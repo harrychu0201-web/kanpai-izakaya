@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://harrychu0201-web.github.io/kanpai-izakaya/sitemap.xml
