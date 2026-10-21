@@ -268,6 +268,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none}
 .hud .fsbtn{display:none}
 @media (pointer:coarse){.hud .fsbtn{display:grid}}
 @media (max-height:480px) and (orientation:landscape){#wrap{padding-block:2px 2px;gap:2px}.hud{min-height:0}.pill{padding:1px 8px}.goal{height:18px}}
+#game.wide .cust{margin-top:-64px}#game.wide .cust .bubble{top:-100px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 <style>html,body{margin:0;overscroll-behavior:none}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
@@ -608,19 +609,19 @@ function drawBg(){
   if(hasIn('tv'))s+=`<g transform="translate(${P.tv[0]} ${P.tv[1]}) scale(${P.tv[2]})"><path d="M60 0v8" stroke="${O}" stroke-width="4"/><rect x="0" y="8" width="130" height="78" rx="6" fill="#141418" stroke="${O}" stroke-width="3"/><rect x="7" y="14" width="116" height="62" fill="#3a8a3a"/><path d="M65 70l-26-24l26-24l26 24z" fill="#c9a26a"/><path d="M65 64l-20-18l20-18l20 18z" fill="#4aa04a"/><rect x="7" y="14" width="52" height="14" fill="#141418" opacity=".75"/><text x="12" y="25" font-family="Zen Maru Gothic,sans-serif" font-weight="900" font-size="10" fill="#fff">灯 5 - 3 鷹</text><circle cx="98" cy="30" r="4" fill="#fff"/><rect x="7" y="14" width="116" height="62" fill="#fff" opacity=".06"/></g>`;
   if(hasIn('record'))s+=`<g transform="translate(${P.rec[0]} ${P.rec[1]}) scale(${P.rec[2]})"><rect x="0" y="22" width="110" height="34" rx="4" fill="#6b4026" stroke="${O}" stroke-width="3"/><rect x="6" y="10" width="98" height="14" rx="3" fill="#8a5a34" stroke="${O}" stroke-width="2.5"/><ellipse cx="46" cy="14" rx="34" ry="8" fill="#141414" stroke="${O}" stroke-width="2"/><ellipse cx="46" cy="14" rx="9" ry="3" fill="#c0392b"/><path d="M92 6l-24 10" stroke="#c9ced4" stroke-width="3" stroke-linecap="round"/><circle cx="92" cy="6" r="4" fill="#c9ced4" stroke="${O}" stroke-width="1.5"/><text x="96" y="-2" font-size="16" fill="#ffd27a">♪</text></g>`;
   if(hasIn('barrels'))s+=`<g transform="translate(${P.bar[0]} ${P.bar[1]}) scale(${P.bar[2]})">${[[0,22],[66,22],[33,-12]].map(([x,y])=>`<g transform="translate(${x} ${y})"><rect width="62" height="36" rx="10" fill="#e3c08f" stroke="${O}" stroke-width="3"/><path d="M8 2v32M54 2v32" stroke="#5a3a24" stroke-width="4"/><circle cx="31" cy="18" r="11" fill="#fbf1dc" stroke="#b8372a" stroke-width="3"/><text x="31" y="23" text-anchor="middle" font-family="Dela Gothic One,serif" font-size="13" fill="#b8372a">酒</text></g>`).join('')}</g>`;
-  if(ST&&ST.up.cat)s+=`<g transform="translate(${P.cat} 202)"><ellipse cx="22" cy="40" rx="22" ry="20" fill="${hasIn('goldcat')?'#f0c040':'#fff'}" stroke="${O}" stroke-width="3"/><circle cx="22" cy="18" r="16" fill="${hasIn('goldcat')?'#f0c040':'#fff'}" stroke="${O}" stroke-width="3"/><path d="M8 8l2-12l8 8M36 8l-2-12l-8 8" fill="${hasIn('goldcat')?'#f0c040':'#fff'}" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M40 30q10-14 4-26" stroke="${O}" stroke-width="3" fill="${hasIn('goldcat')?'#f0c040':'#fff'}"/><path d="M15 18q3-3 6 0M25 18q3-3 6 0" stroke="${O}" stroke-width="2.5" fill="none"/><circle cx="22" cy="44" r="7" fill="#f0b229" stroke="${O}" stroke-width="2"/></g>`;
+  if(ST&&ST.up.cat)s+=`<g transform="translate(${P.cat} ${202+KY-400})"><ellipse cx="22" cy="40" rx="22" ry="20" fill="${hasIn('goldcat')?'#f0c040':'#fff'}" stroke="${O}" stroke-width="3"/><circle cx="22" cy="18" r="16" fill="${hasIn('goldcat')?'#f0c040':'#fff'}" stroke="${O}" stroke-width="3"/><path d="M8 8l2-12l8 8M36 8l-2-12l-8 8" fill="${hasIn('goldcat')?'#f0c040':'#fff'}" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M40 30q10-14 4-26" stroke="${O}" stroke-width="3" fill="${hasIn('goldcat')?'#f0c040':'#fff'}"/><path d="M15 18q3-3 6 0M25 18q3-3 6 0" stroke="${O}" stroke-width="2.5" fill="none"/><circle cx="22" cy="44" r="7" fill="#f0b229" stroke="${O}" stroke-width="2"/></g>`;
   if(ST&&ST.up.waiter)s+=`<g transform="translate(-4 196) scale(.74)">${custSVG(STAFF.waiter,'happy').replace('<svg class="fig" viewBox="0 0 160 212">','<svg viewBox="0 0 160 212" width="160" height="212">')}</g>`;
   if(ST&&ST.up.helper)s+=`<g transform="translate(${W-108} 214) scale(.66)">${custSVG(STAFF.cook,'ok').replace('<svg class="fig" viewBox="0 0 160 212">','<svg viewBox="0 0 160 212" width="160" height="212">')}</g>`;
   if(ST&&ST.owned)s+=`<g transform="translate(${W/2-70} 28)"><rect width="140" height="40" rx="6" fill="#3f2416" stroke="#d9a441" stroke-width="4"/><text x="70" y="29" text-anchor="middle" font-family="Dela Gothic One,serif" font-size="22" fill="#f0c040">老舗 乾杯</text></g>`;
   $('bg').innerHTML=s;['bg','counter'].forEach(id=>{const e=$(id);e.setAttribute('viewBox',`0 0 ${W} ${H}`);e.setAttribute('width',W);e.setAttribute('height',H)});
   const TC=theme('counter');
-  $('counter').innerHTML=`<defs><linearGradient id="ctop2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${TC.c[0]}"/><stop offset="1" stop-color="${TC.c[1]}"/></linearGradient><linearGradient id="kit2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a2c1a"/><stop offset="1" stop-color="#2f1b10"/></linearGradient></defs>
+  $('counter').innerHTML=`<g transform="translate(0 ${KY-400})"><defs><linearGradient id="ctop2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${TC.c[0]}"/><stop offset="1" stop-color="${TC.c[1]}"/></linearGradient><linearGradient id="kit2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a2c1a"/><stop offset="1" stop-color="#2f1b10"/></linearGradient></defs>
   <rect x="-4" y="348" width="${W+8}" height="26" fill="url(#ctop2)" stroke="${O}" stroke-width="3"/><path d="M0 353h${W}" stroke="#fff3d6" stroke-width="3" opacity=".6"/>
   ${TC.id==='marble'?`<path d="M40 352q60 10 120 2t140 8M420 356q80-6 160 4t200-4" stroke="#a8a29a" stroke-width="1.5" fill="none" opacity=".7"/>`:TC.id==='slab'?`<path d="M0 360q200-6 400 2t560-2M0 366q260 4 520-2t440 2" stroke="#6a3a18" stroke-width="1.5" fill="none" opacity=".6"/>`:''}<rect x="-4" y="374" width="${W+8}" height="26" fill="${TC.c[2]}" stroke="${O}" stroke-width="3"/><path d="M0 380h${W}" stroke="#fff" stroke-width="2" opacity=".18"/>
-  <rect x="0" y="400" width="${W}" height="${H-400}" fill="url(#kit2)"/>${Array.from({length:Math.ceil(W/48)},(_,i)=>`<path d="M${i*48} 400v${H-400}" stroke="#24140c" stroke-width="2" opacity=".5"/>`).join('')}
+  <rect x="0" y="400" width="${W}" height="${H-KY}" fill="url(#kit2)"/>${Array.from({length:Math.ceil(W/48)},(_,i)=>`<path d="M${i*48} 400v${H-KY}" stroke="#24140c" stroke-width="2" opacity=".5"/>`).join('')}
   ${hasDec('bonsai')?`<g transform="translate(16 286)"><path d="M6 46h44l-4 16H10z" fill="#6b3a24" stroke="${O}" stroke-width="3"/><path d="M28 46q-6-14 4-24q6-6 0-14" stroke="#5a3a24" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse cx="18" cy="18" rx="16" ry="9" fill="#3f7a3a" stroke="${O}" stroke-width="2.5"/><ellipse cx="40" cy="10" rx="16" ry="9" fill="#4f8a44" stroke="${O}" stroke-width="2.5"/><ellipse cx="32" cy="28" rx="13" ry="7" fill="#3f7a3a" stroke="${O}" stroke-width="2.5"/></g>`:''}
   ${hasDec('daruma')?`<g transform="translate(76 306)"><ellipse cx="18" cy="24" rx="18" ry="20" fill="#d23a2a" stroke="${O}" stroke-width="3"/><ellipse cx="18" cy="20" rx="11" ry="10" fill="#fbf1dc" stroke="${O}" stroke-width="2"/><circle cx="14" cy="19" r="2.5" fill="${O}"/><circle cx="22" cy="19" r="2.5" fill="${O}"/><path d="M13 26q5 3 10 0" stroke="${O}" stroke-width="2" fill="none"/><path d="M8 36q10 5 20 0" stroke="#f0b229" stroke-width="3" fill="none"/></g>`:''}
-  ${hasDec('goldfish')?`<g transform="translate(${W-78} 280)"><circle cx="36" cy="36" r="32" fill="#bfe6ff" fill-opacity=".55" stroke="${O}" stroke-width="3"/><path d="M8 40q28 10 56 0v4q-28 26-56 0z" fill="#7ac7f0" opacity=".6"/><ellipse cx="22" cy="6" rx="16" ry="5" fill="none" stroke="${O}" stroke-width="3"/><g transform="translate(26 44)"><ellipse rx="8" ry="5" fill="#ff7a2a" stroke="${O}" stroke-width="1.5"/><path d="M7 0l7-5v10z" fill="#ff9a4a" stroke="${O}" stroke-width="1.5"/></g><g transform="translate(46 52) scale(-1 1)"><ellipse rx="6" ry="4" fill="#ff5a2a" stroke="${O}" stroke-width="1.5"/><path d="M5 0l6-4v8z" fill="#ff8a4a" stroke="${O}" stroke-width="1.5"/></g><path d="M8 66h56" stroke="${O}" stroke-width="3"/></g>`:''}`;
+  ${hasDec('goldfish')?`<g transform="translate(${W-78} 280)"><circle cx="36" cy="36" r="32" fill="#bfe6ff" fill-opacity=".55" stroke="${O}" stroke-width="3"/><path d="M8 40q28 10 56 0v4q-28 26-56 0z" fill="#7ac7f0" opacity=".6"/><ellipse cx="22" cy="6" rx="16" ry="5" fill="none" stroke="${O}" stroke-width="3"/><g transform="translate(26 44)"><ellipse rx="8" ry="5" fill="#ff7a2a" stroke="${O}" stroke-width="1.5"/><path d="M7 0l7-5v10z" fill="#ff9a4a" stroke="${O}" stroke-width="1.5"/></g><g transform="translate(46 52) scale(-1 1)"><ellipse rx="6" ry="4" fill="#ff5a2a" stroke="${O}" stroke-width="1.5"/><path d="M5 0l6-4v8z" fill="#ff8a4a" stroke="${O}" stroke-width="1.5"/></g><path d="M8 66h56" stroke="${O}" stroke-width="3"/></g>`:''}</g>`;
 }
 
 /* ================= stations ================= */
@@ -637,23 +638,23 @@ const PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},sake:{x:123.5,y:418,w:84,h:90,k:1
   teppan:{x:10,y:418,w:360,h:182,k:1.12,pg:2},rawButa:{x:420,y:418,w:72,h:90,k:1.12,pg:2},rawGyu:{x:420,y:525.5,w:72,h:90,k:1.12,pg:2},rawIka:{x:508,y:418,w:72,h:90,k:1.12,pg:2},rawHotate:{x:508,y:525.5,w:72,h:90,k:1.12,pg:2},
   tempura:{x:11,y:636,w:210,h:122,k:1.4,pg:2},rawEbi:{x:11,y:815,w:103,h:58,k:1.4,pg:2},rawKaki:{x:160,y:815,w:103,h:58,k:1.4,pg:2},highball:{x:316,y:636,w:100,h:90,k:1.4,pg:2},hiyayakko:{x:316,y:769,w:100,h:90,k:1.4,pg:2},
   deco2:{x:463,y:636,w:100,h:128,k:1.3,pg:2},trash2:{x:463,y:820,w:100,h:52,k:1.3,pg:2},pgbtn:{x:418,y:350,w:174,h:46,pg:0}};
-let LAY='land',W=960,H=600,L=LAND;
-function spreadLand(W){const ex=W-960,out={};
+let LAY='land',W=960,H=600,L=LAND,KY=400,KK=1;
+function spreadLand(W){KY=W>=1240?336:400;KK=W>=1240?Math.min(1.32,(W-80)/1000):1;const ex=W-960,out={};
   for(const k in LAND)out[k]=Object.assign({},LAND[k],{x:LAND[k].x+ex/2});
-  if(ex<=0)return out;
+  out.warmT.y=KY-54;out.pgbtn.y=KY-46;
   [1,2].forEach(p=>{const ks=Object.keys(LAND).filter(k=>(LAND[k].pg||1)===p&&LAND[k].pg!==0&&k!=='warmT'&&k!=='pgbtn'&&LAND[k].y>=400);
     const items=ks.map(k=>({k,x:LAND[k].x,r:LAND[k].x+LAND[k].w})).sort((a,b)=>a.x-b.x);const cols=[];
-    for(const it of items){const c=cols[cols.length-1];if(c&&it.x<c.r-2){c.ks.push(it.k);c.r=Math.max(c.r,it.r)}else cols.push({ks:[it.k],r:it.r})}
-    const n=cols.length,edge=ex*.08,gap=n>1?(ex-edge*2)/(n-1):0;
-    cols.forEach((c,i)=>c.ks.forEach(k=>out[k].x=LAND[k].x+edge+gap*i))});
+    for(const it of items){const c=cols[cols.length-1];if(c&&it.x<c.r-2){c.ks.push(it.k);c.r=Math.max(c.r,it.r)}else cols.push({ks:[it.k],x0:it.x,r:it.r})}
+    const used=cols.reduce((s,c)=>s+(c.r-c.x0)*KK,0),free=Math.max(0,W-used),edge=Math.min(free*.08,40)+8,n=cols.length,gap=n>1?(free-edge*2)/(n-1):0;
+    let cur=edge;cols.forEach(c=>{c.ks.forEach(k=>{const o=out[k];o.x=cur+(LAND[k].x-c.x0)*KK;o.y=KY+6+(LAND[k].y-406)*KK;o.k=KK});cur+=(c.r-c.x0)*KK+gap})});
   return out}
 function chooseLayout(force){
   const ww=$('wrap').clientWidth-24,ah=Math.max(300,window.innerHeight-60),want=(ww<760&&ww/ah<1.05)?'port':'land';
   const nw=want==='port'?600:Math.round(Math.max(960,Math.min(1500,600*ww/ah))/10)*10;
   if(want===LAY&&nw===W&&!force)return;
   LAY=want;W=nw;H=want==='port'?906:600;
-  if(want==='port')L=PORT;else{L=spreadLand(W)}
-  const g=$('game');g.style.width=W+'px';g.style.height=H+'px';g.classList.toggle('port',LAY==='port');
+  if(want==='port'){L=PORT;KY=400;KK=1}else{L=spreadLand(W)}
+  const g=$('game');g.style.width=W+'px';g.style.height=H+'px';g.classList.toggle('port',LAY==='port');g.classList.toggle('wide',KY<400);
   drawBg();if(HOME)showHome();
   if(R){buildStations();renderStations();R.seats.forEach(c=>{if(c&&c.st!=='bye'){c.el.style.transition='none';c.el.style.left=(seatX(c.seat,ST.up.seats)-80)+'px';void c.el.offsetWidth;c.el.style.transition=''}});seatClasses();renderCust()}
 }
@@ -823,7 +824,7 @@ function renderStations(){
 
 /* ================= run ================= */
 function seatX(i,n){const ex=LAY==='port'?0:Math.min(W-960,(n-1)*150-600>0?(n-1)*150-600:0)/2,a=LAY==='port'?(n>=6?120:ST.up.seats>=4?170:180):(n>=6?130:200)+(W-960)/2-ex,b=LAY==='port'?(n>=6?560:ST.up.seats>=4?530:500):(n>=6?830:800)+(W-960)/2+ex;return n===1?W/2:a+i*(b-a)/(n-1)}
-function crowded(){return ST.up.seats>=(LAY==='port'?4:5)}
+function crowded(){return KY>=400&&ST.up.seats>=(LAY==='port'?4:5)}
 function seatClasses(){if(!R)return;R.seats.forEach(c=>{if(c){c.el.classList.toggle('low',crowded());c.el.classList.toggle('hi',crowded()&&c.seat%2===1);c.el.classList.toggle('small',LAY==='port'&&ST.up.seats>=4)}})}
 function quotaOf(d){return Math.min(24,6+d*2)}
 function startDay(){
