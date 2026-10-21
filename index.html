@@ -57,7 +57,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .goal i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#e8932a,var(--amber));border-radius:999px;transition:width .3s}
 .goal span{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:16px;color:#6b4a30;text-shadow:0 1px 0 #000}
 .goal span.on{color:#fff6c2;text-shadow:0 0 6px #ff9a2a}
-.goal em{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--f-disp);font-size:15px;color:#fff;text-shadow:0 1px 2px #000;font-variant-numeric:tabular-nums}
+.goal em{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--f-ui);font-weight:500;font-size:15px;color:#fff;text-shadow:0 1px 2px #000;font-variant-numeric:tabular-nums}
 .hud .icon-btn{width:36px;height:36px;border-radius:50%;background:#1a0e08;border:2px solid #5a3420;display:grid;place-items:center;font-size:13px}
 
 /* stage */
@@ -275,12 +275,14 @@ body.ovl .hud{position:fixed;top:3px;left:6px;right:6px;z-index:20;pointer-event
 body.ovl .hud>*{pointer-events:auto}
 body.ovl .hud .pill{background:#1a0e08cc;font-size:11px;padding:1px 8px;border-width:1.5px}
 body.ovl .hud .pill b{font-size:12px}
-body.ovl .hud .goal{order:0;flex:1 1 auto;flex-basis:auto;max-width:34vw;height:18px;margin:0 auto}
+body.ovl .hud .goal{order:2;flex:0 0 22vw;flex-basis:22vw;max-width:22vw;height:18px}
+body.ovl .hud .day{order:0;margin-right:auto}body.ovl .hud .clock{order:1}body.ovl .hud .pill:not(.day):not(.clock){order:3}body.ovl .hud .icon-btn{order:5}body.ovl .hud .fsbtn{margin-left:auto}
+body.ovl .hud,body.ovl .hud b{font-weight:500}
 body.ovl .hud .goal em{font-size:11px}
 body.ovl .hud .icon-btn{width:24px;height:24px;font-size:10px}
 body.ovl .hud .staff{display:none}
-body.ovl #game.wide .cust{margin-top:-52px;transform:scale(.86);transform-origin:50% 100%}
-body.ovl #game.wide .cust .bubble{top:-98px}
+body.ovl #game.wide .cust{margin-top:-46px}
+body.ovl #game.wide .cust .bubble{top:-90px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 <style>html,body{margin:0;overscroll-behavior:none}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
@@ -517,7 +519,7 @@ function icon(key){
 function itemName(key){const [b,v]=key.split(':');if(b==='chazuke')return (v==='salmon'?'鮭魚':'梅子')+'茶泡飯';if(b==='sashimi')return v.split('+').map(f=>FISH[f]).join('＋');return ITEMS[b].zh}
 function lanternG(ch){return `<path d="M30 0v8" stroke="${O}" stroke-width="3"/><rect x="16" y="6" width="28" height="8" rx="2" fill="#1a0e08"/><rect x="16" y="70" width="28" height="8" rx="2" fill="#1a0e08"/>
   <path d="M18 14q-16 28 0 56h24q16-28 0-56z" fill="#d8402c" stroke="${O}" stroke-width="3"/><path d="M14 26h32M10 42h40M12 58h36" stroke="#9e2a1b" stroke-width="2"/><path d="M22 18q-6 20 0 48" stroke="#ff9a7a" stroke-width="4" fill="none" opacity=".6"/>
-  <text x="30" y="50" text-anchor="middle" font-family="Dela Gothic One,serif" font-size="22" fill="#1a0e08">${ch}</text>`}
+  <text x="30" y="50" text-anchor="middle" font-family="Noto Serif TC,Noto Serif CJK TC,serif" font-weight="600" font-size="23" fill="#1a0e08">${ch}</text>`}
 
 /* customers */
 const STAFF={waiter:{id:'waiter',top:'#2b3b6e',skin:'#f9dcc0',hc:'#3a2418'},cook:{id:'cook',top:'#f2efe8',skin:'#eec09a',hc:'#1c1a22'}};
@@ -577,7 +579,8 @@ function custSVG(look,mood){
 
 /* ================= background ================= */
 function drawBg(){
-  const day=ST?ST.day:1,P=LAY==='port'?{ts:23,ls:.65,tv:[372,168,.82],rec:[500,210,.6],bar:[488,38,.55],sx:186,sw:168,tag:118,sake:562,lx:[402,482],lp:[150,316],chime:176,scroll:116,board:186,sham:[290,226],notes:[262,250],cat:W-76}:(()=>{const d=(W-960)/2;return {ts:25,ls:.8,tv:[190+d*.3,104,1],rec:[210+d*.3,214,.7],bar:[W-232,28,.85],sx:330+d,sw:300,tag:150+Math.min(d,60),sake:650+d,lx:[734+d*1.4,820+d*1.6],lp:[300+d,588+d],chime:262+d*.4,scroll:128,board:638+d,sham:[704+d,84],notes:[676+d,110],cat:W-76}})();
+  const TY=KY<400?38:0;
+  const day=ST?ST.day:1,P=LAY==='port'?{ts:27,ls:.8,tv:[372,168,.82],rec:[500,210,.6],bar:[488,38,.55],sx:186,sw:168,tag:118,sake:562,lx:[402,482],lp:[150,316],chime:176,scroll:116,board:186,sham:[290,226],notes:[262,250],cat:W-76}:(()=>{const d=(W-960)/2;return {ts:29,ls:1,tv:[190+d*.3,104,1],rec:[210+d*.3,214,.7],bar:[W-232,28,.85],sx:KY<400?Math.max(330+d,640):330+d,sw:300,tag:KY<400?156:150+Math.min(d,60),sake:650+d,lx:[734+d*1.4,820+d*1.6],lp:[300+d,588+d],chime:262+d*.4,scroll:128,board:638+d,sham:[704+d,84],notes:[676+d,110],cat:W-76}})();
   const TW_=theme('wall'),TL=theme('light').c;
   let s=`<defs><linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${TW_.c[0]}"/><stop offset="1" stop-color="${TW_.c[1]}"/></linearGradient>
   <radialGradient id="glow" cx=".5" cy=".3" r=".7"><stop offset="0" stop-color="${TL}" stop-opacity=".35"/><stop offset="1" stop-color="${TL}" stop-opacity="0"/></radialGradient></defs>
@@ -587,12 +590,12 @@ function drawBg(){
   else for(let x=0;x<W;x+=48)s+=`<path d="M${x} 0v380" stroke="${TW_.c[2]}" stroke-width="2" opacity=".5"/>`;
   s+=`<rect width="${W}" height="380" fill="url(#glow)"/>`;
   const cols=Math.round(P.sw/50),cw=P.sw/cols;
-  s+=`<g transform="translate(${P.sx} 70)"><rect width="${P.sw}" height="150" rx="4" fill="#fbe7b8" stroke="#3f2416" stroke-width="8"/><rect id="sky" width="${P.sw}" height="150" fill="#ff9a3a" opacity=".3"/><g id="moon" opacity="0">${[[.12,22],[.3,118],[.45,40],[.58,128],[.9,30],[.2,80],[.68,96],[.95,124],[.38,72]].map(([x,y],i)=>`<circle cx="${P.sw*x}" cy="${y}" r="${i%3?1.3:2}" fill="#fff" opacity="${i%2?.6:.9}"/>`).join('')}<circle cx="${P.sw*.76}" cy="44" r="30" fill="#fff3c4" opacity=".18"/><circle cx="${P.sw*.76}" cy="44" r="17" fill="#fff6d6"/><circle cx="${P.sw*.76-5}" cy="40" r="3" fill="#e8dcb0"/><circle cx="${P.sw*.76+6}" cy="50" r="2.2" fill="#e8dcb0"/></g>`;
+  s+=`<g transform="translate(${P.sx} ${70+TY})"><rect width="${P.sw}" height="150" rx="4" fill="#fbe7b8" stroke="#3f2416" stroke-width="8"/><rect id="sky" width="${P.sw}" height="150" fill="#ff9a3a" opacity=".3"/><g id="moon" opacity="0">${[[.12,22],[.3,118],[.45,40],[.58,128],[.9,30],[.2,80],[.68,96],[.95,124],[.38,72]].map(([x,y],i)=>`<circle cx="${P.sw*x}" cy="${y}" r="${i%3?1.3:2}" fill="#fff" opacity="${i%2?.6:.9}"/>`).join('')}<circle cx="${P.sw*.76}" cy="44" r="30" fill="#fff3c4" opacity=".18"/><circle cx="${P.sw*.76}" cy="44" r="17" fill="#fff6d6"/><circle cx="${P.sw*.76-5}" cy="40" r="3" fill="#e8dcb0"/><circle cx="${P.sw*.76+6}" cy="50" r="2.2" fill="#e8dcb0"/></g>`;
   for(let i=1;i<cols;i++)s+=`<path d="M${i*cw} 0v150" stroke="#8a5a34" stroke-width="3"/>`;
   for(let j=1;j<3;j++)s+=`<path d="M0 ${j*50}h${P.sw}" stroke="#8a5a34" stroke-width="3"/>`;
   s+=`</g>`;
   s+=`<rect x="0" y="30" width="112" height="350" fill="#1d2440"/><rect x="104" y="30" width="10" height="350" fill="#3f2416"/>
-  ${[0,1,2].map(i=>`<path d="M${i*36} 30h34v98q-17 6-34 0z" fill="${hasDec('noren')?'#8e2f22':'#2b3b6e'}" stroke="#1a2346" stroke-width="2"/>`).join('')}<text x="52" y="94" text-anchor="middle" font-family="Dela Gothic One,serif" font-size="30" fill="#fbf1dc">酒</text>`;
+  ${[0,1,2].map(i=>`<path d="M${i*36} 30h34v98q-17 6-34 0z" fill="${hasDec('noren')?'#8e2f22':'#2b3b6e'}" stroke="#1a2346" stroke-width="2"/>`).join('')}<text x="52" y="94" text-anchor="middle" font-family="Noto Serif TC,Noto Serif CJK TC,serif" font-weight="600" font-size="32" fill="#fbf1dc">酒</text>`;
   s+=`<g transform="translate(${W-238} 76)"><rect x="0" y="80" width="220" height="10" fill="#3f2416"/><rect x="0" y="176" width="220" height="10" fill="#3f2416"/>`;
   const bc=hasIn('premium')?['#1a1a1a','#3a2412','#0f2a44','#2a1a10','#141414','#4a1a12','#1a2a1a']:['#2f6a3a','#5a3a1e','#2a4466','#e9e3d3','#7a2e22','#3d5a2a','#1f2a44'];
   for(let i=0;i<14;i++){const row=i<7?0:1,x=12+(i%7)*30,h=52+(i*13%20),y=(row?176:80)-h;
@@ -600,8 +603,8 @@ function drawBg(){
   s+=`</g>`;
   s+=`<rect x="0" y="0" width="${W}" height="24" fill="#3f2416"/>`;
   const keys=ST?unlocked(day):Object.keys(ITEMS).filter(k=>!ITEMS[k].buy);
-  keys.forEach((k,i)=>{const t=ITEMS[k].tag||ITEMS[k].jp,x=P.tag+i*P.ts;const sp=t.length===2?22:14,off=(52-((t.length-1)*sp+11))/2-7;s+=`<g transform="translate(${x} 18)"><rect width="22" height="52" fill="#f3e6c8" stroke="${O}" stroke-width="2"/>${[...t].map((c,j)=>c==='ー'?`<rect x="10" y="${7+off+j*sp}" width="2.5" height="11" fill="${O}"/>`:`<text x="11" y="${17+off+j*sp}" text-anchor="middle" font-family="Zen Maru Gothic,sans-serif" font-weight="900" font-size="12" fill="${O}">${c}</text>`).join('')}</g>`});
-  s+=`<g transform="translate(${P.sake} 6) scale(${P.ls})">${lanternG('酒')}</g><g transform="translate(${P.lx[0]} 10) scale(${P.ls})">${lanternG('灯')}</g><g transform="translate(${P.lx[1]} 6) scale(${P.ls})">${lanternG('宴')}</g><g transform="translate(8 128) scale(1.2)" opacity="${hasDec('noren')?1:0}">${lanternG('灯')}</g>`;
+  keys.forEach((k,i)=>{const t=ITEMS[k].tag||ITEMS[k].jp,x=P.tag+i*P.ts;const sp=t.length===2?22:14,off=(52-((t.length-1)*sp+11))/2-7;s+=`<g transform="translate(${x} ${9+TY}) scale(1.25)"><rect width="22" height="52" fill="#f3e6c8" stroke="${O}" stroke-width="2"/>${[...t].map((c,j)=>c==='ー'?`<rect x="10" y="${7+off+j*sp}" width="2.5" height="11" fill="${O}"/>`:`<text x="11" y="${17+off+j*sp}" text-anchor="middle" font-family="Zen Maru Gothic,sans-serif" font-weight="900" font-size="12" fill="${O}">${c}</text>`).join('')}</g>`});
+  s+=`<g transform="translate(${P.sake} ${6+TY}) scale(${P.ls})">${lanternG('酒')}</g><g transform="translate(${P.lx[0]} ${10+TY}) scale(${P.ls})">${lanternG('灯')}</g><g transform="translate(${P.lx[1]} ${6+TY}) scale(${P.ls})">${lanternG('宴')}</g><g transform="translate(8 128) scale(1.2)" opacity="${hasDec('noren')?1:0}">${lanternG('灯')}</g>`;
   if(hasDec('lanterns'))s+=`<g transform="translate(${P.lp[0]} 28) scale(.6)">${lanternG('祭')}</g><g transform="translate(${P.lp[1]} 34) scale(.6)">${lanternG('祭')}</g>`;
   if(hasDec('chime'))s+=`<g transform="translate(${P.chime} 24)"><path d="M0 0v12" stroke="${O}" stroke-width="2"/><path d="M-13 30q0-19 13-19q13 0 13 19z" fill="#cdeeff" fill-opacity=".85" stroke="${O}" stroke-width="2.5"/><path d="M-7 22q4-5 8-1q-4 4-8 1z" fill="#e0412c"/><path d="M0 30v12" stroke="${O}" stroke-width="1.5"/><rect x="-6" y="42" width="12" height="30" fill="#fbf1dc" stroke="${O}" stroke-width="2" transform="rotate(${Math.sin(Date.now()/900)*6} 0 42)"/></g>`;
   if(hasDec('scroll'))s+=`<g transform="translate(${P.scroll} 132)"><rect x="-4" y="0" width="56" height="7" rx="3" fill="#5a3a24" stroke="${O}" stroke-width="2"/><rect x="2" y="6" width="44" height="168" fill="#3f5a3a" stroke="${O}" stroke-width="2"/><rect x="8" y="14" width="32" height="150" fill="#f5ead2"/>${[...'一期一會'].map((c,i)=>`<text x="24" y="${44+i*33}" text-anchor="middle" font-family="Dela Gothic One,serif" font-size="24" fill="#1a0e08">${c}</text>`).join('')}<rect x="-4" y="172" width="56" height="8" rx="4" fill="#5a3a24" stroke="${O}" stroke-width="2"/></g>`;
