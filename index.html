@@ -1363,19 +1363,28 @@ function tutEnd(){
 document.addEventListener('click',e=>{const b=e.target.closest('[data-tut]');if(!b||!TUT)return;
   const a=b.dataset.tut;if(a==='skip')tutEnd();else if(a==='prev'){TUT.i--;tutShow()}else if(TUT.i>=TUTS.length-1)tutEnd();else{TUT.i++;tutShow()}});
 window.addEventListener('resize',()=>{if(TUT)setTimeout(tutShow,60)});
-/* ===== sound: all synthesized, no files ===== */
-const SND={ctx:null,mus:null,sfx:null,on:true,next:0,step:0,timer:null};
+/* ===== sound: BGM = bgm.mp3 (synth tune only as fallback if it fails to load); SFX synthesized ===== */
+const SND={ctx:null,mus:null,sfx:null,on:true,next:0,step:0,timer:null,bgm:null,bgmG:null,bgmFail:false};
 try{SND.on=localStorage.getItem('izakaya-snd')!=='0'}catch(e){}
+const BGM_VOL=.42;
+// fetch the whole file (goes through the service worker → works offline), play from a blob URL so the
+// audio element streams it instead of decoding 3 minutes into memory
+fetch('bgm.mp3').then(r=>{if(!r.ok)throw 0;return r.blob()}).then(b=>{
+  const a=new Audio();a.src=URL.createObjectURL(b);a.loop=true;a.preload='auto';a.setAttribute('playsinline','');SND.bgm=a;bgmRoute();bgmPlay()
+}).catch(()=>{SND.bgmFail=true});
+function bgmRoute(){if(!SND.ctx||!SND.bgm||SND.bgmG)return;
+  try{const g=SND.ctx.createGain();g.gain.value=SND.on?BGM_VOL:0;SND.ctx.createMediaElementSource(SND.bgm).connect(g);g.connect(SND.ctx.destination);SND.bgmG=g}catch(e){SND.bgm.volume=BGM_VOL}}
+function bgmPlay(){const a=SND.bgm;if(!a||!SND.ctx||!SND.on||document.hidden||!a.paused)return;a.play().catch(()=>{})}
 function sndInit(){if(SND.ctx)return;const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
   const x=new C(),m=x.createGain(),f=x.createGain(),rv=x.createConvolver();
   const len=x.sampleRate*1.6,b=x.createBuffer(2,len,x.sampleRate);for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3)}
   rv.buffer=b;const wet=x.createGain();wet.gain.value=.25;m.connect(x.destination);m.connect(rv);rv.connect(wet);wet.connect(x.destination);f.connect(x.destination);
   m.gain.value=SND.on?.26:0;f.gain.value=SND.on?.5:0;SND.ctx=x;SND.mus=m;SND.sfx=f;SND.next=x.currentTime+.1;
-  SND.timer=setInterval(sndTick,120)}
-let SNDUNLK=false;function sndWake(){if(!SNDUNLK){SNDUNLK=true;try{const au=new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');au.loop=true;au.volume=0.01;au.play().catch(()=>{})}catch(e){}}sndInit();if(SND.ctx&&SND.ctx.state!=='running')SND.ctx.resume()}
+  SND.timer=setInterval(sndTick,120);bgmRoute()}
+let SNDUNLK=false;function sndWake(){if(!SNDUNLK){SNDUNLK=true;try{const au=new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');au.loop=true;au.volume=0.01;au.play().catch(()=>{})}catch(e){}}sndInit();if(SND.ctx&&SND.ctx.state!=='running')SND.ctx.resume();bgmPlay()}
 ['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,sndWake,{passive:true}));
-document.addEventListener('visibilitychange',()=>{if(!SND.ctx)return;if(document.hidden)SND.ctx.suspend();else SND.ctx.resume()});
-function sndSet(on){SND.on=on;try{localStorage.setItem('izakaya-snd',on?'1':'0')}catch(e){}if(SND.ctx){const t=SND.ctx.currentTime;SND.mus.gain.setTargetAtTime(on?.26:0,t,.1);SND.sfx.gain.setTargetAtTime(on?.5:0,t,.05)}}
+document.addEventListener('visibilitychange',()=>{if(!SND.ctx)return;if(document.hidden){SND.ctx.suspend();if(SND.bgm)SND.bgm.pause()}else{SND.ctx.resume();bgmPlay()}});
+function sndSet(on){SND.on=on;try{localStorage.setItem('izakaya-snd',on?'1':'0')}catch(e){}if(SND.ctx){const t=SND.ctx.currentTime;SND.mus.gain.setTargetAtTime(on?.26:0,t,.1);SND.sfx.gain.setTargetAtTime(on?.5:0,t,.05);if(SND.bgmG)SND.bgmG.gain.setTargetAtTime(on?BGM_VOL:0,t,.1)}if(SND.bgm){if(on)bgmPlay();else SND.bgm.pause()}}
 function tone(dest,f,t,d,v,type='triangle',glide=0){const x=SND.ctx,o=x.createOscillator(),g=x.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(glide)o.frequency.exponentialRampToValueAtTime(glide,t+d);
   g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.008);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(dest);o.start(t);o.stop(t+d+.05)}
 function pluck(f,t,d,v){tone(SND.mus,f,t,d,v,'triangle');tone(SND.mus,f*2.003,t,d*.5,v*.35,'sine')}
@@ -1404,7 +1413,7 @@ function shami(f,t,v,dest){const x=SND.ctx,o=x.createOscillator(),fl=x.createBiq
 function taiko(t,v){const x=SND.ctx,o=x.createOscillator(),g=x.createGain();o.type='sine';o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(48,t+.3);
   g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0008,t+.45);o.connect(g);g.connect(SND.mus);o.start(t);o.stop(t+.5);noise(SND.mus,t,.05,v*.3,600)}
 function wood(t,v,f){tone(SND.mus,f||1250,t,.05,v,'sine');tone(SND.mus,(f||1250)*1.5,t,.03,v*.4,'sine')}
-function sndTick(){const x=SND.ctx;if(!x||x.state!=='running')return;
+function sndTick(){const x=SND.ctx;if(!x||x.state!=='running')return;if(!SND.bgmFail){SND.next=Math.max(SND.next,x.currentTime+.1);return}
   while(SND.next<x.currentTime+.5){const t=SND.next,s=SND.step,bar=Math.floor(s/8)%16,pos=s%8,B=bar>=8;
     const root=(pos>=4&&CH2[bar]!=null)?CH2[bar]:CH[bar],minor=[-3,-10].includes(root),tri=[root,root+(minor?3:4),root+7];
     if(pos===0||(pos===4&&CH2[bar]!=null))tri.forEach((n,i)=>tone(SND.mus,MZ(n-12),t+i*.02,BEAT*(CH2[bar]!=null?3.6:7.5),.035,'sine'));
