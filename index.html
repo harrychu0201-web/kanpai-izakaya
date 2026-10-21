@@ -294,9 +294,12 @@ body.ovl #game.wide .cust .bubble{top:-90px}
 .sideb svg{width:min(6.2vw,13vh,84px)!important;height:min(6.2vw,13vh,84px)!important}
 .sideb span{font-size:min(1.3vw,3vh,19px)!important}
 .home.port .side{top:22vh!important}.home.port .side-r{top:22vh!important}
-body.lite .steam svg{filter:none;-webkit-mask-image:none;mask-image:none;opacity:.25}
-body.lite .steam svg path{stroke-width:14}
-body.lite .steam .mist{filter:none;background:radial-gradient(ellipse at 50% 75%,#ffffff40 0,#fff0 70%)}
+body.lite .steam svg{display:none}
+body.lite .steam .mist{filter:none;left:-34px;top:-60px;width:68px;height:70px;background:radial-gradient(ellipse at 50% 60%,#ffffff70 0,#ffffff30 40%,#fff0 70%);animation:litepuff 2.6s infinite ease-out}
+body.lite .steam .mist::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;animation:litepuff 2.6s -1.3s infinite ease-out}
+@keyframes litepuff{0%{transform:translateY(14px) scale(.6);opacity:0}30%{opacity:1}100%{transform:translateY(-40px) scale(1.5,1.3);opacity:0}}
+body.lite .steam.soft .mist{left:-24px;top:-44px;width:48px;height:50px}
+body.lite .steam.smoke .mist{background:radial-gradient(ellipse at 50% 60%,#555c 0,#4448 40%,#4440 70%)}
 body.lite .held{filter:none;box-shadow:0 0 0 3px #ffc65a}
 body.lite .sideb svg,body.lite .htitle h1.logo img{filter:none}
 #game{will-change:transform}
