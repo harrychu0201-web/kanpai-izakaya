@@ -1574,7 +1574,7 @@ I18N={"zh-Hans":{"乾杯！居酒屋 — 免費居酒屋料理經營網頁遊戲
    The game keeps saving to localStorage exactly as before; every local save is mirrored to the cloud
    (debounced). On sign-in the two are reconciled: records are merged, and if both sides hold a
    different game save the player picks one. */
-const FB_CONFIG=null;
+const FB_CONFIG={apiKey:"AIzaSyBP7czM0Vr9RldwJ2M8iI3qezUsvYZhngA",authDomain:"kanpai-izakaya.firebaseapp.com",projectId:"kanpai-izakaya",storageBucket:"kanpai-izakaya.firebasestorage.app",messagingSenderId:"920920633539",appId:"1:920920633539:web:dc71cba6784c6264003276"};
 const SAVED_AT='izakaya-saved-at';
 const CL={user:null,ready:false,timer:null,status:'',api:null,pick:null};
 function localStamp(){try{return +localStorage.getItem(SAVED_AT)||0}catch(e){return 0}}
