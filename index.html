@@ -283,6 +283,12 @@ body.ovl .hud .icon-btn{width:24px;height:24px;font-size:10px}
 body.ovl .hud .staff{display:none}
 body.ovl #game.wide .cust{margin-top:-46px}
 body.ovl #game.wide .cust .bubble{top:-90px}
+@media (max-height:560px) and (orientation:landscape){
+.home .side{top:3vh;gap:1.2vh}
+.sideb svg{width:min(12vh,62px);height:min(12vh,62px)}
+.sideb span{font-size:min(2.9vh,15px)}
+.home .menu{bottom:3vh}
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 <style>html,body{margin:0;overscroll-behavior:none}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
@@ -1381,6 +1387,7 @@ function loop(now){
 const TOUCH=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;
 function goFS(){if(!TOUCH||document.fullscreenElement||document.webkitFullscreenElement)return;const e=document.documentElement,f=e.requestFullscreen||e.webkitRequestFullscreen;if(!f)return;try{const p=f.call(e,{navigationUI:'hide'});if(p&&p.then)p.then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(x){}}).catch(()=>{})}catch(x){}}
 function toggleFS(){if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}else goFS()}
+if(TOUCH)document.addEventListener('pointerup',function f(){goFS();if(document.fullscreenElement||document.webkitFullscreenElement)document.removeEventListener('pointerup',f)});
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(fit,120)));
 if(window.visualViewport)visualViewport.addEventListener('resize',()=>fit());
 function fit(){
