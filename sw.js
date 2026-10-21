@@ -1,10 +1,11 @@
-const CACHE='izakaya-v61';
+const CACHE='izakaya-v62';
 const FILES=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
-  e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(res=>{
-    if(res.ok&&(e.request.url.startsWith(self.location.origin)||e.request.url.includes('fonts.g'))){const copy=res.clone();caches.open(CACHE).then(c=>c.put(e.request,copy))}
-    return res}).catch(()=>hit)));
+  const url=e.request.url, same=url.startsWith(self.location.origin);
+  // network first for the game itself, so updates show up immediately; cache is only the offline fallback
+  if(same){e.respondWith(fetch(e.request,{cache:'no-cache'}).then(res=>{if(res.ok){const c=res.clone();caches.open(CACHE).then(x=>x.put(e.request,c))}return res}).catch(()=>caches.match(e.request).then(h=>h||caches.match('./index.html'))));return}
+  e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(res=>{if(res.ok&&url.includes('fonts.g')){const c=res.clone();caches.open(CACHE).then(x=>x.put(e.request,c))}return res})));
 });
