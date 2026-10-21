@@ -1,1 +1,7 @@
-# kanpai-izakaya
+# 乾杯！居酒屋
+
+巷子裡的小居酒屋料理經營遊戲。接客、烤串燒、炸唐揚、送啤酒，把小店經營成巷口的老字號。
+
+**直接玩：** https://harrychu0201-web.github.io/kanpai-izakaya/
+
+手機建議橫向遊玩，也可以「加入主畫面」當成 App 使用。
