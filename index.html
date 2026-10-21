@@ -303,6 +303,8 @@ body.lite .steam.smoke .mist{background:radial-gradient(ellipse at 50% 60%,#555c
 body.lite .held{filter:none;box-shadow:0 0 0 3px #ffc65a}
 body.lite .sideb svg,body.lite .htitle h1.logo img{filter:none}
 #game{will-change:transform}
+.home .modal{cursor:pointer}.home .modal .card{cursor:auto}
+.home .modal{padding-bottom:22px;box-sizing:border-box}.home .modal::after{content:'點空白處關閉';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:13px;color:#f3dfb4cc;pointer-events:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 <style>html,body{margin:0;overscroll-behavior:none}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
@@ -1154,6 +1156,8 @@ const SIDEI={
 function sideBtn(act,label){const [a,b,ic]=SIDEI[act];return `<button class="sideb" data-act="${act}"><svg viewBox="0 0 64 64"><defs><linearGradient id="sg-${act}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><circle cx="32" cy="32" r="29" fill="url(#sg-${act})" stroke="#3a1a10" stroke-width="3.5"/><circle cx="32" cy="32" r="25.5" fill="none" stroke="#c9963e" stroke-width="2.5"/><ellipse cx="32" cy="16" rx="17" ry="6" fill="#fff" opacity=".1"/>${ic}</svg><span>${label}</span></button>`}
 function plaque(act,label,sub,primary){return `<button class="plq ${primary?'pri':''}" data-act="${act}"><span class="plan">${sv(lanternG(''),'0 0 60 84')}</span><span class="plt">${label}${sub?`<small>${sub}</small>`:''}</span></button>`}
 let SHOPHOME=false;
+document.addEventListener('click',e=>{if(!HOME)return;const m=e.target.closest('.modal');if(!m||e.target!==m)return;if(SHOPHOME)showHome();else closeModal()});
+
 function showHome(){
   SHOPHOME=false;DEMO=false;if(TUT){TUT=null;tutLayer().innerHTML=''}HOME=true;R=null;ST=null;closeModal();setTimeout(fit,0);renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
   const saved=load();
