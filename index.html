@@ -305,6 +305,8 @@ body.lite .sideb svg,body.lite .htitle h1.logo img{filter:none}
 #game{will-change:transform}
 .home .modal{cursor:pointer}.home .modal .card{cursor:auto}
 .home .modal{padding-bottom:22px;box-sizing:border-box}.home .modal::after{content:'點空白處關閉';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:13px;color:#f3dfb4cc;pointer-events:none}
+.cust.walk{pointer-events:none;z-index:0}.cust:not(.walk){z-index:1}
+html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 <style>html,body{margin:0;overscroll-behavior:none}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
@@ -1295,8 +1297,9 @@ document.addEventListener('click',e=>{
   else if(act==='dex'){DEXSEL=a.dataset.id||null;showDex()}
   else if(act==='closem')closeModal();
   else if(act==='home')showHome();
-  else if(act==='start'){goFS();startDay()}
+  else if(act==='start'){goFS();startDay();let seen=false;try{seen=localStorage.getItem('izakaya-iostip')==='1'}catch(e){}if(IOS&&!STANDALONE&&!seen)setTimeout(()=>{if(R&&!TUT)iosTip()},400)}
   else if(act==='fs')toggleFS();
+  else if(act==='iostipok'){closeModal();if(R&&IOSTIPR)R.paused=false;IOSTIPR=false;try{localStorage.setItem('izakaya-iostip','1')}catch(e){}}
   else if(act==='next'||act==='back'){if(SHOPHOME){SHOPHOME=false;showHome()}else advance()}
   else if(act==='retry'){ST.pendingNext=false;save();showDayIntro()}
   else if(act==='shop')showShop();
@@ -1488,7 +1491,10 @@ function loop(now){
 }
 const TOUCH=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;
 function goFS(){if(!TOUCH||document.fullscreenElement||document.webkitFullscreenElement)return;const e=document.documentElement,f=e.requestFullscreen||e.webkitRequestFullscreen;if(!f)return;try{const p=f.call(e,{navigationUI:'hide'});if(p&&p.then)p.then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(x){}}).catch(()=>{})}catch(x){}}
-function toggleFS(){if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}else goFS()}
+const IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),STANDALONE=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+function iosTip(){const w=$('modalLayer');const was=R&&R.paused;if(R)R.paused=true;modal(`<h2>iPhone 要這樣全螢幕</h2><p>iPhone 的 Safari 不支援網頁全螢幕，但可以把遊戲加到主畫面，之後從桌面圖示打開就會是全螢幕，跟 App 一樣。</p><div class="how"><div class="how-row"><div><b>1.</b> 點 Safari 下方（或上方）的<b>分享</b>按鈕（方框加向上箭頭）</div></div><div class="how-row"><div><b>2.</b> 往下滑，選<b>「加入主畫面」</b></div></div><div class="how-row"><div><b>3.</b> 回到手機桌面，點「乾杯！居酒屋」圖示開始玩</div></div></div><div class="btns"><button class="btn" data-act="iostipok">知道了</button></div>`);IOSTIPR=!was}
+let IOSTIPR=false;
+function toggleFS(){if(IOS&&!STANDALONE){iosTip();return}if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}else goFS()}
 if(TOUCH)document.addEventListener('pointerup',function f(){goFS();if(document.fullscreenElement||document.webkitFullscreenElement)document.removeEventListener('pointerup',f)});
 if(TOUCH)document.body.classList.add('lite');
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(fit,120)));
