@@ -638,12 +638,21 @@ const PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},sake:{x:123.5,y:418,w:84,h:90,k:1
   tempura:{x:11,y:636,w:210,h:122,k:1.4,pg:2},rawEbi:{x:11,y:815,w:103,h:58,k:1.4,pg:2},rawKaki:{x:160,y:815,w:103,h:58,k:1.4,pg:2},highball:{x:316,y:636,w:100,h:90,k:1.4,pg:2},hiyayakko:{x:316,y:769,w:100,h:90,k:1.4,pg:2},
   deco2:{x:463,y:636,w:100,h:128,k:1.3,pg:2},trash2:{x:463,y:820,w:100,h:52,k:1.3,pg:2},pgbtn:{x:418,y:350,w:174,h:46,pg:0}};
 let LAY='land',W=960,H=600,L=LAND;
+function spreadLand(W){const ex=W-960,out={};
+  for(const k in LAND)out[k]=Object.assign({},LAND[k],{x:LAND[k].x+ex/2});
+  if(ex<=0)return out;
+  [1,2].forEach(p=>{const ks=Object.keys(LAND).filter(k=>(LAND[k].pg||1)===p&&LAND[k].pg!==0&&k!=='warmT'&&k!=='pgbtn'&&LAND[k].y>=400);
+    const items=ks.map(k=>({k,x:LAND[k].x,r:LAND[k].x+LAND[k].w})).sort((a,b)=>a.x-b.x);const cols=[];
+    for(const it of items){const c=cols[cols.length-1];if(c&&it.x<c.r-2){c.ks.push(it.k);c.r=Math.max(c.r,it.r)}else cols.push({ks:[it.k],r:it.r})}
+    const n=cols.length,edge=ex*.08,gap=n>1?(ex-edge*2)/(n-1):0;
+    cols.forEach((c,i)=>c.ks.forEach(k=>out[k].x=LAND[k].x+edge+gap*i))});
+  return out}
 function chooseLayout(force){
   const ww=$('wrap').clientWidth-24,ah=Math.max(300,window.innerHeight-60),want=(ww<760&&ww/ah<1.05)?'port':'land';
   const nw=want==='port'?600:Math.round(Math.max(960,Math.min(1500,600*ww/ah))/10)*10;
   if(want===LAY&&nw===W&&!force)return;
   LAY=want;W=nw;H=want==='port'?906:600;
-  if(want==='port')L=PORT;else{const dx=(W-960)/2;L={};for(const k in LAND)L[k]=Object.assign({},LAND[k],{x:LAND[k].x+dx})}
+  if(want==='port')L=PORT;else{L=spreadLand(W)}
   const g=$('game');g.style.width=W+'px';g.style.height=H+'px';g.classList.toggle('port',LAY==='port');
   drawBg();if(HOME)showHome();
   if(R){buildStations();renderStations();R.seats.forEach(c=>{if(c&&c.st!=='bye'){c.el.style.transition='none';c.el.style.left=(seatX(c.seat,ST.up.seats)-80)+'px';void c.el.offsetWidth;c.el.style.transition=''}});seatClasses();renderCust()}
