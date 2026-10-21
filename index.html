@@ -260,6 +260,14 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .cust.mob[data-m=worry]:not(.walk) .spr img.m-worry{animation:mobfret 1.2s infinite ease-in-out}
 @keyframes mobfret{50%{transform:translateY(2px) rotate(-1deg)}}
 .heart{position:absolute;pointer-events:none;font-size:30px;color:#ff5a8a;-webkit-text-stroke:2px #3a1a10;paint-order:stroke;animation:rise 1.2s forwards;z-index:6}
+html,body{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none}
+#rot{position:fixed;inset:0;z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#1a0e08f2;color:#f3dfb4;font-size:20px;font-weight:900;text-align:center;padding:24px}
+#rot svg{width:96px;height:96px;animation:rotph 1.8s infinite ease-in-out}
+@keyframes rotph{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+@media (orientation:portrait) and (pointer:coarse){body.playing #rot{display:flex}}
+.hud .fsbtn{display:none}
+@media (pointer:coarse){.hud .fsbtn{display:grid}}
+@media (max-height:480px) and (orientation:landscape){#wrap{padding-block:2px 2px;gap:2px}.hud{min-height:0}.pill{padding:1px 8px}.goal{height:18px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 <style>html,body{margin:0;overscroll-behavior:none}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
@@ -267,7 +275,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 <body>
 
 
-<div id="wrap">
+<div id="wrap"><div id="rot"><svg viewBox="0 0 64 64"><rect x="20" y="6" width="24" height="52" rx="5" fill="none" stroke="#f3dfb4" stroke-width="4"/><circle cx="32" cy="51" r="2.5" fill="#f3dfb4"/></svg>請把手機轉成橫的<br><small style="font-size:14px;opacity:.8">這個遊戲要橫著玩</small></div>
   <div class="hud" id="hud"></div>
   <div id="box"><div id="game">
     <svg class="layer" id="bg" viewBox="0 0 960 600" width="960" height="600"></svg>
@@ -1048,7 +1056,7 @@ function giveTo(c,j,h,byPlayer){
 }
 
 /* ---- HUD ---- */
-function renderHUD(){
+function renderHUD(){document.body.classList.toggle('playing',!!R);
   if(!ST){$('hud').innerHTML='';return}
   const g=R?R.goals:null,e=Math.max(0,net()+(R?R.rent:0)),max=g?g[2]*1.1:1;
   setHTML($('hud'),`<div class="pill day">第 ${ST.day} 天</div>
@@ -1056,7 +1064,7 @@ function renderHUD(){
     <div class="pill clock"><b>${clockStr()}</b>${PERIOD(hourNow())}</div>`:'<div style="flex:1"></div>'}
     ${ST.up.waiter||ST.up.helper?`<div class="pill staff">店員 <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[ST.up.waiter?'小美'+(staffLv('waiter')>1?'★'.repeat(staffLv('waiter')-1):''):'',ST.up.helper?'阿健'+(staffLv('helper')>1?'★'.repeat(staffLv('helper')-1):''):''].filter(Boolean).join('・')}</b></div>`:''}
     ${(()=>{const w=R?live():ST.coins;return `<div class="pill ${w<0?'neg':''}">錢包 <b>${w<0?'−':''}¥${Math.abs(Math.round(w)).toLocaleString('en-US')}</b></div>`})()}${ST.debt?`<div class="pill staff">借款 <b>${yen(ST.debt)}</b></div>`:''}
-    ${R&&!R.over?`<button class="icon-btn" data-act="pause" aria-label="暫停">❚❚</button>`:''}`);
+    ${R&&!R.over?`<button class="icon-btn fsbtn" data-act="fs" aria-label="全螢幕">⛶</button><button class="icon-btn" data-act="pause" aria-label="暫停">❚❚</button>`:''}`);
 }
 
 /* ---- modals ---- */
@@ -1220,7 +1228,7 @@ function advance(){if(ST.pendingNext){ST.day++;ST.pendingNext=false;save()}showD
 document.addEventListener('click',e=>{
   const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
   if(act==='newgame'){closeHome();ST=fresh();save();showDayIntro()}
-  else if(act==='cont'){closeHome();ST=load();advance()}
+  else if(act==='cont'){goFS();closeHome();ST=load();advance()}
   else if(act==='asknew')modal(`<h2>開一家新店？</h2><p>目前的存檔會被清除，從第 1 天重新開始。</p><div class="btns"><button class="btn" data-act="newgame">確定重來</button><button class="btn alt" data-act="closem">取消</button></div>`);
   else if(act==='howto')showHowto();
   else if(act==='tut'){closeHome();DEMO=true;ST=fresh();startDay();startTut(true)}
@@ -1229,7 +1237,8 @@ document.addEventListener('click',e=>{
   else if(act==='dex'){DEXSEL=a.dataset.id||null;showDex()}
   else if(act==='closem')closeModal();
   else if(act==='home')showHome();
-  else if(act==='start')startDay();
+  else if(act==='start'){goFS();startDay()}
+  else if(act==='fs')toggleFS();
   else if(act==='next'||act==='back'){if(SHOPHOME){SHOPHOME=false;showHome()}else advance()}
   else if(act==='retry'){ST.pendingNext=false;save();showDayIntro()}
   else if(act==='shop')showShop();
@@ -1341,9 +1350,14 @@ function loop(now){
   if(R&&!R.paused&&!R.over){step(dt);acc+=dt;if(acc>.07){acc=0;renderStations();renderCust();renderHUD();sky()}}
   stmT+=dt;if(stmT>.1){stmT=0;steamTick()}
 }
+const TOUCH=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;
+function goFS(){if(!TOUCH||document.fullscreenElement||document.webkitFullscreenElement)return;const e=document.documentElement,f=e.requestFullscreen||e.webkitRequestFullscreen;if(!f)return;try{const p=f.call(e,{navigationUI:'hide'});if(p&&p.then)p.then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(x){}}).catch(()=>{})}catch(x){}}
+function toggleFS(){if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}else goFS()}
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(fit,120)));
+if(window.visualViewport)visualViewport.addEventListener('resize',()=>fit());
 function fit(){
   chooseLayout();
-  const box=$('box'),w=$('wrap').clientWidth-24,maxH=Math.max(200,window.innerHeight-$('hud').offsetHeight-(window.innerHeight<560?18:34));
+  const box=$('box'),w=$('wrap').clientWidth-24,maxH=Math.max(200,(window.visualViewport?visualViewport.height:window.innerHeight)-$('hud').offsetHeight-(window.innerHeight<560?18:34));
   const s=Math.min(w/W,maxH/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
   $('game').style.transform=`scale(${s})`;
 }
