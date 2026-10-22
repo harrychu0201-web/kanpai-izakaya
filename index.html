@@ -2020,6 +2020,7 @@ async function cloudSync(){
   try{const c=await CL.api.get(u.uid);if(CL.user!==u)return;
     const lg=lsGet(KEY),lr=lsGet(RKEY),cg=c?c.game||null:null,cr=c?c.rec||null:null;
     const rec=(lr||cr)?mergeRec(cr,lr):null;if(rec!==lr)lsSet(RKEY,rec);
+    if(cg&&lg&&cg!==lg&&(localStamp()||0)>(c.at||0)){await cloudUpload(true);return}
     if(cg&&lg&&cg!==lg){CL.pick={game:cg,rec,at:c.at||0};CL.status='ok';acctRefresh();if(HOME&&!R)cloudAsk();return}
     if(cg&&!lg){applyCloud({game:cg,rec,at:c.at||0});await cloudUpload(true);return}
     await cloudUpload(true);
