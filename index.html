@@ -848,7 +848,7 @@ function lvOf(b){return (ST.lv&&ST.lv[b])||0}
 function priceOf(k){const b=k.split(':')[0];return Math.round(ITEMS[b].price*(1+.3*lvOf(b))/10)*10}
 function costOf(b){return Math.round(ITEMS[b].cost*(1+.25*lvOf(b))*(evNow().sale===b?.5:1)/10)*10}
 function upCost(b){const lv=lvOf(b);return lv>=3?0:Math.round(ITEMS[b].price*16*[1,3,7.5][lv]/500)*500}
-function rentOf(){if(ST.day<4)return 0;const wk=Math.floor((ST.day-1)/7);return Math.round((1000+800*wk)*(1+(ST.up.seats-3)*.25)/100)*100}
+function rentOf(){if(ST.day<4||ST.owned)return 0;const wk=Math.floor((ST.day-1)/7);return Math.round((1000+800*wk)*(1+(ST.up.seats-3)*.25)/100)*100}
 const STAFFLV={
   waiter:{zh:'外場・小美',flag:'waiter',lv:[
     {cost:15000,wage:800,d:'把保溫台上的菜送給客人，大約每 2.6 秒一份。'},
