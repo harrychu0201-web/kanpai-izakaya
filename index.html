@@ -358,10 +358,10 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 .fbtext{font:inherit;font-size:16px;font-weight:500;min-height:110px;resize:vertical;padding:8px 10px;border:3px solid var(--soot);border-radius:12px;background:#fffaf0;color:var(--soot);box-sizing:border-box;width:100%}
 .fbsmall{font-size:12px!important;color:#7a4a2a;text-align:right;margin:-4px 0 0!important}
 .notice p{white-space:pre-line}.ntbtn{gap:4px;padding:5px 12px}@media (max-width:800px){.ntbtn .ntl{display:none}.ntbtn{padding:4px 9px}}.notice .sign{text-align:right;font-weight:900}
-.chatfab{position:absolute;left:max(14px,env(safe-area-inset-left,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:3;display:flex;align-items:center;gap:6px;padding:8px 16px 8px 12px;border-radius:999px;background:#fffaf0;border:3px solid #3a1a10;box-shadow:0 4px 0 #3a1a10,0 6px 14px #0007;font-size:16px;font-weight:900;color:#3a1a10;cursor:pointer}
+.chatfab{position:absolute;left:max(14px,env(safe-area-inset-left,0px));bottom:calc(max(14px,env(safe-area-inset-bottom,0px)) + 40px);z-index:3;display:flex;align-items:center;gap:6px;padding:8px 16px 8px 12px;border-radius:999px;background:#fffaf0;border:3px solid #3a1a10;box-shadow:0 4px 0 #3a1a10,0 6px 14px #0007;font-size:16px;font-weight:900;color:#3a1a10;cursor:pointer}
 .chatfab b{font-size:22px;line-height:1}
-@media (max-height:560px) and (orientation:landscape){.chatfab{padding:5px 12px 5px 9px;font-size:13px}.chatfab b{font-size:18px}}
-.home.port .chatfab{bottom:120px}
+@media (max-height:560px) and (orientation:landscape){.chatfab{padding:5px 12px 5px 9px;font-size:13px;bottom:calc(max(14px,env(safe-area-inset-bottom,0px)) + 44px)}.chatfab b{font-size:18px}}
+.home.port .chatfab{bottom:160px}
 .chat{display:flex;flex-direction:column;gap:6px;min-height:0}
 .chatwarn{font-size:12px!important;color:#7a4a2a;background:#f1e2c2;border-radius:8px;padding:4px 10px}
 .chatlist{height:min(46vh,330px);overflow-y:auto;display:flex;flex-direction:column;gap:4px;background:#f6ead0;border-radius:12px;padding:8px;flex-shrink:0}
