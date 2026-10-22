@@ -1970,7 +1970,7 @@ const FB_CONFIG={apiKey:"AIzaSyBP7czM0Vr9RldwJ2M8iI3qezUsvYZhngA",authDomain:"ka
 const SAVED_AT='izakaya-saved-at';
 const CL={user:null,ready:false,timer:null,status:'',api:null,pick:null};
 function localStamp(){try{return +localStorage.getItem(SAVED_AT)||0}catch(e){return 0}}
-function touchLocal(){try{localStorage.setItem(SAVED_AT,String(Date.now()))}catch(e){}if(CL.user){clearTimeout(CL.timer);CL.timer=setTimeout(()=>cloudUpload(),1500)}}
+function touchLocal(){try{localStorage.setItem(SAVED_AT,String(Date.now()))}catch(e){}if(CL.user){clearTimeout(CL.timer);CL.timer=setTimeout(()=>cloudUpload(),60000)}}
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
 function mergeRec(a,b){const x=a?JSON.parse(a):{},y=b?JSON.parse(b):{},o=Object.assign({},x,y);
@@ -2023,7 +2023,7 @@ async function cloudUpload(now){
   const u=CL.user;if(!u||!CL.api||CL.pick)return;clearTimeout(CL.timer);CL.timer=null;
   CL.status='sync';acctRefresh();
   try{await CL.api.put(u.uid,{game:lsGet(KEY),rec:lsGet(RKEY),at:localStamp()||Date.now()});await lbPush(u);if(CL.user===u){CL.status='ok';acctRefresh()}}
-  catch(e){console.warn('cloud save failed',e);CL.status='err';acctRefresh();CL.timer=setTimeout(()=>cloudUpload(),20000)}
+  catch(e){console.warn('cloud save failed',e);CL.status='err';acctRefresh();CL.timer=setTimeout(()=>cloudUpload(),120000)}
 }
 function applyCloud(c){lsSet(KEY,c.game);if(c.rec)lsSet(RKEY,c.rec);try{localStorage.setItem(SAVED_AT,String(c.at||Date.now()))}catch(e){}if(HOME&&!R)showHome()}
 function saveSummary(g){try{const o=JSON.parse(g);return T('第 {0} 天',o.day+(o.pendingNext?1:0))+'・'+yen(o.coins)}catch(e){return ''}}
@@ -2154,7 +2154,7 @@ async function chatSend(){const i=$('cin'),m=$('cmsg');if(!i||!CL.user||!CL.api)
   if(!text){return}if(!name){showNick();CHT.back=true;return}
   const w=5000-(Date.now()-CHT.last);if(w>0){say(T('慢一點～ {0} 秒後才能再發',Math.ceil(w/1000)));return}
   CHT.last=Date.now();i.value='';say('');
-  try{await CL.api.chatSend(CL.user.uid,name,text);const l=$('chatlist');if(l)l.scrollTop=l.scrollHeight}
+  try{const sent=CL.api.chatSend(CL.user.uid,name,text);if(await Promise.race([sent.then(()=>1),new Promise(r=>setTimeout(r,8000,0))])===0){sent.catch(()=>{});say(T('送出失敗，請稍後再試'));return}const l=$('chatlist');if(l)l.scrollTop=l.scrollHeight}
   catch(e){console.warn('chat send',e);i.value=text;CHT.last=0;const c=String(e&&e.code||'');
     if(/permission/.test(c)){const b=await CL.api.banned(CL.user.uid).catch(()=>false);if(b){CHT.banned=true;showChat();return}say(T('發太快了，等幾秒再試'))}else say(T('送出失敗，請稍後再試'))}}
 function chatBlocks(){const ks=Object.keys(CHT.block);
@@ -2171,7 +2171,7 @@ function showAcct(){const u=CL.user;if(!u)return;
   modal(`<h2>${T('帳號')}</h2><div class="acctcard">${u.photo?`<img src="${esc(u.photo)}" alt="" referrerpolicy="no-referrer">`:''}<div><b>${esc(u.name)}</b><p style="font-size:14px;margin:2px 0 0">${st}</p></div></div>
   <p style="font-size:14px">${T('存檔會自動同步到雲端，換手機或電腦登入同一個帳號就能接著玩。')}</p>
   <div class="btns"><button class="btn" data-act="closem">${T('返回')}</button><button class="btn alt" data-act="syncnow">${T('立即同步')}</button><button class="btn alt" data-act="logout">${T('登出')}</button></div>`)}
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&CL.timer)cloudUpload(true)});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&CL.timer)cloudUpload(true)});window.addEventListener('pagehide',()=>{if(CL.timer)cloudUpload(true)});
 cloudInit();
 /* ===== new-version notice: compare the CACHE name in sw.js now vs when this page loaded ===== */
 let VER0=null,NEWVER=false;
