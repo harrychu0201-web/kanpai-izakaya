@@ -2183,7 +2183,7 @@ function showNotice(again,idx){const old=idx!=null,n=old?NOTICES[idx]:NOTICE;if(
   modal(`<div class="notice"><h2>📢 ${rem?(n.title?esc(n.title):T('公告')):T(n.title)}</h2><p>${esc(text)}</p>${sign?`<p class="sign">${esc(sign)}</p>`:''}</div>
   ${past.length?`<p style="font-size:13px;margin-bottom:-6px">${T('之前的公告')}</p><div class="btns">${past.map(x=>`<button class="btn alt" style="font-size:14px;padding:5px 12px" data-act="noticeold" data-id="${NOTICES.indexOf(x)}">${T(x.title)} <small>${x.id.slice(0,10)}</small></button>`).join('')}</div>`:''}
   <div class="btns"><button class="btn" data-act="noticeok">${T('知道了')}</button>${FB_CONFIG?`<button class="btn alt" data-act="fb">${T('意見反應')}</button>`:''}</div>`)}
-async function noticeRemote(){try{const d=await CL.api.notice();if(d&&d.id&&d.text&&d.id!==NOTICE_BUILTIN.id){NOTICE={id:String(d.id),title:d.title?String(d.title):'',text:String(d.text),sign:d.sign?String(d.sign):''};NOTICE_REMOTE=true;
+async function noticeRemote(){try{const d=await CL.api.notice();if(d&&d.id&&d.text&&String(d.id)>NOTICE_BUILTIN.id){NOTICE={id:String(d.id),title:d.title?String(d.title):'',text:String(d.text),sign:d.sign?String(d.sign):''};NOTICE_REMOTE=true;
   if(HOME&&!R&&noticeDue()&&!document.querySelector('#homeModal .modal'))showNotice()}}catch(e){}}
 const FB={cat:'idea',text:'',contact:'',last:0};
 const FBCATS=[['bug','🐞 回報問題'],['idea','💡 玩法靈感'],['item','🍶 新菜・新商品'],['other','💬 其他']];
