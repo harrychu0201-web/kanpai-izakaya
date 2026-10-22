@@ -2047,7 +2047,10 @@ function cloudAsk(){const c=CL.pick;if(!c||!HOME)return;
 /* ===== leaderboard: one public doc per player in lb/{uid}; written only by its owner, readable by all ===== */
 const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['own','最快買店','asc','只有買下整棟店面的人才會上榜，天數越少越前面。'],['earned','累計營收','desc','所有天數加起來的總營收。']];
 const LB={tab:'best',cache:{},last:null};
-function lbEntry(){const r=loadRec();if(!r.nick)return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.ownDay)d.own=r.ownDay;return d}
+function lbEntry(){const r=loadRec();
+  // stores bought before the leaderboard existed never recorded a buy day; fill it in once from the save's current day (an upper bound, so it can't overstate speed)
+  if(!r.ownDay){let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.owned&&g.day>0){r.owned=true;r.ownDay=g.day;saveRec(r)}}
+  if(!r.nick)return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.ownDay)d.own=r.ownDay;return d}
 async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;const k=JSON.stringify(d);if(LB.last===u.uid+k)return;
   await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d));LB.last=u.uid+k;LB.cache={}}
 const lbVal=(t,v)=>t==='own'?T('{0} 天',v):yen(v);
