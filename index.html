@@ -1966,7 +1966,7 @@ I18N={"zh-Hans":{"🔫 武器":"🔫 武器","武器（防身用品）已經移�
    The game keeps saving to localStorage exactly as before; every local save is mirrored to the cloud
    (debounced). On sign-in the two are reconciled: records are merged, and if both sides hold a
    different game save the player picks one. */
-const FB_CONFIG={apiKey:"AIzaSyBP7czM0Vr9RldwJ2M8iI3qezUsvYZhngA",authDomain:"kanpai-izakaya.firebaseapp.com",projectId:"kanpai-izakaya",storageBucket:"kanpai-izakaya.firebasestorage.app",messagingSenderId:"920920633539",appId:"1:920920633539:web:dc71cba6784c6264003276"};
+const RTDB_URL='__RTDB_URL__',FB_CONFIG={apiKey:"AIzaSyBP7czM0Vr9RldwJ2M8iI3qezUsvYZhngA",authDomain:"kanpai-izakaya.firebaseapp.com",projectId:"kanpai-izakaya",storageBucket:"kanpai-izakaya.firebasestorage.app",messagingSenderId:"920920633539",appId:"1:920920633539:web:dc71cba6784c6264003276"};
 const SAVED_AT='izakaya-saved-at';
 const CL={user:null,ready:false,timer:null,status:'',api:null,pick:null};
 function localStamp(){try{return +localStorage.getItem(SAVED_AT)||0}catch(e){return 0}}
@@ -1982,6 +1982,7 @@ async function cloudInit(){
   try{const B='https://www.gstatic.com/firebasejs/10.12.2/';
     const [fa,au,fs]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
     const app=fa.initializeApp(FB_CONFIG),auth=au.getAuth(app),db=fs.getFirestore(app);
+    let RD=null;const rtdb=async()=>{if(!RD){const rd=await import(B+'firebase-database.js');RD={rd,db:rd.getDatabase(app,RTDB_URL)}}return RD};
     CL.api={
       signIn:async()=>{const pv=new au.GoogleAuthProvider();pv.setCustomParameters({prompt:'select_account'});
         try{await au.signInWithPopup(auth,pv)}catch(e){const c=e&&e.code||'';
@@ -1994,12 +1995,17 @@ async function cloudInit(){
       putLb:(uid,d)=>fs.setDoc(fs.doc(db,'lb',uid),d),
       addFb:d=>fs.addDoc(fs.collection(db,'feedback'),d),
       notice:async()=>{const d=await fs.getDoc(fs.doc(db,'config','notice'));return d.exists()?d.data():null},
-      chatSub:(cb,err)=>fs.onSnapshot(fs.query(fs.collection(db,'chat'),fs.orderBy('t','desc'),fs.limit(60)),q=>cb(q.docs.map(d=>{const x=d.data();return {id:d.id,uid:x.uid,name:x.name,text:x.text,t:x.t?x.t.toMillis():Date.now()}})),err),
-      chatSend:(uid,name,text)=>{const b=fs.writeBatch(db);b.set(fs.doc(fs.collection(db,'chat')),{uid,name,text,t:fs.serverTimestamp()});b.set(fs.doc(db,'chatlast',uid),{t:fs.serverTimestamp()});return b.commit()},
-      chatDel:id=>fs.deleteDoc(fs.doc(db,'chat',id)),
-      ban:(uid,name)=>fs.setDoc(fs.doc(db,'bans',uid),{name:name||'',t:fs.serverTimestamp()}),
-      unban:uid=>fs.deleteDoc(fs.doc(db,'bans',uid)),
-      banned:async uid=>(await fs.getDoc(fs.doc(db,'bans',uid))).exists(),
+      chatOn:async()=>{const {rd,db:r}=await rtdb();rd.goOnline(r)},
+      chatOff:async()=>{if(RD)RD.rd.goOffline(RD.db)},
+      chatSub:(cb,err)=>{let off=null,dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;rd.goOnline(r);
+        off=rd.onValue(rd.query(rd.ref(r,'chat'),rd.orderByChild('t'),rd.limitToLast(60)),snap=>{const a=[];snap.forEach(c=>{const x=c.val()||{};a.push({id:c.key,uid:x.uid,name:x.name,text:x.text,t:typeof x.t==='number'?x.t:Date.now()})});cb(a.reverse())},err)}).catch(err);
+        return ()=>{dead=true;if(off)off()}},
+      chatSend:async(uid,name,text)=>{const {rd,db:r}=await rtdb();const id=rd.push(rd.ref(r,'chat')).key;
+        return rd.update(rd.ref(r),{['chat/'+id]:{uid,name,text,t:rd.serverTimestamp()},['chatlast/'+uid]:rd.serverTimestamp()})},
+      chatDel:async id=>{const {rd,db:r}=await rtdb();return rd.remove(rd.ref(r,'chat/'+id))},
+      ban:async(uid,name)=>{const {rd,db:r}=await rtdb();return rd.set(rd.ref(r,'bans/'+uid),{name:String(name||'').slice(0,24),t:rd.serverTimestamp()})},
+      unban:async uid=>{const {rd,db:r}=await rtdb();return rd.remove(rd.ref(r,'bans/'+uid))},
+      banned:async uid=>{const {rd,db:r}=await rtdb();rd.goOnline(r);return (await rd.get(rd.ref(r,'bans/'+uid))).exists()},
       report:d=>fs.addDoc(fs.collection(db,'reports'),Object.assign({t:fs.serverTimestamp()},d))};
     noticeRemote();fbFlush();
     au.getRedirectResult(auth).catch(e=>cloudErr(e));
@@ -2107,7 +2113,7 @@ function fbQueue(d){try{const q=JSON.parse(localStorage.getItem(FBQ)||'[]');q.pu
 async function fbFlush(){if(!CL.api)return;let q;try{q=JSON.parse(localStorage.getItem(FBQ)||'[]')}catch(e){return}if(!q.length)return;
   const left=[];for(const d of q){try{await CL.api.addFb(d)}catch(e){left.push(d)}}
   try{if(left.length)localStorage.setItem(FBQ,JSON.stringify(left));else localStorage.removeItem(FBQ)}catch(e){}}
-/* ===== public chat room (Firestore 'chat'; 5 s per-user rate limit and bans enforced by security rules) ===== */
+/* ===== public chat room (Realtime Database 'chat' — no daily write cap; 5 s per-user rate limit and bans enforced by RTDB rules) ===== */
 const ADMIN_EMAIL='harrychu0201@gmail.com';
 function isAdmin(){return !!(CL.user&&CL.user.email===ADMIN_EMAIL)}
 const CHT={msgs:[],unsub:null,open:null,last:0,hide:{},block:{},me:null,banned:false,back:false};
@@ -2138,7 +2144,7 @@ function showChat(){
   chatListen();chatDraw()}
 function chatListen(){if(CHT.unsub||!CL.api)return;
   CHT.unsub=CL.api.chatSub(m=>{if(!$('chatlist')){chatStop();return}CHT.msgs=m.reverse();chatDraw(true)},e=>{console.warn('chat',e);const l=$('chatlist');if(l)l.innerHTML=`<p style="font-size:14px">${T('聊天室載入失敗，請稍後再試。')}</p>`;chatStop()})}
-function chatStop(){if(CHT.unsub){try{CHT.unsub()}catch(e){}CHT.unsub=null}}
+function chatStop(){if(CHT.unsub){try{CHT.unsub()}catch(e){}CHT.unsub=null}if(CL.api&&CL.api.chatOff)CL.api.chatOff().catch(()=>{})}
 setInterval(()=>{if(CHT.unsub&&!$('chatlist'))chatStop()},2000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)chatStop();else if($('chatlist'))chatListen()});
 function chatDraw(scroll){const l=$('chatlist');if(!l)return;const near=l.scrollHeight-l.scrollTop-l.clientHeight<60;
@@ -2156,7 +2162,7 @@ async function chatSend(){const i=$('cin'),m=$('cmsg');if(!i||!CL.user||!CL.api)
   CHT.last=Date.now();i.value='';say('');
   try{const sent=CL.api.chatSend(CL.user.uid,name,text);if(await Promise.race([sent.then(()=>1),new Promise(r=>setTimeout(r,8000,0))])===0){sent.catch(()=>{});say(T('送出失敗，請稍後再試'));return}const l=$('chatlist');if(l)l.scrollTop=l.scrollHeight}
   catch(e){console.warn('chat send',e);i.value=text;CHT.last=0;const c=String(e&&e.code||'');
-    if(/permission/.test(c)){const b=await CL.api.banned(CL.user.uid).catch(()=>false);if(b){CHT.banned=true;showChat();return}say(T('發太快了，等幾秒再試'))}else say(T('送出失敗，請稍後再試'))}}
+    if(/permission/i.test(c)){const b=await CL.api.banned(CL.user.uid).catch(()=>false);if(b){CHT.banned=true;showChat();return}say(T('發太快了，等幾秒再試'))}else say(T('送出失敗，請稍後再試'))}}
 function chatBlocks(){const ks=Object.keys(CHT.block);
   modal(`<h2>${T('封鎖名單')}</h2>${ks.length?`<div class="how">${ks.map(u=>`<div class="how-row" style="justify-content:space-between"><b>${esc(CHT.block[u]||'?')}</b><button class="btn alt" style="font-size:14px;padding:4px 12px" data-act="cunblock" data-id="${u}">${T('解除封鎖')}</button></div>`).join('')}</div>`:`<p>${T('沒有封鎖任何人。')}</p>`}
   <div class="btns"><button class="btn" data-act="chat">${T('回到聊天室')}</button></div>`)}

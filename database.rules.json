@@ -1,0 +1,32 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "chat": {
+      ".read": true,
+      ".indexOn": ["t"],
+      "$id": {
+        ".write": "auth != null && ((!data.exists() && newData.exists() && !root.child('bans').child(auth.uid).exists() && newData.child('uid').val() === auth.uid && newData.child('t').val() === now && newData.parent().parent().child('chatlast').child(auth.uid).val() === now) || (!newData.exists() && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))",
+        ".validate": "newData.hasChildren(['uid', 'name', 'text', 't'])",
+        "uid": { ".validate": "newData.isString()" },
+        "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24" },
+        "text": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
+        "t": { ".validate": "newData.isNumber()" },
+        "$other": { ".validate": false }
+      }
+    },
+    "chatlast": {
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.val() === now && (!data.exists() || data.val() <= now - 5000)"
+      }
+    },
+    "bans": {
+      ".read": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true"
+      }
+    }
+  }
+}
