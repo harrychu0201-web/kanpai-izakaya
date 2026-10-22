@@ -4,15 +4,27 @@
     ".write": false,
     "chat": {
       ".read": true,
-      ".indexOn": ["t"],
+      ".indexOn": [
+        "t"
+      ],
       "$id": {
         ".write": "auth != null && ((!data.exists() && newData.exists() && !root.child('bans').child(auth.uid).exists() && newData.child('uid').val() === auth.uid && newData.child('t').val() === now && newData.parent().parent().child('chatlast').child(auth.uid).val() === now) || (!newData.exists() && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))",
         ".validate": "newData.hasChildren(['uid', 'name', 'text', 't'])",
-        "uid": { ".validate": "newData.isString()" },
-        "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24" },
-        "text": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
-        "t": { ".validate": "newData.isNumber()" },
-        "$other": { ".validate": false }
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24"
+        },
+        "text": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+        },
+        "t": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     },
     "chatlast": {
@@ -26,6 +38,55 @@
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true"
+      }
+    },
+    "saves": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['at'])",
+        "game": {
+          ".validate": "newData.isString() && newData.val().length <= 300000"
+        },
+        "rec": {
+          ".validate": "newData.isString() && newData.val().length <= 50000"
+        },
+        "at": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "lb": {
+      ".read": true,
+      ".indexOn": [
+        "best",
+        "earned",
+        "own"
+      ],
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['name', 'best', 'earned', 'at'])",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24"
+        },
+        "best": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "earned": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "own": {
+          ".validate": "newData.isNumber() && newData.val() >= 1"
+        },
+        "at": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     }
   }

@@ -1968,7 +1968,7 @@ I18N={"zh-Hans":{"🔫 武器":"🔫 武器","武器（防身用品）已經移�
    different game save the player picks one. */
 const RTDB_URL='https://kanpai-izakaya-default-rtdb.firebaseio.com',FB_CONFIG={apiKey:"AIzaSyBP7czM0Vr9RldwJ2M8iI3qezUsvYZhngA",authDomain:"kanpai-izakaya.firebaseapp.com",projectId:"kanpai-izakaya",storageBucket:"kanpai-izakaya.firebasestorage.app",messagingSenderId:"920920633539",appId:"1:920920633539:web:dc71cba6784c6264003276"};
 const SAVED_AT='izakaya-saved-at';
-const CL={user:null,ready:false,timer:null,status:'',api:null,pick:null};
+const CL={user:null,ready:false,timer:null,status:'',api:null,pick:null,synced:false};
 function localStamp(){try{return +localStorage.getItem(SAVED_AT)||0}catch(e){return 0}}
 function touchLocal(){try{localStorage.setItem(SAVED_AT,String(Date.now()))}catch(e){}if(CL.user){clearTimeout(CL.timer);CL.timer=setTimeout(()=>cloudUpload(),60000)}}
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
@@ -1982,30 +1982,37 @@ async function cloudInit(){
   try{const B='https://www.gstatic.com/firebasejs/10.12.2/';
     const [fa,au,fs]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
     const app=fa.initializeApp(FB_CONFIG),auth=au.getAuth(app),db=fs.getFirestore(app);
-    let RD=null;const rtdb=async()=>{if(!RD){const rd=await import(B+'firebase-database.js');RD={rd,db:rd.getDatabase(app,RTDB_URL)}}return RD};
+    let RD=null,rtT=null;const rtdb=async()=>{if(!RD){const rd=await import(B+'firebase-database.js');RD={rd,db:rd.getDatabase(app,RTDB_URL)}}return RD};
+    const rtIdle=()=>{clearTimeout(rtT);rtT=setTimeout(()=>{if(RD&&!CHT.unsub)RD.rd.goOffline(RD.db)},8000)};
+    const rt=async f=>{const x=await rtdb();clearTimeout(rtT);x.rd.goOnline(x.db);try{return await f(x.rd,x.db)}finally{rtIdle()}};
     CL.api={
       signIn:async()=>{const pv=new au.GoogleAuthProvider();pv.setCustomParameters({prompt:'select_account'});
         try{await au.signInWithPopup(auth,pv)}catch(e){const c=e&&e.code||'';
           if(/popup-blocked|operation-not-supported|web-storage-unsupported/.test(c))await au.signInWithRedirect(auth,pv);
           else if(!/popup-closed|cancelled-popup/.test(c))throw e}},
       signOut:()=>au.signOut(auth),
-      get:async uid=>{const d=await fs.getDoc(fs.doc(db,'saves',uid));return d.exists()?d.data():null},
-      put:(uid,d)=>fs.setDoc(fs.doc(db,'saves',uid),d),
-      top:async(f,dir,n)=>(await fs.getDocs(fs.query(fs.collection(db,'lb'),fs.orderBy(f,dir),fs.limit(n)))).docs.map(d=>Object.assign({uid:d.id},d.data())),
-      putLb:(uid,d)=>fs.setDoc(fs.doc(db,'lb',uid),d),
+      // saves + leaderboard live in Realtime Database (no daily write cap); old Firestore copies are only read as a one-time fallback
+      get:async uid=>{const v=await rt((rd,r)=>rd.get(rd.ref(r,'saves/'+uid)).then(s=>s.val()));if(v)return v;
+        const d=await fs.getDoc(fs.doc(db,'saves',uid));return d.exists()?d.data():null},
+      put:(uid,d)=>rt((rd,r)=>{const o={at:+d.at||Date.now()};if(d.game)o.game=d.game;if(d.rec)o.rec=d.rec;return rd.set(rd.ref(r,'saves/'+uid),o)}),
+      top:async(f,dir,n)=>{const asc=dir==='asc';
+        const rows=await rt((rd,r)=>rd.get(rd.query(rd.ref(r,'lb'),rd.orderByChild(f),...(asc?[rd.startAt(1),rd.limitToFirst(n)]:[rd.limitToLast(n)]))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({uid:c.key},c.val()))});return a}));
+        let old=[];if(rows.length<n){try{old=(await fs.getDocs(fs.query(fs.collection(db,'lb'),fs.orderBy(f,dir),fs.limit(n)))).docs.map(d=>Object.assign({uid:d.id},d.data()))}catch(e){}}
+        const seen=new Set(rows.map(x=>x.uid)),all=rows.concat(old.filter(x=>!seen.has(x.uid))).filter(x=>typeof x[f]==='number'&&(!asc||x[f]>0));
+        return all.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f]).slice(0,n)},
+      putLb:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lb/'+uid),d)),
       addFb:d=>fs.addDoc(fs.collection(db,'feedback'),d),
       notice:async()=>{const d=await fs.getDoc(fs.doc(db,'config','notice'));return d.exists()?d.data():null},
-      chatOn:async()=>{const {rd,db:r}=await rtdb();rd.goOnline(r)},
-      chatOff:async()=>{if(RD)RD.rd.goOffline(RD.db)},
-      chatSub:(cb,err)=>{let off=null,dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;rd.goOnline(r);
+      chatOff:async()=>rtIdle(),
+      chatSub:(cb,err)=>{let off=null,dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
         off=rd.onValue(rd.query(rd.ref(r,'chat'),rd.orderByChild('t'),rd.limitToLast(60)),snap=>{const a=[];snap.forEach(c=>{const x=c.val()||{};a.push({id:c.key,uid:x.uid,name:x.name,text:x.text,t:typeof x.t==='number'?x.t:Date.now()})});cb(a.reverse())},err)}).catch(err);
         return ()=>{dead=true;if(off)off()}},
-      chatSend:async(uid,name,text)=>{const {rd,db:r}=await rtdb();const id=rd.push(rd.ref(r,'chat')).key;
-        return rd.update(rd.ref(r),{['chat/'+id]:{uid,name,text,t:rd.serverTimestamp()},['chatlast/'+uid]:rd.serverTimestamp()})},
-      chatDel:async id=>{const {rd,db:r}=await rtdb();return rd.remove(rd.ref(r,'chat/'+id))},
-      ban:async(uid,name)=>{const {rd,db:r}=await rtdb();return rd.set(rd.ref(r,'bans/'+uid),{name:String(name||'').slice(0,24),t:rd.serverTimestamp()})},
-      unban:async uid=>{const {rd,db:r}=await rtdb();return rd.remove(rd.ref(r,'bans/'+uid))},
-      banned:async uid=>{const {rd,db:r}=await rtdb();rd.goOnline(r);return (await rd.get(rd.ref(r,'bans/'+uid))).exists()},
+      chatSend:(uid,name,text)=>rt((rd,r)=>{const id=rd.push(rd.ref(r,'chat')).key;
+        return rd.update(rd.ref(r),{['chat/'+id]:{uid,name,text,t:rd.serverTimestamp()},['chatlast/'+uid]:rd.serverTimestamp()})}),
+      chatDel:id=>rt((rd,r)=>rd.remove(rd.ref(r,'chat/'+id))),
+      ban:(uid,name)=>rt((rd,r)=>rd.set(rd.ref(r,'bans/'+uid),{name:String(name||'').slice(0,24),t:rd.serverTimestamp()})),
+      unban:uid=>rt((rd,r)=>rd.remove(rd.ref(r,'bans/'+uid))),
+      banned:uid=>rt((rd,r)=>rd.get(rd.ref(r,'bans/'+uid)).then(s=>s.exists())),
       report:d=>fs.addDoc(fs.collection(db,'reports'),Object.assign({t:fs.serverTimestamp()},d))};
     noticeRemote();fbFlush();
     au.getRedirectResult(auth).catch(e=>cloudErr(e));
@@ -2014,20 +2021,20 @@ async function cloudInit(){
 }
 function cloudErr(e){const c=(e&&(e.code||e.message))||String(e);if(/popup-closed|cancelled-popup|no-auth-event/.test(c))return;CL.status='err';acctRefresh();if(HOME)modal(`<h2>${T('帳號')}</h2><p>${T('登入失敗：{0}',c)}</p><div class="btns"><button class="btn" data-act="closem">${T('知道了')}</button></div>`)}
 async function cloudLogin(){if(!CL.api)return;try{await CL.api.signIn()}catch(e){cloudErr(e)}}
-function cloudUser(u){CL.user=u;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(u)cloudSync();if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
+function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(u)cloudSync();if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
 async function cloudSync(){
   const u=CL.user;if(!u)return;
-  try{const c=await CL.api.get(u.uid);if(CL.user!==u)return;
+  try{const c=await CL.api.get(u.uid);if(CL.user!==u)return;CL.synced=true;
     const lg=lsGet(KEY),lr=lsGet(RKEY),cg=c?c.game||null:null,cr=c?c.rec||null:null;
     const rec=(lr||cr)?mergeRec(cr,lr):null;if(rec!==lr)lsSet(RKEY,rec);
     if(cg&&lg&&cg!==lg&&(localStamp()||0)>(c.at||0)){await cloudUpload(true);return}
     if(cg&&lg&&cg!==lg){CL.pick={game:cg,rec,at:c.at||0};CL.status='ok';acctRefresh();if(HOME&&!R)cloudAsk();return}
     if(cg&&!lg){applyCloud({game:cg,rec,at:c.at||0});await cloudUpload(true);return}
     await cloudUpload(true);
-  }catch(e){console.warn('cloud sync failed',e);CL.status='err';acctRefresh()}
+  }catch(e){console.warn('cloud sync failed',e);CL.status='err';acctRefresh();setTimeout(()=>{if(CL.user===u&&!CL.synced)cloudSync()},120000)}
 }
 async function cloudUpload(now){
-  const u=CL.user;if(!u||!CL.api||CL.pick)return;clearTimeout(CL.timer);CL.timer=null;
+  const u=CL.user;if(!u||!CL.api||CL.pick||!CL.synced)return;clearTimeout(CL.timer);CL.timer=null;
   CL.status='sync';acctRefresh();
   try{await CL.api.put(u.uid,{game:lsGet(KEY),rec:lsGet(RKEY),at:localStamp()||Date.now()});await lbPush(u);if(CL.user===u){CL.status='ok';acctRefresh()}}
   catch(e){console.warn('cloud save failed',e);CL.status='err';acctRefresh();CL.timer=setTimeout(()=>cloudUpload(),120000)}
