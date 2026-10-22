@@ -2154,7 +2154,7 @@ function showChat(){
   <div class="chat"><div class="chatlist" id="chatlist"><p style="font-size:14px">${T('載入中…')}</p></div>${chatFoot()}</div>
   <div class="btns"><button class="btn alt" data-act="closem">${T('返回')}</button>${n?`<button class="btn alt" data-act="cblocks">${T('封鎖名單（{0}）',n)}</button>`:''}</div>`);
   if(CL.user&&CL.api)CL.api.banned(CL.user.uid).then(b=>{if(b!==CHT.banned){CHT.banned=b;if($('chatlist'))showChat()}}).catch(()=>{});
-  chatListen();chatDraw()}
+  CHT.drawn=false;chatListen();chatDraw()}
 function chatListen(){if(CHT.unsub||!CL.api)return;
   CHT.unsub=CL.api.chatSub(m=>{if(!$('chatlist')){chatStop();return}CHT.msgs=m.reverse();chatDraw(true)},e=>{console.warn('chat',e);const l=$('chatlist');if(l)l.innerHTML=`<p style="font-size:14px">${T('聊天室載入失敗，請稍後再試。')}</p>`;chatStop()})}
 function chatStop(){if(CHT.unsub){try{CHT.unsub()}catch(e){}CHT.unsub=null}if(CL.api&&CL.api.chatOff)CL.api.chatOff().catch(()=>{})}
@@ -2167,7 +2167,7 @@ function chatDraw(scroll){const l=$('chatlist');if(!l)return;const near=l.scroll
     return `<div class="cmsg ${mine?'me':''}" data-act="cmsg" data-id="${m.id}"><span class="cn" style="color:${chatColor(m.uid)}">${esc(m.name||'?')}</span><span class="ct">${esc(chatClean(m.text))}</span><span class="cw">${chatTime(m.t)}</span></div>
     ${op?`<div class="cmenu">${mine?'':`<button class="btn alt" data-act="chide">${T('隱藏這則')}</button><button class="btn alt" data-act="cblock">${T('封鎖這個人')}</button><button class="btn alt" data-act="creport">${T('檢舉')}</button>`}${adm?`<button class="btn" data-act="cdel">${T('刪除')}</button>${mine?'':`<button class="btn" data-act="cban">${T('禁言')}</button>`}`:''}${mine&&!adm?`<span style="font-size:12px;color:#9a7a5a">${T('這是你發的訊息')}</span>`:''}</div>`:''}`}).join('')
     :`<p style="font-size:14px">${T('還沒有人說話，來打聲招呼吧！')}</p>`;
-  if(scroll===true?near||!CHT.drawn:false)l.scrollTop=l.scrollHeight;if(!CHT.drawn&&rows.length){CHT.drawn=true;l.scrollTop=l.scrollHeight}}
+  if(scroll===true?near||!CHT.drawn:false)l.scrollTop=l.scrollHeight;if(!CHT.drawn&&rows.length){CHT.drawn=true;l.scrollTop=l.scrollHeight;requestAnimationFrame(()=>{l.scrollTop=l.scrollHeight});setTimeout(()=>{l.scrollTop=l.scrollHeight},250)}}
 async function chatSend(){const i=$('cin'),m=$('cmsg');if(!i||!CL.user||!CL.api)return;const say=x=>{if(m)m.textContent=x};
   const name=(loadRec().nick||'').slice(0,12),text=chatClean(i.value);
   if(!text){return}if(!name){showNick();CHT.back=true;return}
