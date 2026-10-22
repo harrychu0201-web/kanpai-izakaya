@@ -88,6 +88,88 @@
           ".validate": false
         }
       }
+    },
+    "fb": {
+      ".read": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true",
+      ".indexOn": [
+        "t"
+      ],
+      "$id": {
+        ".write": "(!data.exists() && newData.exists() && (!newData.child('uid').exists() || (auth != null && newData.child('uid').val() === auth.uid)) && newData.child('t').val() === now) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
+        ".validate": "newData.hasChildren(['cat', 'text', 't'])",
+        "cat": {
+          ".validate": "newData.isString() && newData.val().length <= 20"
+        },
+        "text": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 800"
+        },
+        "contact": {
+          ".validate": "newData.isString() && newData.val().length <= 60"
+        },
+        "lang": {
+          ".validate": "newData.isString() && newData.val().length <= 12"
+        },
+        "uid": {
+          ".validate": "newData.isString() && newData.val().length <= 128"
+        },
+        "re": {
+          ".validate": "newData.isString() && newData.val().length <= 1000"
+        },
+        "day": {
+          ".validate": "newData.isNumber()"
+        },
+        "at": {
+          ".validate": "newData.isNumber()"
+        },
+        "t": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "fbreply": {
+      "$uid": {
+        ".read": "(auth != null && auth.uid === $uid) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
+        ".write": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true",
+        "$id": {
+          ".validate": "newData.hasChildren(['text', 't'])",
+          "q": {
+            ".validate": "newData.isString() && newData.val().length <= 300"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1000"
+          },
+          "t": {
+            ".validate": "newData.isNumber()"
+          },
+          "seen": {
+            ".write": "auth != null && auth.uid === $uid",
+            ".validate": "newData.val() === true"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "notice": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true"
+    },
+    "reports": {
+      ".read": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true",
+      "$id": {
+        ".write": "auth != null && !data.exists() && newData.child('by').val() === auth.uid && newData.child('t').val() === now",
+        ".validate": "newData.hasChildren(['by', 't'])",
+        "t": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": "newData.isString() && newData.val().length <= 300"
+        }
+      }
     }
   }
 }
