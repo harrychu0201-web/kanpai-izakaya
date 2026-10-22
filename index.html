@@ -1158,7 +1158,13 @@ function renderStations(){
 /* ================= run ================= */
 function seatX(i,n){const ex=LAY==='port'?0:Math.min(W-960,(n-1)*150-600>0?(n-1)*150-600:0)/2,a=LAY==='port'?(n>=6?120:seatsN()>=4?170:180):(n>=6?130:200)+(W-960)/2-ex,b=LAY==='port'?(n>=6?560:seatsN()>=4?530:500):(n>=6?830:800)+(W-960)/2+ex;return n===1?W/2:a+i*(b-a)/(n-1)}
 function crowded(){return KY>=400&&seatsN()>=(LAY==='port'?4:5)}
-function seatClasses(){if(!R)return;R.seats.forEach(c=>{if(c){c.el.classList.toggle('low',crowded());c.el.classList.toggle('hi',crowded()&&c.seat%2===1);c.el.classList.toggle('small',LAY==='port'&&seatsN()>=4)}})}
+function seatClasses(){if(!R)return;R.seats.forEach(c=>{if(c){c.el.classList.toggle('low',crowded());c.el.classList.toggle('hi',crowded()&&c.seat%2===1);c.el.classList.toggle('small',LAY==='port'&&seatsN()>=4)}});clampBubbles()}
+// phone-landscape fullscreen: the HUD floats over the top of the game, so push any order bubble that would sit under it down until it clears
+function clampBubbles(){const g=$('game');if(!g)return;const ovl=document.body.classList.contains('ovl'),els=[...document.querySelectorAll('#custLayer .cust,#custLayer .robber')];
+  if(!ovl){els.forEach(e=>{const b=e.querySelector('.bubble');if(b)b.style.top=''});return}
+  const gr=g.getBoundingClientRect(),sc=gr.height/H,hb=$('hud').getBoundingClientRect().bottom;if(!sc||!hb)return;const lim=(hb+4-gr.top)/sc;
+  els.forEach(e=>{const b=e.querySelector('.bubble');if(!b)return;b.style.top='';const d=parseFloat(getComputedStyle(b).top)||0,cy=(e.getBoundingClientRect().top-gr.top)/sc;if(cy+d<lim)b.style.top=Math.round(lim-cy)+'px'})}
+
 function quotaOf(d){return Math.min(24,6+d*2)}
 function startDay(){setTimeout(()=>sfx('open'),80);$('game').classList.remove('aim');
   closeModal();
@@ -1854,7 +1860,7 @@ function robSay(t){const b=R.rob.el.querySelector('.bubble');b.querySelector('.r
 function robIn(){
   const x=W/2-80,el=document.createElement('div');el.className='robber in';el.dataset.m='walk';el.style.left=x+'px';
   el.innerHTML=`<div class="spr">${['ok','happy','worry','hit','walk'].map(m=>`<img class="r-${m}" src="${ROBSPR[m]}" alt="" draggable="false">`).join('')}</div><div class="bubble hide"><div class="rtxt"></div><div class="rbar"><i></i></div></div>`;
-  el.style.transform=`translateX(${-(x+200)}px)`;$('custLayer').appendChild(el);
+  el.style.transform=`translateX(${-(x+200)}px)`;$('custLayer').appendChild(el);clampBubbles();
   R.rob={el,st:'in',t:0,hp:GUNS[(ST.weapon||1)-1].hits,dur:8};
   requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.transform='translateX(0)'}))}
 function robTake(){const r=R.rob;r.st='took';r.t=0;robSet('happy');robSay(T('嘿嘿，謝啦！'));
@@ -1951,6 +1957,7 @@ function fit(){
   const box=$('box'),wcs=getComputedStyle($('wrap')),w=$('wrap').clientWidth-(document.body.classList.contains('ovl')?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),ovl=document.body.classList.contains('ovl'),maxH=Math.max(200,(window.visualViewport?visualViewport.height:window.innerHeight)-(ovl?0:$('hud').offsetHeight+(window.innerHeight<560?18:34)));
   const s=Math.min(w/W,maxH/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
   $('game').style.transform=`scale(${s})`;
+  clampBubbles();
   if(HOME)placeChat();
 }
 window.addEventListener('resize',fit);document.addEventListener('focusout',e=>{if(e.target&&/^(INPUT|TEXTAREA)$/.test(e.target.tagName))setTimeout(fit,300)});try{new ResizeObserver(()=>fit()).observe($('hud'))}catch(e){}
