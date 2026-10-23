@@ -1,6 +1,10 @@
-const CACHE='izakaya-v153';
-const FILES=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting()});
+const CACHE='izakaya-v154';
+// './' is not listed: every page load is answered with the cached './index.html', so caching './' too only downloaded
+// the 3.7MB page twice on every update. cache:'reload' skips the browser's HTTP cache so a fresh install never stores
+// a stale page (GitHub Pages lets browsers keep it for 10 minutes).
+const FILES=['./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))));self.skipWaiting()});
+self.addEventListener('message',e=>{if(e.data&&e.data.type==='skip')self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
 const tag=r=>r&&(r.headers.get('etag')||r.headers.get('last-modified'))||'';
 self.addEventListener('fetch',e=>{
@@ -25,7 +29,7 @@ self.addEventListener('fetch',e=>{
         }
         return res}).catch(()=>null);
       if(hit){e.waitUntil(refresh);return hit}
-      return refresh.then(res=>res||caches.match('./index.html'));
+      return refresh.then(res=>res||caches.match('./index.html')).then(res=>res||Response.error());
     }));
     return;
   }

@@ -404,6 +404,11 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 <style>html,body{margin:0;overscroll-behavior:none}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 </head>
 <body>
+<div id="boot" style="position:fixed;inset:0;z-index:99999;background:#24140c;color:#f3dfb4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font:700 18px/1.5 -apple-system,'PingFang TC','Noto Sans TC',sans-serif;text-align:center;padding:16px">
+<div style="font-size:42px">🏮</div><div>乾杯！居酒屋<br><span style="font-size:15px;opacity:.75">載入中… Loading…</span></div>
+<button id="bootR" onclick="location.reload()" style="display:none;margin-top:6px;padding:10px 22px;border-radius:999px;border:2px solid #f3dfb4;background:transparent;color:#f3dfb4;font:inherit;font-size:16px">載入太久？點這裡重試 / Retry</button>
+</div>
+<script>setTimeout(function(){var b=document.getElementById('bootR');if(b)b.style.display='block'},15000)</script>
 
 
 <div id="wrap"><div id="rot"><svg viewBox="0 0 64 64"><rect x="20" y="6" width="24" height="52" rx="5" fill="none" stroke="#f3dfb4" stroke-width="4"/><circle cx="32" cy="51" r="2.5" fill="#f3dfb4"/></svg><span id="rotT">請把手機轉成橫的</span><small id="rotS" style="font-size:14px;opacity:.8">這個遊戲要橫著玩</small></div>
@@ -1859,7 +1864,7 @@ document.addEventListener('click',e=>{
   else if(act==='cont'){goFS();closeHome();ST=load();advance()}
   else if(act==='asknew')modal(`<h2>${T('開一家新店？')}</h2><p>${T('目前的存檔會被清除，從第 1 天重新開始。')}</p><div class="btns"><button class="btn" data-act="newgame">${T('確定重來')}</button><button class="btn alt" data-act="closem">${T('取消')}</button></div>`);
   else if(act==='lang')showLang();
-  else if(act==='update')location.reload();
+  else if(act==='update')doUpdate();
   else if(act==='lb')showLB();
   else if(act==='chat')showChat();
   else if(act==='csend')chatSend();
@@ -2615,11 +2620,20 @@ async function verCheck(){if(NEWVER||!navigator.onLine)return;
   try{const r=await fetch('sw.js',{cache:'no-store'});if(!r.ok)return;const m=(await r.text()).match(/CACHE\s*=\s*'([^']+)'/);if(!m)return;
     if(VER0==null){VER0=m[1];return}
     if(m[1]!==VER0)showUpd()}catch(e){}}
+/* tapping "update": make the new service worker install (it downloads the new page into its cache) and take over
+   BEFORE reloading. Reloading right away let the old worker answer from its cache, so the player got the old version
+   back (and the banner went away), and on iPhone home-screen apps the reload could hang on a black screen. */
+let UPDATING=false;
+async function doUpdate(){if(UPDATING)return;UPDATING=true;const b=$('updbar');if(b){b.disabled=true;b.textContent='⟳ '+T('更新中，請稍等…')}
+  try{const sw=navigator.serviceWorker,r=sw&&await sw.getRegistration();
+    if(r){const ready=new Promise(ok=>{sw.addEventListener('controllerchange',ok,{once:true})});
+      await Promise.race([r.update().then(()=>{if(!r.installing&&!r.waiting)return;if(r.waiting)r.waiting.postMessage({type:'skip'});return ready}),new Promise(ok=>setTimeout(ok,15000))])}}catch(e){}
+  location.reload()}
 function showUpd(){NEWVER=true;const h=document.querySelector('.home');if(HOME&&h&&!$('updbar'))h.insertAdjacentHTML('beforeend',updBar())}
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='newver')showUpd()});
 verCheck();setInterval(verCheck,10*60*1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)verCheck()});
-applyLang();chooseLayout(true);fit();showHome();requestAnimationFrame(loop);
+applyLang();chooseLayout(true);fit();showHome();requestAnimationFrame(loop);{const b=document.getElementById('boot');if(b)b.remove()}
 </script>
 
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{}));</script>
