@@ -98,6 +98,8 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .bubble::after{content:"";position:absolute;left:calc(50% - var(--dx,0px) / var(--bs,1));bottom:-15px;margin-left:-10px;border:10px solid transparent;border-top:14px solid var(--soot);border-bottom:0}
 .bubble::before{content:"";position:absolute;left:calc(50% - var(--dx,0px) / var(--bs,1));bottom:-9px;margin-left:-7px;border:7px solid transparent;border-top:10px solid #fffaf0;border-bottom:0;z-index:1}
 .bubble.hide{transform:translateX(calc(-50% + var(--dx,0px))) scale(0)}
+.cust.hurry .bubble{box-shadow:0 0 0 3px #e74c3c,0 0 14px #e74c3c;animation:hurry .6s ease-in-out infinite alternate}
+@keyframes hurry{to{box-shadow:0 0 0 3px #ffb3a7,0 0 4px #ffb3a7}}
 .pat{width:12px;height:66px;border:2px solid var(--soot);border-radius:6px;background:#e9dcc4;position:relative;overflow:hidden;flex:none}
 .pat i{position:absolute;left:0;right:0;bottom:0;background:#5fb33a}
 .pat i.mid{background:#f0b229}.pat i.low{background:#e0412c}
@@ -739,6 +741,9 @@ const LOOKS=[
 const SPR={misaki:{ok:'img/misaki-ok-01a5650a.webp',happy:'img/misaki-happy-830abe1c.webp',worry:'img/misaki-worry-f0ba1313.webp',angry:'img/misaki-angry-2c0d6766.webp',walk:'img/misaki-walk-5b627fad.webp'},ren:{ok:'img/ren-ok-f5198ecd.webp',happy:'img/ren-happy-6c4bb03c.webp',worry:'img/ren-worry-d0976431.webp',angry:'img/ren-angry-48be0d9d.webp',walk:'img/ren-walk-452aab1d.webp'},hinata:{ok:'img/hinata-ok-e91c51e4.webp',happy:'img/hinata-happy-d4b4a908.webp',worry:'img/hinata-worry-543fdf20.webp',angry:'img/hinata-angry-b495225b.webp',walk:'img/hinata-walk-358a278a.webp'},taizo:{ok:'img/taizo-ok-d87371b7.webp',happy:'img/taizo-happy-78da198b.webp',worry:'img/taizo-worry-10d538bf.webp',angry:'img/taizo-angry-00ebedb2.webp',walk:'img/taizo-walk-60ea4dbf.webp'},nakamura:{ok:'img/nakamura-ok-a08bda4e.webp',happy:'img/nakamura-happy-b2c2ffb1.webp',worry:'img/nakamura-worry-c572f60c.webp',angry:'img/nakamura-angry-90802c8f.webp',walk:'img/nakamura-walk-64b892f6.webp'},chiyo:{ok:'img/chiyo-ok-744b7772.webp',happy:'img/chiyo-happy-27ed2bfa.webp',worry:'img/chiyo-worry-b8fd9314.webp',angry:'img/chiyo-angry-3dc0fc89.webp',walk:'img/chiyo-walk-8ea2ec17.webp'},soichiro:{ok:'img/soichiro-ok-52aa709f.webp',happy:'img/soichiro-happy-5cefb3e0.webp',worry:'img/soichiro-worry-008a99b9.webp',angry:'img/soichiro-angry-24113124.webp',walk:'img/soichiro-walk-47ba2a07.webp'},reiko:{ok:'img/reiko-ok-4ea2861e.webp',happy:'img/reiko-happy-9466e1fc.webp',worry:'img/reiko-worry-3937534a.webp',angry:'img/reiko-angry-98326925.webp',walk:'img/reiko-walk-cfbc95a9.webp'},riko:{ok:'img/riko-ok-bfc37df1.webp',happy:'img/riko-happy-e1c14890.webp',worry:'img/riko-worry-96ecd1f1.webp',angry:'img/riko-angry-e8feb1c2.webp',walk:'img/riko-walk-584681da.webp'},emily:{ok:'img/emily-ok-441d24e2.webp',happy:'img/emily-happy-0048f599.webp',worry:'img/emily-worry-8bf5466d.webp',angry:'img/emily-angry-616037b4.webp',walk:'img/emily-walk-33f994a2.webp'},kuroda:{ok:'img/kuroda-ok-1e1f2578.webp',happy:'img/kuroda-happy-f42a9ac7.webp',worry:'img/kuroda-worry-274d2565.webp',angry:'img/kuroda-angry-5fa17840.webp',walk:'img/kuroda-walk-e4525d21.webp'},sachiko:{ok:'img/sachiko-ok-7975b07d.webp',happy:'img/sachiko-happy-596ec0dc.webp',worry:'img/sachiko-worry-b5d31f6a.webp',angry:'img/sachiko-angry-1b0454f1.webp',walk:'img/sachiko-walk-bbec1841.webp'},ryuji:{ok:'img/ryuji-ok-6588a289.webp',happy:'img/ryuji-happy-5d8fc72f.webp',worry:'img/ryuji-worry-41a28133.webp',angry:'img/ryuji-angry-91dd5f90.webp',walk:'img/ryuji-walk-831d79ec.webp'}};
 const CHARS=[{spr: 'misaki', name: '佐藤 美咲'}, {spr: 'ren', name: '高橋 蓮'}, {spr: 'hinata', name: '小林 日向'}, {spr: 'taizo', name: '源 大造'}, {spr: 'nakamura', name: '中村 課長'}, {spr: 'chiyo', name: '山本 千代'}, {spr: 'soichiro', name: '西園寺 宗一郎'}, {spr: 'reiko', name: '白鳥 麗子'}, {spr: 'riko', name: '桃井 莉子'}, {spr: 'emily', name: '艾蜜莉'}, {spr: 'kuroda', name: '黑田 鏡'}, {spr: 'sachiko', name: '浜田 幸子'}, {spr: 'ryuji', name: '鬼塚 龍二'}];
 const WALKV=280;
+/* customer personalities: reorder = chance a customer orders the dish they just got again (once per customer);
+   pat = patience multiplier (below 1 = shorter wait, shown with a red glow so it gets served first) */
+const TRAITS={taizo:{reorder:.5},chiyo:{reorder:.35},reiko:{reorder:.25,pat:.9},nakamura:{pat:.75},ren:{pat:.55}};
 const MOBSPR={mob0:{ok:'img/mob0-ok-713ca63c.webp',worry:'img/mob0-worry-d015e4db.webp',angry:'img/mob0-angry-d85c95fc.webp',walk:'img/mob0-walk-143a721e.webp',happy:'img/mob0-happy-516c38cb.webp'},mob1:{ok:'img/mob1-ok-dde3ddc7.webp',worry:'img/mob1-worry-6ab0447a.webp',angry:'img/mob1-angry-68e872d1.webp',walk:'img/mob1-walk-3755068c.webp',happy:'img/mob1-happy-c663d58e.webp'},mob2:{ok:'img/mob2-ok-7efdd98b.webp',worry:'img/mob2-worry-1b7aecc4.webp',angry:'img/mob2-angry-43feeef2.webp',walk:'img/mob2-walk-ee6bdc69.webp',happy:'img/mob2-happy-f04b9d7f.webp'},mob3:{ok:'img/mob3-ok-6a50984c.webp',worry:'img/mob3-worry-07660d6c.webp',angry:'img/mob3-angry-57fe2042.webp',walk:'img/mob3-walk-83dba783.webp',happy:'img/mob3-happy-aeb5f711.webp'},mob4:{ok:'img/mob4-ok-3c2b92ce.webp',worry:'img/mob4-worry-95856736.webp',angry:'img/mob4-angry-e52fd4cb.webp',walk:'img/mob4-walk-7387a999.webp',happy:'img/mob4-happy-c3e48cd2.webp'},mob5:{ok:'img/mob5-ok-cf7e298d.webp',worry:'img/mob5-worry-9f577de7.webp',angry:'img/mob5-angry-408cd14d.webp',walk:'img/mob5-walk-c60a351b.webp',happy:'img/mob5-happy-66b5cc14.webp'},mob6:{ok:'img/mob6-ok-a803b736.webp',worry:'img/mob6-worry-25b0dbf2.webp',angry:'img/mob6-angry-8c554bb4.webp',walk:'img/mob6-walk-11e8070f.webp',happy:'img/mob6-happy-73d654b3.webp'},mob7:{ok:'img/mob7-ok-c7d5210b.webp',worry:'img/mob7-worry-bfafa015.webp',angry:'img/mob7-angry-cd048cdc.webp',walk:'img/mob7-walk-1de9dffc.webp',happy:'img/mob7-happy-e669f769.webp'}};
 for(const k in MOBSPR){const m=MOBSPR[k];SPR[k]={ok:m.ok,happy:m.happy||m.ok,worry:m.worry,angry:m.angry,walk:m.walk||m.ok}}
 const MOBS=Object.keys(MOBSPR).map(k=>({spr:k,name:'路人',mob:true}));
@@ -1375,6 +1380,7 @@ function spawn(){
   const max=(46+order.length*13)*patMult()*(1+order.reduce((s,k)=>s+lvOf(k.split(':')[0])*.04,0))*Math.max(.7,1-ST.day*.015)*(evNow().ev==='rain'?1.3:1);
   const look=R.forceLook||pickChar();R.forceLook=null;
   const c={seat:i,look,critic:look.spr==='kuroda'&&evNow().ev==='critic'&&!R.criticDone,order,filled:order.map(()=>false),pat:max,max,st:'in',t:0,fig:'ok'};
+  c.tr=TRAITS[look.spr]||{};if(c.tr.pat){c.max*=c.tr.pat;c.pat=c.max}
   R.seats[i]=c;R.spawned++;sfx('door');if(c.look.spr&&PROF[c.look.spr]&&!DEMO){const rr=loadRec();rr.met=rr.met||{};if(!rr.met[c.look.spr]){rr.met[c.look.spr]=1;saveRec(rr)}}
   const el=document.createElement('div');el.className='cust walk';el.dataset.seat=i;el.dataset.m='ok';if(c.look.spr){el.classList.add('sp');el.dataset.c=c.look.spr;if(c.look.mob)el.classList.add('mob')}{const tx=seatX(i,seatsN())-80;el.style.left=tx+'px';el.style.transform=`translateX(${-(tx+170)}px)`}
   el.innerHTML=custFig(c.look,'ok')+`<div class="bubble hide"></div>`;
@@ -1399,7 +1405,7 @@ function step(dt){
   evStep(dt,hr);
   R.seats.forEach(c=>{if(!c)return;c.t+=dt;
     if(c.st==='in'&&c.t>(c.walkT||1.15)){c.st='wait';c.waitAt=c.t;c.el.classList.remove('walk')}
-    else if(c.st==='wait'){c.pat-=dt;if(c.pat<=0)leave(c,false)}
+    else if(c.st==='wait'){c.pat-=dt;if(c.pat<=0)leave(c,false);c.el.classList.toggle('hurry',c.tr.pat!=null&&c.pat/c.max<.5)}
   });
   if(R.t>=DAYLEN&&R.seats.every(x=>!x)&&!R.rob&&!R.over){R.over=true;setTimeout(endDay,900)}
 }
@@ -1669,9 +1675,10 @@ function giveTo(c,j,h,byPlayer){
   const f=document.createElement('div');f.className='fly';f.innerHTML=icon(h.key);f.style.left=(from.x-28)+'px';f.style.top=(from.y-28)+'px';$('fx').appendChild(f);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{f.style.transform=`translate(${to.x-from.x}px,${to.y-from.y}px) scale(.8)`;f.style.opacity=.2}));setTimeout(()=>f.remove(),420);
   if(INSTANT.includes(h.src))charge(costOf(h.src),from.x,from.y-20);else{consume(h);if(R.held&&R.held.src===h.src&&R.held.i===h.i)R.held=null}
-  c.filled[j]=true;c.pat=Math.min(c.max,c.pat+3);
+  c.filled[j]=true;c.lastKey=h.key;c.pat=Math.min(c.max,c.pat+3);
   if(R.where==='rm'&&ST.rm&&RFK.includes(h.key)&&!DEMO){ST.rm.fried=(ST.rm.fried||0)+1;if(ST.rm.fried===TAI_NEED&&!has('taiyaki'))setTimeout(()=>toast('二號廚房好像可以做新甜點了…打烊後去商店看看！'),500)}
-  if(c.filled.every(Boolean)){if(c.critic){R.criticDone=true;const ok=c.t-(c.waitAt||0)<=10;if(ok){const b=3000+ST.day*300;R.earned+=b;setTimeout(()=>popup(seatX(c.seat,seatsN()),120,T('評論家大讚！+{0}',yen(b))),300);sfx('star')}else toast(T('評論家：嗯…普通。'))}leave(c,true)}
+  if(c.filled.every(Boolean)&&!c.critic&&c.tr.reorder&&!c.reordered&&Math.random()<c.tr.reorder){c.reordered=1;c.order.push(c.lastKey);c.filled.push(false);popup(seatX(c.seat,seatsN()),120,T('再來一份！'))}
+  else if(c.filled.every(Boolean)){if(c.critic){R.criticDone=true;const ok=c.t-(c.waitAt||0)<=10;if(ok){const b=3000+ST.day*300;R.earned+=b;setTimeout(()=>popup(seatX(c.seat,seatsN()),120,T('評論家大讚！+{0}',yen(b))),300);sfx('star')}else toast(T('評論家：嗯…普通。'))}leave(c,true)}
   renderStations();renderCust();
 }
 
