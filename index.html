@@ -106,6 +106,12 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .oi.done svg{opacity:.3}
 .oi.done::after{content:"";position:absolute;right:-3px;bottom:2px;width:24px;height:24px;border-radius:50%;background:#5fb33a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12l4 4 8-9' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/18px no-repeat;border:2px solid var(--soot)}
 .oi small{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);font-size:10px;color:#fff;background:var(--lacquer);border-radius:999px;padding:0 5px;line-height:1.5;white-space:nowrap}
+.oi>svg{display:block;margin:0 auto}
+.oi .vt{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);display:flex;gap:2px;z-index:1;white-space:nowrap;pointer-events:none}
+.oi .vt b{font-size:15px;font-weight:900;line-height:1.25;padding:0 5px;border-radius:7px;border:2px solid var(--soot);color:#fff;background:var(--lacquer);text-shadow:0 1px 0 #0005}
+.oi .vt b.maguro{background:#c8283a}.oi .vt b.salmon{background:#f07a36}.oi .vt b.tai{background:#ffe0e4;color:#3a2318;text-shadow:none}.oi .vt b.ume{background:#8e2a5a}.oi .vt b.egg{background:#f2c35a;color:#3a2318;text-shadow:none}.oi .vt b.chashu{background:#8a4a24}
+.oi.done .vt{opacity:.35}
+.bubble:has(.vt){padding-bottom:15px}
 
 /* fx */
 .fly{position:absolute;width:56px;height:56px;pointer-events:none;transition:transform .38s cubic-bezier(.4,.1,.6,1),opacity .38s;z-index:5}
@@ -1249,13 +1255,17 @@ function step(dt){
   if(R.t>=DAYLEN&&R.seats.every(x=>!x)&&!R.rob&&!R.over){R.over=true;setTimeout(endDay,900)}
 }
 function tagOf(k){if(k.startsWith('ramen:'))return T(k.endsWith('egg')?'溏心蛋':'叉燒');if(k.startsWith('chazuke'))return T(k.endsWith('salmon')?'鮭魚':'梅子');if(k.startsWith('sashimi'))return k.split(':')[1].split('+').map(f=>T(FISH[f][0])).join('＋');return ''}
+/* big colour-coded chips under variant orders (colours match the ingredient buttons) */
+function chipsOf(k){let a=[];if(k.startsWith('ramen:'))a=[[T(k.endsWith('egg')?'溏心蛋':'叉燒'),k.endsWith('egg')?'egg':'chashu']];else if(k.startsWith('chazuke'))a=[[T(k.endsWith('salmon')?'鮭魚':'梅子'),k.endsWith('salmon')?'salmon':'ume']];else if(k.startsWith('sashimi'))a=k.split(':')[1].split('+').map(f=>[T(FISH[f][0]),f]);return a.map(([t,c])=>[t&&t.charCodeAt(0)<0x2e80?t[0].toUpperCase():t,c])}
+function chipW(a){return a.reduce((w,[t])=>w+[...t].reduce((x,ch)=>x+(ch.charCodeAt(0)>0x2e80?16:8.6),0)+16,0)+(a.length-1)*2}
+function oiHTML(k,done){const a=chipsOf(k),w=a.length?Math.max(52,Math.ceil(chipW(a))):0;return `<div class="oi ${done?'done':''}"${w>52?` style="width:${w}px"`:''}>${icon(k)}${a.length?`<span class="vt">${a.map(([t,c])=>`<b class="${c}">${t}</b>`).join('')}</span>`:''}</div>`}
 function renderCust(){
   R.seats.forEach(c=>{if(!c)return;const p=Math.max(0,c.pat/c.max);
     const mood=c.st==='bye'?(c.happy?'happy':'angry'):p>.5?'ok':p>.22?'worry':'angry';
     if(mood!==c.fig){c.fig=mood;if(c.look.spr)c.el.dataset.m=mood;else c.el.querySelector('.fig').outerHTML=custSVG(c.look,mood)}
     const b=c.el.querySelector('.bubble');
     b.classList.toggle('hide',c.st!=='wait');
-    setHTML(b,`<div class="pat"><i class="${p>.5?'':p>.22?'mid':'low'}" style="height:${(p*100).toFixed(0)}%"></i></div>`+c.order.map((k,j)=>`<div class="oi ${c.filled[j]?'done':''}">${icon(k)}${tagOf(k)?`<small>${tagOf(k)}</small>`:''}</div>`).join(''));
+    setHTML(b,`<div class="pat"><i class="${p>.5?'':p>.22?'mid':'low'}" style="height:${(p*100).toFixed(0)}%"></i></div>`+c.order.map((k,j)=>oiHTML(k,c.filled[j])).join(''));
   });
 }
 function leave(c,happy){sfx(happy?'coin':'angry');
@@ -2030,10 +2040,11 @@ if(TOUCH)document.addEventListener('pointerup',function f(){goFS();if(document.f
 if(TOUCH)document.body.classList.add('lite');
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(fit,120)));
 if(window.visualViewport)visualViewport.addEventListener('resize',()=>fit());
+function safeBottom(){let d=document.getElementById('sabProbe');if(!d){d=document.createElement('div');d.id='sabProbe';d.style.cssText='position:fixed;left:0;bottom:0;width:1px;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';document.body.appendChild(d)}return d.offsetHeight||0}
 function fit(){
   document.body.classList.toggle('ovl',TOUCH&&innerWidth>innerHeight&&innerHeight<560&&!HOME);
   chooseLayout();
-  const box=$('box'),wcs=getComputedStyle($('wrap')),w=$('wrap').clientWidth-(document.body.classList.contains('ovl')?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),ovl=document.body.classList.contains('ovl'),maxH=Math.max(200,(window.visualViewport?visualViewport.height:window.innerHeight)-(ovl?0:$('hud').offsetHeight+(window.innerHeight<560?18:34)));
+  const box=$('box'),wcs=getComputedStyle($('wrap')),w=$('wrap').clientWidth-(document.body.classList.contains('ovl')?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),ovl=document.body.classList.contains('ovl'),maxH=Math.max(200,(window.visualViewport?visualViewport.height:window.innerHeight)-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)));
   const s=Math.min(w/W,maxH/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
   $('game').style.transform=`scale(${s})`;
   clampBubbles();
