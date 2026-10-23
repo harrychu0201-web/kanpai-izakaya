@@ -2040,7 +2040,7 @@ if(TOUCH)document.addEventListener('pointerup',function f(){goFS();if(document.f
 if(TOUCH)document.body.classList.add('lite');
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(fit,120)));
 if(window.visualViewport)visualViewport.addEventListener('resize',()=>fit());
-function safeBottom(){let d=document.getElementById('sabProbe');if(!d){d=document.createElement('div');d.id='sabProbe';d.style.cssText='position:fixed;left:0;bottom:0;width:1px;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';document.body.appendChild(d)}return d.offsetHeight||0}
+function safeBottom(){let d=document.getElementById('sabProbe');if(!d){d=document.createElement('div');d.id='sabProbe';d.style.cssText='position:fixed;left:0;bottom:0;width:1px;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';document.body.appendChild(d)}return Math.max(d.offsetHeight||0,14)}/* min gap so Android gesture bar / iPhone home line never sits on the bottom row */
 function fit(){
   document.body.classList.toggle('ovl',TOUCH&&innerWidth>innerHeight&&innerHeight<560&&!HOME);
   chooseLayout();
