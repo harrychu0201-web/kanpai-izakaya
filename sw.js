@@ -1,11 +1,14 @@
-const CACHE='izakaya-v154';
+const CACHE='izakaya-v155';
+// character art lives in img/ with the content hash in each file name, so a file never changes once published:
+// keep it in its own cache that survives version bumps (an update then only re-downloads the small page, not 2.4MB of art)
+const IMGCACHE='izakaya-img';
 // './' is not listed: every page load is answered with the cached './index.html', so caching './' too only downloaded
-// the 3.7MB page twice on every update. cache:'reload' skips the browser's HTTP cache so a fresh install never stores
+// the page twice on every update. cache:'reload' skips the browser's HTTP cache so a fresh install never stores
 // a stale page (GitHub Pages lets browsers keep it for 10 minutes).
 const FILES=['./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))));self.skipWaiting()});
 self.addEventListener('message',e=>{if(e.data&&e.data.type==='skip')self.skipWaiting()});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!==IMGCACHE).map(k=>caches.delete(k)))));self.clients.claim()});
 const tag=r=>r&&(r.headers.get('etag')||r.headers.get('last-modified'))||'';
 self.addEventListener('fetch',e=>{
   const req=e.request;
@@ -16,7 +19,11 @@ self.addEventListener('fetch',e=>{
     //  - sw.js: the page's "new version?" check (verCheck) reads it and must always see the live file
     //  - bgm.mp3 / any Range request: audio asks for byte ranges; a cached full response makes iPhone audio fail
     if(url.pathname.endsWith('/sw.js')||url.pathname.endsWith('.mp3')||req.headers.has('range'))return;
-    // the game page (~3.7MB): serve from cache first so a slow connection never leaves the player on a blank
+    if(url.pathname.includes('/img/')){
+      e.respondWith(caches.open(IMGCACHE).then(x=>x.match(req).then(hit=>hit||fetch(req).then(res=>{if(res.ok&&res.status===200)x.put(req,res.clone());return res}))));
+      return;
+    }
+    // the game page: serve from cache first so a slow connection never leaves the player on a blank
     // screen, refresh the cache in the background, and tell the open page when a newer version has arrived
     const key=req.mode==='navigate'?'./index.html':req;
     e.respondWith(caches.match(key,{ignoreSearch:req.mode==='navigate'}).then(hit=>{
