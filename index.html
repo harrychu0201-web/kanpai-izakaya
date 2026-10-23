@@ -1264,7 +1264,7 @@ function fryerHTML(){
 function buildStations(){
   {const wn=warmN();let sw=LAY==='port'?(wn>9?30:40):(wn>9?48:60);const k=L.warmT.k||1,cx=LAY==='port'?209.6:482+(W-960)/2;let ww=wn*sw+8,x=cx-ww*k/2;
     delete L.gunT;
-    if(ST.weapon){const gw=GUNW*k,gap=6,left=8;
+    if(ST.weapon){const gw=GUNW*k,gap=LAY==='port'?16:36,left=8;
       if(x-gw-gap<left){x=left+gw+gap;const lim=(L.pgbtn&&page2On()?L.pgbtn.x:W)-8;if(x+ww*k>lim){sw=Math.max(24,Math.floor(((lim-x)/k-8)/wn));ww=wn*sw+8}}
       L.gunT={x:x-gw-gap,y:L.warmT.y,w:GUNW,h:54,k}}
     L.warmT=Object.assign({},L.warmT,{w:ww,x})}
