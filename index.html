@@ -1015,8 +1015,7 @@ function ingArt(id){
   if(id==='tsalmon')return `<ellipse cx="50" cy="62" rx="38" ry="18" fill="#f3efe6" stroke="${O}" stroke-width="4"/><g stroke="${O}" stroke-width="2"><path d="M30 58l8-4l4 6l-8 4z" fill="#f58a5c"/><path d="M44 52l8-2l2 7l-8 2z" fill="#f79a6c"/><path d="M58 56l8-2l1 6l-8 2z" fill="#f58a5c"/><path d="M48 62l6-1l2 6l-7 1z" fill="#f79a6c"/></g>`;
   if(id==='tume')return `<ellipse cx="50" cy="64" rx="38" ry="18" fill="#f3efe6" stroke="${O}" stroke-width="4"/><circle cx="40" cy="56" r="11" fill="#c8283a" stroke="${O}" stroke-width="3"/><circle cx="60" cy="58" r="11" fill="#c8283a" stroke="${O}" stroke-width="3"/><circle cx="36" cy="52" r="3" fill="#ff8090"/><circle cx="56" cy="54" r="3" fill="#ff8090"/>`;
   if(id==='boat')return sashimiG([]);
-  {let c=T(FISH[id][0]);if(c&&c.charCodeAt(0)<0x2e80)c=c[0].toUpperCase();
-  return `<rect x="8" y="22" width="84" height="56" rx="10" fill="${FISHC[id][0]}" stroke="${O}" stroke-width="4"/><path d="M16 32h68" stroke="${FISHC[id][1]}" stroke-width="4" opacity=".8"/><text x="50" y="66" text-anchor="middle" font-size="40" font-weight="900" fill="#fff" stroke="${O}" stroke-width="6" stroke-linejoin="round" paint-order="stroke">${c}</text>`;}
+  return `<rect x="10" y="30" width="80" height="42" rx="10" fill="${FISHC[id][0]}" stroke="${O}" stroke-width="4"/><path d="M20 42h60" stroke="${FISHC[id][1]}" stroke-width="5" opacity=".8"/>`;
 }
 function burnAt(kind){return COOK[kind]+12+(ST.up.warm?6:0)}
 function cookState(t,kind){return t<COOK[kind]?'raw':t<burnAt(kind)?'done':'burnt'}
