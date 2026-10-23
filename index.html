@@ -2614,7 +2614,9 @@ function updBar(){return `<button class="updbar" id="updbar" data-act="update">â
 async function verCheck(){if(NEWVER||!navigator.onLine)return;
   try{const r=await fetch('sw.js',{cache:'no-store'});if(!r.ok)return;const m=(await r.text()).match(/CACHE\s*=\s*'([^']+)'/);if(!m)return;
     if(VER0==null){VER0=m[1];return}
-    if(m[1]!==VER0){NEWVER=true;const h=document.querySelector('.home');if(HOME&&h&&!$('updbar'))h.insertAdjacentHTML('beforeend',updBar())}}catch(e){}}
+    if(m[1]!==VER0)showUpd()}catch(e){}}
+function showUpd(){NEWVER=true;const h=document.querySelector('.home');if(HOME&&h&&!$('updbar'))h.insertAdjacentHTML('beforeend',updBar())}
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='newver')showUpd()});
 verCheck();setInterval(verCheck,10*60*1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)verCheck()});
 applyLang();chooseLayout(true);fit();showHome();requestAnimationFrame(loop);
