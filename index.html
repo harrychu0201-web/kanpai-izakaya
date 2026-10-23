@@ -2285,7 +2285,7 @@ async function replyBack(){const u=CL.user,x=RPL.list.find(y=>y.id===RPL.open),t
   RPL.busy=true;replyDraw();
   try{await CL.api.replyBack(u.uid,x.id,text,{ctx,lang:LANG,day:(ST&&ST.day)||(load()||{}).day||0,at:Date.now()});
     RPL.last=Date.now();x.msgs=Object.assign({},x.msgs,{['_'+Date.now()]:{text,t:Date.now()}});RPL.open=null;RPL.draft='';RPL.busy=false;replyDraw();toast(T('已送給作者 💌'))}
-  catch(e){console.warn('reply back',e);RPL.busy=false;replyDraw();const m2=$('rplmsg');if(m2)m2.textContent=T('送出失敗，請稍後再試')}}
+  catch(e){console.warn('reply back',e);RPL.busy=false;replyDraw();const m2=$('rplmsg');if(m2)m2.textContent=T('送出失敗，請稍後再試')+' ('+String(e&&(e.code||e.message)||e).slice(0,60)+')'}}
 /* ===== author's inbox (admin only) ===== */
 const INB={rows:[],old:[],open:null,draft:'',busy:false,err:''};
 const FBCATN=Object.fromEntries(FBCATS);FBCATN.re='↩️ 玩家回你';
