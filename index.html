@@ -1400,7 +1400,7 @@ function step(dt){
   {let sz=0,dn=0,br=0;[[R.grill,0],[R.fryer,1],[R.teppan,0],[R.tempura,0],[R.rmpan,0],[R.mpot,0],[R.rfry,0],[R.tyaki,0]].forEach(([arr,fr])=>arr.forEach(g=>{if(!g)return;const k=fr?'karaage':g.kind,st=cookState(g.t,k);if(!g.s0){g.s0=1;sz=1}if(st==='done'&&!g.s1){g.s1=1;dn=1}if(st==='burnt'&&!g.s2){g.s2=1;br=1}}));if(br)sfx('burn');else if(dn)sfx('done');else if(sz)sfx('sizzle')}
   R.cool-=dt;
   const hr=hourNow();
-  if(hr<24+20/60&&R.cool<=0&&R.seats.some(x=>!x)){spawn();R.cool=rnd(.75,1.25)*baseGap()*RUSH[Math.min(7,Math.floor(hr-16))]}
+  if(hr<24+20/60&&R.cool<=0&&R.seats.some(x=>!x)&&!(TEST&&evNow().nocust)){spawn();R.cool=rnd(.75,1.25)*baseGap()*RUSH[Math.min(7,Math.floor(hr-16))]}
   if(hr>=24+20/60&&!R.lastCall){R.lastCall=true;toast(T('最後點餐！不再接新客人'))}
   evStep(dt,hr);
   R.seats.forEach(c=>{if(!c)return;c.t+=dt;
@@ -2658,7 +2658,8 @@ function tstForce(t){const f=ST.tforce||{};
   else if(f.ev){delete t.sale;delete t.at;t.ev=f.ev;
     if(f.ev==='sale'){const c=unlocked(ST.day).filter(k=>ITEMS[k].cost&&k!=='beer');t.sale=pick(c.length?c:['edamame'])}
     if(f.ev==='group')t.at=rnd(.3,.7)*DAYLEN;if(f.ev==='critic')t.at=rnd(.15,.5)*DAYLEN}
-  if(f.rob==='on'){t.rob=true;t.robAt=rnd(.25,.7)*DAYLEN}else if(f.rob==='off'){delete t.rob;delete t.robAt}}
+  if(f.rob==='on'){t.rob=true;t.robAt=rnd(.25,.7)*DAYLEN}else if(f.rob==='off'){delete t.rob;delete t.robAt}
+  if(f.cust==='none'){t.nocust=true;delete t.rob;delete t.robAt;if(t.ev==='group'||t.ev==='critic'){delete t.ev;delete t.at}}else delete t.nocust}
 function tstSet(on,copy){
   if(on===TEST)return;
   if(on){clearTimeout(CL.timer);CL.timer=null;
@@ -2676,7 +2677,8 @@ function tstPanel(){
   <div class="tstr"><b>天數</b><input id="tstday" type="number" min="1" max="999" value="${o?o.day+(o.pendingNext?1:0):1}"><button class="btn" data-act="tstday">跳過去</button></div>
   <div class="tstr"><b>錢</b><button class="btn alt" data-act="tstcoin" data-id="10000">+1萬</button><button class="btn alt" data-act="tstcoin" data-id="100000">+10萬</button><button class="btn alt" data-act="tstcoin" data-id="1000000">+100萬</button><button class="btn alt" data-act="tstdebt">清債</button></div>
   <div class="tstr"><b>事件</b><select id="tstev">${TEVS.map(([k,n])=>`<option value="${k}" ${(f.ev||'')===k?'selected':''}>${n}</option>`).join('')}</select>
-    <select id="tstrob"><option value="" ${!f.rob?'selected':''}>搶劫：隨機</option><option value="on" ${f.rob==='on'?'selected':''}>搶劫：一定來</option><option value="off" ${f.rob==='off'?'selected':''}>搶劫：不要</option></select><button class="btn" data-act="tstev">套用</button></div>
+    <select id="tstrob"><option value="" ${!f.rob?'selected':''}>搶劫：隨機</option><option value="on" ${f.rob==='on'?'selected':''}>搶劫：一定來</option><option value="off" ${f.rob==='off'?'selected':''}>搶劫：不要</option></select>
+    <select id="tstcust"><option value="" ${f.cust!=='none'?'selected':''}>客人：照常</option><option value="none" ${f.cust==='none'?'selected':''}>客人：無</option></select><button class="btn" data-act="tstev">套用</button></div>
   <p class="tsth">事件設定會套用到之後每一天，直到你改回「隨機」。</p>
   <div class="tstr"><b>屋台炸物</b><button class="btn alt" data-act="tstfried">賣出 +50</button><span style="font-size:13px">${o&&o.rm?`目前 ${o.rm.fried||0} 份`:'還沒開屋台'}</span></div>
   <div class="tstr"><b>營業速度</b>${[1,2,4].map(n=>`<button class="btn ${TSPD===n?'':'alt'}" data-act="tstspd" data-id="${n}">${n}x</button>`).join('')}</div>
@@ -2691,7 +2693,7 @@ document.addEventListener('click',e=>{const a=e.target.closest('[data-act^="tst"
   else if(act==='tstday'){const d=Math.max(1,Math.min(999,parseInt($('tstday').value)||1));tstEdit(o=>{o.day=d;o.pendingNext=false;o.today=null})}
   else if(act==='tstcoin')tstEdit(o=>{o.coins=(o.coins||0)+(+a.dataset.id)});
   else if(act==='tstdebt')tstEdit(o=>{o.debt=0;o.loans=0;o.dues=[]});
-  else if(act==='tstev'){const ev=$('tstev').value,rob=$('tstrob').value;tstEdit(o=>{o.tforce={ev,rob};if(!ev&&!rob)delete o.tforce;o.today=null})}
+  else if(act==='tstev'){const ev=$('tstev').value,rob=$('tstrob').value,cust=$('tstcust').value;tstEdit(o=>{o.tforce={ev,rob,cust};if(!ev&&!rob&&!cust)delete o.tforce;o.today=null})}
   else if(act==='tstspd'){TSPD=+a.dataset.id;tstPanel()}
   else if(act==='tstfried')tstEdit(o=>{if(o.rm)o.rm.fried=(o.rm.fried||0)+50});
   else if(act==='tstreset'){lsSet(TKEY,null);lsSet(TRKEY,null);const r=loadRec();r.tut=true;saveRec(r);showHome();tstPanel()}
