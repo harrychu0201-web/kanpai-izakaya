@@ -2103,6 +2103,7 @@ document.addEventListener('click',e=>{
   else if(act==='noticelist')noticeList();
   else if(act==='noticeedit')noticeEdit(a.dataset.id);
   else if(act==='noticeeditsave')noticeEditSave(a.dataset.id);
+  else if(act==='noticedel')noticeDelete(a.dataset.id);
   else if(act==='noticeok'){noticeSeen();closeModal();if(CL.pick)cloudAsk()}
   else if(act==='lbtab'){LB.tab=a.dataset.id;showLB()}
   else if(act==='frshare')frShare();
@@ -2646,6 +2647,10 @@ async function cloudInit(){
       // 'notice' keeps the latest post at its top level (older game versions read it) and every post, edited or not, under notice/hist/<id>
       setNotice:d=>rt((rd,r)=>{const u={};['id','title','text','sign'].forEach(k=>{u['notice/'+k]=d[k]==null?'':d[k]});u['notice/hist/'+String(d.id).replace(/[.#$\[\]\/]/g,'_')]=d;return rd.update(rd.ref(r),u)}),
       editNotice:(d,top)=>rt((rd,r)=>{const u={};u['notice/hist/'+String(d.id).replace(/[.#$\[\]\/]/g,'_')]=d;if(top)['id','title','text','sign'].forEach(k=>{u['notice/'+k]=d[k]==null?'':d[k]});return rd.update(rd.ref(r),u)}),
+      // delete one announcement: drop its history entry; a built-in one also gets a notice/del marker; if it was the top-level post, the top level moves to the next remote post (or is cleared)
+      delNotice:(id,builtin,next)=>rt((rd,r)=>rd.get(rd.ref(r,'notice')).then(s=>{const v=s.val()||{},k=String(id).replace(/[.#$\[\]\/]/g,'_'),u={};u['notice/hist/'+k]=null;if(builtin)u['notice/del/'+k]=true;
+        if(String(v.id)===String(id))['id','title','text','sign'].forEach(f=>{u['notice/'+f]=next?(next[f]==null?'':next[f]):null});
+        return rd.update(rd.ref(r),u)})),
       chatOff:async()=>rtIdle(),
       chatSub:(cb,err)=>{let off=null,dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
         off=rd.onValue(rd.query(rd.ref(r,'chat'),rd.orderByChild('t'),rd.limitToLast(60)),snap=>{const a=[];snap.forEach(c=>{const x=c.val()||{};a.push({id:c.key,uid:x.uid,name:x.name,text:x.text,t:typeof x.t==='number'?x.t:Date.now()})});cb(a.reverse())},err)}).catch(err);
@@ -2835,25 +2840,30 @@ const NOTICE_TRACK={id:"2026-10-24-music",at:"2026-10-24T03:17:00+08:00",title:"
 const NOTICE_FR={id:"2026-10-24-friends",at:"2026-10-24T23:10:00+08:00",title:"好友系統上線！",text:"各位老闆與老闆娘們大家好！\n\n很多人說想跟朋友一起玩，所以先做了好友系統～\n\n首頁「繼續營業」左邊多了「好友」按鈕（排行榜裡也有好友分頁）：\n・好友碼：每個人有一組好友碼，按「分享」傳給朋友，對方輸入就能互加好友（最多 20 位）\n・好友排行榜：只跟朋友比單日淨利或累計營收\n・參觀：看朋友的營業天數、成績、有沒有屋台和二號廚房、裝飾有幾件\n・送禮物：每位好友每天可以送一次 ¥1,000，對方進好友分頁就能領\n\n要先登入 Google 並取好暱稱，朋友才看得到你。朋友的店面資訊要等他們更新到新版、同步雲端之後才會出現，剛開始可能顯示不完整，請大家多包涵。\n\n目前還不能同時在同一間店裡一起煮，這個比較難，之後再研究。有其他想法歡迎從意見反應告訴我！",sign:'作者敬上'};
 const NOTICE_DAYS={id:"2026-10-25-days",at:"2026-10-25T00:50:00+08:00",title:"排行榜新增「最長營業」！",text:"各位老闆與老闆娘們大家好！\n\n很多人想比誰撐得最久，所以排行榜多了一個新分頁「最長營業」，比的是你歷史上最遠撐到第幾天，破產重來也不會歸零。\n\n要上榜的話：\n・先登入 Google 並取好暱稱\n・重新整理頁面，或按更新提示更新到新版\n・你以前玩過的天數遊戲有記著，登入同步之後會自動補上，不用重玩\n\n剛更新完可能要等一下才會看到自己的名字，沒出現的話重新開一次遊戲就好。另外排行榜的分頁變多了，可以左右滑動。\n\n看看誰是最能撐的老闆吧😆 有其他想法歡迎從意見反應告訴我！",sign:'作者敬上'};
 const NOTICES=[NOTICE_DAYS,NOTICE_FR,NOTICE_ART,NOTICE_TRACK,NOTICE_K2,NOTICE_RMX,NOTICE_AOI,NOTICE_GUN,NOTICE_NEW,NOTICE_OLD],NOTICE_BUILTIN=NOTICES[0];
-let NOTICE=NOTICE_BUILTIN,NOTICE_REMOTE=false,NOTICE_HIST={};
+let NOTICE_REMOTE=false,NOTICE_HIST={},NOTICE_DEL={};
+/* deleted announcements: a built-in one cannot be removed from the code, so deleting it leaves a marker in the database (notice/del/<key>);
+   the markers are also kept on this device so a deleted built-in notice does not flash up before the database answers */
+try{NOTICE_DEL=JSON.parse(localStorage.getItem('izakaya-notice-del')||'{}')||{}}catch(e){}
+function nkey(id){return String(id).replace(/[.#$\[\]\/]/g,'_')}
+let NOTICE=noticeAll()[0]||null;
 /* every announcement = the built-in ones above + the ones posted in-game (Realtime Database notice/hist/<id>).
    An in-game entry with the same id as a built-in one overrides it (that is how a built-in one gets edited). */
 function noticeAt(x){return x.at?Date.parse(x.at):noticeTime(x.id)}
 function noticeAll(){const m=new Map();NOTICES.forEach(x=>m.set(x.id,x));
   Object.keys(NOTICE_HIST).forEach(k=>{const h=NOTICE_HIST[k];m.set(h.id,Object.assign({},m.get(h.id)||{},h,{rem:true}))});
-  return [...m.values()].sort((a,b)=>noticeAt(b)-noticeAt(a))}
+  return [...m.values()].filter(x=>!NOTICE_DEL[nkey(x.id)]).sort((a,b)=>noticeAt(b)-noticeAt(a))}
 function noticeDate(x){const t=noticeAt(x);if(!t)return'';const s=new Date(t+288e5).toISOString();return x.at||/^\d{4}-\d\d-\d\dT/.test(String(x.id))?s.slice(0,10)+' '+s.slice(11,16):s.slice(0,10)}
 function noticeSeenId(){try{return localStorage.getItem('izakaya-notice')}catch(e){return null}}
 function noticeSeen(){try{localStorage.setItem('izakaya-notice',NOTICE.id)}catch(e){}}
-function noticeDue(){return !!NOTICE&&NOTICE.id&&noticeSeenId()!==NOTICE.id}
-function showNotice(again,id){const all=noticeAll(),old=id!=null,n=old?all.find(x=>x.id===String(id)):NOTICE;if(!n)return;const rem=!!n.rem;
+function noticeDue(){const sid=noticeSeenId();return !!NOTICE&&NOTICE.id&&sid!==NOTICE.id&&!(sid&&NOTICE_DEL[nkey(sid)])}
+function showNotice(again,id){const all=noticeAll(),old=id!=null,n=old?all.find(x=>x.id===String(id)):NOTICE;if(!n){closeModal();return}const rem=!!n.rem;
   const text=rem?n.text:T(n.text),sign=rem?(n.sign||''):T(n.sign),dt=noticeDate(n);
   modal(`<div class="notice"><h2>📢 ${rem?(n.title?esc(n.title):T('公告')):T(n.title)}</h2>${dt?`<p style="font-size:12px;opacity:.7;margin-top:-6px">${dt}${n.edited?' · 已編輯':''}</p>`:''}<p>${esc(text)}</p>${sign?`<p class="sign">${esc(sign)}</p>`:''}</div>
-  <div class="btns"><button class="btn" data-act="noticeok">${T('知道了')}</button>${all.length>1?`<button class="btn alt" data-act="noticelist">📜 ${T('之前的公告')}</button>`:''}${FB_CONFIG?`<button class="btn alt" data-act="fb">${T('意見反應')}</button>`:''}${isAdmin()?`<button class="btn alt" data-act="noticeedit" data-id="${esc(n.id)}">✏️ 編輯</button>`:''}</div>`)}
+  <div class="btns"><button class="btn" data-act="noticeok">${T('知道了')}</button>${all.length>1?`<button class="btn alt" data-act="noticelist">📜 ${T('之前的公告')}</button>`:''}${FB_CONFIG?`<button class="btn alt" data-act="fb">${T('意見反應')}</button>`:''}${isAdmin()?`<button class="btn alt" data-act="noticeedit" data-id="${esc(n.id)}">✏️ 編輯</button><button class="btn alt" data-act="noticedel" data-id="${esc(n.id)}">🗑️ 刪除</button>`:''}</div>`)}
 /* the "past announcements" screen: every announcement, newest first, in a box that scrolls so it never takes over the screen */
 function noticeList(){const all=noticeAll(),adm=isAdmin();
   modal(`<h2>📜 ${T('之前的公告')}（${all.length}）</h2>
-  <div style="max-height:58vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin:6px 0">${all.map(x=>`<div style="display:flex;gap:6px"><button class="btn alt" style="flex:1;text-align:left;font-size:14px;padding:6px 12px" data-act="noticeold" data-id="${esc(x.id)}"><small style="opacity:.7">${noticeDate(x)}</small><br>${x.rem?esc(x.title||T('公告')):T(x.title)}</button>${adm?`<button class="btn alt" style="font-size:14px;padding:6px 10px" data-act="noticeedit" data-id="${esc(x.id)}">✏️</button>`:''}</div>`).join('')}</div>
+  <div style="max-height:58vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin:6px 0">${all.map(x=>`<div style="display:flex;gap:6px"><button class="btn alt" style="flex:1;text-align:left;font-size:14px;padding:6px 12px" data-act="noticeold" data-id="${esc(x.id)}"><small style="opacity:.7">${noticeDate(x)}</small><br>${x.rem?esc(x.title||T('公告')):T(x.title)}</button>${adm?`<button class="btn alt" style="font-size:14px;padding:6px 10px" data-act="noticeedit" data-id="${esc(x.id)}">✏️</button><button class="btn alt" style="font-size:14px;padding:6px 10px" data-act="noticedel" data-id="${esc(x.id)}">🗑️</button>`:''}</div>`).join('')}</div>
   <div class="btns"><button class="btn alt" data-act="notice">${T('返回')}</button></div>`)}
 function noticeEdit(id){const n=noticeAll().find(x=>x.id===String(id));if(!n||!isAdmin())return;
   modal(`<h2>✏️ 編輯公告</h2><p style="font-size:14px">改的是已經發出去的這則：玩家不會再被跳一次提示，下次打開遊戲或翻歷史公告時就會看到新內容（只顯示中文原文，不會自動翻譯）。${n.rem?'':'這則是內建公告，儲存後會用線上版本蓋過去。'}</p>
@@ -2865,16 +2875,24 @@ async function noticeEditSave(id){const n=noticeAll().find(x=>x.id===String(id))
   const text=tx.value.trim();if(text.length<2){toast('公告內容太短了');return}
   const d={id:n.id,title:ti.value.trim(),text,sign:sg.value.trim(),edited:Date.now()};if(n.at)d.at=n.at;
   try{await CL.api.editNotice(d,n.id===NOTICE.id);NOTICE_HIST[n.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;toast('公告已更新 ✏️');showNotice(true,n.id)}catch(e){toast('儲存失敗：'+String(e&&e.code||e))}}
+async function noticeDelete(id){const n=noticeAll().find(x=>x.id===String(id));if(!n||!isAdmin())return;
+  if(!confirm('確定刪除這則公告？\n「'+(n.title||'公告')+'」\n刪除後所有玩家都看不到，無法復原。'))return;
+  const builtin=NOTICES.some(x=>x.id===n.id),next=noticeAll().filter(x=>x.rem&&x.id!==n.id)[0]||null;
+  try{await CL.api.delNotice(n.id,builtin,next);
+    delete NOTICE_HIST[n.id];if(builtin){NOTICE_DEL[nkey(n.id)]=true;try{localStorage.setItem('izakaya-notice-del',JSON.stringify(NOTICE_DEL))}catch(e){}}
+    NOTICE=noticeAll()[0]||null;NOTICE_REMOTE=!!(NOTICE&&NOTICE.rem);toast('公告已刪除 🗑️');
+    if(noticeAll().length)noticeList();else closeModal()}catch(e){toast('刪除失敗：'+String(e&&e.code||e))}}
 /* in-game notices use a UTC timestamp id ('2026-10-22T18:31'); built-in ones use a Taiwan date ('2026-10-23-aoi').
    Compare real times, not strings, or a notice posted after midnight in Taiwan looks 'older' than that day's built-in one.
    Give each new built-in notice an 'at' (its real release time), or any in-game notice from earlier that same day hides it. */
 function noticeTime(id){id=String(id||'');const t=/^\d{4}-\d\d-\d\dT\d\d:\d\d/.test(id)?Date.parse(id.slice(0,16)+'Z'):Date.parse(id.slice(0,10)+'T00:00:00+08:00');return isNaN(t)?0:t}
 function noticeClean(x){const o={id:String(x.id),title:x.title?String(x.title):'',text:String(x.text),sign:x.sign?String(x.sign):''};if(x.at)o.at=String(x.at);if(x.edited)o.edited=+x.edited;return o}
-async function noticeRemote(){try{const d=await CL.api.notice();if(!d)return;const h={};
+async function noticeRemote(){try{const d=await CL.api.notice();const del=d&&d.del&&typeof d.del==='object'?d.del:{};NOTICE_DEL=del;try{localStorage.setItem('izakaya-notice-del',JSON.stringify(del))}catch(e){}
+  if(!d){NOTICE_HIST={};NOTICE=noticeAll()[0]||null;NOTICE_REMOTE=false;return}const h={};
   if(d.hist&&typeof d.hist==='object')Object.keys(d.hist).forEach(k=>{const x=d.hist[k];if(x&&x.id&&x.text){const c=noticeClean(x);h[c.id]=c}});
   // the single latest post from before the history existed
   if(d.id&&d.text&&!h[String(d.id)]&&!NOTICES.some(x=>x.id===String(d.id))){const c=noticeClean(d);h[c.id]=c}
-  NOTICE_HIST=h;NOTICE=noticeAll()[0]||NOTICE_BUILTIN;NOTICE_REMOTE=!!NOTICE.rem;
+  NOTICE_HIST=h;NOTICE=noticeAll()[0]||null;NOTICE_REMOTE=!!(NOTICE&&NOTICE.rem);
   if(HOME&&!R&&noticeDue()&&!document.querySelector('#homeModal .modal'))showNotice()}catch(e){}}
 const FB={cat:'idea',text:'',contact:'',last:0};
 const FBCATS=[['bug','🐞 回報問題'],['idea','💡 玩法靈感'],['item','🍶 新菜・新商品'],['other','💬 其他']];
