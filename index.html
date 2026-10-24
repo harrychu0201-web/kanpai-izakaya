@@ -600,6 +600,7 @@ const $=id=>document.getElementById(id);
 
 let ST=null,R=null,cache=new Map();
 let TEST=false,TSPD=1; /* author test mode, see tstPanel */
+const CHEAT=()=>TEST||isAdmin(); /* author tools (forced events / speed) run on the real save too */
 function fresh(){return {day:1,coins:3000,debt:0,loans:0,dues:[],dec:{},up:{seats:3,grill:3,fryer:2,warmN:3,tap:false,warm:false,decor:false,cat:false},stars:{}}}
 function save(){if(DEMO)return;try{localStorage.setItem(KEY,JSON.stringify(ST))}catch(e){}touchLocal()}
 let RKEY='izakaya-rec-v1';
@@ -616,7 +617,7 @@ function pickToday(){if(DEMO||(ST.today&&ST.today.day===ST.day))return;const d=S
     if(t.ev==='sale'){const c=unlocked(d).filter(k=>ITEMS[k].cost&&k!=='beer');t.sale=pick(c.length?c:['edamame'])}
     if(t.ev==='group')t.at=rnd(.3,.7)*DAYLEN;if(t.ev==='critic')t.at=rnd(.15,.5)*DAYLEN}
   if(d>=5&&Math.random()<.3){t.rob=true;t.robAt=rnd(.25,.7)*DAYLEN}
-  if(TEST)tstForce(t);
+  if(CHEAT())tstForce(t);
   ST.today=t;save()}
 function evLabel(e){const v=EVS[e.ev];return v?v[0]+' '+T(v[1]):''}
 function saleCands(){return unlocked(ST.day).filter(k=>ITEMS[k].cost&&k!=='beer')}
@@ -1239,7 +1240,7 @@ function pageStatus(p){let ready=0,warn=0;const chk=(arr,kf)=>arr.forEach(g=>{if
   if(p===1){chk(R.grill,g=>g.kind);chk(R.fryer,()=>'karaage')}else{chk(R.teppan,g=>g.kind);chk(R.tempura,g=>g.kind)}return {ready,warn}}
 function pgHTML(){return KP===1?T('二號廚房')+' ▶':'◀ '+T('一號廚房')}
 function onPage(k){return k==='warmT'||k==='gunT'||((L[k].pg||1)===KP)}
-function bareOn(){return TEST&&CUR!=='rm'&&!!(ST&&ST.tforce&&ST.tforce.bare)}
+function bareOn(){return CHEAT()&&CUR!=='rm'&&!!(ST&&ST.tforce&&ST.tforce.bare)}
 function setPage(p){KP=page2On()?p:1;const bare=bareOn();for(const k in L){const el=$('st-'+k);if(el)el.hidden=bare||(k==='pgbtn'?!page2On():!onPage(k))}if(R)renderStations()}
 function tapTime(){return ST.up.tap?1:2}
 function boardDone(i){const b=R.boards[i];return !!b&&((b.base==='bowl'&&!!b.tea)||(b.base==='boat'&&b.fish.length===2))}
@@ -1409,7 +1410,7 @@ function step(dt){
   {let sz=0,dn=0,br=0;[[R.grill,0],[R.fryer,1],[R.teppan,0],[R.tempura,0],[R.rmpan,0],[R.mpot,0],[R.rfry,0],[R.tyaki,0]].forEach(([arr,fr])=>arr.forEach(g=>{if(!g)return;const k=fr?'karaage':g.kind,st=cookState(g.t,k);if(!g.s0){g.s0=1;sz=1}if(st==='done'&&!g.s1){g.s1=1;dn=1}if(st==='burnt'&&!g.s2){g.s2=1;br=1}}));if(br)sfx('burn');else if(dn)sfx('done');else if(sz)sfx('sizzle')}
   R.cool-=dt;
   const hr=hourNow();
-  if(hr<24+20/60&&R.cool<=0&&R.seats.some(x=>!x)&&!(TEST&&evNow().nocust)){spawn();R.cool=rnd(.75,1.25)*baseGap()*RUSH[Math.min(7,Math.floor(hr-16))]}
+  if(hr<24+20/60&&R.cool<=0&&R.seats.some(x=>!x)&&!(CHEAT()&&evNow().nocust)){spawn();R.cool=rnd(.75,1.25)*baseGap()*RUSH[Math.min(7,Math.floor(hr-16))]}
   if(hr>=24+20/60&&!R.lastCall){R.lastCall=true;toast(T('最後點餐！不再接新客人'))}
   evStep(dt,hr);
   R.seats.forEach(c=>{if(!c)return;c.t+=dt;
@@ -2354,7 +2355,7 @@ function loop(now){
   requestAnimationFrame(loop);
   if(R&&R.held!==lastHeld){if(R.held&&(!lastHeld||lastHeld.key!==R.held.key||lastHeld.src!==R.held.src))sfx('pick');lastHeld=R.held}
   const dt=Math.min(.1,(now-last)/1000);last=now;
-  if(R&&!R.paused&&!R.over){const sp=TEST?TSPD:1;for(let i=0;i<sp&&R&&!R.over;i++)step(dt);acc+=dt;if(acc>(TOUCH?.1:.07)){acc=0;renderStations();renderCust();renderHUD();sky()}}
+  if(R&&!R.paused&&!R.over){const sp=CHEAT()?TSPD:1;for(let i=0;i<sp&&R&&!R.over;i++)step(dt);acc+=dt;if(acc>(TOUCH?.1:.07)){acc=0;renderStations();renderCust();renderHUD();sky()}}
   stmT+=dt;if(stmT>(TOUCH?.3:.1)){stmT=0;steamTick()}
 }
 const TOUCH=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;
@@ -2494,7 +2495,7 @@ function slSave(o){try{localStorage.setItem(SLKEY,JSON.stringify(o));return true
 function slOK(g){try{const o=JSON.parse(g);return !!o&&typeof o.day==='number'}catch(e){return false}}
 function slBackup(g,why){if(TEST||!g||!slOK(g)||g===JSON.stringify(fresh()))return;const o=slLoad();if(o.b.some(x=>x&&x.game===g))return;o.b.unshift({at:Date.now(),game:g,why});o.b=o.b.slice(0,3);slSave(o)}
 function slTime(at){try{return new Date(at).toLocaleString(LANG,{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}}
-const SLWHY={new:'開新的一局前',bankrupt:'破產前',cloud:'雲端同步前',load:'讀取存檔前'};
+const SLWHY={new:'開新的一局前',bankrupt:'破產前',cloud:'雲端同步前',load:'讀取存檔前',cheat:'開啟測試功能前'};
 function showSlots(){
   if(TEST){modal(`<h2>${T('存檔欄位')}</h2><p>${T('測試模式下無法使用存檔欄位。')}</p><div class="btns"><button class="btn" data-act="closem">${T('知道了')}</button></div>`);return}
   const o=slLoad(),cur=lsGet(KEY);
@@ -2518,7 +2519,8 @@ function lbEntry(){const r=loadRec();
   // stores bought before the leaderboard existed never recorded a buy day; fill it in once from the save's current day (an upper bound, so it can't overstate speed)
   if(!r.ownDay){let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.owned&&g.day>0){r.owned=true;r.ownDay=g.day;saveRec(r)}}
   if(!r.nick)return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.ownDay)d.own=r.ownDay;return d}
-async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;const k=JSON.stringify(d);if(LB.last===u.uid+k)return;
+async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return} /* a save touched by the author test tools never goes on the leaderboard */
+  const k=JSON.stringify(d);if(LB.last===u.uid+k)return;
   await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d));LB.last=u.uid+k;LB.cache={}}
 const lbVal=(t,v)=>t==='own'?T('{0} 天',v):yen(v);
 async function showLB(){
@@ -2778,13 +2780,11 @@ function tstSet(on,copy){
     TEST=true;KEY=TKEY;RKEY=TRKEY;const r=loadRec();if(!r.tut){r.tut=true;saveRec(r)}}
   else{TEST=false;TSPD=1;KEY=REAL_KEY;RKEY=REAL_RKEY;if(CL.user){if(CL.synced)cloudUpload(true);else cloudSync()}}
   LB.cache={};tstBadge();showHome()}
-function tstEdit(fn){const o=load()||fresh();fn(o);lsSet(KEY,JSON.stringify(o));showHome();tstPanel()}
+function tstEdit(fn){const o=load()||fresh();if(!TEST&&!o.cheat){slBackup(lsGet(KEY),'cheat');o.cheat=1}fn(o);lsSet(KEY,JSON.stringify(o));if(!TEST)touchLocal();showHome();tstPanel()}
 function tstPanel(){
-  if(!TEST){modal(`<h2>🧪 測試模式</h2><p>測試模式用的是另一份獨立存檔，可以跳天數、加錢、指定事件、加速。<b>不會動到你的正式存檔，也不會上傳雲端或排行榜。</b>重新整理頁面就會自動回到正式模式。</p>
-    <div class="btns"><button class="btn" data-act="tstcopy">複製正式存檔來測</button><button class="btn alt" data-act="tston">用測試存檔${lsGet(TKEY)?'（接續上次）':'（空白）'}</button><button class="btn alt" data-act="closem">取消</button></div>`);return}
   const o=load(),f=(o&&o.tforce)||{};
   modal(`<h2>🧪 測試面板</h2><div class="tstp">
-  <p class="tsts">${o?`測試存檔：第 ${o.day+(o.pendingNext?1:0)} 天・${yen(o.coins)}${o.debt?`・欠 ${yen(o.debt)}`:''}`:'測試存檔是空的，先跳天數或按「開始營業」'}</p>
+  <p class="tsts">${o?`${TEST?'測試存檔':'目前存檔'}：第 ${o.day+(o.pendingNext?1:0)} 天・${yen(o.coins)}${o.debt?`・欠 ${yen(o.debt)}`:''}`:'存檔是空的，先跳天數或按「開始營業」'}</p>
   <div class="tstr"><b>天數</b><input id="tstday" type="number" min="1" max="999" value="${o?o.day+(o.pendingNext?1:0):1}"><button class="btn" data-act="tstday">跳過去</button></div>
   <div class="tstr"><b>錢</b><button class="btn alt" data-act="tstcoin" data-id="10000">+1萬</button><button class="btn alt" data-act="tstcoin" data-id="100000">+10萬</button><button class="btn alt" data-act="tstcoin" data-id="1000000">+100萬</button><button class="btn alt" data-act="tstdebt">清債</button></div>
   <div class="tstr"><b>事件</b><select id="tstev">${TEVS.map(([k,n])=>`<option value="${k}" ${(f.ev||'')===k?'selected':''}>${n}</option>`).join('')}</select>
@@ -2794,21 +2794,20 @@ function tstPanel(){
   <p class="tsth">事件設定會套用到之後每一天，直到你改回「隨機」。</p>
   <div class="tstr"><b>屋台炸物</b><button class="btn alt" data-act="tstfried">賣出 +50</button><span style="font-size:13px">${o&&o.rm?`目前 ${o.rm.fried||0} 份`:'還沒開屋台'}</span></div>
   <div class="tstr"><b>營業速度</b>${[1,2,4].map(n=>`<button class="btn ${TSPD===n?'':'alt'}" data-act="tstspd" data-id="${n}">${n}x</button>`).join('')}</div>
-  </div><div class="btns"><button class="btn alt" data-act="tstreset">清空測試存檔</button><button class="btn alt" data-act="tstoff">離開測試模式</button><button class="btn" data-act="closem">關閉</button></div>`)}
+  </div><div class="btns">${TEST?`<button class="btn alt" data-act="tstreset">清空測試存檔</button><button class="btn alt" data-act="tstoff">離開測試模式</button>`:`<button class="btn alt" data-act="tstcopy">另開獨立測試存檔</button>`}<button class="btn" data-act="closem">關閉</button></div>`)}
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act^="tst"]');if(!a)return;const act=a.dataset.act;
   if(!TEST&&!isAdmin())return;
   if(act==='tstpanel'){if(!HOME){toast('回到主畫面再開測試面板');return}tstPanel()}
   else if(act==='tston')tstSet(true,false);
   else if(act==='tstcopy'){if(CL.pick){toast('先選好要用哪份存檔');return}tstSet(true,true)}
   else if(act==='tstoff')tstSet(false);
-  else if(!TEST)return;
   else if(act==='tstday'){const d=Math.max(1,Math.min(999,parseInt($('tstday').value)||1));tstEdit(o=>{o.day=d;o.pendingNext=false;o.today=null})}
   else if(act==='tstcoin')tstEdit(o=>{o.coins=(o.coins||0)+(+a.dataset.id)});
   else if(act==='tstdebt')tstEdit(o=>{o.debt=0;o.loans=0;o.dues=[]});
   else if(act==='tstev'){const ev=$('tstev').value,rob=$('tstrob').value,cust=$('tstcust').value,bare=$('tstbare').value?1:0;tstEdit(o=>{o.tforce={ev,rob,cust};if(bare)o.tforce.bare=1;if(!ev&&!rob&&!cust&&!bare)delete o.tforce;o.today=null})}
   else if(act==='tstspd'){TSPD=+a.dataset.id;tstPanel()}
   else if(act==='tstfried')tstEdit(o=>{if(o.rm)o.rm.fried=(o.rm.fried||0)+50});
-  else if(act==='tstreset'){lsSet(TKEY,null);lsSet(TRKEY,null);const r=loadRec();r.tut=true;saveRec(r);showHome();tstPanel()}
+  else if(act==='tstreset'){if(!TEST)return;lsSet(TKEY,null);lsSet(TRKEY,null);const r=loadRec();r.tut=true;saveRec(r);showHome();tstPanel()}
 });
 
 function showAcct(){const u=CL.user;if(!u)return;
