@@ -628,10 +628,12 @@ function evDesc(e){const v=EVS[e.ev];return v?T(v[2],e.sale?dishTitle(e.sale):''
 const sv=(inner,vb='0 0 100 100')=>`<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
 /* art preview mode (hidden): type `art` or tap the day pill 5x. Only swaps in the new art for whoever turns it on. */
 let ART=(()=>{try{return localStorage.getItem('izakaya-art')!=='0'}catch(e){return true}})();
+/* 2026-10-24: players preferred the old food drawings, so only the new kitchen background stays. Flip to true to bring the new food/station art back. */
+const ARTFOOD=false;
 const ARTIMG={mug:'img/art-beermug-1.webp',tap:'img/art-beertap-1.webp'};
 let ARTN=0;
 function beerG(level=1,glow){
-  if(ART){const id='ab'+(++ARTN),top=96-level*70,g=glow?`<path d="M86 6v20M76 16h20" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`:'';
+  if(ARTFOOD&&ART){const id='ab'+(++ARTN),top=96-level*70,g=glow?`<path d="M86 6v20M76 16h20" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`:'';
     return `<image href="${ARTIMG.mug}" x="22" y="26" width="56.1" height="70" opacity=".35"/>`+(level>0?`<clipPath id="${id}"><rect x="0" y="${top}" width="100" height="${100-top}"/></clipPath><image href="${ARTIMG.mug}" x="22" y="26" width="56.1" height="70" clip-path="url(#${id})"/>`:'')+g}
   const y=92-level*56;
   return `<path d="M72 40h8q12 0 12 13v14q0 13-12 13h-8" fill="none" stroke="${O}" stroke-width="10"/><path d="M72 40h8q12 0 12 13v14q0 13-12 13h-8" fill="none" stroke="#f3efe6" stroke-width="4"/>
@@ -1149,8 +1151,8 @@ function stHTML(name){
   const rmh=rmStHTML(name);if(rmh!=null)return rmh;
   if(name==='tap'){const n=tapsN();
     return `<div style="display:flex;gap:2px;width:100%;height:100%">${R.taps.slice(0,n).map((tp,i)=>{const lvl=tp.st==='empty'?0:tp.st==='filling'?tp.t/tapTime():1,vb=n===1?100:50,c=vb/2,sc=n===1?.72:.46;
-      return `<div class="st" data-tap="${i}" style="position:relative;inset:auto;flex:1">${sv(`${ART?`<image href="${ARTIMG.tap}" x="${c-15.65}" y="0" width="31.3" height="92"/>`:`<rect x="${c-12}" y="6" width="24" height="70" rx="6" fill="#d7dce2" stroke="${O}" stroke-width="4"/><rect x="${c-8}" y="10" width="6" height="60" fill="#fff" opacity=".6"/><rect x="${c-16}" y="0" width="32" height="14" rx="5" fill="#1a1a1a" stroke="${O}" stroke-width="3"/>
-      <path d="M${c} 76v12h-${n===1?10:6}" stroke="${O}" stroke-width="10" fill="none"/><path d="M${c} 76v12h-${n===1?10:6}" stroke="#c9ced4" stroke-width="4" fill="none"/>`}${tp.st==='filling'?`<path d="M${ART?c-8.9:c-(n===1?10:6)} 92v${n===1?22:40}" stroke="#f4a62a" stroke-width="4"/>`:''}
+      return `<div class="st" data-tap="${i}" style="position:relative;inset:auto;flex:1">${sv(`${ARTFOOD&&ART?`<image href="${ARTIMG.tap}" x="${c-15.65}" y="0" width="31.3" height="92"/>`:`<rect x="${c-12}" y="6" width="24" height="70" rx="6" fill="#d7dce2" stroke="${O}" stroke-width="4"/><rect x="${c-8}" y="10" width="6" height="60" fill="#fff" opacity=".6"/><rect x="${c-16}" y="0" width="32" height="14" rx="5" fill="#1a1a1a" stroke="${O}" stroke-width="3"/>
+      <path d="M${c} 76v12h-${n===1?10:6}" stroke="${O}" stroke-width="10" fill="none"/><path d="M${c} 76v12h-${n===1?10:6}" stroke="#c9ced4" stroke-width="4" fill="none"/>`}${tp.st==='filling'?`<path d="M${ARTFOOD&&ART?c-8.9:c-(n===1?10:6)} 92v${n===1?22:40}" stroke="#f4a62a" stroke-width="4"/>`:''}
       <rect x="3" y="166" width="${vb-6}" height="12" rx="4" fill="#8a9098" stroke="${O}" stroke-width="3"/>
       <g transform="translate(${c-55*sc} ${n===1?98:128}) scale(${sc})">${beerG(lvl,tp.st==='full')}</g>`,`0 0 ${vb} 186`)}<span class="lbl"${n>1?' style="font-size:10px;padding:0 4px"':''}>${T(tp.st==='full'?'啤酒':(n===1?'自動裝杯中…':'裝杯中'))}</span></div>`}).join('')}</div>`}
   if(name==='sake')return sv(`<rect x="4" y="44" width="76" height="40" rx="6" fill="#8a5a34" stroke="${O}" stroke-width="3"/><g transform="translate(4 -2) scale(.78)">${sakeG()}</g>`,'0 0 84 90')+`<span class="lbl">${T('清酒')}</span>`+lockDiv(ITEMS.sake.day);
@@ -1256,7 +1258,7 @@ function grillHTML(){
   for(let i=0;i<5;i++){const g=R.grill[i],x=10+i*GW;
     if(i>=n){s+=`<div class="locked" style="left:${x}px;top:16px;width:${GW-2}px;height:150px;font-size:11px">${T('加大<br>燒烤台')}</div>`;continue}
     let inner='',bar='',st='';
-    if(g){st=cookState(g.t,g.kind);inner=sv(skewerV(g.kind,st),'0 0 40 150');if(artOn()){const dp=[0,.55,.15,.85,.35][i],sc=.92-.2*dp,ty=-(28+22*dp),rot=[-1.5,1,-.5,1.5,-1][i];inner=inner.replace('<svg ',`<svg style="transform:translateY(${ty}px) rotate(${rot}deg) scale(${sc});transform-origin:50% 100%" `)}
+    if(g){st=cookState(g.t,g.kind);inner=sv(skewerV(g.kind,st),'0 0 40 150');if(artFoodOn()){const dp=[0,.55,.15,.85,.35][i],sc=.92-.2*dp,ty=-(28+22*dp),rot=[-1.5,1,-.5,1.5,-1][i];inner=inner.replace('<svg ',`<svg style="transform:translateY(${ty}px) rotate(${rot}deg) scale(${sc});transform-origin:50% 100%" `)}
       if(st==='raw')bar=`<i style="position:absolute;left:6px;right:6px;bottom:4px;height:7px;background:#000a;border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:${Math.min(100,g.t/COOK[g.kind]*100)}%;background:#ffc65a"></i></i>`;
       if(st==='done'){const left=1-(g.t-COOK[g.kind])/(burnAt(g.kind)-COOK[g.kind]);bar=`<i style="position:absolute;left:6px;right:6px;bottom:4px;height:7px;background:#000a;border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:${left*100}%;background:${left>.4?'#5fb33a':'#e0412c'}"></i></i>`}
       if(st==='burnt')bar=`<span style="position:absolute;left:50%;top:2px;transform:translateX(-50%);font-size:11px;color:#fff;background:#000c;padding:0 4px;border-radius:4px;white-space:nowrap">${T('焦了')}</span>`;}
@@ -2290,13 +2292,14 @@ Object.assign(ARTIMG,{negima:'img/art-negima-done-1.webp',negimaRaw:'img/art-neg
   trash:'img/art-trash-1.webp',kitchen:'img/art-kitchen-1.webp',
   tea:'img/art-tea-1.webp',tsalmon:'img/art-tsalmon-1.webp',tume:'img/art-tume-1.webp',maguro:'img/art-maguro-1.webp',salmon:'img/art-salmon-1.webp',tai:'img/art-tai-1.webp'});
 const artOn=()=>ART&&CUR!=='rm';
+const artFoodOn=()=>ARTFOOD&&artOn();
 const AIMG=(k,x,y,w,h,par)=>`<image href="${ARTIMG[k]}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="${par||'none'}"/>`;
 const _skewerV=skewerV,_karaagePieces=karaagePieces,_ingArt=ingArt,_stHTML=stHTML,_grillHTML=grillHTML,_fryerHTML=fryerHTML,_drawBg=drawBg;
-skewerV=function(kind,state){if(artOn()&&(kind==='negima'||kind==='tsukune')){const key=kind+(state==='raw'?'Raw':state==='burnt'?'Burnt':'');if(ARTIMG[key])return AIMG(key,0,0,40,150,'xMidYMid meet')}return _skewerV(kind,state)};
-karaagePieces=function(st,dx=0,dy=0){if(artOn()&&st==='raw')return AIMG('karaageRaw',14+dx,46+dy,48,28,'xMidYMid meet');if(artOn()&&st==='burnt')return AIMG('karaageBurnt',18+dx,30+dy,64,38,'xMidYMid meet');if(artOn()&&st==='done')return AIMG('karaage',18+dx,30+dy,64,38,'xMidYMid meet');return _karaagePieces(st,dx,dy)};
-ingArt=function(id){if(artOn()&&(id==='bowl'||id==='rice'||id==='tea'||id==='tsalmon'||id==='tume'||id==='maguro'||id==='salmon'||id==='tai'))return AIMG(id,4,4,92,92,'xMidYMid meet');return _ingArt(id)};
+skewerV=function(kind,state){if(artFoodOn()&&(kind==='negima'||kind==='tsukune')){const key=kind+(state==='raw'?'Raw':state==='burnt'?'Burnt':'');if(ARTIMG[key])return AIMG(key,0,0,40,150,'xMidYMid meet')}return _skewerV(kind,state)};
+karaagePieces=function(st,dx=0,dy=0){if(artFoodOn()&&st==='raw')return AIMG('karaageRaw',14+dx,46+dy,48,28,'xMidYMid meet');if(artFoodOn()&&st==='burnt')return AIMG('karaageBurnt',18+dx,30+dy,64,38,'xMidYMid meet');if(artFoodOn()&&st==='done')return AIMG('karaage',18+dx,30+dy,64,38,'xMidYMid meet');return _karaagePieces(st,dx,dy)};
+ingArt=function(id){if(artFoodOn()&&(id==='bowl'||id==='rice'||id==='tea'||id==='tsalmon'||id==='tume'||id==='maguro'||id==='salmon'||id==='tai'))return AIMG(id,4,4,92,92,'xMidYMid meet');return _ingArt(id)};
 const _svgRe=/<svg[\s\S]*?<\/svg>/;
-stHTML=function(name){let h=_stHTML(name);if(!artOn())return h;
+stHTML=function(name){let h=_stHTML(name);if(!artFoodOn())return h;
   if(name==='sake')return h.replace(_svgRe,sv(AIMG('sake',2,0,80,88,'xMidYMid meet'),'0 0 84 90'));
   if(name==='edamame')return h.replace(_svgRe,sv(AIMG('edamame',0,6,84,76,'xMidYMid meet'),'0 0 84 90'));
   if(name==='rawN')return h.replace('<rect x="4" y="10" width="64" height="72" rx="8" fill="#c9ced4" stroke="#3a2318" stroke-width="3"/>',AIMG('tray',2,6,68,80));
@@ -2305,8 +2308,8 @@ stHTML=function(name){let h=_stHTML(name);if(!artOn())return h;
   if(name==='board')return h.replace(/<rect x="4" y="(\d+)" width="120" height="(\d+)" rx="12" fill="#e8c48e"[^>]*\/>/g,(m,y,hh)=>AIMG('board',2,y,124,hh));
   if(name==='trash'||(name==='trash2'&&/垃圾桶|丟掉|清空砧板/.test(h)))return h.replace(_svgRe,sv(AIMG('trash',4,0,120,52,'xMidYMid meet'),'0 0 128 52'));
   return h};
-grillHTML=function(){const h=_grillHTML();if(!artOn())return h;return h.replace(_svgRe,`<svg viewBox="0 0 250 182" style="position:absolute;inset:0">${AIMG('grill',0,6,250,176)}</svg>`)};
-fryerHTML=function(){const h=_fryerHTML();if(!artOn())return h;return h.replace(_svgRe,`<svg viewBox="0 0 136 122" style="position:absolute;inset:0">${AIMG('fryer',0,4,136,118)}</svg>`)};
+grillHTML=function(){const h=_grillHTML();if(!artFoodOn())return h;return h.replace(_svgRe,`<svg viewBox="0 0 250 182" style="position:absolute;inset:0">${AIMG('grill',0,6,250,176)}</svg>`)};
+fryerHTML=function(){const h=_fryerHTML();if(!artFoodOn())return h;return h.replace(_svgRe,`<svg viewBox="0 0 136 122" style="position:absolute;inset:0">${AIMG('fryer',0,4,136,118)}</svg>`)};
 drawBg=function(){_drawBg();if(!artOn()||(CUR==='rm'&&ST&&ST.rm))return;
   const bg=$('bg');if(!bg)return;const ch=[...bg.children];
   let ti=ch.findIndex(e=>e.tagName==='g'&&e.firstElementChild&&e.firstElementChild.getAttribute('width')==='22'&&e.firstElementChild.getAttribute('height')==='52');if(ti<0)ti=ch.length;
