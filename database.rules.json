@@ -64,7 +64,8 @@
       ".indexOn": [
         "best",
         "earned",
-        "own"
+        "own",
+        "days"
       ],
       "$uid": {
         ".write": "auth != null && auth.uid === $uid",
@@ -79,6 +80,9 @@
           ".validate": "newData.isNumber() && newData.val() >= 0"
         },
         "own": {
+          ".validate": "newData.isNumber() && newData.val() >= 1"
+        },
+        "days": {
           ".validate": "newData.isNumber() && newData.val() >= 1"
         },
         "at": {
