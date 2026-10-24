@@ -1253,7 +1253,7 @@ function grillHTML(){
   for(let i=0;i<5;i++){const g=R.grill[i],x=10+i*GW;
     if(i>=n){s+=`<div class="locked" style="left:${x}px;top:16px;width:${GW-2}px;height:150px;font-size:11px">${T('加大<br>燒烤台')}</div>`;continue}
     let inner='',bar='',st='';
-    if(g){st=cookState(g.t,g.kind);inner=sv(skewerV(g.kind,st),'0 0 40 150');if(artOn()){const sc=.9-.05*i,ty=-(8+3*i),rot=[-1.5,1,-.5,1.5,-1][i];inner=inner.replace('<svg ',`<svg style="transform:translateY(${ty}px) rotate(${rot}deg) scale(${sc});transform-origin:50% 100%" `)}
+    if(g){st=cookState(g.t,g.kind);inner=sv(skewerV(g.kind,st),'0 0 40 150');if(artOn()){const dp=[0,.55,.15,.85,.35][i],sc=.92-.2*dp,ty=-(28+22*dp),rot=[-1.5,1,-.5,1.5,-1][i];inner=inner.replace('<svg ',`<svg style="transform:translateY(${ty}px) rotate(${rot}deg) scale(${sc});transform-origin:50% 100%" `)}
       if(st==='raw')bar=`<i style="position:absolute;left:6px;right:6px;bottom:4px;height:7px;background:#000a;border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:${Math.min(100,g.t/COOK[g.kind]*100)}%;background:#ffc65a"></i></i>`;
       if(st==='done'){const left=1-(g.t-COOK[g.kind])/(burnAt(g.kind)-COOK[g.kind]);bar=`<i style="position:absolute;left:6px;right:6px;bottom:4px;height:7px;background:#000a;border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:${left*100}%;background:${left>.4?'#5fb33a':'#e0412c'}"></i></i>`}
       if(st==='burnt')bar=`<span style="position:absolute;left:50%;top:2px;transform:translateX(-50%);font-size:11px;color:#fff;background:#000c;padding:0 4px;border-radius:4px;white-space:nowrap">${T('焦了')}</span>`;}
