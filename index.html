@@ -368,6 +368,22 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 .lbrow{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:8px;background:#f6ead0;border-radius:10px;padding:6px 12px;font-size:15px}
 .lbrow b{font-family:var(--f-disp);font-weight:400;color:#7a4a2a;text-align:center;font-size:18px;line-height:1}
 .card>*{flex-shrink:0}
+/* mobile legibility: stage is scaled down (--s), so enlarge modal text by --fz (1 on desktop) */
+#game .card{width:min(calc(620px*var(--fz,1)),94%);gap:calc(14px*var(--fz,1)*.8);padding:calc(22px*var(--fz,1)*.8) calc(28px*var(--fz,1)*.8)}
+#game .card h2{font-size:calc(34px*var(--fz,1))}
+#game .card p{font-size:calc(16px*var(--fz,1))}
+#game .card .hint{font-size:calc(14px*var(--fz,1))!important}
+#game .card .btn{font-size:calc(18px*var(--fz,1))}
+#game .how-row div{font-size:calc(14px*var(--fz,1))}
+#game .how-row b{font-size:calc(16px*var(--fz,1))}
+#game .how-row svg{width:calc(52px*var(--fz,1)*.8);height:calc(52px*var(--fz,1)*.8)}
+#game .goalcard b{font-size:calc(17px*var(--fz,1))}
+#game .goalcard p{font-size:calc(13px*var(--fz,1))}
+#game .evbox{font-size:calc(15px*var(--fz,1))}
+#game .evbox .ei{font-size:calc(30px*var(--fz,1)*.8)}
+#game .bank{font-size:calc(15px*var(--fz,1))}
+#game .salepick small{font-size:calc(13px*var(--fz,1))}
+#game .new{font-size:calc(11px*var(--fz,1))}
 .home .card{max-height:calc(100vh - 44px);max-height:calc(100dvh - 44px);box-sizing:border-box}.lbrow.me{background:#ffd98a;box-shadow:0 0 0 2px #e0412c}
 .lbrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lbrow em{font-style:normal;font-variant-numeric:tabular-nums;color:var(--lacquer);font-weight:900}
 .lbme{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:#f1e2c2;border-radius:12px;padding:8px 12px;font-size:14px}
@@ -2433,6 +2449,7 @@ function fit(){
   const box=$('box'),wcs=getComputedStyle($('wrap')),w=$('wrap').clientWidth-(document.body.classList.contains('ovl')?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),ovl=document.body.classList.contains('ovl'),maxH=Math.max(200,(window.visualViewport?Math.min(innerHeight,visualViewport.height*(visualViewport.scale||1)):window.innerHeight)-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)));
   const s=Math.min(w/W,maxH/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
   $('game').style.transform=`scale(${s})`;
+  $('game').style.setProperty('--fz',Math.min(1.8,Math.max(1,0.85/s)).toFixed(2));
   clampBubbles();
   if(HOME)placeChat();
 }
