@@ -1231,7 +1231,8 @@ function pageStatus(p){let ready=0,warn=0;const chk=(arr,kf)=>arr.forEach(g=>{if
   if(p===1){chk(R.grill,g=>g.kind);chk(R.fryer,()=>'karaage')}else{chk(R.teppan,g=>g.kind);chk(R.tempura,g=>g.kind)}return {ready,warn}}
 function pgHTML(){return KP===1?T('二號廚房')+' ▶':'◀ '+T('一號廚房')}
 function onPage(k){return k==='warmT'||k==='gunT'||((L[k].pg||1)===KP)}
-function setPage(p){KP=page2On()?p:1;for(const k in L){const el=$('st-'+k);if(el)el.hidden=k==='pgbtn'?!page2On():!onPage(k)}if(R)renderStations()}
+function bareOn(){return TEST&&CUR!=='rm'&&!!(ST&&ST.tforce&&ST.tforce.bare)}
+function setPage(p){KP=page2On()?p:1;const bare=bareOn();for(const k in L){const el=$('st-'+k);if(el)el.hidden=bare||(k==='pgbtn'?!page2On():!onPage(k))}if(R)renderStations()}
 function tapTime(){return ST.up.tap?1:2}
 function boardDone(i){const b=R.boards[i];return !!b&&((b.base==='bowl'&&!!b.tea)||(b.base==='boat'&&b.fish.length===2))}
 function boardKey(i){const b=R.boards[i];if(b.base==='bowl')return 'chazuke:'+b.top;return 'sashimi:'+b.fish.slice().sort().join('+')}
@@ -2678,7 +2679,8 @@ function tstPanel(){
   <div class="tstr"><b>錢</b><button class="btn alt" data-act="tstcoin" data-id="10000">+1萬</button><button class="btn alt" data-act="tstcoin" data-id="100000">+10萬</button><button class="btn alt" data-act="tstcoin" data-id="1000000">+100萬</button><button class="btn alt" data-act="tstdebt">清債</button></div>
   <div class="tstr"><b>事件</b><select id="tstev">${TEVS.map(([k,n])=>`<option value="${k}" ${(f.ev||'')===k?'selected':''}>${n}</option>`).join('')}</select>
     <select id="tstrob"><option value="" ${!f.rob?'selected':''}>搶劫：隨機</option><option value="on" ${f.rob==='on'?'selected':''}>搶劫：一定來</option><option value="off" ${f.rob==='off'?'selected':''}>搶劫：不要</option></select>
-    <select id="tstcust"><option value="" ${f.cust!=='none'?'selected':''}>客人：照常</option><option value="none" ${f.cust==='none'?'selected':''}>客人：無</option></select><button class="btn" data-act="tstev">套用</button></div>
+    <select id="tstcust"><option value="" ${f.cust!=='none'?'selected':''}>客人：照常</option><option value="none" ${f.cust==='none'?'selected':''}>客人：無</option></select>
+    <select id="tstbare"><option value="" ${!f.bare?'selected':''}>檯面：照常</option><option value="1" ${f.bare?'selected':''}>檯面：全空</option></select><button class="btn" data-act="tstev">套用</button></div>
   <p class="tsth">事件設定會套用到之後每一天，直到你改回「隨機」。</p>
   <div class="tstr"><b>屋台炸物</b><button class="btn alt" data-act="tstfried">賣出 +50</button><span style="font-size:13px">${o&&o.rm?`目前 ${o.rm.fried||0} 份`:'還沒開屋台'}</span></div>
   <div class="tstr"><b>營業速度</b>${[1,2,4].map(n=>`<button class="btn ${TSPD===n?'':'alt'}" data-act="tstspd" data-id="${n}">${n}x</button>`).join('')}</div>
@@ -2693,7 +2695,7 @@ document.addEventListener('click',e=>{const a=e.target.closest('[data-act^="tst"
   else if(act==='tstday'){const d=Math.max(1,Math.min(999,parseInt($('tstday').value)||1));tstEdit(o=>{o.day=d;o.pendingNext=false;o.today=null})}
   else if(act==='tstcoin')tstEdit(o=>{o.coins=(o.coins||0)+(+a.dataset.id)});
   else if(act==='tstdebt')tstEdit(o=>{o.debt=0;o.loans=0;o.dues=[]});
-  else if(act==='tstev'){const ev=$('tstev').value,rob=$('tstrob').value,cust=$('tstcust').value;tstEdit(o=>{o.tforce={ev,rob,cust};if(!ev&&!rob&&!cust)delete o.tforce;o.today=null})}
+  else if(act==='tstev'){const ev=$('tstev').value,rob=$('tstrob').value,cust=$('tstcust').value,bare=$('tstbare').value?1:0;tstEdit(o=>{o.tforce={ev,rob,cust};if(bare)o.tforce.bare=1;if(!ev&&!rob&&!cust&&!bare)delete o.tforce;o.today=null})}
   else if(act==='tstspd'){TSPD=+a.dataset.id;tstPanel()}
   else if(act==='tstfried')tstEdit(o=>{if(o.rm)o.rm.fried=(o.rm.fried||0)+50});
   else if(act==='tstreset'){lsSet(TKEY,null);lsSet(TRKEY,null);const r=loadRec();r.tut=true;saveRec(r);showHome();tstPanel()}
