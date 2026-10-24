@@ -2,6 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#24140c">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2202,7 +2203,7 @@ document.addEventListener('click',e=>{
   else if(act==='nick')showNick();
   else if(act==='nickok')saveNick();
   else if(act==='login'){closeModal();cloudLogin()}
-  else if(act==='addacct'){try{window.open('https://accounts.google.com/AddSession','_blank')}catch(e){}}
+  else if(act==='addacct'){try{window.open('https://accounts.google.com/AddSession','_blank','noopener,noreferrer')}catch(e){}}
   else if(act==='acct')showAcct();
   else if(act==='logout'){closeModal();CL.api&&CL.api.signOut()}
   else if(act==='syncnow'){cloudUpload(true);showAcct()}
@@ -2666,6 +2667,7 @@ const FRX2={"zh-Hans":{"好友系統上線！":"好友系统上线！","各位�
    The game keeps saving to localStorage exactly as before; every local save is mirrored to the cloud
    (debounced). On sign-in the two are reconciled: records are merged, and if both sides hold a
    different game save the player picks one. */
+const APPCHECK_KEY=''; /* paste the reCAPTCHA v3 SITE key from Firebase console → App Check here (the site key is public by design) */
 const RTDB_URL='https://kanpai-izakaya-default-rtdb.firebaseio.com',FB_CONFIG={apiKey:"AIzaSyBP7czM0Vr9RldwJ2M8iI3qezUsvYZhngA",authDomain:"kanpai-izakaya.firebaseapp.com",projectId:"kanpai-izakaya",storageBucket:"kanpai-izakaya.firebasestorage.app",messagingSenderId:"920920633539",appId:"1:920920633539:web:dc71cba6784c6264003276"};
 const SAVED_AT='izakaya-saved-at';
 const CL={user:null,ready:false,timer:null,status:'',api:null,pick:null,synced:false};
@@ -2681,7 +2683,10 @@ async function cloudInit(){
   if(!FB_CONFIG||CL.api)return;
   try{const B='https://www.gstatic.com/firebasejs/10.12.2/';
     const [fa,au,fs]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
-    const app=fa.initializeApp(FB_CONFIG),auth=au.getAuth(app),db=fs.getFirestore(app);
+    const app=fa.initializeApp(FB_CONFIG);
+    /* App Check: proves a request comes from this real site, so scripts and curl can't hammer the database. Inert until APPCHECK_KEY (reCAPTCHA v3 site key) is filled in. */
+    if(APPCHECK_KEY){try{const ac=await import(B+'firebase-app-check.js');ac.initializeAppCheck(app,{provider:new ac.ReCaptchaV3Provider(APPCHECK_KEY),isTokenAutoRefreshEnabled:true})}catch(e){console.warn('app check',e)}}
+    const auth=au.getAuth(app),db=fs.getFirestore(app);
     let RD=null,rtT=null;const rtdb=async()=>{if(!RD){const rd=await import(B+'firebase-database.js');RD={rd,db:rd.getDatabase(app,RTDB_URL)}}return RD};
     const rtIdle=()=>{clearTimeout(rtT);rtT=setTimeout(()=>{if(RD&&!CHT.unsub)RD.rd.goOffline(RD.db)},8000)};
     const rt=async f=>{const x=await rtdb();clearTimeout(rtT);x.rd.goOnline(x.db);try{return await f(x.rd,x.db)}finally{rtIdle()}};
@@ -2742,15 +2747,20 @@ async function cloudInit(){
         return rd.update(rd.ref(r),u)})),
       chatOff:async()=>rtIdle(),
       chatSub:(cb,err)=>{let off=null,dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
-        off=rd.onValue(rd.query(rd.ref(r,'chat'),rd.orderByChild('t'),rd.limitToLast(60)),snap=>{const a=[];snap.forEach(c=>{const x=c.val()||{};a.push({id:c.key,uid:x.uid,name:x.name,text:x.text,t:typeof x.t==='number'?x.t:Date.now()})});cb(a.reverse())},err)}).catch(err);
+        off=rd.onValue(rd.query(rd.ref(r,'chat'),rd.orderByChild('t'),rd.limitToLast(60)),snap=>{const a=[];snap.forEach(c=>{const x=c.val()||{};a.push({id:c.key,uid:x.uid,name:x.name,text:x.text,adm:x.adm===true,t:typeof x.t==='number'?x.t:Date.now()})});cb(a.reverse())},err)}).catch(err);
         return ()=>{dead=true;if(off)off()}},
-      chatSend:(uid,name,text)=>rt((rd,r)=>{const id=rd.push(rd.ref(r,'chat')).key;
-        return rd.update(rd.ref(r),{['chat/'+id]:{uid,name,text,t:rd.serverTimestamp()},['chatlast/'+uid]:rd.serverTimestamp()})}),
+      chatSend:(uid,name,text,adm)=>rt((rd,r)=>{const id=rd.push(rd.ref(r,'chat')).key;
+        const m={uid,name,text,t:rd.serverTimestamp()};if(adm)m.adm=true; /* adm: the rules only accept it from the author's verified Google account, so players can't fake the 👑 mark */
+        return rd.update(rd.ref(r),{['chat/'+id]:m,['chatlast/'+uid]:rd.serverTimestamp()})}),
       chatDel:id=>rt((rd,r)=>rd.remove(rd.ref(r,'chat/'+id))),
       ban:(uid,name)=>rt((rd,r)=>rd.set(rd.ref(r,'bans/'+uid),{name:String(name||'').slice(0,24),t:rd.serverTimestamp()})),
       unban:uid=>rt((rd,r)=>rd.remove(rd.ref(r,'bans/'+uid))),
       banned:uid=>rt((rd,r)=>rd.get(rd.ref(r,'bans/'+uid)).then(s=>s.exists())),
-      report:d=>rt((rd,r)=>{const id=rd.push(rd.ref(r,'reports')).key;const o={t:rd.serverTimestamp()};for(const k in d)o[k]=String(d[k]==null?'':d[k]).slice(0,300);return rd.set(rd.ref(r,'reports/'+id),o)})};
+      // reports are rate-limited by the rules through reportlast/<uid> (same trick as chat); if the rules haven't been republished yet, fall back to the plain write
+      report:d=>rt(async(rd,r)=>{const id=rd.push(rd.ref(r,'reports')).key;const o={t:rd.serverTimestamp()};for(const k in d)o[k]=String(d[k]==null?'':d[k]).slice(0,300);
+        const me=auth.currentUser;
+        if(me){try{return await rd.update(rd.ref(r),{['reports/'+id]:o,['reportlast/'+me.uid]:rd.serverTimestamp()})}catch(e){if(!/permission/i.test(String(e&&e.code||e)))throw e}}
+        return rd.set(rd.ref(r,'reports/'+id),o)})};
     noticeRemote();fbFlush();
     au.getRedirectResult(auth).catch(e=>cloudErr(e));
     au.onAuthStateChanged(auth,u=>cloudUser(u&&{uid:u.uid,name:u.displayName||u.email||'',photo:u.photoURL||'',email:(u.email||'').toLowerCase()}));
@@ -3137,7 +3147,7 @@ function chatDraw(scroll){const l=$('chatlist');if(!l)return;const near=l.scroll
   const me=CL.user&&CL.user.uid,adm=isAdmin();
   const rows=CHT.msgs.filter(m=>!CHT.hide[m.id]&&!CHT.block[m.uid]);
   l.innerHTML=rows.length?rows.map(m=>{const mine=m.uid===me,op=CHT.open===m.id;
-    return `<div class="cmsg ${mine?'me':''}" data-act="cmsg" data-id="${m.id}"><span class="cn" style="color:${chatColor(m.uid)}">${esc(m.name||'?')}</span><span class="ct">${esc(chatClean(m.text))}</span><span class="cw">${chatTime(m.t)}</span></div>
+    return `<div class="cmsg ${mine?'me':''}" data-act="cmsg" data-id="${esc(m.id)}"><span class="cn" style="color:${chatColor(m.uid)}">${m.adm?'👑 ':''}${esc(m.name||'?')}</span><span class="ct">${esc(chatClean(m.text))}</span><span class="cw">${chatTime(m.t)}</span></div>
     ${op?`<div class="cmenu">${mine?'':`<button class="btn alt" data-act="chide">${T('隱藏這則')}</button><button class="btn alt" data-act="cblock">${T('封鎖這個人')}</button><button class="btn alt" data-act="creport">${T('檢舉')}</button>`}${adm?`<button class="btn" data-act="cdel">${T('刪除')}</button>${mine?'':`<button class="btn" data-act="cban">${T('禁言')}</button>`}`:''}${mine&&!adm?`<span style="font-size:12px;color:#9a7a5a">${T('這是你發的訊息')}</span>`:''}</div>`:''}`}).join('')
     :`<p style="font-size:14px">${T('還沒有人說話，來打聲招呼吧！')}</p>`;
   if(scroll===true?near||!CHT.drawn:false)l.scrollTop=l.scrollHeight;if(!CHT.drawn&&rows.length){CHT.drawn=true;l.scrollTop=l.scrollHeight;requestAnimationFrame(()=>{l.scrollTop=l.scrollHeight});setTimeout(()=>{l.scrollTop=l.scrollHeight},250)}}
@@ -3146,11 +3156,11 @@ async function chatSend(){const i=$('cin'),m=$('cmsg');if(!i||!CL.user||!CL.api)
   if(!text){return}if(!name){showNick();CHT.back=true;return}
   const w=5000-(Date.now()-CHT.last);if(w>0){say(T('慢一點～ {0} 秒後才能再發',Math.ceil(w/1000)));return}
   CHT.last=Date.now();i.value='';say('');
-  try{const sent=CL.api.chatSend(CL.user.uid,name,text);if(await Promise.race([sent.then(()=>1),new Promise(r=>setTimeout(r,8000,0))])===0){sent.catch(()=>{});say(T('送出失敗，請稍後再試'));return}const l=$('chatlist');if(l)l.scrollTop=l.scrollHeight}
+  try{const sent=CL.api.chatSend(CL.user.uid,name,text,isAdmin());if(await Promise.race([sent.then(()=>1),new Promise(r=>setTimeout(r,8000,0))])===0){sent.catch(()=>{});say(T('送出失敗，請稍後再試'));return}const l=$('chatlist');if(l)l.scrollTop=l.scrollHeight}
   catch(e){console.warn('chat send',e);i.value=text;CHT.last=0;const c=String(e&&e.code||'');
     if(/permission/i.test(c)){const b=await CL.api.banned(CL.user.uid).catch(()=>false);if(b){CHT.banned=true;showChat();return}say(T('發太快了，等幾秒再試'))}else say(T('送出失敗，請稍後再試'))}}
 function chatBlocks(){const ks=Object.keys(CHT.block);
-  modal(`<h2>${T('封鎖名單')}</h2>${ks.length?`<div class="how">${ks.map(u=>`<div class="how-row" style="justify-content:space-between"><b>${esc(CHT.block[u]||'?')}</b><button class="btn alt" style="font-size:14px;padding:4px 12px" data-act="cunblock" data-id="${u}">${T('解除封鎖')}</button></div>`).join('')}</div>`:`<p>${T('沒有封鎖任何人。')}</p>`}
+  modal(`<h2>${T('封鎖名單')}</h2>${ks.length?`<div class="how">${ks.map(u=>`<div class="how-row" style="justify-content:space-between"><b>${esc(CHT.block[u]||'?')}</b><button class="btn alt" style="font-size:14px;padding:4px 12px" data-act="cunblock" data-id="${esc(u)}">${T('解除封鎖')}</button></div>`).join('')}</div>`:`<p>${T('沒有封鎖任何人。')}</p>`}
   <div class="btns"><button class="btn" data-act="chat">${T('回到聊天室')}</button></div>`)}
 const GICON='<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.5 5.8c4.4-4 6.8-10 6.8-17.2z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-2.9-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.7 0 20.2 0 24s1 7.3 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.2 0-11.5-4.1-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

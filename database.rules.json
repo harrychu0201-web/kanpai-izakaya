@@ -3,24 +3,27 @@
     ".read": false,
     ".write": false,
     "chat": {
-      ".read": true,
+      ".read": "query.limitToLast <= 100",
       ".indexOn": [
         "t"
       ],
       "$id": {
         ".write": "auth != null && ((!data.exists() && newData.exists() && !root.child('bans').child(auth.uid).exists() && newData.child('uid').val() === auth.uid && newData.child('t').val() === now && newData.parent().parent().child('chatlast').child(auth.uid).val() === now) || (!newData.exists() && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))",
-        ".validate": "newData.hasChildren(['uid', 'name', 'text', 't'])",
+        ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['uid', 'name', 'text', 't'])",
         "uid": {
           ".validate": "newData.isString()"
         },
         "name": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24"
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24 && (!newData.val().matches(/作者|站長|站长|管理員|管理员|客服|官方|[Aa][Dd][Mm][Ii][Nn]/) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))"
         },
         "text": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
         },
         "t": {
           ".validate": "newData.isNumber()"
+        },
+        "adm": {
+          ".validate": "newData.val() === true && auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true"
         },
         "$other": {
           ".validate": false
@@ -60,7 +63,7 @@
       }
     },
     "lb": {
-      ".read": true,
+      ".read": "query.limitToFirst <= 100 || query.limitToLast <= 100",
       ".indexOn": [
         "best",
         "earned",
@@ -71,19 +74,19 @@
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "newData.hasChildren(['name', 'best', 'earned', 'at'])",
         "name": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24"
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24 && (!newData.val().matches(/作者|站長|站长|管理員|管理员|客服|官方|[Aa][Dd][Mm][Ii][Nn]/) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))"
         },
         "best": {
-          ".validate": "newData.isNumber() && newData.val() >= 0"
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000000000"
         },
         "earned": {
-          ".validate": "newData.isNumber() && newData.val() >= 0"
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000000000"
         },
         "own": {
-          ".validate": "newData.isNumber() && newData.val() >= 1"
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1000000"
         },
         "days": {
-          ".validate": "newData.isNumber() && newData.val() >= 1"
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1000000"
         },
         "at": {
           ".validate": "newData.isNumber()"
@@ -100,7 +103,7 @@
       ],
       "$id": {
         ".write": "(!data.exists() && newData.exists() && (!newData.child('uid').exists() || (auth != null && newData.child('uid').val() === auth.uid)) && newData.child('t').val() === now) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
-        ".validate": "newData.hasChildren(['cat', 'text', 't'])",
+        ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['cat', 'text', 't'])",
         "cat": {
           ".validate": "newData.isString() && newData.val().length <= 20"
         },
@@ -161,7 +164,7 @@
           "msgs": {
             "$mid": {
               ".write": "auth != null && auth.uid === $uid && !data.exists() && newData.exists() && !newData.child('a').exists() && newData.child('t').val() === now",
-              ".validate": "newData.hasChildren(['text', 't'])",
+              ".validate": "$mid.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['text', 't'])",
               "text": {
                 ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1000"
               },
@@ -199,8 +202,8 @@
     "reports": {
       ".read": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true",
       "$id": {
-        ".write": "auth != null && !data.exists() && newData.child('by').val() === auth.uid && newData.child('t').val() === now",
-        ".validate": "newData.hasChildren(['by', 't'])",
+        ".write": "auth != null && !data.exists() && newData.child('by').val() === auth.uid && newData.child('t').val() === now && newData.parent().parent().child('reportlast').child(auth.uid).val() === now",
+        ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['by', 't'])",
         "t": {
           ".validate": "newData.isNumber()"
         },
@@ -210,24 +213,23 @@
       }
     },
     "lbx": {
-      ".read": "auth != null",
       "$uid": {
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "newData.hasChildren(['name', 'day'])",
         "name": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24"
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24 && (!newData.val().matches(/作者|站長|站长|管理員|管理员|客服|官方|[Aa][Dd][Mm][Ii][Nn]/) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))"
         },
         "best": {
-          ".validate": "newData.isNumber() && newData.val() >= 0"
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000000000"
         },
         "earned": {
-          ".validate": "newData.isNumber() && newData.val() >= 0"
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000000000"
         },
         "own": {
-          ".validate": "newData.isNumber() && newData.val() >= 1"
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1000000"
         },
         "day": {
-          ".validate": "newData.isNumber() && newData.val() >= 1"
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1000000"
         },
         "ya": {
           ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1)"
@@ -236,14 +238,15 @@
           ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1)"
         },
         "dc": {
-          ".validate": "newData.isNumber() && newData.val() >= 0"
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
         },
         "at": {
           ".validate": "newData.isNumber()"
         },
         "$other": {
           ".validate": false
-        }
+        },
+        ".read": "auth != null"
       }
     },
     "fcode": {
@@ -299,6 +302,12 @@
         "$from": {
           ".validate": "newData.isNumber()"
         }
+      }
+    },
+    "reportlast": {
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.val() === now && (!data.exists() || data.val() <= now - 10000)"
       }
     }
   }
