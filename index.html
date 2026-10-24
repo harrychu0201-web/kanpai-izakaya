@@ -627,7 +627,7 @@ function evDesc(e){const v=EVS[e.ev];return v?T(v[2],e.sale?dishTitle(e.sale):''
 /* ================= art ================= */
 const sv=(inner,vb='0 0 100 100')=>`<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
 /* art preview mode (hidden): type `art` or tap the day pill 5x. Only swaps in the new art for whoever turns it on. */
-let ART=(()=>{try{return localStorage.getItem('izakaya-art')!=='0'}catch(e){return true}})();
+let ART=(()=>{try{return localStorage.getItem('izakaya-art2')==='1'}catch(e){return false}})();
 /* 2026-10-24: players preferred the old food drawings, so only the new kitchen background stays. Flip to true to bring the new food/station art back. */
 const ARTFOOD=false;
 const ARTIMG={mug:'img/art-beermug-1.webp',tap:'img/art-beertap-1.webp'};
@@ -2281,7 +2281,7 @@ $('game').addEventListener('pointerdown',e=>{if(e.button>0)return;if(e.target.cl
 $('game').addEventListener('contextmenu',e=>e.preventDefault());
 function artBadge(){let b=document.getElementById('artbadge');if(false&&ART&&!b){b=document.createElement('div');b.id='artbadge';b.textContent='美術預覽中';b.style.cssText='position:fixed;right:8px;bottom:8px;z-index:99999;background:#c62828;color:#fff;font:bold 12px sans-serif;padding:4px 10px;border-radius:999px;pointer-events:none;opacity:.92';document.body.appendChild(b)}else if(!ART&&b)b.remove()}
 function artToast(){let t=document.getElementById('arttoast');if(!t){t=document.createElement('div');t.id='arttoast';t.style.cssText='position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:99999;background:#1a0e08;color:#ffd27a;border:3px solid #ffd27a;border-radius:14px;padding:10px 22px;font:900 20px sans-serif;pointer-events:none;transition:opacity .4s';document.body.appendChild(t)}t.textContent=ART?'美術預覽：開':'美術預覽：關';t.style.opacity=1;clearTimeout(t._h);t._h=setTimeout(()=>t.style.opacity=0,1600)}
-function artToggle(){ART=!ART;try{localStorage.setItem('izakaya-art',ART?'1':'0')}catch(e){}artBadge();artToast();try{cache.clear();chooseLayout(true)}catch(e){}if(R){cache.clear();renderStations();try{renderCust()}catch(e){}}}
+function artToggle(){ART=!ART;try{localStorage.setItem('izakaya-art2',ART?'1':'0')}catch(e){}artBadge();artToast();try{cache.clear();chooseLayout(true)}catch(e){}if(R){cache.clear();renderStations();try{renderCust()}catch(e){}}}
 artBadge();
 /* ---- art preview: food, kitchen background and station objects (first kitchen only) ---- */
 Object.assign(ARTIMG,{negima:'img/art-negima-done-1.webp',negimaRaw:'img/art-negima-raw-1.webp',negimaBurnt:'img/art-negima-burnt-1.webp',
