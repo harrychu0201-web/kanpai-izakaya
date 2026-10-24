@@ -3028,6 +3028,7 @@ function tstPanel(){
     <select id="tstcust"><option value="" ${f.cust!=='none'?'selected':''}>客人：照常</option><option value="none" ${f.cust==='none'?'selected':''}>客人：無</option></select>
     <select id="tstbare"><option value="" ${!f.bare?'selected':''}>檯面：照常</option><option value="1" ${f.bare?'selected':''}>檯面：全空</option></select><button class="btn" data-act="tstev">套用</button></div>
   <p class="tsth">事件設定會套用到之後每一天，直到你改回「隨機」。</p>
+  <div class="tstr"><b>拉麵店</b>${o&&o.rm?`<button class="btn alt" disabled>屋台已開張</button>`:`<button class="btn" data-act="tstrm">買店面＋開屋台</button>`}${o&&o.rm&&!o.rm.k2?`<button class="btn" data-act="tstk2">擴建二號廚房</button>`:''}<span style="font-size:13px">${!o?'':o.rm?(o.rm.k2?'屋台＋二號廚房都有了':'已有屋台，還沒擴建'):o.owned?'已買店面，還沒開屋台':'還沒買店面'}・不扣錢</span></div>
   <div class="tstr"><b>屋台炸物</b><button class="btn alt" data-act="tstfried">賣出 +50</button><span style="font-size:13px">${o&&o.rm?`目前 ${o.rm.fried||0} 份`:'還沒開屋台'}</span></div>
   <div class="tstr"><b>營業速度</b>${[1,2,4].map(n=>`<button class="btn ${TSPD===n?'':'alt'}" data-act="tstspd" data-id="${n}">${n}x</button>`).join('')}</div>
   </div><div class="btns">${TEST?`<button class="btn alt" data-act="tstreset">清空測試存檔</button><button class="btn alt" data-act="tstoff">離開測試模式</button>`:`<button class="btn alt" data-act="tstcopy">另開獨立測試存檔</button>`}<button class="btn" data-act="closem">關閉</button></div>`)}
@@ -3042,6 +3043,8 @@ document.addEventListener('click',e=>{const a=e.target.closest('[data-act^="tst"
   else if(act==='tstdebt')tstEdit(o=>{o.debt=0;o.loans=0;o.dues=[]});
   else if(act==='tstev'){const ev=$('tstev').value,rob=$('tstrob').value,cust=$('tstcust').value,bare=$('tstbare').value?1:0;tstEdit(o=>{o.tforce={ev,rob,cust};if(bare)o.tforce.bare=1;if(!ev&&!rob&&!cust&&!bare)delete o.tforce;o.today=null})}
   else if(act==='tstspd'){TSPD=+a.dataset.id;tstPanel()}
+  else if(act==='tstrm')tstEdit(o=>{o.owned=true;if(!o.rm)o.rm={up:{},dec:{},seen:false};o.where='rm'});
+  else if(act==='tstk2')tstEdit(o=>{if(!o.rm||o.rm.k2)return;o.rm.k2=1;o.menu=o.menu||{};o.menu.koro=true;o.fresh=(o.fresh||[]).concat('koro')});
   else if(act==='tstfried')tstEdit(o=>{if(o.rm)o.rm.fried=(o.rm.fried||0)+50});
   else if(act==='tstreset'){if(!TEST)return;lsSet(TKEY,null);lsSet(TRKEY,null);const r=loadRec();r.tut=true;saveRec(r);showHome();tstPanel()}
 });
