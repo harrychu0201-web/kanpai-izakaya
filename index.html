@@ -75,7 +75,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .held{filter:drop-shadow(0 0 5px #fff4a8) drop-shadow(0 0 10px #ffc65a)}
 .nope{animation:nope .3s}
 @keyframes nope{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-.lbl{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);background:var(--soot);color:var(--paper);font-size:11px;padding:1px 8px;border-radius:999px;white-space:nowrap;pointer-events:none;z-index:2}
+.lbl{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);background:var(--soot);color:var(--paper);font-size:13px;padding:1px 8px;border-radius:999px;white-space:nowrap;pointer-events:none;z-index:2}
 .locked{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:repeating-linear-gradient(-45deg,#3f2416ee 0 12px,#4a2b19ee 12px 24px);border-radius:10px;font-size:13px;color:#e7b97f;pointer-events:auto;cursor:default;line-height:1.3;z-index:3}
 .slot{border-radius:6px}
 
@@ -107,7 +107,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .oi svg{width:52px;height:52px}
 .oi.done svg{opacity:.3}
 .oi.done::after{content:"";position:absolute;right:-3px;bottom:2px;width:24px;height:24px;border-radius:50%;background:#5fb33a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12l4 4 8-9' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/18px no-repeat;border:2px solid var(--soot)}
-.oi small{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);font-size:10px;color:#fff;background:var(--lacquer);border-radius:999px;padding:0 5px;line-height:1.5;white-space:nowrap}
+.oi small{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);font-size:12px;color:#fff;background:var(--lacquer);border-radius:999px;padding:0 5px;line-height:1.5;white-space:nowrap}
 .oi>svg{display:block;margin:0 auto}
 .oi .vt{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);display:flex;gap:2px;z-index:1;white-space:nowrap;pointer-events:none}
 .oi .vt b{font-size:15px;font-weight:900;line-height:1.25;padding:0 5px;border-radius:7px;border:2px solid var(--soot);color:#fff;background:var(--lacquer);text-shadow:0 1px 0 #0005}
@@ -1021,7 +1021,7 @@ function rmStHTML(name){
   if(name==='bowls'){const n=bowlsN();
     return `<div style="display:flex;flex-direction:column;gap:3px;width:100%;height:100%">${R.bowls.slice(0,n).map((b,i)=>{const done=bowlDone(i),h=n===1?128:62;
       return `<div class="st" data-bowl="${i}" style="position:relative;inset:auto;flex:1">${sv(`<rect x="4" y="${n===1?14:3}" width="102" height="${n===1?106:56}" rx="12" fill="#e8c48e" stroke="${O}" stroke-width="4"/>${b?`<g transform="translate(${n===1?8:31} ${n===1?18:2}) scale(${n===1?.94:.5})">${ramenG(b)}</g>`:`<circle cx="55" cy="${n===1?66:31}" r="${n===1?30:18}" fill="none" stroke="#b8905a" stroke-width="3" stroke-dasharray="6 5"/>`}
-      ${done?`<circle cx="94" cy="${n===1?24:14}" r="11" fill="#5fb33a" stroke="${O}" stroke-width="3"/><path d="M88 ${n===1?24:14}l4 4l7-8" stroke="#fff" stroke-width="3" fill="none"/>`:''}`,`0 0 110 ${h}`)}<span class="lbl"${n>1?' style="bottom:-4px;font-size:10px"':''}>${done?T('完成！點我拿起'):b?T(b.men?'放配料':'等麵'):T('拉麵碗')+(n>1?(i+1):'')}</span></div>`}).join('')}</div>`}
+      ${done?`<circle cx="94" cy="${n===1?24:14}" r="11" fill="#5fb33a" stroke="${O}" stroke-width="3"/><path d="M88 ${n===1?24:14}l4 4l7-8" stroke="#fff" stroke-width="3" fill="none"/>`:''}`,`0 0 110 ${h}`)}<span class="lbl"${n>1?' style="bottom:-4px;font-size:12px"':''}>${done?T('完成！點我拿起'):b?T(b.men?'放配料':'等麵'):T('拉麵碗')+(n>1?(i+1):'')}</span></div>`}).join('')}</div>`}
   if(name==='rmtop'){const tiles=[['bowl',ramenG({}),T('拉麵碗')],['chashu',`<g transform="translate(0 10)"><ellipse cx="38" cy="40" rx="22" ry="14" fill="#e8a888" stroke="${O}" stroke-width="3"/><ellipse cx="38" cy="40" rx="13" ry="8" fill="none" stroke="#c9785a" stroke-width="3"/><ellipse cx="62" cy="56" rx="20" ry="13" fill="#eab092" stroke="${O}" stroke-width="3"/></g>`,T('叉燒')],['egg',`<ellipse cx="50" cy="54" rx="26" ry="20" fill="#fff" stroke="${O}" stroke-width="3"/><ellipse cx="50" cy="54" rx="14" ry="11" fill="#f5a020"/>`,T('溏心蛋')],['corn',`${[[34,46],[46,42],[58,46],[40,56],[52,54],[64,56],[30,58],[46,66],[58,64]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="6" fill="#f7d33a" stroke="${O}" stroke-width="2"/>`).join('')}<rect x="54" y="26" width="22" height="16" rx="3" fill="#fff4b8" stroke="${O}" stroke-width="2.5" transform="rotate(-10 65 34)"/>`,T('奶油玉米')]];
     return `<div style="display:grid;grid-template-rows:repeat(${tiles.length},minmax(0,1fr));gap:3px;width:100%;height:100%">${tiles.map(([id,art,lb])=>{const lk=id!=='bowl'&&!topOn(id);
       return `<div class="st" data-tp="${id}" style="position:relative;inset:auto;background:#f1e2c2;border:2px solid ${O};border-radius:8px;opacity:${lk?.3:1};${lk?'cursor:default':''}">${sv(art)}<span class="lbl" style="font-size:10px;padding:0 5px">${lb}</span></div>`}).join('')}</div>`}
@@ -1118,14 +1118,14 @@ const LAND={
   tap:{x:10,y:406,w:100,h:186},sake:{x:116,y:406,w:84,h:90},edamame:{x:116,y:502,w:84,h:90},
   grill:{x:206,y:410,w:250,h:182},rawN:{x:462,y:406,w:72,h:90},rawT:{x:462,y:502,w:72,h:90},
   fryer:{x:540,y:406,w:136,h:122},rawC:{x:540,y:534,w:136,h:58},
-  board:{x:682,y:406,w:128,h:128},warmT:{x:262,y:346,w:440,h:54},trash:{x:682,y:540,w:128,h:52},ing:{x:816,y:406,w:138,h:186},
+  board:{x:682,y:406,w:120,h:128},warmT:{x:262,y:346,w:440,h:54},trash:{x:682,y:540,w:120,h:52},ing:{x:808,y:406,w:146,h:186},
   teppan:{x:10,y:410,w:360,h:182,pg:2},rawButa:{x:376,y:406,w:72,h:90,pg:2},rawGyu:{x:376,y:502,w:72,h:90,pg:2},rawIka:{x:454,y:406,w:72,h:90,pg:2},rawHotate:{x:454,y:502,w:72,h:90,pg:2},
   tempura:{x:532,y:406,w:210,h:122,pg:2},rawEbi:{x:532,y:534,w:103,h:58,pg:2},rawKaki:{x:639,y:534,w:103,h:58,pg:2},highball:{x:748,y:406,w:100,h:90,pg:2},hiyayakko:{x:748,y:502,w:100,h:90,pg:2},
   deco2:{x:854,y:406,w:100,h:128,pg:2},trash2:{x:854,y:540,w:100,h:52,pg:2},
   tako:{x:10,y:410,w:270,h:182,pg:3},rawTako:{x:286,y:406,w:84,h:90,pg:3},trash3:{x:286,y:540,w:84,h:52,pg:3},pgbtn:{x:786,y:354,w:166,h:44,pg:0}};
 const LAND_IZ=LAND;
 const PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},sake:{x:123.5,y:418,w:84,h:90,k:1.12},edamame:{x:123.5,y:525.5,w:84,h:90,k:1.12},grill:{x:223.5,y:418,w:250,h:182,k:1.12},rawN:{x:509.5,y:418,w:72,h:90,k:1.12},rawT:{x:509.5,y:525.5,w:72,h:90,k:1.12},
-  fryer:{x:11,y:636,w:136,h:122,k:1.4},rawC:{x:11,y:815,w:136,h:58,k:1.4},board:{x:209,y:636,w:128,h:128,k:1.4},trash:{x:209,y:824,w:128,h:52,k:1.4},ing:{x:396,y:636,w:138,h:186,k:1.4},warmT:{x:8,y:340,w:360,h:54,k:1.12},
+  fryer:{x:11,y:636,w:136,h:122,k:1.4},rawC:{x:11,y:815,w:136,h:58,k:1.4},board:{x:209,y:636,w:120,h:128,k:1.4},trash:{x:209,y:824,w:120,h:52,k:1.4},ing:{x:388,y:636,w:146,h:186,k:1.4},warmT:{x:8,y:340,w:360,h:54,k:1.12},
   teppan:{x:10,y:418,w:360,h:182,k:1.12,pg:2},rawButa:{x:420,y:418,w:72,h:90,k:1.12,pg:2},rawGyu:{x:420,y:525.5,w:72,h:90,k:1.12,pg:2},rawIka:{x:508,y:418,w:72,h:90,k:1.12,pg:2},rawHotate:{x:508,y:525.5,w:72,h:90,k:1.12,pg:2},
   tempura:{x:11,y:636,w:210,h:122,k:1.4,pg:2},rawEbi:{x:11,y:815,w:103,h:58,k:1.4,pg:2},rawKaki:{x:160,y:815,w:103,h:58,k:1.4,pg:2},highball:{x:316,y:636,w:100,h:90,k:1.4,pg:2},hiyayakko:{x:316,y:769,w:100,h:90,k:1.4,pg:2},
   deco2:{x:463,y:636,w:100,h:128,k:1.3,pg:2},trash2:{x:463,y:820,w:100,h:52,k:1.3,pg:2},
@@ -1186,7 +1186,7 @@ function stHTML(name){
       return `<div class="st" data-tap="${i}" style="position:relative;inset:auto;flex:1">${sv(`${ARTFOOD&&ART?`<image href="${ARTIMG.tap}" x="${c-15.65}" y="0" width="31.3" height="92"/>`:`<rect x="${c-12}" y="6" width="24" height="70" rx="6" fill="#d7dce2" stroke="${O}" stroke-width="4"/><rect x="${c-8}" y="10" width="6" height="60" fill="#fff" opacity=".6"/><rect x="${c-16}" y="0" width="32" height="14" rx="5" fill="#1a1a1a" stroke="${O}" stroke-width="3"/>
       <path d="M${c} 76v12h-${n===1?10:6}" stroke="${O}" stroke-width="10" fill="none"/><path d="M${c} 76v12h-${n===1?10:6}" stroke="#c9ced4" stroke-width="4" fill="none"/>`}${tp.st==='filling'?`<path d="M${ARTFOOD&&ART?c-8.9:c-(n===1?10:6)} 92v${n===1?22:40}" stroke="#f4a62a" stroke-width="4"/>`:''}
       <rect x="3" y="166" width="${vb-6}" height="12" rx="4" fill="#8a9098" stroke="${O}" stroke-width="3"/>
-      <g transform="translate(${c-55*sc} ${n===1?98:128}) scale(${sc})">${beerG(lvl,tp.st==='full')}</g>`,`0 0 ${vb} 186`)}<span class="lbl"${n>1?' style="font-size:10px;padding:0 4px"':''}>${T(tp.st==='full'?'啤酒':(n===1?'自動裝杯中…':'裝杯中'))}</span></div>`}).join('')}</div>`}
+      <g transform="translate(${c-55*sc} ${n===1?98:128}) scale(${sc})">${beerG(lvl,tp.st==='full')}</g>`,`0 0 ${vb} 186`)}<span class="lbl"${n>1?' style="font-size:12px;padding:0 4px"':''}>${T(tp.st==='full'?'啤酒':(n===1?'自動裝杯中…':'裝杯中'))}</span></div>`}).join('')}</div>`}
   if(name==='sake')return sv(`<rect x="4" y="44" width="76" height="40" rx="6" fill="#8a5a34" stroke="${O}" stroke-width="3"/><g transform="translate(4 -2) scale(.78)">${sakeG()}</g>`,'0 0 84 90')+`<span class="lbl">${T('清酒')}</span>`+lockDiv(ITEMS.sake.day);
   if(name==='edamame')return sv(`<g transform="translate(-4 -6) scale(.92)">${edamameG()}</g>`,'0 0 84 90')+`<span class="lbl">${JP('edamame')}</span>`;
   if(name==='rawN'||name==='rawT'){const k=name==='rawN'?'negima':'tsukune';
@@ -1205,10 +1205,10 @@ function stHTML(name){
       if(b.base==='bowl')art=chazukeG({bowl:1,rice:b.rice,top:b.top,tea:b.tea});else if(b.base==='boat')art=sashimiG(b.fish);
       const done=boardDone(i),h=n===1?128:62;
       return `<div class="st" data-board="${i}" style="position:relative;inset:auto;flex:1">${sv(`<rect x="4" y="${n===1?14:3}" width="120" height="${n===1?106:56}" rx="12" fill="#e8c48e" stroke="${O}" stroke-width="4"/><g transform="translate(${n===1?14:38} ${n===1?22:2}) scale(${n===1?1:.56})">${art}</g>
-      ${done?`<circle cx="112" cy="${n===1?24:14}" r="11" fill="#5fb33a" stroke="${O}" stroke-width="3"/><path d="M106 ${n===1?24:14}l4 4l7-8" stroke="#fff" stroke-width="3" fill="none"/>`:''}`,`0 0 128 ${h}`)}<span class="lbl"${n>1?' style="bottom:-4px;font-size:10px"':''}>${done?T('完成！點我拿起'):b.base?T('製作中…'):T('砧板')+(n>1?(i+1):'')}</span></div>`}).join('')}${lockDiv(ITEMS.chazuke.day)}</div>`}
+      ${done?`<circle cx="112" cy="${n===1?24:14}" r="11" fill="#5fb33a" stroke="${O}" stroke-width="3"/><path d="M106 ${n===1?24:14}l4 4l7-8" stroke="#fff" stroke-width="3" fill="none"/>`:''}`,`0 0 128 ${h}`)}<span class="lbl"${n>1?' style="bottom:-4px;font-size:12px"':''}>${done?T('完成！點我拿起'):b.base?T('製作中…'):T('砧板')+(n>1?(i+1):'')}</span></div>`}).join('')}${lockDiv(ITEMS.chazuke.day)}</div>`}
   if(name==='ing'){
-    return `<div style="display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:4px;width:100%;height:100%">${ING.map(g=>{const lk=ITEMS[g.for].day>ST.day;
-      return `<div class="st" data-ing="${g.id}" style="position:relative;inset:auto;background:#f1e2c2;border:2px solid ${O};border-radius:8px;opacity:${lk?.3:1};${lk?'cursor:default':''}">${sv(ingArt(g.id))}${(()=>{const t=T(g.zh),cjk=t.charCodeAt(0)>=0x2e80,n=[...t].length,big=cjk?n<=3:n<=5;return `<span class="lbl" style="font-size:${big?(cjk&&n===3?12:14):10}px;font-weight:${big?800:400};padding:0 ${big?4:5}px">${t}</span>`})()}</div>`}).join('')}</div>`}
+    return `<div style="display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:7px;width:100%;height:100%">${ING.map(g=>{const lk=ITEMS[g.for].day>ST.day;
+      return `<div class="st" data-ing="${g.id}" style="position:relative;inset:auto;background:#f1e2c2;border:2px solid ${O};border-radius:8px;opacity:${lk?.3:1};${lk?'cursor:default':''}">${sv(ingArt(g.id))}${(()=>{const t=T(g.zh),cjk=t.charCodeAt(0)>=0x2e80,n=[...t].length,big=cjk?n<=3:n<=5;return `<span class="lbl" style="font-size:${big?(cjk?(n===3?13:16):14):11}px;font-weight:${big?800:400};padding:0 ${big?3:4}px${big?'':';white-space:normal;text-align:center;line-height:1.15;width:94%;border-radius:8px'}">${t}</span>`})()}</div>`}).join('')}</div>`}
   return '';
 }
 function warmN(){return CUR==='rm'&&rmOwned()?rmUp('warm',3):ST.up.warmN||3}
@@ -2360,8 +2360,8 @@ stHTML=function(name){let h=_stHTML(name);if(!artOn())return h;
   if(name==='board')return h.replace(/<rect x="4" y="(\d+)" width="120" height="(\d+)" rx="12" fill="#e8c48e"[^>]*\/>/g,(m,y,hh)=>AIMG('board',2,y,124,hh));
   if(name==='trash'||(name==='trash2'&&/垃圾桶|丟掉|清空砧板/.test(h)))return h.replace(_svgRe,sv(AIMG('trash',4,0,120,52,'xMidYMid meet'),'0 0 128 52'));
   return h};
-grillHTML=function(){const h=_grillHTML();if(!artOn())return h;return h.replace(_svgRe,`<svg viewBox="0 0 250 182" style="position:absolute;inset:0">${AIMG('grill',0,6,250,176)}</svg>`)};
-fryerHTML=function(){const h=_fryerHTML();if(!artOn())return h;return h.replace(_svgRe,`<svg viewBox="0 0 136 122" style="position:absolute;inset:0">${AIMG('fryer',0,4,136,118)}</svg>`)};
+grillHTML=function(){const h=_grillHTML();if(!artFoodOn())return h;return h.replace(_svgRe,`<svg viewBox="0 0 250 182" style="position:absolute;inset:0">${AIMG('grill',0,6,250,176)}</svg>`)};
+fryerHTML=function(){const h=_fryerHTML();if(!artFoodOn())return h;return h.replace(_svgRe,`<svg viewBox="0 0 136 122" style="position:absolute;inset:0">${AIMG('fryer',0,4,136,118)}</svg>`)};
 drawBg=function(){_drawBg();if(!artOn()||(CUR==='rm'&&ST&&ST.rm))return;
   const bg=$('bg');if(!bg)return;const ch=[...bg.children];
   let ti=ch.findIndex(e=>e.tagName==='g'&&e.firstElementChild&&e.firstElementChild.getAttribute('width')==='22'&&e.firstElementChild.getAttribute('height')==='52');if(ti<0)ti=ch.length;
