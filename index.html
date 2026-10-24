@@ -2097,12 +2097,12 @@ const SILENT=(()=>{const n=800,b=new Uint8Array(44+n),v=new DataView(b.buffer),w
   return URL.createObjectURL(new Blob([b],{type:'audio/wav'}))})();
 bgmSwap(SND.want,true);
 function bgmRoute(){if(!SND.ctx||!SND.bgm||SND.bgmG)return;
-  try{const g=SND.ctx.createGain();g.gain.value=SND.bgmOn?BGM_VOL*bgmK():0;SND.ctx.createMediaElementSource(SND.bgm).connect(g);g.connect(SND.ctx.destination);SND.bgmG=g}catch(e){SND.bgm.volume=SND.bgmOn?Math.min(1,BGM_VOL*bgmK()):0}}
+  try{const g=SND.ctx.createGain();g.gain.value=SND.bgmOn?BGM_VOL*bgmK():0;SND.ctx.createMediaElementSource(SND.bgm).connect(g);g.connect(SND.out||SND.ctx.destination);SND.bgmG=g}catch(e){SND.bgm.volume=SND.bgmOn?Math.min(1,BGM_VOL*bgmK()):0}}
 function bgmPlay(){const a=SND.bgm;if(!a||SND.bgmFail||SND.synthTurn||!SND.ctx||!SND.bgmOn||document.hidden||!a.paused)return;if(!SND.bgmSrc&&!a.src)a.src=SILENT;a.play().catch(()=>{})}
 function sndInit(){if(SND.ctx)return;const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
   const x=new C(),m=x.createGain(),f=x.createGain(),rv=x.createConvolver();
   const len=x.sampleRate*1.6,b=x.createBuffer(2,len,x.sampleRate);for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3)}
-  rv.buffer=b;const wet=x.createGain();wet.gain.value=.25;m.connect(x.destination);m.connect(rv);rv.connect(wet);wet.connect(x.destination);f.connect(x.destination);
+  rv.buffer=b;const wet=x.createGain();wet.gain.value=.25;let out=x.destination;try{const lim=x.createDynamicsCompressor();lim.threshold.value=-10;lim.knee.value=8;lim.ratio.value=12;lim.attack.value=.002;lim.release.value=.15;lim.connect(x.destination);out=lim}catch(e){}SND.out=out;m.connect(out);m.connect(rv);rv.connect(wet);wet.connect(out);f.connect(out);
   m.gain.value=SND.bgmOn?.26*bgmK():0;f.gain.value=SND.sfxOn?.5*sfxK():0;SND.ctx=x;SND.mus=m;SND.sfx=f;SND.next=x.currentTime+.1;
   SND.timer=setInterval(sndTick,120);bgmRoute()}
 let SNDUNLK=false,SNDUA=null;function sndWake(){if(!SNDUNLK){try{if(!SNDUA){SNDUA=new Audio(SILENT);SNDUA.loop=true;SNDUA.volume=0.01}if(SNDUA.paused)SNDUA.play().then(()=>{SNDUNLK=true}).catch(()=>{})}catch(e){}}sndInit();if(SND.ctx&&SND.ctx.state!=='running')SND.ctx.resume();bgmPlay()}
@@ -2181,7 +2181,8 @@ function sndTick(){const x=SND.ctx;if(!x||x.state!=='running')return;
     if(B&&pos===0)taiko(t,.32);if(B&&pos===3&&bar%2)taiko(t,.18);
     if(!B&&pos===0&&bar%4===0)taiko(t,.22);
     SND.next+=BEAT;SND.step++;if(SND.synthTurn&&!SND.bgmFail&&!SND.pend&&!(R&&CUR==='rm')&&SND.step>=256){SND.synthTurn=false;SND.step=0;if(SND.bgm){SND.bgm.currentTime=0;bgmPlay()}break}}}
-function sfx(k){if(!SND.ctx||!SND.sfxOn)return;const x=SND.ctx,t=x.currentTime,d=SND.sfx;
+const SFXLAST={};
+function sfx(k){if(!SND.ctx||!SND.sfxOn)return;const x=SND.ctx,t=x.currentTime,d=SND.sfx;if(SFXLAST[k]!=null&&t-SFXLAST[k]<.045)return;SFXLAST[k]=t;
   if(k==='pick'){tone(d,700,t,.05,.14,'sine',1050);noise(d,t,.02,.05,5000)}
   else if(k==='serve'){tone(d,660,t,.1,.16,'triangle');tone(d,880,t+.05,.12,.14,'triangle');tone(d,1320,t+.1,.18,.1,'sine')}
   else if(k==='coin'){tone(d,1568,t,.07,.13,'square');tone(d,2093,t+.07,.3,.12,'square');tone(d,3136,t+.07,.2,.04,'sine')}
@@ -2273,7 +2274,7 @@ function autoWarm(h){
 }
 $('game').addEventListener('pointerdown',e=>{if(e.button>0)return;if(e.target.closest('.modal'))return;if(R&&!R.paused&&!R.over&&ST.weapon&&e.target.closest('#st-gunT')){toggleGun();return}if(R&&R.aim&&!R.paused&&!R.over){shoot(e);return}
   const h=srcOfEl(e.target),key=h?h.src+h.i:'',now=performance.now(),dbl=key&&lastTap.k===key&&now-lastTap.t<380;
-  if(dbl){lastTap={k:'',t:0};autoWarm(h);return}
+  if(dbl&&R&&R.held&&R.held.src===h.src&&R.held.i===h.i&&heldValid()){lastTap={k:'',t:0};autoWarm(h);return} // only a real 'send to warmer' double-tap eats the tap; otherwise fast tappers lost every second tap on the same grill/board/bowl spot
   onTap(e);lastTap={k:key,t:now};});
 $('game').addEventListener('contextmenu',e=>e.preventDefault());
 function artBadge(){let b=document.getElementById('artbadge');if(false&&ART&&!b){b=document.createElement('div');b.id='artbadge';b.textContent='美術預覽中';b.style.cssText='position:fixed;right:8px;bottom:8px;z-index:99999;background:#c62828;color:#fff;font:bold 12px sans-serif;padding:4px 10px;border-radius:999px;pointer-events:none;opacity:.92';document.body.appendChild(b)}else if(!ART&&b)b.remove()}
