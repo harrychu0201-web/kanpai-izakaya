@@ -194,6 +194,98 @@
           ".validate": "newData.isString() && newData.val().length <= 300"
         }
       }
+    },
+    "lbx": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['name', 'day'])",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24"
+        },
+        "best": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "earned": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "own": {
+          ".validate": "newData.isNumber() && newData.val() >= 1"
+        },
+        "day": {
+          ".validate": "newData.isNumber() && newData.val() >= 1"
+        },
+        "ya": {
+          ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1)"
+        },
+        "k2": {
+          ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1)"
+        },
+        "dc": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "at": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "fcode": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && newData.val() === auth.uid && (!data.exists() || data.val() === auth.uid)",
+        ".validate": "newData.isString() && $code.matches(/^[A-Z2-9]{8}$/)"
+      }
+    },
+    "friends": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "$fid": {
+          ".validate": "newData.isNumber() && $fid !== $uid"
+        }
+      }
+    },
+    "freq": {
+      "$to": {
+        ".read": "auth != null && auth.uid === $to",
+        "$from": {
+          ".write": "auth != null && auth.uid === $from",
+          ".validate": "newData.isNumber() && $from !== $to"
+        }
+      }
+    },
+    "gifts": {
+      "$to": {
+        ".read": "auth != null && auth.uid === $to",
+        "$from": {
+          ".write": "auth != null && auth.uid === $from && newData.child('t').val() === now && (!data.exists() || newData.child('d').val() > data.child('d').val())",
+          ".validate": "newData.hasChildren(['t', 'a', 'd']) && $from !== $to",
+          "t": {
+            ".validate": "newData.isNumber()"
+          },
+          "a": {
+            ".validate": "newData.isNumber() && newData.val() >= 100 && newData.val() <= 2000"
+          },
+          "d": {
+            ".validate": "newData.isNumber() && newData.val() <= (now + 28800000) / 86400000 + 1"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "gclaim": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "$from": {
+          ".validate": "newData.isNumber()"
+        }
+      }
     }
   }
 }
