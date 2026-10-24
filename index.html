@@ -99,6 +99,11 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .bubble::before{content:"";position:absolute;left:calc(50% - var(--dx,0px) / var(--bs,1));bottom:-9px;margin-left:-7px;border:7px solid transparent;border-top:10px solid #fffaf0;border-bottom:0;z-index:1}
 .bubble.hide{transform:translateX(calc(-50% + var(--dx,0px))) scale(0)}
 .cust.hurry .bubble{box-shadow:0 0 0 3px #e74c3c,0 0 14px #e74c3c;animation:hurry .6s ease-in-out infinite alternate}
+/* "wants a dish that isn't on the menu yet" thought chip: harmless, just a hint to unlock kitchen 2 / 3 */
+.cust .wish{position:absolute;left:64%;top:6px;display:flex;align-items:center;gap:3px;background:#fffaf0;border:2.5px dashed var(--soot);border-radius:14px;padding:2px 8px 2px 3px;font-size:12px;font-weight:700;color:var(--soot);box-shadow:0 3px 0 #00000030;white-space:nowrap;pointer-events:none;z-index:2;transform-origin:0 100%;transition:transform .2s;animation:wishbob 1.6s ease-in-out infinite alternate}
+.cust .wish svg{width:26px;height:26px;opacity:.9}
+.cust .wish.hide{transform:scale(0)}
+@keyframes wishbob{from{translate:0 0}to{translate:0 -4px}}
 @keyframes hurry{to{box-shadow:0 0 0 3px #ffb3a7,0 0 4px #ffb3a7}}
 .pat{width:12px;height:66px;border:2px solid var(--soot);border-radius:6px;background:#e9dcc4;position:relative;overflow:hidden;flex:none}
 .pat i{position:absolute;left:0;right:0;bottom:0;background:#5fb33a}
@@ -522,6 +527,11 @@ function page2On(){return CUR==='rm'?rmK2():NEWD.some(has)}
 function page3On(){return CUR!=='rm'&&has('takoyaki')}
 function pages(){const a=[1];if(page2On())a.push(2);if(page3On())a.push(3);return a}
 function nextPage(){const a=pages();return a[(a.indexOf(KP)+1)%a.length]}
+/* gentle nudge toward kitchen 2 / 3: once the player can nearly afford it, some customers show a "wants X" chip.
+   No penalty for not having the dish; after WISHN sightings a one-time toast points them to the shop. */
+const WISHN=5;
+function wishTarget(){if(DEMO||!ST||CUR==='rm'||ST.day<8)return null;const t=!NEWD.some(has)?'buta':!has('takoyaki')?'takoyaki':null;return t&&ST.coins>=ITEMS[t].buy*.5?t:null}
+function wishCount(k){return (ST.wish&&ST.wish[k])||0}
 /* which shop is open: 'iz' = izakaya, 'rm' = late-night ramen yatai (bought after owning the building) */
 let CUR='iz';
 function rmOwned(){return !!(ST&&ST.rm)}
@@ -1448,7 +1458,10 @@ function spawn(){
   c.tr=TRAITS[look.spr]||{};if(c.tr.pat){c.max*=c.tr.pat;c.pat=c.max}
   R.seats[i]=c;R.spawned++;sfx('door');if(c.look.spr&&PROF[c.look.spr]&&!DEMO){const rr=loadRec();rr.met=rr.met||{};if(!rr.met[c.look.spr]){rr.met[c.look.spr]=1;saveRec(rr)}}
   const el=document.createElement('div');el.className='cust walk';el.dataset.seat=i;el.dataset.m='ok';if(c.look.spr){el.classList.add('sp');el.dataset.c=c.look.spr;if(c.look.mob)el.classList.add('mob')}{const tx=seatX(i,seatsN())-80;el.style.left=tx+'px';el.style.transform=`translateX(${-(tx+170)}px)`}
-  el.innerHTML=custFig(c.look,'ok')+`<div class="bubble hide"></div>`;
+  const wt=!c.critic&&R.lost<=1&&Math.random()<.25?wishTarget():null;
+  if(wt){c.wish=wt;ST.wish=ST.wish||{};ST.wish[wt]=(ST.wish[wt]||0)+1;save();
+    if(ST.wish[wt]===WISHN)setTimeout(()=>toast('最近好像有很多客人想吃'+ITEMS[wt].zh+'…打烊後去商店看看！'),1200)}
+  el.innerHTML=custFig(c.look,'ok')+`<div class="bubble hide"></div>`+(wt?`<div class="wish hide">${icon(wt)}<span>${T('想吃')}${T(ITEMS[wt].zh)}</span></div>`:'');
   $('custLayer').appendChild(el);c.el=el;seatClasses();
   c.walkT=(seatX(i,seatsN())-80+170)/WALKV;el.style.transitionDuration=c.walkT.toFixed(2)+'s';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.transform='translateX(0)'}));
@@ -1486,6 +1499,7 @@ function renderCust(){
     if(mood!==c.fig){c.fig=mood;if(c.look.spr)c.el.dataset.m=mood;else c.el.querySelector('.fig').outerHTML=custSVG(c.look,mood)}
     const b=c.el.querySelector('.bubble');
     b.classList.toggle('hide',c.st!=='wait');
+    {const w=c.el.querySelector('.wish');if(w)w.classList.toggle('hide',c.st!=='wait'||has(c.wish))}
     setHTML(b,`<div class="pat"><i class="${p>.5?'':p>.22?'mid':'low'}" style="height:${(p*100).toFixed(0)}%"></i></div>`+c.order.map((k,j)=>oiHTML(k,c.filled[j])).join(''));
   });
   layoutBubbles();
@@ -1959,7 +1973,7 @@ function showOwned(){
   <div class="btns"><button class="btn" data-act="shop">${T('回到商店')}</button><button class="btn alt" data-act="back">${ST.pendingNext?T('前往第 {0} 天',ST.day+1):T('返回')}</button></div>`);
 }
 function shopMenu(un){return `  <h3 class="sh">${T('新菜單・花錢解鎖')}${ST.day<7?T('（第 7 天開放）'):''}</h3>
-  <div class="shop">${NEWD.concat(NEWD3).map(k=>{const own=has(k),it=ITEMS[k];return `<div class="up ${own?'done':''}"><b><span class="ui">${icon(k)}</span>${JP(k)}<span class="new" style="background:#2b3b6e">${T(it.st)}</span></b><p>${T('{0}。售價 {1}，食材 {2}。',T(it.zh),yen(it.price),yen(it.cost))}</p><div class="row"><span class="price">${yen(it.buy)}</span>${own?`<span>${T('已上菜單')}</span>`:ST.day<7?`<span style="font-size:12px">${T('第 7 天開放')}</span>`:`<button class="btn" data-act="buymenu" data-id="${k}" ${ST.coins<it.buy?'disabled':''}>${T('解鎖')}</button>`}</div></div>`}).join('')}</div>
+  <div class="shop">${NEWD.concat(NEWD3).map(k=>{const own=has(k),it=ITEMS[k];return `<div class="up ${own?'done':''}"><b><span class="ui">${icon(k)}</span>${JP(k)}<span class="new" style="background:#2b3b6e">${T(it.st)}</span></b><p>${T('{0}。售價 {1}，食材 {2}。',T(it.zh),yen(it.price),yen(it.cost))}${!own&&wishCount(k)?` <b style="color:#c9533a">${T('已經有 {0} 位客人問過這道菜',wishCount(k))}</b>`:''}</p><div class="row"><span class="price">${yen(it.buy)}</span>${own?`<span>${T('已上菜單')}</span>`:ST.day<7?`<span style="font-size:12px">${T('第 7 天開放')}</span>`:`<button class="btn" data-act="buymenu" data-id="${k}" ${ST.coins<it.buy?'disabled':''}>${T('解鎖')}</button>`}</div></div>`}).join('')}</div>
   <h3 class="sh">${T('菜色升級・用更好的食材')}</h3>
   <div class="shop">${un.map(b=>{const lv=lvOf(b),c=upCost(b),n=LVN[b];return `<div class="up ${lv>=3?'done':''}"><b>${JP(b)}<span class="new" style="background:#c9853a">${'★'.repeat(lv)}${'☆'.repeat(3-lv)}</span></b><p>${lv?T('現在：{0}。',T(n[lv])):''}${lv<3?T('升級成「{0}」：售價 {1} → {2}，點這道菜的客人更有耐心。',T(n[lv+1]),yen(priceOf(b)),yen(Math.round(ITEMS[b].price*(1+.3*(lv+1))/10)*10)):T('已經是最高級的食材。')}</p><div class="row"><span class="price">${lv<3?yen(c):''}</span>${lv>=3?`<span>${T('已滿級')}</span>`:`<button class="btn" data-act="lvup" data-id="${b}" ${ST.coins<c?'disabled':''}>${T('升級')}</button>`}</div></div>`}).join('')}</div>`}
 function shopDeco(){return `  <h3 class="sh">${T('店內布置・讓客人更有耐心')}</h3>
