@@ -2286,13 +2286,14 @@ Object.assign(ARTIMG,{negima:'img/art-negima-done-1.webp',negimaRaw:'img/art-neg
   karaage:'img/art-karaage-done-1.webp',karaageRaw:'img/art-karaage-raw-1.webp',karaageBurnt:'img/art-karaage-burnt-1.webp',
   rice:'img/art-rice-1.webp',bowl:'img/art-bowl-1.webp',sake:'img/art-sake-1.webp',edamame:'img/art-edamame-1.webp',grill:'img/art-grill-1.webp',
   fryer:'img/art-fryer-1.webp',tray:'img/art-tray-1.webp',box:'img/art-box-1.webp',ftray:'img/art-ftray-1.webp',board:'img/art-board-1.webp',
-  trash:'img/art-trash-1.webp',kitchen:'img/art-kitchen-1.webp'});
+  trash:'img/art-trash-1.webp',kitchen:'img/art-kitchen-1.webp',
+  tea:'img/art-tea-1.webp',tsalmon:'img/art-tsalmon-1.webp',tume:'img/art-tume-1.webp',maguro:'img/art-maguro-1.webp',salmon:'img/art-salmon-1.webp',tai:'img/art-tai-1.webp'});
 const artOn=()=>ART&&CUR!=='rm';
 const AIMG=(k,x,y,w,h,par)=>`<image href="${ARTIMG[k]}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="${par||'none'}"/>`;
 const _skewerV=skewerV,_karaagePieces=karaagePieces,_ingArt=ingArt,_stHTML=stHTML,_grillHTML=grillHTML,_fryerHTML=fryerHTML,_drawBg=drawBg;
 skewerV=function(kind,state){if(artOn()&&(kind==='negima'||kind==='tsukune')){const key=kind+(state==='raw'?'Raw':state==='burnt'?'Burnt':'');if(ARTIMG[key])return AIMG(key,0,0,40,150,'xMidYMid meet')}return _skewerV(kind,state)};
 karaagePieces=function(st,dx=0,dy=0){if(artOn()&&st==='raw')return AIMG('karaageRaw',14+dx,46+dy,48,28,'xMidYMid meet');if(artOn()&&st==='burnt')return AIMG('karaageBurnt',18+dx,30+dy,64,38,'xMidYMid meet');if(artOn()&&st==='done')return AIMG('karaage',18+dx,30+dy,64,38,'xMidYMid meet');return _karaagePieces(st,dx,dy)};
-ingArt=function(id){if(artOn()&&(id==='bowl'||id==='rice'))return AIMG(id,4,4,92,92,'xMidYMid meet');return _ingArt(id)};
+ingArt=function(id){if(artOn()&&(id==='bowl'||id==='rice'||id==='tea'||id==='tsalmon'||id==='tume'||id==='maguro'||id==='salmon'||id==='tai'))return AIMG(id,4,4,92,92,'xMidYMid meet');return _ingArt(id)};
 const _svgRe=/<svg[\s\S]*?<\/svg>/;
 stHTML=function(name){let h=_stHTML(name);if(!artOn())return h;
   if(name==='sake')return h.replace(_svgRe,sv(AIMG('sake',2,0,80,88,'xMidYMid meet'),'0 0 84 90'));
