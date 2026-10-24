@@ -2477,7 +2477,9 @@ async function cloudSync(){
   try{const c=await CL.api.get(u.uid);if(CL.user!==u)return;CL.synced=true;
     const lg=lsGet(KEY),lr=lsGet(RKEY),cg=c?c.game||null:null,cr=c?c.rec||null:null;
     const rec=(lr||cr)?mergeRec(cr,lr):null;if(rec!==lr)lsSet(RKEY,rec);
-    if(cg&&lg&&cg!==lg&&(localStamp()||0)>(c.at||0)){slBackup(cg,'cloud');await cloudUpload(true);return}
+    // a newer timestamp alone must never overwrite the cloud: a fresh device (day 1, saved a moment ago) is always "newer" than the phone's last upload
+    const dayOf=g=>{try{const o=JSON.parse(g);return (o.day||0)+(o.pendingNext?1:0)}catch(e){return 0}};
+    if(cg&&lg&&cg!==lg&&(localStamp()||0)>(c.at||0)&&dayOf(lg)>=dayOf(cg)){slBackup(cg,'cloud');await cloudUpload(true);return}
     if(cg&&lg&&cg!==lg){CL.pick={game:cg,rec,at:c.at||0};CL.status='ok';acctRefresh();if(HOME&&!R)cloudAsk();return}
     if(cg&&!lg){applyCloud({game:cg,rec,at:c.at||0});await cloudUpload(true);return}
     await cloudUpload(true);
