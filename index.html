@@ -409,7 +409,7 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 .fbcats{display:flex;flex-wrap:wrap;gap:6px}.fbcats .btn{font-size:14px;padding:5px 12px;border-radius:999px}
 .fbtext{font:inherit;font-size:16px;font-weight:500;min-height:110px;resize:vertical;padding:8px 10px;border:3px solid var(--soot);border-radius:12px;background:#fffaf0;color:var(--soot);box-sizing:border-box;width:100%}
 .fbsmall{font-size:12px!important;color:#7a4a2a;text-align:right;margin:-4px 0 0!important}
-.notice p{white-space:pre-line}
+.notice p{white-space:pre-line}.nvbox{margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:4px}.nvrow{display:flex;gap:10px}.nvb{font-size:18px;padding:5px 16px;min-width:64px;justify-content:center}.nvb.on{background:#b4561c;color:#fff;border-color:#ffb36b}.nvb:disabled{opacity:.5}.notice .nvhint,.notice .nvstat{font-size:12px;opacity:.75;margin:0;text-align:center}.notice .nvstat{opacity:1;font-weight:900;font-size:13px;background:#f6ead0;border-radius:10px;padding:5px 10px}
 .rplbox,.inbit{background:#f6ead0;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
 .rplbox p,.inbit p{margin:0;white-space:pre-line;word-break:break-word;font-size:15px}
 .rplq{color:#7a5a3a}.rplt,.inbh{font-size:12px!important;color:#9a7a5a}
@@ -2187,6 +2187,7 @@ document.addEventListener('click',e=>{
   else if(act==='noticeedit')noticeEdit(a.dataset.id);
   else if(act==='noticeeditsave')noticeEditSave(a.dataset.id);
   else if(act==='noticedel')noticeDelete(a.dataset.id);
+  else if(act==='noticevote')noticeVote(+a.dataset.v);
   else if(act==='noticeok'){noticeSeen();closeModal();if(CL.pick)cloudAsk()}
   else if(act==='lbtab'){LB.tab=a.dataset.id;showLB()}
   else if(act==='frshare')frShare();
@@ -2729,6 +2730,9 @@ async function cloudInit(){
       myReplies:uid=>rt((rd,r)=>rd.get(rd.ref(r,'fbreply/'+uid)).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.sort((x,y)=>(y.t||0)-(x.t||0))})),
       replySeen:(uid,id)=>rt((rd,r)=>rd.set(rd.ref(r,'fbreply/'+uid+'/'+id+'/seen'),true)),
       notice:()=>rt((rd,r)=>rd.get(rd.ref(r,'notice')).then(s=>s.val())),
+      noticeVoteGet:(nid,uid)=>rt((rd,r)=>rd.get(rd.ref(r,'noticevote/'+nkey(nid)+'/'+uid)).then(s=>s.exists()?s.val():null)),
+      noticeVoteSet:(nid,uid,v)=>rt((rd,r)=>rd.set(rd.ref(r,'noticevote/'+nkey(nid)+'/'+uid),v)),
+      noticeVoteAll:nid=>rt((rd,r)=>rd.get(rd.ref(r,'noticevote/'+nkey(nid))).then(s=>{const o={seen:0,up:0,down:0};s.forEach(c=>{const v=c.val();o.seen++;if(v===1)o.up++;else if(v===-1)o.down++});return o})),
       // 'notice' keeps the latest post at its top level (older game versions read it) and every post, edited or not, under notice/hist/<id>
       setNotice:d=>rt((rd,r)=>{const u={};['id','title','text','sign'].forEach(k=>{u['notice/'+k]=d[k]==null?'':d[k]});u['notice/hist/'+String(d.id).replace(/[.#$\[\]\/]/g,'_')]=d;return rd.update(rd.ref(r),u)}),
       editNotice:(d,top)=>rt((rd,r)=>{const u={};u['notice/hist/'+String(d.id).replace(/[.#$\[\]\/]/g,'_')]=d;if(top)['id','title','text','sign'].forEach(k=>{u['notice/'+k]=d[k]==null?'':d[k]});return rd.update(rd.ref(r),u)}),
@@ -2757,7 +2761,7 @@ async function cloudLogin(){if(!CL.api)return;try{if(await CL.api.signIn()==='cl
 // Chrome severs the sign-in popup when the player picks "Use another account", so the popup seems to close by itself.
 // Workaround: add that account to the browser first, then it shows up in the account list and can be picked directly.
 function loginHelp(){if(!HOME)return;modal(`<h2>${T('登入視窗關掉了')}</h2><p>${T('如果你剛剛是按「使用其他帳戶」，Chrome 會把登入視窗切斷。')}</p><p>${T('先按「新增 Google 帳號」，在新分頁登入你要用的帳號，登好後回到遊戲再按一次登入，那個帳號就會直接出現在清單裡，點它就好。')}</p><div class="btns"><button class="btn" data-act="addacct">${T('新增 Google 帳號')}</button><button class="btn" data-act="login">${T('再試一次')}</button><button class="btn" data-act="closem">${T('知道了')}</button></div>`)}
-function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(u){cloudSync();setTimeout(()=>replyCheck(0),2500)}if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
+function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){cloudSync();setTimeout(()=>replyCheck(0),2500)}if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
 async function cloudSync(){
   const u=CL.user;if(!u||TEST)return;
   try{const c=await CL.api.get(u.uid);if(CL.user!==u)return;CL.synced=true;
@@ -2941,10 +2945,25 @@ function noticeDate(x){const t=noticeAt(x);if(!t)return'';const s=new Date(t+288
 function noticeSeenId(){try{return localStorage.getItem('izakaya-notice')}catch(e){return null}}
 function noticeSeen(){try{localStorage.setItem('izakaya-notice',NOTICE.id)}catch(e){}}
 function noticeDue(){const sid=noticeSeenId();return !!NOTICE&&NOTICE.id&&sid!==NOTICE.id&&!(sid&&NOTICE_DEL[nkey(sid)])}
+/* announcement reactions: noticevote/<id>/<uid> = 0 (seen) | 1 (like) | -1 (dislike). Only signed-in players are counted; only the author can read the totals (see database.rules.json). */
+let NV={id:null,v:null,st:null};
+async function noticeVoteInit(n){NV={id:String(n.id),v:null,st:null};noticeVoteDraw();if(!CL.api||!CL.user)return;
+  const id=NV.id,u=CL.user.uid;
+  try{let v=await CL.api.noticeVoteGet(id,u);if(NV.id!==id)return;
+    if(v==null){v=0;CL.api.noticeVoteSet(id,u,0).then(()=>{if(isAdmin()&&NV.id===id)noticeVoteStat()}).catch(()=>{})}
+    NV.v=v;noticeVoteDraw();if(isAdmin())noticeVoteStat()}catch(e){}}
+async function noticeVoteStat(){const id=NV.id;try{const st=await CL.api.noticeVoteAll(id);if(NV.id===id){NV.st=st;noticeVoteDraw()}}catch(e){}}
+function noticeVoteDraw(){const b=$('nvbox');if(!b)return;const on=!!CL.user&&NV.v!=null;
+  const btn=(val,ic)=>`<button class="btn alt nvb${NV.v===val?' on':''}" data-act="noticevote" data-v="${val}"${on?'':' disabled'}>${ic}</button>`;
+  const st=NV.st,pc=x=>st&&st.seen?Math.round(x*100/st.seen)+'%':'0%';
+  b.innerHTML=`<div class="nvrow">${btn(1,'👍')}${btn(-1,'👎')}</div>`+(CL.user?'':`<p class="nvhint">${T('登入後才能按讚，也才會算進看過人數')}</p>`)+(isAdmin()&&st?`<p class="nvstat">👁 看過 ${st.seen}　👍 ${st.up}（${pc(st.up)}）　👎 ${st.down}（${pc(st.down)}）</p><p class="nvhint">只計入有登入的玩家</p>`:'')}
+async function noticeVote(val){if(!CL.user||!CL.api||NV.v==null||!NV.id)return;const id=NV.id,old=NV.v,nv=old===val?0:val;
+  NV.v=nv;noticeVoteDraw();
+  try{await CL.api.noticeVoteSet(id,CL.user.uid,nv);if(isAdmin())noticeVoteStat()}catch(e){if(NV.id===id){NV.v=old;noticeVoteDraw()}toast('送出失敗，晚點再試')}}
 function showNotice(again,id){const all=noticeAll(),old=id!=null,n=old?all.find(x=>x.id===String(id)):NOTICE;if(!n){closeModal();return}const rem=!!n.rem;
   const text=rem?n.text:T(n.text),sign=rem?(n.sign||''):T(n.sign),dt=noticeDate(n);
-  modal(`<div class="notice"><h2>📢 ${rem?(n.title?esc(n.title):T('公告')):T(n.title)}</h2>${dt?`<p style="font-size:12px;opacity:.7;margin-top:-6px">${dt}${n.edited?' · 已編輯':''}</p>`:''}<p>${esc(text)}</p>${sign?`<p class="sign">${esc(sign)}</p>`:''}</div>
-  <div class="btns"><button class="btn" data-act="noticeok">${T('知道了')}</button>${all.length>1?`<button class="btn alt" data-act="noticelist">📜 ${T('之前的公告')}</button>`:''}${FB_CONFIG?`<button class="btn alt" data-act="fb">${T('意見反應')}</button>`:''}${isAdmin()?`<button class="btn alt" data-act="noticeedit" data-id="${esc(n.id)}">✏️ 編輯</button><button class="btn alt" data-act="noticedel" data-id="${esc(n.id)}">🗑️ 刪除</button>`:''}</div>`)}
+  modal(`<div class="notice"><h2>📢 ${rem?(n.title?esc(n.title):T('公告')):T(n.title)}</h2>${dt?`<p style="font-size:12px;opacity:.7;margin-top:-6px">${dt}${n.edited?' · 已編輯':''}</p>`:''}<p>${esc(text)}</p>${sign?`<p class="sign">${esc(sign)}</p>`:''}<div class="nvbox" id="nvbox"></div></div>
+  <div class="btns"><button class="btn" data-act="noticeok">${T('知道了')}</button>${all.length>1?`<button class="btn alt" data-act="noticelist">📜 ${T('之前的公告')}</button>`:''}${FB_CONFIG?`<button class="btn alt" data-act="fb">${T('意見反應')}</button>`:''}${isAdmin()?`<button class="btn alt" data-act="noticeedit" data-id="${esc(n.id)}">✏️ 編輯</button><button class="btn alt" data-act="noticedel" data-id="${esc(n.id)}">🗑️ 刪除</button>`:''}</div>`);noticeVoteInit(n)}
 /* the "past announcements" screen: every announcement, newest first, in a box that scrolls so it never takes over the screen */
 function noticeList(){const all=noticeAll(),adm=isAdmin();
   modal(`<h2>📜 ${T('之前的公告')}（${all.length}）</h2>

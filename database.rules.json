@@ -186,6 +186,16 @@
       ".read": true,
       ".write": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true"
     },
+    "noticevote": {
+      ".read": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true",
+      "$nid": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1 || newData.val() === -1)"
+        }
+      }
+    },
     "reports": {
       ".read": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true",
       "$id": {
