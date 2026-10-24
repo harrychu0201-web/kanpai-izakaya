@@ -356,6 +356,7 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 .acct img{width:24px;height:24px;border-radius:50%;flex:none;object-fit:cover}.acct span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acct i{width:8px;height:8px;border-radius:50%;background:#5fb33a;flex:none}.acct i.sync{background:#f0b229}.acct i.err{background:#e0412c}
 .acctcard{display:flex;gap:14px;align-items:center;background:#f1e2c2;border-radius:12px;padding:10px 14px}.acctcard img{width:48px;height:48px;border-radius:50%}
+.slrow{display:flex;align-items:center;gap:8px;border:3px solid var(--soot);border-radius:12px;padding:8px 10px;background:#fffaf0}.slrow .si{flex:1;min-width:0;font-weight:700;font-size:16px}.slrow .si small{display:block;font-size:12.5px;opacity:.7;font-weight:600}.slrow .btn{font-size:14px;padding:6px 12px}.slh{font-weight:900;font-size:15px;margin-top:2px}
 .pickrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pickrow .btn{display:flex;flex-direction:column;gap:2px;font-size:17px}.pickrow .btn small{font-size:13px;opacity:.85;font-weight:700}
 @media (max-height:560px) and (orientation:landscape){.topr{top:6px}.acct{font-size:12px;padding:2px 10px 2px 3px}.acct .g,.acct img{width:18px;height:18px}.acct .g svg{width:13px;height:13px}}
 .updbar{position:absolute;left:50%;top:max(10px,env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;background:#b8372a;border:2px solid #fff1cf;color:#fff;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 4px 12px #0008;white-space:nowrap;animation:updpulse 1.6s infinite ease-in-out}@keyframes updpulse{50%{transform:translateX(-50%) scale(1.05)}}
@@ -1754,7 +1755,7 @@ function showHome(){
   const saved=load();
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
   <div class="htitle"><h1 class="logo"><img src="img/logo-9e60dada.webp" alt="${T('乾杯！居酒屋')}" draggable="false"></h1><div class="sub">${T('～ 巷子裡的小居酒屋 ～')}</div></div>
-  <div class="menu">${saved?plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1)+plaque('asknew','新的一局'):plaque('newgame','開始營業','',1)}</div><div class="side">${saved?sideBtn('homeshop','商店'):''}${sideBtn('tut','新手教學')}${sideBtn('howto','遊戲說明')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side side-r">${sideBtn('records','經營紀錄')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反應'):''}</div><div class="topr"><span id="tstslot">${tstBtn()}</span>${NOTICE?`<button class="langbtn ntbtn" data-act="notice" aria-label="${T('公告')}">📢<span class="ntl"> ${T('公告')}</span></button>`:''}${acctBtn()}<button class="langbtn" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>${LANGS.find(l=>l[0]===LANG)[1]}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}<div id="homeModal"></div></div>`;
+  <div class="menu">${saved?plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1)+plaque('asknew','新的一局'):plaque('newgame','開始營業','',1)}</div><div class="side">${saved?sideBtn('homeshop','商店'):''}${sideBtn('tut','新手教學')}${sideBtn('howto','遊戲說明')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side side-r">${sideBtn('records','經營紀錄')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反應'):''}</div><div class="topr"><span id="tstslot">${tstBtn()}</span><button class="langbtn ntbtn" data-act="slots" aria-label="${T('存檔欄位')}">💾<span class="ntl"> ${T('存檔')}</span></button>${NOTICE?`<button class="langbtn ntbtn" data-act="notice" aria-label="${T('公告')}">📢<span class="ntl"> ${T('公告')}</span></button>`:''}${acctBtn()}<button class="langbtn" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>${LANGS.find(l=>l[0]===LANG)[1]}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}<div id="homeModal"></div></div>`;
   placeChat();requestAnimationFrame(placeChat);setTimeout(placeChat,300);
   if(noticeDue())setTimeout(()=>{if(HOME&&!document.querySelector('#homeModal .modal'))showNotice()},400);else if(CL.pick)setTimeout(cloudAsk,0);
 }
@@ -1864,7 +1865,7 @@ function endDay(){sfx('end');$('game').classList.remove('aim');
 }
 function bankrupt(){
   const rec=loadRec();rec.bankrupt=(rec.bankrupt||0)+1;saveRec(rec);
-  const d=ST.day;try{localStorage.removeItem(KEY)}catch(e){}touchLocal();
+  const d=ST.day;slBackup(lsGet(KEY),'bankrupt');try{localStorage.removeItem(KEY)}catch(e){}touchLocal();
   ST=null;R=null;renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
   modal(`<h2>${T('破產了……')}</h2><div class="stars"><span>★</span><span>★</span><span>★</span></div>
   <p>${T('撐到第 {0} 天，錢包第三次見底，銀行說什麼都不肯再借錢了。店面被收回，所有東西都歸零。',d)}</p>
@@ -1907,7 +1908,7 @@ function advance(){if(ST.pendingNext){ST.day++;ST.pendingNext=false;save()}showD
 document.addEventListener('click',e=>{
   const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
   if(/^(buy|lvup|staffup|rmstaff)/.test(act)&&!a.disabled&&!a.classList.contains('poor'))sfx('buy');else if(!['snd','sndg','start'].includes(act))sfx('click');
-  if(act==='newgame'){closeHome();ST=fresh();save();showDayIntro()}
+  if(act==='newgame'){slBackup(lsGet(KEY),'new');closeHome();ST=fresh();save();showDayIntro()}
   else if(act==='cont'){goFS();closeHome();ST=load();advance()}
   else if(act==='asknew')modal(`<h2>${T('開一家新店？')}</h2><p>${T('目前的存檔會被清除，從第 1 天重新開始。')}</p><div class="btns"><button class="btn" data-act="newgame">${T('確定重來')}</button><button class="btn alt" data-act="closem">${T('取消')}</button></div>`);
   else if(act==='lang')showLang();
@@ -1954,11 +1955,21 @@ document.addEventListener('click',e=>{
   else if(act==='logout'){closeModal();CL.api&&CL.api.signOut()}
   else if(act==='syncnow'){cloudUpload(true);showAcct()}
   else if(act==='pickcloud'){const c=CL.pick;CL.pick=null;closeModal();if(c)applyCloud(c)}
-  else if(act==='picklocal'){CL.pick=null;closeModal();cloudUpload(true)}
+  else if(act==='picklocal'){if(CL.pick)slBackup(CL.pick.game,'cloud');CL.pick=null;closeModal();cloudUpload(true)}
   else if(act==='setlang')setLang(a.dataset.id);
   else if(act==='howto')showHowto();
   else if(act==='tut'){closeHome();DEMO=true;ST=fresh();startDay();startTut(true)}
   else if(act==='records')showRecords();
+  else if(act==='slots')showSlots();
+  else if(act==='slotput'){const i=+a.dataset.i,g=lsGet(KEY),o=slLoad();if(!g||!slOK(g))return;
+    if(o.s[i]&&!a.dataset.ok){slAsk('slotput',i,T('覆蓋存檔 {0}？',i+1),T('這個欄位裡的舊進度會被目前的進度取代。'));return}
+    o.s[i]={at:Date.now(),game:g};slSave(o);showSlots()}
+  else if(act==='slotload'){const i=+a.dataset.i,x=slLoad().s[i];if(!x)return;
+    if(!a.dataset.ok){slAsk('slotload',i,T('讀取存檔 {0}？',i+1),T('目前的進度會被取代，不過會先自動備份一份。'));return}
+    slLoadGame(x.game)}
+  else if(act==='bakload'){const i=+a.dataset.i,x=slLoad().b[i];if(!x)return;
+    if(!a.dataset.ok){slAsk('bakload',i,T('還原這份備份？'),T('目前的進度會被取代，不過會先自動備份一份。'));return}
+    slLoadGame(x.game)}
   else if(act==='snd'){sndWake();showSndModal(false)}
   else if(act==='sndg'){sndWake();showSndModal(true)}
   else if(act==='togbgm'){sndWake();bgmSet(!SND.bgmOn);showSndModal();renderHUD()}
@@ -2463,7 +2474,7 @@ async function cloudSync(){
   try{const c=await CL.api.get(u.uid);if(CL.user!==u)return;CL.synced=true;
     const lg=lsGet(KEY),lr=lsGet(RKEY),cg=c?c.game||null:null,cr=c?c.rec||null:null;
     const rec=(lr||cr)?mergeRec(cr,lr):null;if(rec!==lr)lsSet(RKEY,rec);
-    if(cg&&lg&&cg!==lg&&(localStamp()||0)>(c.at||0)){await cloudUpload(true);return}
+    if(cg&&lg&&cg!==lg&&(localStamp()||0)>(c.at||0)){slBackup(cg,'cloud');await cloudUpload(true);return}
     if(cg&&lg&&cg!==lg){CL.pick={game:cg,rec,at:c.at||0};CL.status='ok';acctRefresh();if(HOME&&!R)cloudAsk();return}
     if(cg&&!lg){applyCloud({game:cg,rec,at:c.at||0});await cloudUpload(true);return}
     await cloudUpload(true);
@@ -2475,7 +2486,27 @@ async function cloudUpload(now){
   try{await CL.api.put(u.uid,{game:lsGet(KEY),rec:lsGet(RKEY),at:localStamp()||Date.now()});await lbPush(u);if(CL.user===u){CL.status='ok';acctRefresh()}}
   catch(e){console.warn('cloud save failed',e);CL.status='err';acctRefresh();CL.timer=setTimeout(()=>cloudUpload(),120000)}
 }
-function applyCloud(c){lsSet(KEY,c.game);if(c.rec)lsSet(RKEY,c.rec);try{localStorage.setItem(SAVED_AT,String(c.at||Date.now()))}catch(e){}if(HOME&&!R)showHome()}
+/* save slots */Object.assign(I18N["zh-Hans"],{"存檔欄位": "存档栏位", "存檔": "存档", "存檔 {0}": "存档 {0}", "空的": "空的", "存入": "存入", "讀取": "读取", "還原": "还原", "自動備份": "自动备份", "開新的一局前": "开新的一局前", "破產前": "破产前", "雲端同步前": "云端同步前", "讀取存檔前": "读取存档前", "測試模式下無法使用存檔欄位。": "测试模式下无法使用存档栏位。", "目前的進度可以存進下面三個欄位，之後隨時讀回來。欄位只存在這台裝置上，不會同步到雲端。": "当前的进度可以存进下面三个栏位，之后随时读回来。栏位只存在这台设备上，不会同步到云端。", "開新的一局、破產、雲端存檔覆蓋之前，遊戲會自動備份舊存檔（最多 3 份）。": "开新的一局、破产、云端存档覆盖之前，游戏会自动备份旧存档（最多 3 份）。", "目前沒有備份。": "目前没有备份。", "關閉": "关闭", "覆蓋存檔 {0}？": "覆盖存档 {0}？", "這個欄位裡的舊進度會被目前的進度取代。": "这个栏位里的旧进度会被当前的进度取代。", "讀取存檔 {0}？": "读取存档 {0}？", "目前的進度會被取代，不過會先自動備份一份。": "当前的进度会被取代，不过会先自动备份一份。", "還原這份備份？": "还原这份备份？"});Object.assign(I18N["en"],{"存檔欄位": "Save slots", "存檔": "Saves", "存檔 {0}": "Slot {0}", "空的": "Empty", "存入": "Save here", "讀取": "Load", "還原": "Restore", "自動備份": "Auto backups", "開新的一局前": "Before starting over", "破產前": "Before bankruptcy", "雲端同步前": "Before cloud sync", "讀取存檔前": "Before loading a save", "測試模式下無法使用存檔欄位。": "Save slots aren't available in test mode.", "目前的進度可以存進下面三個欄位，之後隨時讀回來。欄位只存在這台裝置上，不會同步到雲端。": "Store your current progress in one of the three slots below and load it back any time. Slots live on this device only and aren't synced to the cloud.", "開新的一局、破產、雲端存檔覆蓋之前，遊戲會自動備份舊存檔（最多 3 份）。": "Before you start over, go bankrupt, or a cloud save overwrites yours, the game backs up the old save automatically (up to 3).", "目前沒有備份。": "No backups yet.", "關閉": "Close", "覆蓋存檔 {0}？": "Overwrite slot {0}?", "這個欄位裡的舊進度會被目前的進度取代。": "The old progress in this slot will be replaced by your current progress.", "讀取存檔 {0}？": "Load slot {0}?", "目前的進度會被取代，不過會先自動備份一份。": "Your current progress will be replaced, but a backup is made first.", "還原這份備份？": "Restore this backup?"});Object.assign(I18N["ja"],{"存檔欄位": "セーブ枠", "存檔": "セーブ", "存檔 {0}": "スロット {0}", "空的": "空き", "存入": "保存", "讀取": "読み込み", "還原": "復元", "自動備份": "自動バックアップ", "開新的一局前": "新しく始める前", "破產前": "破産する前", "雲端同步前": "クラウド同期の前", "讀取存檔前": "セーブ読み込みの前", "測試模式下無法使用存檔欄位。": "テストモードではセーブ枠を使えません。", "目前的進度可以存進下面三個欄位，之後隨時讀回來。欄位只存在這台裝置上，不會同步到雲端。": "今の進行状況を下の3つの枠に保存して、いつでも読み込めます。枠はこの端末だけに保存され、クラウドとは同期されません。", "開新的一局、破產、雲端存檔覆蓋之前，遊戲會自動備份舊存檔（最多 3 份）。": "新しく始める・破産する・クラウドのセーブで上書きされる前に、古いセーブを自動でバックアップします（最大3件）。", "目前沒有備份。": "バックアップはまだありません。", "關閉": "閉じる", "覆蓋存檔 {0}？": "スロット {0} を上書きしますか？", "這個欄位裡的舊進度會被目前的進度取代。": "この枠の古い進行状況が、今の進行状況に置き換わります。", "讀取存檔 {0}？": "スロット {0} を読み込みますか？", "目前的進度會被取代，不過會先自動備份一份。": "今の進行状況は置き換わりますが、先に自動でバックアップされます。", "還原這份備份？": "このバックアップを復元しますか？"});Object.assign(I18N["ko"],{"存檔欄位": "저장 슬롯", "存檔": "저장", "存檔 {0}": "슬롯 {0}", "空的": "비어 있음", "存入": "저장", "讀取": "불러오기", "還原": "복원", "自動備份": "자동 백업", "開新的一局前": "새로 시작하기 전", "破產前": "파산 전", "雲端同步前": "클라우드 동기화 전", "讀取存檔前": "저장 불러오기 전", "測試模式下無法使用存檔欄位。": "테스트 모드에서는 저장 슬롯을 쓸 수 없어요.", "目前的進度可以存進下面三個欄位，之後隨時讀回來。欄位只存在這台裝置上，不會同步到雲端。": "현재 진행 상황을 아래 세 슬롯에 저장해 두고 언제든 다시 불러올 수 있어요. 슬롯은 이 기기에만 저장되고 클라우드와 동기화되지 않아요.", "開新的一局、破產、雲端存檔覆蓋之前，遊戲會自動備份舊存檔（最多 3 份）。": "새로 시작하거나 파산하거나 클라우드 저장이 덮어쓰기 전에 이전 저장을 자동으로 백업해요(최대 3개).", "目前沒有備份。": "아직 백업이 없어요.", "關閉": "닫기", "覆蓋存檔 {0}？": "슬롯 {0}을(를) 덮어쓸까요?", "這個欄位裡的舊進度會被目前的進度取代。": "이 슬롯의 이전 진행 상황이 현재 진행 상황으로 바뀌어요.", "讀取存檔 {0}？": "슬롯 {0}을(를) 불러올까요?", "目前的進度會被取代，不過會先自動備份一份。": "현재 진행 상황은 바뀌지만 먼저 자동으로 백업돼요.", "還原這份備份？": "이 백업을 복원할까요?"});Object.assign(I18N["id"],{"存檔欄位": "Slot simpan", "存檔": "Simpan", "存檔 {0}": "Slot {0}", "空的": "Kosong", "存入": "Simpan di sini", "讀取": "Muat", "還原": "Pulihkan", "自動備份": "Cadangan otomatis", "開新的一局前": "Sebelum mulai ulang", "破產前": "Sebelum bangkrut", "雲端同步前": "Sebelum sinkron cloud", "讀取存檔前": "Sebelum memuat simpanan", "測試模式下無法使用存檔欄位。": "Slot simpan tidak tersedia di mode uji.", "目前的進度可以存進下面三個欄位，之後隨時讀回來。欄位只存在這台裝置上，不會同步到雲端。": "Simpan progres saat ini di salah satu dari tiga slot di bawah dan muat kapan saja. Slot hanya ada di perangkat ini dan tidak disinkronkan ke cloud.", "開新的一局、破產、雲端存檔覆蓋之前，遊戲會自動備份舊存檔（最多 3 份）。": "Sebelum kamu mulai ulang, bangkrut, atau simpanan cloud menimpa simpananmu, game mencadangkan simpanan lama secara otomatis (maks. 3).", "目前沒有備份。": "Belum ada cadangan.", "關閉": "Tutup", "覆蓋存檔 {0}？": "Timpa slot {0}?", "這個欄位裡的舊進度會被目前的進度取代。": "Progres lama di slot ini akan diganti dengan progres saat ini.", "讀取存檔 {0}？": "Muat slot {0}?", "目前的進度會被取代，不過會先自動備份一份。": "Progres saat ini akan diganti, tetapi dicadangkan lebih dulu.", "還原這份備份？": "Pulihkan cadangan ini?"});
+/* ===== extra save slots (stored on this device only): 3 manual slots + automatic backups of any save that is about to be overwritten ===== */
+const SLKEY='izakaya-slots-v1';
+function slLoad(){try{const o=JSON.parse(localStorage.getItem(SLKEY));return {s:Array.isArray(o&&o.s)?o.s.slice(0,3):[],b:Array.isArray(o&&o.b)?o.b.slice(0,3):[]}}catch(e){return {s:[],b:[]}}}
+function slSave(o){try{localStorage.setItem(SLKEY,JSON.stringify(o));return true}catch(e){return false}}
+function slOK(g){try{const o=JSON.parse(g);return !!o&&typeof o.day==='number'}catch(e){return false}}
+function slBackup(g,why){if(TEST||!g||!slOK(g)||g===JSON.stringify(fresh()))return;const o=slLoad();if(o.b.some(x=>x&&x.game===g))return;o.b.unshift({at:Date.now(),game:g,why});o.b=o.b.slice(0,3);slSave(o)}
+function slTime(at){try{return new Date(at).toLocaleString(LANG,{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}}
+const SLWHY={new:'開新的一局前',bankrupt:'破產前',cloud:'雲端同步前',load:'讀取存檔前'};
+function showSlots(){
+  if(TEST){modal(`<h2>${T('存檔欄位')}</h2><p>${T('測試模式下無法使用存檔欄位。')}</p><div class="btns"><button class="btn" data-act="closem">${T('知道了')}</button></div>`);return}
+  const o=slLoad(),cur=lsGet(KEY);
+  const rows=[0,1,2].map(i=>{const x=o.s[i];
+    return `<div class="slrow"><div class="si">${T('存檔 {0}',i+1)}${x?`<small>${saveSummary(x.game)}・${slTime(x.at)}</small>`:`<small>${T('空的')}</small>`}</div><button class="btn alt" data-act="slotput" data-i="${i}" ${cur?'':'disabled'}>${T('存入')}</button>${x?`<button class="btn" data-act="slotload" data-i="${i}">${T('讀取')}</button>`:''}</div>`}).join('');
+  const bk=o.b.map((x,i)=>`<div class="slrow"><div class="si">${T(SLWHY[x.why]||'自動備份')}<small>${saveSummary(x.game)}・${slTime(x.at)}</small></div><button class="btn" data-act="bakload" data-i="${i}">${T('還原')}</button></div>`).join('');
+  modal(`<h2>${T('存檔欄位')}</h2><p>${T('目前的進度可以存進下面三個欄位，之後隨時讀回來。欄位只存在這台裝置上，不會同步到雲端。')}</p>${rows}
+  <div class="slh">${T('自動備份')}</div><p style="font-size:13.5px;opacity:.8">${T('開新的一局、破產、雲端存檔覆蓋之前，遊戲會自動備份舊存檔（最多 3 份）。')}</p>${bk||`<p>${T('目前沒有備份。')}</p>`}
+  <div class="btns"><button class="btn alt" data-act="closem">${T('關閉')}</button></div>`)}
+function slLoadGame(g){if(!g||!slOK(g))return;slBackup(lsGet(KEY),'load');lsSet(KEY,g);touchLocal();if(CL.user&&CL.synced)cloudUpload(true);closeModal();showHome()}
+function slAsk(act,i,title,msg){modal(`<h2>${title}</h2><p>${msg}</p><div class="btns"><button class="btn" data-act="${act}" data-i="${i}" data-ok="1">${T('確定')}</button><button class="btn alt" data-act="slots">${T('取消')}</button></div>`)}
+function applyCloud(c){if(lsGet(KEY)!==c.game)slBackup(lsGet(KEY),'cloud');lsSet(KEY,c.game);if(c.rec)lsSet(RKEY,c.rec);try{localStorage.setItem(SAVED_AT,String(c.at||Date.now()))}catch(e){}if(HOME&&!R)showHome()}
 function saveSummary(g){try{const o=JSON.parse(g);return T('第 {0} 天',o.day+(o.pendingNext?1:0))+'・'+yen(o.coins)}catch(e){return ''}}
 function cloudAsk(){const c=CL.pick;if(!c||!HOME)return;
   modal(`<h2>${T('選擇要用哪一份存檔')}</h2><p>${T('這台裝置和雲端各有一份不同的存檔，要用哪一份？另一份會被覆蓋。')}</p>
