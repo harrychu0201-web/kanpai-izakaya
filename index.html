@@ -2496,6 +2496,7 @@ document.addEventListener('click',e=>{
   else if(act==='noticelist')noticeList();
   else if(act==='noticenew')inboxNotice();
   else if(act==='fbboard')showFbBoard();
+  else if(act==='uidcopy'){if(CL.user)copyTxt(CL.user.uid,'已複製 ID')}
   else if(act==='fbpubsync')fbPubSync();
   else if(act==='noticeedit')noticeEdit(a.dataset.id);
   else if(act==='noticeeditsave')noticeEditSave(a.dataset.id);
@@ -3370,7 +3371,7 @@ function showFb(){
   <textarea class="fbtext" id="fbtext" maxlength="800" oninput="FB.text=this.value" placeholder="${T('想說什麼都可以寫在這裡…')}">${esc(FB.text)}</textarea>
   <input class="nickin" id="fbcontact" maxlength="60" style="font-size:16px;padding:7px 10px" placeholder="${T('聯絡方式（選填，例如 Threads 帳號）')}" value="${esc(FB.contact)}" autocomplete="off" oninput="FB.contact=this.value">
   <p class="fbsmall" style="margin:0">${CL.user?T('作者回覆後，你打開遊戲就會看到 💌'):T('登入後再送出，作者就能直接在遊戲裡回覆你喔')}</p>
-  <p class="fbsmall" id="fbmsg"></p></div>
+  ${CL.user?`<p class="fbsmall">管理員用 ID：<code style="word-break:break-all">${esc(CL.user.uid)}</code> <button class="btn alt" data-act="uidcopy" style="padding:4px 10px;font-size:14px">複製</button></p>`:''}<p class="fbsmall" id="fbmsg"></p></div>
   <div class="btns"><button class="btn alt" data-act="fbboard">👀 ${T('大家的意見')}</button><button class="btn" data-act="fbsend">${T('送出')}</button><button class="btn alt" data-act="closem">${T('返回')}</button><button class="btn alt" data-act="notice">📢 ${T('公告')}</button>${CL.user?`<button class="btn alt" data-act="myre">💌 ${T('作者的回覆')}</button>`:''}${canInbox()?`<button class="btn" data-act="inbox">📬 收件匣</button>`:''}</div>`);
   setTimeout(()=>{const t=$('fbtext');if(t&&!('ontouchstart' in window))t.focus()},50)}
 const FBB={rows:[],q:'',err:''};
