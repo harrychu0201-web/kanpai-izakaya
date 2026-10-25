@@ -2195,7 +2195,12 @@ const ARC={slotBet:200,pinBet:200,SYM:['🍺','🍢','🍣','🍙','💴'],PINMU
 function arcWallet(delta){const s=load();if(!s)return 0;if(delta){s.coins=Math.max(0,(s.coins||0)+delta);try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}touchLocal()}return s.coins||0}
 const arcCanPay=b=>arcWallet(0)>=b;
 function arcShowW(){const e=document.getElementById('arcW');if(e)e.textContent=T('錢包：{0}',yen(arcWallet(0)))}
-function arcMsg(t){const e=document.getElementById('arcMsg');if(e)e.textContent=t}
+const EGG_PRIZE=3000,EGG_KEY='izakaya-arc-egg';
+function arcEggTick(){let e=null;try{e=JSON.parse(localStorage.getItem(EGG_KEY))}catch(x){}
+  if(!e||!e.next)e={c:0,next:50+Math.floor(Math.random()*51)};e.c++;let hit=false;
+  if(e.c>=e.next){hit=true;e.c=0;e.next=50+Math.floor(Math.random()*51)}
+  try{localStorage.setItem(EGG_KEY,JSON.stringify(e))}catch(x){}return hit}
+function arcMsg(t){const e=document.getElementById('arcMsg');if(ARC.eggHit){ARC.eggHit=false;t='🎁 彩蛋！+'+yen(EGG_PRIZE)+' '+t}if(e)e.textContent=t}
 const ARC_STEP=100,ARC_CAP=10000;
 const arcBetOf=g=>g==='pin'?ARC.pinBet:ARC.slotBet;
 function arcBetMax(){return Math.max(ARC_STEP,Math.min(ARC_CAP,Math.floor(arcWallet(0)/ARC_STEP)*ARC_STEP))}
@@ -2222,7 +2227,7 @@ function showArcSlot(){modal(`${ARC_CSS}<h2>${T('拉霸機')}</h2><div class="ar
 function arcSpin(){
   if(ARC.busy)return;const bet=ARC.slotBet;
   if(!arcCanPay(bet)){arcMsg(T('錢包不夠了，先去賣點東西吧！'));return}
-  ARC.busy=true;arcWallet(-bet);arcShowW();sfx('click');
+  ARC.busy=true;arcWallet(-bet);arcShowW();sfx('click');if(arcEggTick()){arcWallet(EGG_PRIZE);ARC.eggHit=true;arcShowW();sfx('star')}
   const res=[0,0,0].map(()=>Math.floor(Math.random()*5));
   const reels=[...document.querySelectorAll('#arcReels span')];
   const timers=reels.map(r=>setInterval(()=>{r.textContent=ARC.SYM[Math.floor(Math.random()*5)]},70));
@@ -2250,7 +2255,7 @@ function arcPinDraw(ball,hi){
 function arcDrop(){
   if(ARC.busy)return;const bet=ARC.pinBet;
   if(!arcCanPay(bet)){arcMsg(T('錢包不夠了，先去賣點東西吧！'));return}
-  ARC.busy=true;arcWallet(-bet);arcShowW();sfx('click');
+  ARC.busy=true;arcWallet(-bet);arcShowW();sfx('click');if(arcEggTick()){arcWallet(EGG_PRIZE);ARC.eggHit=true;arcShowW();sfx('star')}
   const dirs=[];let k=0;for(let i=0;i<8;i++){const r=Math.random()<.5?1:0;dirs.push(r);k+=r}
   const pts=[[150,12]];let off=0;
   dirs.forEach((r,i)=>{off+=r?1:-1;pts.push([150+off*16,40+i*30+15])});
