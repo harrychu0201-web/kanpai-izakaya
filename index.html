@@ -1956,7 +1956,7 @@ function showHome(){
   <div class="htitle"><h1 class="logo"><img src="img/logo-9e60dada.webp" alt="${T('乾杯！居酒屋')}" draggable="false"></h1><div class="sub">${T('～ 巷子裡的小居酒屋 ～')}</div></div>
   <div class="menu">${saved?(FB_CONFIG?plaque('frhome','好友'):'')+plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1)+plaque('asknew','新的一局'):plaque('newgame','開始營業','',1)}</div><div class="side">${saved?sideBtn('homeshop','商店'):''}${sideBtn('tut','新手教學')}${sideBtn('howto','遊戲說明')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side side-r">${sideBtn('records','經營紀錄')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反應'):''}</div><div class="topl"><button class="langbtn ntbtn" data-act="slots" aria-label="${T('存檔欄位')}">💾<span class="ntl"> ${T('存檔')}</span></button><button class="langbtn ntbtn" data-act="share" aria-label="${T('分享')}">🔗<span class="ntl"> ${T('分享')}</span></button></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${NOTICE?`<button class="langbtn ntbtn" data-act="notice" aria-label="${T('公告')}">📢<span class="ntl"> ${T('公告')}</span></button>`:''}${acctBtn()}<button class="langbtn" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>${LANGS.find(l=>l[0]===LANG)[1]}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}<div id="homeModal"></div></div>`;
   placeChat();requestAnimationFrame(placeChat);setTimeout(placeChat,300);
-  if(noticeDue())setTimeout(()=>{if(HOME&&!document.querySelector('#homeModal .modal'))showNotice()},400);else if(CL.pick)setTimeout(cloudAsk,0);
+  if(noticeDue()){if(NOTICE_LOADED||!FB_CONFIG)setTimeout(()=>{if(HOME&&!document.querySelector('#homeModal .modal')){NAUTOREQ=true;showNotice()}},400);else setTimeout(noticePop,3500)}else if(CL.pick)setTimeout(cloudAsk,0);
 }
 const HOWTO=[['做菜、送菜','客人頭上的對話框是他點的菜。點做好的菜拿起來，再點客人送上。快速點兩下可以把菜收進保溫台，就不會焦。'],
   ['營業時間','每天 16:00 到凌晨 00:30。晚餐和續攤時段客人最多，00:20 最後點餐，之後不再接客。淨利夠高就能拿星星，至少一顆星才能進到下一天。'],
@@ -2189,7 +2189,7 @@ document.addEventListener('click',e=>{
   else if(act==='noticeeditsave')noticeEditSave(a.dataset.id);
   else if(act==='noticedel')noticeDelete(a.dataset.id);
   else if(act==='noticevote')noticeVote(+a.dataset.v);
-  else if(act==='noticeok'){noticeSeen();closeModal();if(CL.pick)cloudAsk()}
+  else if(act==='noticeok'){noticeSeen(NAUTO&&NSHOW?NSHOW:null);closeModal();if(NAUTO&&noticeDue()){NAUTOREQ=true;showNotice()}else if(CL.pick)cloudAsk()}
   else if(act==='lbtab'){LB.tab=a.dataset.id;showLB()}
   else if(act==='frshare')frShare();
   else if(act==='fradd')frAdd();
@@ -2942,7 +2942,7 @@ const NOTICE_TRACK={id:"2026-10-24-music",at:"2026-10-24T03:17:00+08:00",title:"
 const NOTICE_FR={id:"2026-10-24-friends",at:"2026-10-24T23:10:00+08:00",title:"好友系統上線！",text:"各位老闆與老闆娘們大家好！\n\n很多人說想跟朋友一起玩，所以先做了好友系統～\n\n首頁「繼續營業」左邊多了「好友」按鈕（排行榜裡也有好友分頁）：\n・好友碼：每個人有一組好友碼，按「分享」傳給朋友，對方輸入就能互加好友（最多 20 位）\n・好友排行榜：只跟朋友比單日淨利或累計營收\n・參觀：看朋友的營業天數、成績、有沒有屋台和二號廚房、裝飾有幾件\n・送禮物：每位好友每天可以送一次 ¥1,000，對方進好友分頁就能領\n\n要先登入 Google 並取好暱稱，朋友才看得到你。朋友的店面資訊要等他們更新到新版、同步雲端之後才會出現，剛開始可能顯示不完整，請大家多包涵。\n\n目前還不能同時在同一間店裡一起煮，這個比較難，之後再研究。有其他想法歡迎從意見反應告訴我！",sign:'作者敬上'};
 const NOTICE_DAYS={id:"2026-10-25-days",at:"2026-10-25T00:50:00+08:00",title:"排行榜新增「最長營業」！",text:"各位老闆與老闆娘們大家好！\n\n很多人想比誰撐得最久，所以排行榜多了一個新分頁「最長營業」，比的是你歷史上最遠撐到第幾天，破產重來也不會歸零。\n\n要上榜的話：\n・先登入 Google 並取好暱稱\n・重新整理頁面，或按更新提示更新到新版\n・你以前玩過的天數遊戲有記著，登入同步之後會自動補上，不用重玩\n\n剛更新完可能要等一下才會看到自己的名字，沒出現的話重新開一次遊戲就好。另外排行榜的分頁變多了，可以左右滑動。\n\n看看誰是最能撐的老闆吧😆 有其他想法歡迎從意見反應告訴我！",sign:'作者敬上'};
 const NOTICES=[NOTICE_DAYS,NOTICE_FR,NOTICE_ART,NOTICE_TRACK,NOTICE_K2,NOTICE_RMX,NOTICE_AOI,NOTICE_GUN,NOTICE_NEW,NOTICE_OLD],NOTICE_BUILTIN=NOTICES[0];
-let NOTICE_REMOTE=false,NOTICE_HIST={},NOTICE_DEL={};
+let NOTICE_REMOTE=false,NOTICE_HIST={},NOTICE_DEL={},NOTICE_LOADED=false,NSHOW=null,NAUTO=false,NAUTOREQ=false;
 /* deleted announcements: a built-in one cannot be removed from the code, so deleting it leaves a marker in the database (notice/del/<key>);
    the markers are also kept on this device so a deleted built-in notice does not flash up before the database answers */
 try{NOTICE_DEL=JSON.parse(localStorage.getItem('izakaya-notice-del')||'{}')||{}}catch(e){}
@@ -2956,7 +2956,12 @@ function noticeAll(){const m=new Map();NOTICES.forEach(x=>m.set(x.id,x));
   return [...m.values()].filter(x=>!NOTICE_DEL[nkey(x.id)]).sort((a,b)=>noticeAt(b)-noticeAt(a))}
 function noticeDate(x){const t=noticeAt(x);if(!t)return'';const s=new Date(t+288e5).toISOString();return x.at||/^\d{4}-\d\d-\d\dT/.test(String(x.id))?s.slice(0,10)+' '+s.slice(11,16):s.slice(0,10)}
 function noticeSeenId(){try{return localStorage.getItem('izakaya-notice')}catch(e){return null}}
-function noticeSeen(){try{localStorage.setItem('izakaya-notice',NOTICE.id)}catch(e){}}
+function noticeSeen(id){try{localStorage.setItem('izakaya-notice',id||NOTICE.id)}catch(e){}}
+/* The auto pop-up must not run ahead of the database: the built-in newest one used to pop up before the posted ones arrived, and 知道了 then marked the (newer) posted one as read without ever showing it.
+   So: wait for the database (3.5s at most), mark only the notice that was really shown, and if a newer one is still due afterwards, show it next. */
+function noticePop(){NOTICE_LOADED=true;if(!HOME||R)return;
+  if(!document.querySelector('#homeModal .modal')){if(noticeDue()){NAUTOREQ=true;showNotice()}}
+  else if(NAUTO&&NSHOW!=null&&NOTICE&&String(NSHOW)!==String(NOTICE.id)&&document.querySelector('#homeModal .notice')){NAUTOREQ=true;showNotice()}}
 function noticeDue(){const sid=noticeSeenId();return !!NOTICE&&NOTICE.id&&sid!==NOTICE.id&&!(sid&&NOTICE_DEL[nkey(sid)])}
 /* announcement reactions: noticevote/<id>/<uid> = 0 (seen) | 1 (like) | -1 (dislike). Only signed-in players are counted; only the author can read the totals (see database.rules.json). */
 let NV={id:null,v:null,st:null};
@@ -2973,7 +2978,7 @@ function noticeVoteDraw(){const b=$('nvbox');if(!b)return;const on=!!CL.user&&NV
 async function noticeVote(val){if(!CL.user||!CL.api||NV.v==null||!NV.id)return;const id=NV.id,old=NV.v,nv=old===val?0:val;
   NV.v=nv;noticeVoteDraw();
   try{await CL.api.noticeVoteSet(id,CL.user.uid,nv);if(isAdmin())noticeVoteStat()}catch(e){if(NV.id===id){NV.v=old;noticeVoteDraw()}toast('送出失敗，晚點再試')}}
-function showNotice(again,id){const all=noticeAll(),old=id!=null,n=old?all.find(x=>x.id===String(id)):NOTICE;if(!n){closeModal();return}const rem=!!n.rem;
+function showNotice(again,id){const au=NAUTOREQ;NAUTOREQ=false;const all=noticeAll(),old=id!=null,n=old?all.find(x=>x.id===String(id)):NOTICE;if(!n){closeModal();return}const rem=!!n.rem;NSHOW=String(n.id);NAUTO=au&&!old;
   const text=rem?n.text:T(n.text),sign=rem?(n.sign||''):T(n.sign),dt=noticeDate(n);
   modal(`<div class="notice"><h2>📢 ${rem?(n.title?esc(n.title):T('公告')):T(n.title)}</h2>${dt?`<p style="font-size:12px;opacity:.7;margin-top:-6px">${dt}${n.edited?' · 已編輯':''}</p>`:''}<p>${esc(text)}</p>${sign?`<p class="sign">${esc(sign)}</p>`:''}<div class="nvbox" id="nvbox"></div></div>
   <div class="btns"><button class="btn" data-act="noticeok">${T('知道了')}</button>${all.length>1?`<button class="btn alt" data-act="noticelist">📜 ${T('之前的公告')}</button>`:''}${FB_CONFIG?`<button class="btn alt" data-act="fb">${T('意見反應')}</button>`:''}${isAdmin()?`<button class="btn alt" data-act="noticeedit" data-id="${esc(n.id)}">✏️ 編輯</button><button class="btn alt" data-act="noticedel" data-id="${esc(n.id)}">🗑️ 刪除</button>`:''}</div>`);noticeVoteInit(n)}
@@ -3005,12 +3010,12 @@ async function noticeDelete(id){const n=noticeAll().find(x=>x.id===String(id));i
 function noticeTime(id){id=String(id||'');const t=/^\d{4}-\d\d-\d\dT\d\d:\d\d/.test(id)?Date.parse(id.slice(0,16)+'Z'):Date.parse(id.slice(0,10)+'T00:00:00+08:00');return isNaN(t)?0:t}
 function noticeClean(x){const o={id:String(x.id),title:x.title?String(x.title):'',text:String(x.text),sign:x.sign?String(x.sign):''};if(x.at)o.at=String(x.at);if(x.edited)o.edited=+x.edited;return o}
 async function noticeRemote(){try{const d=await CL.api.notice();const del=d&&d.del&&typeof d.del==='object'?d.del:{};NOTICE_DEL=del;try{localStorage.setItem('izakaya-notice-del',JSON.stringify(del))}catch(e){}
-  if(!d){NOTICE_HIST={};NOTICE=noticeAll()[0]||null;NOTICE_REMOTE=false;return}const h={};
+  if(!d){NOTICE_HIST={};NOTICE=noticeAll()[0]||null;NOTICE_REMOTE=false;noticePop();return}const h={};
   if(d.hist&&typeof d.hist==='object')Object.keys(d.hist).forEach(k=>{const x=d.hist[k];if(x&&x.id&&x.text){const c=noticeClean(x);h[c.id]=c}});
   // the single latest post from before the history existed
   if(d.id&&d.text&&!h[String(d.id)]&&!NOTICES.some(x=>x.id===String(d.id))){const c=noticeClean(d);h[c.id]=c}
   NOTICE_HIST=h;NOTICE=noticeAll()[0]||null;NOTICE_REMOTE=!!(NOTICE&&NOTICE.rem);
-  if(HOME&&!R&&noticeDue()&&!document.querySelector('#homeModal .modal'))showNotice()}catch(e){}}
+  noticePop()}catch(e){noticePop()}}
 const FB={cat:'idea',text:'',contact:'',last:0};
 const FBCATS=[['bug','🐞 回報問題'],['idea','💡 玩法靈感'],['item','🍶 新菜・新商品'],['other','💬 其他']];
 function showFb(){
