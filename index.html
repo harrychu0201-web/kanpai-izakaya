@@ -2279,7 +2279,7 @@ document.addEventListener('click',e=>{
   else if(act==='mishapdex')showMishapDex();
   else if(act==='closem'){closeModal();if(FR.dirty){FR.dirty=0;showHome()}}
   else if(act==='home')showHome();
-  else if(act==='start'){goFS();startDay();let seen=false;try{seen=localStorage.getItem('izakaya-iostip')==='1'}catch(e){}if(IOS&&!STANDALONE&&!seen)setTimeout(()=>{if(R&&!TUT)iosTip()},400)}
+  else if(act==='start'){goFS();startDay();refitBurst();let seen=false;try{seen=localStorage.getItem('izakaya-iostip')==='1'}catch(e){}if(IOS&&!STANDALONE&&!seen)setTimeout(()=>{if(R&&!TUT)iosTip()},400)}
   else if(act==='fs')toggleFS();
   else if(act==='iostipok'){closeModal();if(R&&IOSTIPR)R.paused=false;IOSTIPR=false;try{localStorage.setItem('izakaya-iostip','1')}catch(e){}}
   else if(act==='next'||act==='back'){if(SHOPHOME){SHOPHOME=false;showHome()}else advance()}
@@ -2676,13 +2676,16 @@ let IOSTIPR=false;
 function toggleFS(){if(IOS&&!STANDALONE){iosTip();return}if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}else goFS()}
 if(TOUCH&&!IOS){let fsTry=0;document.addEventListener('pointerup',function f(){goFS();if(document.fullscreenElement||document.webkitFullscreenElement||++fsTry>=2)document.removeEventListener('pointerup',f)})}
 if(TOUCH)document.body.classList.add('lite');
-['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(fit,120)));
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>refitBurst()));window.addEventListener('orientationchange',()=>refitBurst());
 if(window.visualViewport)visualViewport.addEventListener('resize',()=>fit());
+function visH(){let d=document.getElementById('dvhProbe');if(!d){d=document.createElement('div');d.id='dvhProbe';d.style.cssText='position:fixed;left:0;top:0;width:1px;height:100vh;height:100dvh;visibility:hidden;pointer-events:none';document.body.appendChild(d)}const a=window.innerHeight,b=window.visualViewport?visualViewport.height*(visualViewport.scale||1):a,c=d.offsetHeight||a;return Math.max(200,Math.min(a,b,c))}
+/* fit() only ran on resize events; on Android the fullscreen / rotation animation reports a stale height first, so the board stayed too tall until the next HUD change (end of day). Re-run it a few times while the viewport settles. */
+function refitBurst(){[0,100,300,700,1400,2500].forEach(t=>setTimeout(fit,t))}
 function safeBottom(){let d=document.getElementById('sabProbe');if(!d){d=document.createElement('div');d.id='sabProbe';d.style.cssText='position:fixed;left:0;bottom:0;width:1px;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';document.body.appendChild(d)}return Math.max(d.offsetHeight||0,14)}/* min gap so Android gesture bar / iPhone home line never sits on the bottom row */
 function fit(){
   document.body.classList.toggle('ovl',TOUCH&&innerWidth>innerHeight&&innerHeight<560&&!HOME);
   chooseLayout();
-  const box=$('box'),wcs=getComputedStyle($('wrap')),w=$('wrap').clientWidth-(document.body.classList.contains('ovl')?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),ovl=document.body.classList.contains('ovl'),maxH=Math.max(200,(window.visualViewport?Math.min(innerHeight,visualViewport.height*(visualViewport.scale||1)):window.innerHeight)-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)));
+  const box=$('box'),wcs=getComputedStyle($('wrap')),w=$('wrap').clientWidth-(document.body.classList.contains('ovl')?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),ovl=document.body.classList.contains('ovl'),maxH=Math.max(200,visH()-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)));
   const s=Math.min(w/W,maxH/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
   $('game').style.transform=`scale(${s})`;
   $('game').style.setProperty('--fz',Math.min(1.8,Math.max(1,0.85/s)).toFixed(2));
