@@ -1795,7 +1795,8 @@ function rmServe(){
   if(unlocked(ST.day,'rm').includes('lsour'))src.push({src:'lsour',key:'lsour',inf:1});
   if(has('ramune'))src.push({src:'ramune',key:'ramune',inf:1});
   if(has('goma')&&!gomaOff())src.push({src:'goma',key:'goma',inf:1});
-  for(const c of waiting())for(let j=0;j<c.order.length;j++){if(c.filled[j])continue;const h=src.find(x=>x.key===c.order[j]);if(h&&giveTo(c,j,h,false)!==false){rmPop('小葵上菜');return true}}
+  for(const c of waiting()){for(let j=0;j<c.order.length;j++){if(c.filled[j])continue;const h=src.find(x=>x.key===c.order[j]);if(h&&giveTo(c,j,h,false)!==false){rmPop('小葵上菜');return true}}
+    if(c.extra&&c.extra.ok&&!c.extra.done){const h=src.find(x=>x.key===c.extra.key);if(h&&giveTo(c,'x',h,false)!==false){rmPop('小葵上菜');return true}}}
   return false;
 }
 function staffStep(dt){
