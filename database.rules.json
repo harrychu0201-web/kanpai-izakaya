@@ -25,6 +25,30 @@
         "adm": {
           ".validate": "newData.val() === true && auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true"
         },
+        "likes": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && !root.child('bans').child(auth.uid).exists() && root.child('chat').child($id).exists() && (newData.val() === true || !newData.exists())",
+            ".validate": "newData.val() === true"
+          }
+        },
+        "rp": {
+          ".validate": "newData.hasChildren(['id','uid','name','text'])",
+          "id": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "uid": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 24"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
         "$other": {
           ".validate": false
         }
