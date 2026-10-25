@@ -600,7 +600,7 @@ function nextPage(){const a=pages();return a[(a.indexOf(KP)+1)%a.length]}
    Serve it in time (after the regular order is done they wait up to BONUSTAIL more seconds) and they pay for it plus a
    tip rate +BONUSTIP. Not serving it, or not having the dish, costs nothing. A dish you haven't unlocked shows a lock chip,
    and after WISHN sightings of the same locked dish a one-time toast points to the shop. */
-const WISHN=5,BONUSP=.3,BONUSTAIL=10,BONUSTIP=.1;
+const WISHN=5,BONUSP=.3,BONUSTAIL=12,BONUSTIP=.1,BONUSPAT=1.5;
 function bonusKey(k){if(k==='chazuke')return 'chazuke:'+pick(['salmon','ume']);if(k==='ramen')return 'ramen:'+pick(RTOPS.filter(topOn));if(k==='sashimi')return 'sashimi:'+['maguro','salmon','tai'].sort(()=>Math.random()-.5).slice(0,2).sort().join('+');return k}
 function bonusPick(order){
   if(DEMO||TUT||!ST||ST.day<2)return null;
@@ -1669,6 +1669,7 @@ function spawn(){
     if(ex){c.extra=ex;
       if(!ex.ok){ST.wish=ST.wish||{};ST.wish[ex.base]=(ST.wish[ex.base]||0)+1;save();
         if(ST.wish[ex.base]===WISHN)setTimeout(()=>toast('最近好像有很多客人想吃'+ITEMS[ex.base].zh+'…打烊後去商店看看！'),1200)}}}
+  if(c.extra&&c.extra.ok){c.max*=BONUSPAT;c.pat=c.max} // 加碼的客人願意多等一會兒，免得還沒上菜就走了
   el.innerHTML=custFig(c.look,'ok')+`<div class="bubble hide"></div>`+(hg?`<div class="hg-badge">${hg.ic}</div>`:'');
   if(hg&&!DEMO){const rr=loadRec();rr.hg=rr.hg||{};rr.hg[hg.id]=(rr.hg[hg.id]||0)+1;saveRec(rr);setTimeout(()=>{if(R)toast(T('{0}來了！',T(hg.zh)))},300)}
   $('custLayer').appendChild(el);c.el=el;seatClasses();
@@ -1801,7 +1802,8 @@ function staffStep(dt){
   const wl=staffLv('waiter'),hl=staffLv('helper');
   if(wl){R.staffT-=dt;if(R.staffT<=0){R.staffT=[2.6,2.2,1.8][wl-1];
     const src=readySources().filter(x=>x.src==='warm'||(wl>=2&&x.src==='tap')||(wl>=3&&INSTANT.includes(x.src)));
-    outer:for(const c of waiting())for(let j=0;j<c.order.length;j++){if(c.filled[j])continue;const h=src.find(x=>x.key===c.order[j]);if(h&&giveTo(c,j,h,false)!==false){popup(56,176,T('小美上菜'));break outer}}}}
+    outer:for(const c of waiting()){for(let j=0;j<c.order.length;j++){if(c.filled[j])continue;const h=src.find(x=>x.key===c.order[j]);if(h&&giveTo(c,j,h,false)!==false){popup(56,176,T('小美上菜'));break outer}}
+      if(c.extra&&c.extra.ok&&!c.extra.done){const h=src.find(x=>x.key===c.extra.key);if(h&&giveTo(c,'x',h,false)!==false){popup(56,176,T('小美上菜'));break outer}}}}}
   if(hl){R.helpT-=dt;if(R.helpT<=0){R.helpT=.9;helperAct()}}
   if(hl>=3){R.crisisT=(R.crisisT??3)-dt;if(R.crisisT<=0)R.crisisT=crisisCook()?HELPER_GAP:1}
 }
@@ -2069,7 +2071,7 @@ function giveTo(c,j,h,byPlayer){
   if(R.where==='rm'&&ST.rm&&RFK.includes(h.key)&&!DEMO){ST.rm.fried=(ST.rm.fried||0)+1;if(ST.rm.fried===TAI_NEED&&!has('taiyaki'))setTimeout(()=>toast('二號廚房好像可以做新甜點了…打烊後去商店看看！'),500)}
   if(!ex&&c.filled.every(Boolean)&&!c.critic&&c.tr.reorder&&!c.reordered&&Math.random()<c.tr.reorder){c.reordered=1;c.order.push(c.lastKey);c.filled.push(false);popup(seatX(c.seat,seatsN()),120,T('再來一份！'))}
   else if(c.filled.every(Boolean)&&!c.critic&&!c.tail&&c.extra&&c.extra.ok&&!c.extra.done){ // regular order done, bonus dish still open: wait a little longer, no penalty either way
-    c.tail=1;c.tipP=Math.max(0,c.pat/c.max);c.max=c.pat=BONUSTAIL;popup(seatX(c.seat,seatsN()),120,T('還想加點一份！'))}
+    c.tail=1;c.tipP=Math.max(0,c.pat/c.max);c.max=c.pat=Math.max(BONUSTAIL,c.pat);popup(seatX(c.seat,seatsN()),120,T('還想加點一份！'))}
   else if(c.filled.every(Boolean)){if(c.critic){R.criticDone=true;const ok=c.t-(c.waitAt||0)<=10;if(ok){const b=3000+ST.day*300;R.earned+=b;setTimeout(()=>popup(seatX(c.seat,seatsN()),120,T('評論家大讚！+{0}',yen(b))),300);sfx('star')}else toast(T('評論家：嗯…普通。'))}leave(c,true)}
   renderStations();renderCust();
 }
