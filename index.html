@@ -2576,6 +2576,7 @@ document.addEventListener('click',e=>{
   else if(act==='frsort'){FR.sort=a.dataset.id;frDraw()}
   else if(act==='frvisit')showVisit(a.dataset.id);
   else if(act==='frgift')frGift(a.dataset.id);
+  else if(act==='frgiftall')frGiftAll();
   else if(act==='frdel')frDelAsk(a.dataset.id);
   else if(act==='frdelok')frDel(a.dataset.id);
   else if(act==='frback')showFriends();
@@ -3312,7 +3313,9 @@ function frDraw(){FR.view='list';if(!HOME||LB.tab!=='fr')return;
   const sum=D.pend.reduce((s,f)=>s+D.gifts[f].a,0);
   const list=rows.map((x,i)=>{const act=x.me?'':`<button class="btn alt frb" data-act="frvisit" data-id="${esc(x.uid)}">${T('參觀')}</button><button class="btn alt frb" data-act="frgift" data-id="${esc(x.uid)}" ${(r.frG||{})[x.uid]===today?'disabled':''}>🎁</button>`;
     return `<div class="lbrow frrow ${x.me?'me':''}"><b>${i<3?['🥇','🥈','🥉'][i]:i+1}</b><span>${esc(x.name||T('玩家'))}${rtTag(x.rt)}</span><em>${yen(x[FR.sort]||0)}</em>${act}</div>`}).join('');
-  modal(lbHead(tb)+(D.pend.length?`<div class="lbme"><span>🎁 ${T('收到 {0} 份禮物，共 {1}',D.pend.length,yen(sum))}</span><button class="btn" data-act="frclaim">${T('領取')}</button></div>`:'')
+  const unsent=ids.filter(k=>(r.frG||{})[k]!==today).length;
+  modal(lbHead(tb)+(D.pend.length?`<div class="lbme"><span>🎁 ${T('收到 {0} 份禮物，共 {1}',D.pend.length,yen(sum))}</span><button class="btn" data-act="frclaim">${T('一鍵領取')}</button></div>`:'')
+   +(ids.length?`<div class="lbme"><span>${unsent?T('今天還可送 {0} 位好友',unsent):T('今天已經全部送過了')}</span><button class="btn" data-act="frgiftall" ${unsent?'':'disabled'}>${T('一鍵送禮')}</button></div>`:'')
    +`<div class="lbme"><span>${T('你的好友碼')}：<b style="letter-spacing:2px">${fmtCode(fcodeOf(me.uid))}</b></span><button class="btn alt" data-act="frcopy">${T('複製')}</button><button class="btn alt" data-act="frshare">${T('分享')}</button></div>
    <div class="lbme"><input class="nickin" id="frin" maxlength="9" placeholder="${T('輸入好友碼')}" autocomplete="off" style="flex:1;min-width:0;font-size:16px;padding:6px 10px;text-transform:uppercase"><button class="btn" data-act="fradd">${T('加好友')}</button></div>
    <p id="frerr" style="color:#e0412c;font-size:14px;margin:2px 0" hidden></p>
@@ -3337,6 +3340,12 @@ async function frClaim(){const me=CL.user,D=FR.data;if(!me||!D||!D.pend.length)r
   let sum=0;const m={};D.pend.forEach(f=>{sum+=D.gifts[f].a;m[f]=D.gifts[f].d});
   try{await CL.api.gclaimSet(me.uid,m)}catch(e){console.warn('claim',e);toast('好友功能暫時打不開，請稍後再試。');return}
   g.coins=(g.coins||0)+sum;lsSet(KEY,JSON.stringify(g));touchLocal();FR.dirty=1;D.pend=[];toast(T('已領取 {0}',yen(sum)));frDraw()}
+async function frGiftAll(){const me=CL.user,D=FR.data;if(!me||!D)return;const r=loadRec(),d=frDay();r.frG=r.frG||{};
+  const targets=Object.keys(D.fl).filter(u=>r.frG[u]!==d);
+  if(!targets.length){toast('今天已經全部送過了，明天再來。');return}
+  const res=await Promise.allSettled(targets.map(u=>CL.api.giftSend(me.uid,u,FR_GIFT,d)));
+  let ok=0;res.forEach((x,i)=>{const u=targets[i];if(x.status==='fulfilled'){ok++;r.frG[u]=d}else if(x.reason&&x.reason.code==='PERMISSION_DENIED'){r.frG[u]=d}});
+  saveRec(r);toast(ok?T('已送出 {0} 份禮物！',ok):'送不出去，今天可能已經送過了。');frDraw()}
 async function frGift(uid){const me=CL.user;if(!me)return;const r=loadRec(),d=frDay();r.frG=r.frG||{};
   if(r.frG[uid]===d){toast('今天已經送過了，明天再來。');return}
   try{await CL.api.giftSend(me.uid,uid,FR_GIFT,d);r.frG[uid]=d;saveRec(r);toast('禮物已送出！')}
