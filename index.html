@@ -2138,7 +2138,7 @@ function showHome(){
   const saved=load();
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
   <div class="htitle"><h1 class="logo"><img src="img/logo-9e60dada.webp" alt="${T('乾杯！居酒屋')}" draggable="false"></h1><div class="sub">${T('～ 巷子裡的小居酒屋 ～')}</div></div>
-  <div class="menu">${saved?(FB_CONFIG?plaque('frhome','好友'):'')+plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1)+plaque('asknew','新的一局'):plaque('newgame','開始營業','',1)}</div><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','遊藝'):''}${sideBtn('tut','新手教學')}${sideBtn('howto','遊戲說明')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side side-r">${sideBtn('records','經營紀錄')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反應'):''}</div><div class="topl"><button class="langbtn ntbtn" data-act="slots" aria-label="${T('存檔欄位')}">💾<span class="ntl"> ${T('存檔')}</span></button><button class="langbtn ntbtn" data-act="share" aria-label="${T('分享')}">🔗<span class="ntl"> ${T('分享')}</span></button></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${NOTICE?`<button class="langbtn ntbtn" data-act="notice" aria-label="${T('公告')}">📢<span class="ntl"> ${T('公告')}</span></button>`:''}${acctBtn()}<button class="langbtn" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>${LANGS.find(l=>l[0]===LANG)[1]}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}<div id="homeModal"></div></div>`;
+  <div class="menu">${saved?(FB_CONFIG?plaque('frhome','好友'):'')+plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1)+plaque('asknew','新的一局'):plaque('newgame','開始營業','',1)}</div><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','遊藝'):''}${sideBtn('howto','說明')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side side-r">${sideBtn('records','經營紀錄')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反應'):''}</div><div class="topl"><button class="langbtn ntbtn" data-act="slots" aria-label="${T('存檔欄位')}">💾<span class="ntl"> ${T('存檔')}</span></button><button class="langbtn ntbtn" data-act="share" aria-label="${T('分享')}">🔗<span class="ntl"> ${T('分享')}</span></button></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${NOTICE?`<button class="langbtn ntbtn" data-act="notice" aria-label="${T('公告')}">📢<span class="ntl"> ${T('公告')}</span></button>`:''}${acctBtn()}<button class="langbtn" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>${LANGS.find(l=>l[0]===LANG)[1]}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}<div id="homeModal"></div></div>`;
   placeChat();requestAnimationFrame(placeChat);setTimeout(placeChat,300);
   if(noticeDue()){if(NOTICE_LOADED||!FB_CONFIG)setTimeout(()=>{if(HOME&&!document.querySelector('#homeModal .modal')){NAUTOREQ=true;showNotice()}},400);else setTimeout(noticePop,3500)}else if(CL.pick)setTimeout(cloudAsk,0);
 }
@@ -2156,8 +2156,13 @@ function shareCopy(txt){const done=()=>toast('已複製連結');
 function shareGame(){const text=T('來玩「乾杯！居酒屋」，一起經營自己的居酒屋！');
   if(navigator.share){navigator.share({title:T('乾杯！居酒屋'),text,url:SHARE_URL}).catch(e=>{if(!e||e.name!=='AbortError')shareCopy(text+' '+SHARE_URL)})}
   else shareCopy(text+' '+SHARE_URL)}
-function showHowto(){modal(`<h2>${T('遊戲說明')}</h2><div class="how">${HOWTO.map(([h,p])=>`<div class="how-row"><div><b>${T(h)}</b><br>${T(p)}</div></div>`).join('')}</div>
-  <div class="btns"><button class="btn" data-act="closem">${T('知道了')}</button></div>`)}
+function showHowto(tab){
+  const isTut=tab==='tut';
+  const tabs=`<div class="btns" style="margin-bottom:10px"><button class="btn ${isTut?'alt':''}" data-act="howto" data-id="how">📖 ${T('遊戲說明')}</button><button class="btn ${isTut?'':'alt'}" data-act="howto" data-id="tut">🎓 ${T('新手教學')}</button></div>`;
+  const body=isTut
+    ? `<p style="font-size:14px;line-height:1.6">${T('第一次玩？跟著店員一步步學會點菜、做菜、送菜。練習不會影響存檔，練完再按「開始營業」，就是正式的一局。')}</p><div class="btns"><button class="btn" data-act="tut">${T('開始新手教學')}</button></div>`
+    : `<div class="how">${HOWTO.map(([h,p])=>`<div class="how-row"><div><b>${T(h)}</b><br>${T(p)}</div></div>`).join('')}</div>`;
+  modal(`<h2>${T('說明')}</h2>${tabs}${body}<div class="btns"><button class="btn alt" data-act="closem">${T('知道了')}</button></div>`)}
 const PROF={
  misaki:['27 歲・廣告公司企劃','白天是俐落的企劃，下班一坐下就變豪爽大姊，酒量全店第一，會幫隔壁的新人打氣。','先來一杯生的！','生啤酒、炸雞塊'],
  ren:['24 歲・新人上班族','剛出社會一年的認真新人，常被課長念，下班來喝一杯就開始碎碎念，但會跟店員道謝。','今天也被課長罵了……','蔥雞肉串、生啤酒'],
@@ -2464,7 +2469,7 @@ document.addEventListener('click',e=>{
   else if(act==='pickcloud'){const c=CL.pick;CL.pick=null;closeModal();if(c)applyCloud(c)}
   else if(act==='picklocal'){if(CL.pick)slBackup(CL.pick.game,'cloud');CL.pick=null;closeModal();cloudUpload(true)}
   else if(act==='setlang')setLang(a.dataset.id);
-  else if(act==='howto')showHowto();
+  else if(act==='howto')showHowto(a.dataset.id);
   else if(act==='share')shareGame();
   else if(act==='tut'){closeHome();DEMO=true;ST=fresh();startDay();startTut(true)}
   else if(act==='records')showRecords();
