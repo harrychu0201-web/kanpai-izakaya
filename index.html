@@ -895,7 +895,7 @@ function lanternG(ch){return `<path d="M30 0v8" stroke="${O}" stroke-width="3"/>
   ${[...ch].length>1?[...ch].map((c,i)=>`<text x="30" y="${38+i*21}" text-anchor="middle" font-family="Noto Sans TC,Zen Maru Gothic,sans-serif" font-weight="700" font-size="18" fill="#1a0e08">${c}</text>`).join(''):`<text x="30" y="50" text-anchor="middle" font-family="Noto Sans TC,Zen Maru Gothic,sans-serif" font-weight="700" font-size="23" fill="#1a0e08">${ch}</text>`}`}
 
 /* customers */
-const STAFF={waiter:{id:'waiter',top:'#2b3b6e',skin:'#f9dcc0',hc:'#3a2418'},cook:{id:'cook',top:'#f2efe8',skin:'#eec09a',hc:'#1c1a22'},aoi:{id:'aoi',top:'#2a2a33',skin:'#f6d6b8',hc:'#5a2e1c'},sho:{id:'sho',top:'#24427a',skin:'#eec09a',hc:'#1c1a22'}};
+const STAFF={dai:{id:'dai',top:'#b8372a',skin:'#f1d0b2',hc:'#2a1c14'},waiter:{id:'waiter',top:'#2b3b6e',skin:'#f9dcc0',hc:'#3a2418'},cook:{id:'cook',top:'#f2efe8',skin:'#eec09a',hc:'#1c1a22'},aoi:{id:'aoi',top:'#2a2a33',skin:'#f6d6b8',hc:'#5a2e1c'},sho:{id:'sho',top:'#24427a',skin:'#eec09a',hc:'#1c1a22'}};
 const LOOKS=[
   {id:'sal',hair:'short',top:'#34405f',skin:'#f6d2b0',hc:'#2a1d17'},
   {id:'ol',hair:'long',top:'#e9d7b8',skin:'#f9dcc0',hc:'#5a3a24'},
@@ -1074,7 +1074,12 @@ const RSTAFF2={zh:'屋台廚手・山田',lv:[
   {cost:110000,wage:1700,d:'也會在關東煮不夠的時候補料下鍋，動作也更快。'}]};
 function rmStaffLv(){return rmUp('staff',0)}
 function rmStaff2Lv(){return rmUp('staff2',0)}
-function rmWages(){const l=rmStaffLv(),l2=rmStaff2Lv();return (l?RSTAFF.lv[l-1].wage:0)+(l2?RSTAFF2.lv[l2-1].wage:0)}
+const RSTAFF3={zh:'屋台炸師・大輔',lv:[
+  {cost:40000,wage:900,d:'客人點了可樂餅，油鍋有空位就會自動下鍋（食材錢照付）。'},
+  {cost:75000,wage:1300,d:'也會接手唐揚雞，有空位就自動下鍋。'},
+  {cost:120000,wage:1800,d:'也會炸豬排，動作也更快，大約每 0.6 秒檢查一次油鍋。'}]};
+function rmFryStaffLv(){return rmUp('staff3',0)}
+function rmWages(){const l=rmStaffLv(),l2=rmStaff2Lv(),l3=rmFryStaffLv();return (l?RSTAFF.lv[l-1].wage:0)+(l2?RSTAFF2.lv[l2-1].wage:0)+(l3?RSTAFF3.lv[l3-1].wage:0)}
 const plateG=()=>`<ellipse cx="50" cy="66" rx="44" ry="22" fill="#f3efe6" stroke="${O}" stroke-width="4"/><ellipse cx="50" cy="64" rx="32" ry="13" fill="none" stroke="#2b3b6e" stroke-width="2" opacity=".4"/>`;
 function gyoza1(x,y,r,st){const b=st==='burnt'?'#3a2a1c':'#f5ecd8',c=st==='raw'?'#efe4cc':st==='done'?'#c9852e':'#1a120c';
   return `<g transform="translate(${x} ${y}) rotate(${r})"><path d="M-15 5q0-20 15-20q15 0 15 20z" fill="${b}" stroke="${O}" stroke-width="2.5"/><path d="M-15 5h30v3q-15 6-30 0z" fill="${c}" stroke="${O}" stroke-width="2"/>${st!=='burnt'?`<path d="M-7-8l2 6M0-11v6M7-8l-2 6" stroke="#cdbb96" stroke-width="2" stroke-linecap="round"/>`:''}</g>`}
@@ -1224,6 +1229,7 @@ function drawYatai(){
   if(rmDec('heater'))s+=`<g transform="translate(${W-(rmStaff2Lv()?186:120)} ${KY-118})"><ellipse cx="30" cy="20" rx="44" ry="30" fill="#ff8a2a" opacity=".22"/><rect x="10" y="10" width="40" height="52" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/><rect x="16" y="20" width="28" height="22" rx="4" fill="#ff7a2a"/><path d="M20 26h20M20 32h20M20 38h20" stroke="#ffd27a" stroke-width="2"/></g>`;
   if(rmDec('radio'))s+=`<g transform="translate(28 ${KY-104})"><rect x="0" y="22" width="70" height="30" rx="4" fill="#6b4026" stroke="${O}" stroke-width="3"/><rect x="2" y="0" width="66" height="26" rx="6" fill="#d8b47a" stroke="${O}" stroke-width="3"/><circle cx="18" cy="13" r="8" fill="#5a3a24"/><rect x="32" y="8" width="28" height="10" rx="2" fill="#fff3c4" stroke="${O}" stroke-width="1.5"/><path d="M58 0l8-14" stroke="${O}" stroke-width="2"/><text x="74" y="-4" font-size="15" fill="#ffd27a">♪</text></g>`;
   if(rmDec('flag'))s+=`<g transform="translate(${W-64} ${60+TY})"><path d="M0 0v${KY-170-TY}" stroke="#8a8a8a" stroke-width="4"/><rect x="2" y="6" width="34" height="120" fill="#fbf1dc" stroke="${O}" stroke-width="2"/><rect x="2" y="6" width="34" height="14" fill="#b8372a"/>${[...'豚骨'].map((c,i)=>`<text x="19" y="${56+i*36}" text-anchor="middle" font-family="Noto Sans TC,sans-serif" font-weight="900" font-size="26" fill="#1a0e08">${c}</text>`).join('')}</g>`;
+  if(rmFryStaffLv())s+=`<g transform="translate(${Math.round(W/2-70)} ${KY-206}) scale(.7)">${custSVG(STAFF.dai,'happy').replace('<svg class="fig" viewBox="0 0 160 212">','<svg viewBox="0 0 160 212" width="160" height="212">')}</g>`;
   if(rmStaff2Lv())s+=`<g transform="translate(${W-118} ${KY-206}) scale(.7)">${custSVG(STAFF.sho,'happy').replace('<svg class="fig" viewBox="0 0 160 212">','<svg viewBox="0 0 160 212" width="160" height="212">')}</g>`;
   s+=`<rect x="0" y="0" width="16" height="${KY}" fill="#5a3a24"/><rect x="${W-16}" y="0" width="16" height="${KY}" fill="#5a3a24"/>`;
   const tarp=rmDec('tarp');
@@ -1257,7 +1263,7 @@ function shopRm(sub){
     return `<div class="up ${own&&!gm?'done':''}"><b><span class="ui">${r.id==='tamago'||r.id==='corn'?sv(ramenG({men:1,top:r.id==='corn'?'corn':'egg'})):icon(r.id)}</span>${it?JP(r.id):T(r.zh)}</b><p>${it?T('{0}。售價 {1}，食材 {2}。',T(it.zh),yen(it.price),yen(it.cost)):T(r.d)}${r.id==='goma'?T('便宜、點一下就能送，但賺得少。可以隨時下架，下架之後客人就不會點。'):''}</p><div class="row"><span class="price">${yen(r.cost)}</span>${gm?`<span>${T(gomaOff()?'下架中':'已上菜單')}</span><button class="btn alt" data-act="gomatog">${T(gomaOff()?'重新上架':'暫時下架')}</button>`:own?`<span>${T('已上菜單')}</span>`:`<button class="btn" data-act="buyrmenu" data-id="${r.id}" ${ST.coins<r.cost?'disabled':''}>${T('解鎖')}</button>`}</div></div>`}).join('')}</div>
   <h3 class="sh">${T('屋台菜色升級')}</h3><div class="shop">${un.map(b=>lvCard(b)).join('')}</div>`;
   const KIT=`<h3 class="sh">${T('屋台設備')}</h3><div class="shop">${RUPS.filter(u=>(!u.k2||rmK2())&&(!u.vis||u.vis())).map(u=>{const done=u.done(),can=u.ok();return `<div class="up ${done?'done':''}"><b>${T(u.zh)}</b><p>${T(u.d)}</p><div class="row"><span class="price">${yen(u.cost)}</span>${done?`<span>${T('已購買')}</span>`:can?`<button class="btn" data-act="rmup" data-id="${u.id}" ${ST.coins<u.cost?'disabled':''}>${T('購買')}</button>`:`<span style="font-size:12px">${u.need?T(u.need):''}</span>`}</div></div>`}).join('')}</div>
-  <h3 class="sh">${T('屋台店員・只在屋台幫忙')}</h3><div class="shop">${[[RSTAFF,rmStaffLv(),'rmstaff','#2b3b6e'],[RSTAFF2,rmStaff2Lv(),'rmstaff2','#24427a']].map(([DEF,l,ACT,BG])=>{const nx=DEF.lv[l];return `<div class="up ${l>=3?'done':''}"><b>${T(DEF.zh)}<span class="new" style="background:${BG}">${l?'Lv.'+l:T('未雇用')}</span></b><p>${l?T('現在：{0}（日薪 {1}）',T(DEF.lv[l-1].d),yen(DEF.lv[l-1].wage)):''}${nx?`${l?'<br>':''}${l?T('升到 Lv.{0}',l+1):T('雇用')}${T('：{0}（日薪 {1}）',T(nx.d),yen(nx.wage))}`:''}</p><div class="row"><span class="price">${nx?yen(nx.cost):''}</span>${nx?`<button class="btn" data-act="${ACT}" ${ST.coins<nx.cost?'disabled':''}>${l?T('升級'):T('雇用')}</button>`:`<span>${T('已滿級')}</span>`}</div></div>`}).join('')}</div>`;
+  <h3 class="sh">${T('屋台店員・只在屋台幫忙')}</h3><div class="shop">${[[RSTAFF,rmStaffLv(),'rmstaff','#2b3b6e'],[RSTAFF2,rmStaff2Lv(),'rmstaff2','#24427a'],[RSTAFF3,rmFryStaffLv(),'rmstaff3','#8a3b2a']].map(([DEF,l,ACT,BG])=>{const nx=DEF.lv[l];return `<div class="up ${l>=3?'done':''}"><b>${T(DEF.zh)}<span class="new" style="background:${BG}">${l?'Lv.'+l:T('未雇用')}</span></b><p>${l?T('現在：{0}（日薪 {1}）',T(DEF.lv[l-1].d),yen(DEF.lv[l-1].wage)):''}${nx?`${l?'<br>':''}${l?T('升到 Lv.{0}',l+1):T('雇用')}${T('：{0}（日薪 {1}）',T(nx.d),yen(nx.wage))}`:''}</p><div class="row"><span class="price">${nx?yen(nx.cost):''}</span>${nx?`<button class="btn" data-act="${ACT}" ${ST.coins<nx.cost?'disabled':''}>${l?T('升級'):T('雇用')}</button>`:`<span>${T('已滿級')}</span>`}</div></div>`}).join('')}</div>`;
   const DECO=`<h3 class="sh">${T('屋台布置・讓客人更有耐心')}</h3><div class="shop">${RDECOR.map(d=>{const own=rmDec(d.id);return `<div class="up ${own?'done':''}"><b>${T(d.zh)}<span class="new" style="background:#5c9a3a">${T('耐心 +{0}%',Math.round(d.b*100))}</span></b><p>${T(d.d)}</p><div class="row"><span class="price">${yen(d.cost)}</span>${own?`<span>${T('已布置')}</span>`:`<button class="btn" data-act="rmdec" data-id="${d.id}" ${ST.coins<d.cost?'disabled':''}>${T('購買')}</button>`}</div></div>`}).join('')}</div>`;
   return sub==='kit'?KIT:sub==='deco'?DECO:MENU}
 
@@ -1650,7 +1656,7 @@ function step(dt){
   R.taps.slice(0,tapsN()).forEach((tp,i)=>{
     if(tp.st==='empty'&&live()>=costOf('beer')){R.taps[i]={st:'filling',t:0};sfx('pour');charge(costOf('beer'),L.tap.x+(tapsN()===1?50:25+i*50),L.tap.y+60)}
     else if(tp.st==='filling'){tp.t+=dt;if(tp.t>=tapTime())tp.st='full'}});
-  if(CUR!=='rm')staffStep(dt);else{rmStaffStep(dt);rmCookStep(dt)}
+  if(CUR!=='rm')staffStep(dt);else{rmStaffStep(dt);rmCookStep(dt);rmFryStep(dt)}
   const cdt=dt*cookMul();R.rmpan.forEach(g=>{if(g)g.t+=dt});R.rfry.forEach(g=>{if(g)g.t+=dt});R.tyaki.forEach(g=>{if(g)g.t+=dt});R.mpot.forEach(g=>{if(g)g.t+=dt*(rmUp('fast',0)?1.4:1)});
   R.oden.cook.forEach(b=>b.t+=dt);{const ot=odenT(),dn=R.oden.cook.filter(b=>b.t>=ot).reduce((s,b)=>s+(b.n||2),0);if(dn){R.oden.n+=dn;R.oden.cook=R.oden.cook.filter(b=>b.t<ot);sfx('done')}}
   R.grill.forEach(g=>{if(g)g.t+=cdt});R.fryer.forEach(f=>{if(f)f.t+=cdt});R.teppan.forEach(g=>{if(g)g.t+=cdt});R.tempura.forEach(g=>{if(g)g.t+=cdt});
@@ -1714,14 +1720,22 @@ function rmStaffStep(dt){
 function rmPop(t){popup(50,KY-218,T(t))}
 function shoPop(t){popup(W-62,KY-218,T(t))}
 /* Yamada: starts food for orders nobody is making yet */
-function rmDemand(){const d={ramen:0,gyoza:0,friedrice:0,oden:0};
+function rmDemand(){const d={ramen:0,gyoza:0,friedrice:0,oden:0,koro:0,tori:0,katsu:0};
   for(const c of R.seats){if(!c||(c.st!=='wait'&&c.st!=='in'))continue;c.order.forEach((k,j)=>{if(c.filled[j])return;const b=k.split(':')[0];if(b in d)d[b]++})}
   R.mpot.forEach((g,i)=>{if(g&&i<mpotN()&&cookState(g.t,'noodle')!=='burnt')d.ramen--});
   R.bowls.forEach((b,i)=>{if(b&&i<bowlsN()&&b.men)d.ramen--});
   R.warm.forEach(w=>{if(!w)return;const b=w.key.split(':')[0];if(b in d)d[b]--});
   R.rmpan.forEach(g=>{if(g&&g.kind in d&&cookState(g.t,g.kind)!=='burnt')d[g.kind]--});
+  R.rfry.forEach(g=>{if(g&&g.kind in d&&cookState(g.t,g.kind)!=='burnt')d[g.kind]--});
   d.oden-=R.oden.n+R.oden.cook.reduce((s,b)=>s+(b.n||2),0);
   return d}
+function rmFryStep(dt){const l=rmFryStaffLv();if(!l)return;R.rfT=(R.rfT??1.2)-dt;if(R.rfT<=0){R.rfT=l>=3?.6:1;rmFryAct(l)}}
+function rmFryAct(l){
+  const d=rmDemand(),kinds=['koro','tori','katsu'].slice(0,l>=3?3:l>=2?2:1);
+  for(const k of kinds){if(d[k]<=0||!has(k)||!unlocked(ST.day,'rm').includes(k))continue;
+    const i=R.rfry.findIndex((x,j)=>!x&&j<rfryN()),c=costOf(k);
+    if(i>=0&&live()>=c){R.rfry[i]={kind:k,t:0};const p=srcCenter({src:'rfry',i});charge(c,p.x,p.y-50);shoPop('大輔炸'+ITEMS[k].zh);renderStations();return}}
+}
 function rmCookStep(dt){const l=rmStaff2Lv();if(!l)return;R.rckT=(R.rckT??1.2)-dt;if(R.rckT<=0){R.rckT=l>=3?.6:1;rmCookAct(l)}}
 function rmCookAct(l){
   const d=rmDemand();
@@ -2026,7 +2040,7 @@ function renderHUD(){document.body.classList.toggle('playing',!!R);
   setHTML($('hud'),`<div class="pill day">${R&&R.where==='rm'?'🍜 ':''}${T('第 {0} 天',ST.day)}</div>
     ${R?`<div class="goal" aria-label="${T('今日淨利')}"><i style="width:${Math.min(100,e/max*100)}%"></i><em>${T('淨利 {0}',yen(net()))}</em>${g.map(v=>`<span class="${e>=v?'on':''}" style="left:${v/max*100}%">★</span>`).join('')}</div>
     <div class="pill clock"><b>${clockStr()}</b>${PERIOD(hourNow())}</div>${R.ev&&R.ev.ev?`<div class="pill ev" title="${esc(evDesc(R.ev))}">${evLabel(R.ev)}</div>`:''}`:'<div style="flex:1"></div>'}
-    ${CUR==='rm'?(rmStaffLv()||rmStaff2Lv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[rmStaffLv()?T('小葵')+'★'.repeat(rmStaffLv()-1):'',rmStaff2Lv()?T('山田')+'★'.repeat(rmStaff2Lv()-1):''].filter(Boolean).join('・')}</b></div>`:''):ST.up.waiter||ST.up.helper?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[ST.up.waiter?T('小美')+(staffLv('waiter')>1?'★'.repeat(staffLv('waiter')-1):''):'',ST.up.helper?T('阿健')+(staffLv('helper')>1?'★'.repeat(staffLv('helper')-1):''):''].filter(Boolean).join('・')}</b></div>`:''}
+    ${CUR==='rm'?(rmStaffLv()||rmStaff2Lv()||rmFryStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[rmStaffLv()?T('小葵')+'★'.repeat(rmStaffLv()-1):'',rmStaff2Lv()?T('山田')+'★'.repeat(rmStaff2Lv()-1):'',rmFryStaffLv()?T('大輔')+'★'.repeat(rmFryStaffLv()-1):''].filter(Boolean).join('・')}</b></div>`:''):ST.up.waiter||ST.up.helper?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[ST.up.waiter?T('小美')+(staffLv('waiter')>1?'★'.repeat(staffLv('waiter')-1):''):'',ST.up.helper?T('阿健')+(staffLv('helper')>1?'★'.repeat(staffLv('helper')-1):''):''].filter(Boolean).join('・')}</b></div>`:''}
     ${(()=>{const w=R?live():ST.coins;return `<div class="pill ${w<0?'neg':''}">${T('錢包')} <b>${w<0?'−':''}¥${Math.abs(Math.round(w)).toLocaleString('en-US')}</b></div>`})()}${ST.debt?`<div class="pill staff">${T('借款')} <b>${yen(ST.debt)}</b></div>`:''}
     ${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}">${sndIcon()}</button><button class="icon-btn fsbtn" data-act="fs" aria-label="${T('全螢幕')}">⛶</button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}">❚❚</button>`:''}`);
 }
@@ -2240,7 +2254,7 @@ function tabDot(k){try{const c=ST.coins;
     if(!ST.rm)return k==='rmenu'&&c>=RM_PRICE;
     if(k==='rmenu'){const un=unlocked(ST.day,'rm').filter(x=>x!=='beer');
       return (!rmK2()&&c>=K2_PRICE)||RNEW.some(r=>(!r.k2||rmK2())&&!has(r.id)&&(!r.need||r.need())&&c>=r.cost)||un.some(b=>{const u=upCost(b);return lvOf(b)<3&&u&&c>=u})}
-    if(k==='rkit')return RUPS.some(u=>(!u.k2||rmK2())&&(!u.vis||u.vis())&&!u.done()&&u.ok()&&c>=u.cost)||[[RSTAFF,rmStaffLv()],[RSTAFF2,rmStaff2Lv()]].some(([D,l])=>{const nx=D.lv[l];return nx&&c>=nx.cost});
+    if(k==='rkit')return RUPS.some(u=>(!u.k2||rmK2())&&(!u.vis||u.vis())&&!u.done()&&u.ok()&&c>=u.cost)||[[RSTAFF,rmStaffLv()],[RSTAFF2,rmStaff2Lv()],[RSTAFF3,rmFryStaffLv()]].some(([D,l])=>{const nx=D.lv[l];return nx&&c>=nx.cost});
     if(k==='rdeco')return RDECOR.some(d=>!rmDec(d.id)&&c>=d.cost);
     return false}
   if(k==='menu'){const un=unlocked(ST.day,'iz');
@@ -2385,6 +2399,7 @@ document.addEventListener('click',e=>{
   else if(act==='gomatog'){if(ST.rm&&has('goma')){keepScroll();ST.rm.off=ST.rm.off||{};ST.rm.off.goma=!ST.rm.off.goma;save();drawBg();showShop()}}
   else if(act==='buyrmenu'){const r=RNEW.find(x=>x.id===a.dataset.id);if(r&&ST.rm&&!has(r.id)&&(!r.k2||rmK2())&&(!r.need||r.need())&&ST.coins>=r.cost){keepScroll();ST.coins-=r.cost;ST.menu=ST.menu||{};ST.menu[r.id]=true;if(ITEMS[r.id])ST.fresh=(ST.fresh||[]).concat(r.id);save();drawBg();showShop();renderHUD()}}
   else if(act==='rmstaff'){const l=rmStaffLv(),nx=RSTAFF.lv[l];if(ST.rm&&nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.rm.up.staff=l+1;save();drawBg();showShop();renderHUD()}}
+  else if(act==='rmstaff3'){const l=rmFryStaffLv(),nx=RSTAFF3.lv[l];if(ST.rm&&nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.rm.up.staff3=l+1;save();drawBg();showShop();renderHUD()}}
   else if(act==='rmstaff2'){const l=rmStaff2Lv(),nx=RSTAFF2.lv[l];if(ST.rm&&nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.rm.up.staff2=l+1;save();drawBg();showShop();renderHUD()}}
   else if(act==='rmup'){const u=RUPS.find(x=>x.id===a.dataset.id);if(u&&ST.rm&&u.ok()&&ST.coins>=u.cost){keepScroll();ST.coins-=u.cost;u.go();save();showShop();renderHUD()}}
   else if(act==='rmdec'){const d=RDECOR.find(x=>x.id===a.dataset.id);if(d&&ST.rm&&!rmDec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.rm.dec[d.id]=true;save();drawBg();showShop();renderHUD()}}
