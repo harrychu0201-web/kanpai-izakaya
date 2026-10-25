@@ -211,7 +211,7 @@
     },
     "notice": {
       ".read": true,
-      ".write": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true"
+      ".write": "auth != null && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('posters').child(auth.uid).val() === true)"
     },
     "noticevote": {
       ".read": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true",
@@ -335,6 +335,14 @@
       "$uid": {
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "newData.val() === now && (!data.exists() || data.val() <= now - 10000)"
+      }
+    },
+    "posters": {
+      ".read": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && (auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
+        ".validate": "newData.val() === true || !newData.exists()"
       }
     }
   }

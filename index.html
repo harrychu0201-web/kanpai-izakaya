@@ -2494,6 +2494,7 @@ document.addEventListener('click',e=>{
   else if(act==='notice')showNotice(true);
   else if(act==='noticeold')showNotice(true,a.dataset.id);
   else if(act==='noticelist')noticeList();
+  else if(act==='noticenew')inboxNotice();
   else if(act==='noticeedit')noticeEdit(a.dataset.id);
   else if(act==='noticeeditsave')noticeEditSave(a.dataset.id);
   else if(act==='noticedel')noticeDelete(a.dataset.id);
@@ -3068,6 +3069,7 @@ async function cloudInit(){
       notice:()=>rt((rd,r)=>rd.get(rd.ref(r,'notice')).then(s=>s.val())),
       noticeVoteGet:(nid,uid)=>rt((rd,r)=>rd.get(rd.ref(r,'noticevote/'+nkey(nid)+'/'+uid)).then(s=>s.exists()?s.val():null)),
       noticeVoteSet:(nid,uid,v)=>rt((rd,r)=>rd.set(rd.ref(r,'noticevote/'+nkey(nid)+'/'+uid),v)),
+      isPoster:uid=>rt((rd,r)=>rd.get(rd.ref(r,'posters/'+uid)).then(s=>s.val()===true)),
       noticeVoteAll:nid=>rt((rd,r)=>rd.get(rd.ref(r,'noticevote/'+nkey(nid))).then(s=>{const o={seen:0,up:0,down:0};s.forEach(c=>{const v=c.val();o.seen++;if(v===1)o.up++;else if(v===-1)o.down++});return o})),
       // 'notice' keeps the latest post at its top level (older game versions read it) and every post, edited or not, under notice/hist/<id>
       setNotice:d=>rt((rd,r)=>{const u={};['id','title','text','sign'].forEach(k=>{u['notice/'+k]=d[k]==null?'':d[k]});u['notice/hist/'+String(d.id).replace(/[.#$\[\]\/]/g,'_')]=d;return rd.update(rd.ref(r),u)}),
@@ -3103,7 +3105,7 @@ async function cloudLogin(){if(!CL.api)return;try{if(await CL.api.signIn()==='cl
 // Chrome severs the sign-in popup when the player picks "Use another account", so the popup seems to close by itself.
 // Workaround: add that account to the browser first, then it shows up in the account list and can be picked directly.
 function loginHelp(){if(!HOME)return;modal(`<h2>${T('登入視窗關掉了')}</h2><p>${T('如果你剛剛是按「使用其他帳戶」，Chrome 會把登入視窗切斷。')}</p><p>${T('先按「新增 Google 帳號」，在新分頁登入你要用的帳號，登好後回到遊戲再按一次登入，那個帳號就會直接出現在清單裡，點它就好。')}</p><div class="btns"><button class="btn" data-act="addacct">${T('新增 Google 帳號')}</button><button class="btn" data-act="login">${T('再試一次')}</button><button class="btn" data-act="closem">${T('知道了')}</button></div>`)}
-function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){cloudSync();setTimeout(()=>replyCheck(0),2500)}if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
+function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){CL.isPoster=false;if(CL.api)CL.api.isPoster(u.uid).then(v=>{CL.isPoster=v===true}).catch(()=>{});cloudSync();setTimeout(()=>replyCheck(0),2500)}if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
 async function cloudSync(){
   const u=CL.user;if(!u||TEST)return;
   try{const c=await CL.api.get(u.uid);if(CL.user!==u)return;CL.synced=true;
@@ -3318,23 +3320,23 @@ async function noticeVote(val){if(!CL.user||!CL.api||NV.v==null||!NV.id)return;c
 function showNotice(again,id){const au=NAUTOREQ;NAUTOREQ=false;const all=noticeAll(),old=id!=null,n=old?all.find(x=>x.id===String(id)):NOTICE;if(!n){closeModal();return}const rem=!!n.rem;NSHOW=String(n.id);NAUTO=au&&!old;
   const text=rem?n.text:T(n.text),sign=rem?(n.sign||''):T(n.sign),dt=noticeDate(n);
   modal(`<div class="notice"><h2>📢 ${rem?(n.title?esc(n.title):T('公告')):T(n.title)}</h2>${dt?`<p style="font-size:12px;opacity:.7;margin-top:-6px">${dt}${n.edited?' · 已編輯':''}</p>`:''}<p>${esc(text)}</p>${sign?`<p class="sign">${esc(sign)}</p>`:''}<div class="nvbox" id="nvbox"></div></div>
-  <div class="btns"><button class="btn" data-act="noticeok">${T('知道了')}</button>${all.length>1?`<button class="btn alt" data-act="noticelist">📜 ${T('之前的公告')}</button>`:''}${FB_CONFIG?`<button class="btn alt" data-act="fb">${T('意見反應')}</button>`:''}${isAdmin()?`<button class="btn alt" data-act="noticeedit" data-id="${esc(n.id)}">✏️ 編輯</button><button class="btn alt" data-act="noticedel" data-id="${esc(n.id)}">🗑️ 刪除</button>`:''}</div>`);noticeVoteInit(n)}
+  <div class="btns"><button class="btn" data-act="noticeok">${T('知道了')}</button>${all.length>1?`<button class="btn alt" data-act="noticelist">📜 ${T('之前的公告')}</button>`:''}${FB_CONFIG?`<button class="btn alt" data-act="fb">${T('意見反應')}</button>`:''}${canPost()?`<button class="btn alt" data-act="noticenew">📢 發布</button>`:''}${canPost()?`<button class="btn alt" data-act="noticeedit" data-id="${esc(n.id)}">✏️ 編輯</button><button class="btn alt" data-act="noticedel" data-id="${esc(n.id)}">🗑️ 刪除</button>`:''}</div>`);noticeVoteInit(n)}
 /* the "past announcements" screen: every announcement, newest first, in a box that scrolls so it never takes over the screen */
-function noticeList(){const all=noticeAll(),adm=isAdmin();
+function noticeList(){const all=noticeAll(),adm=canPost();
   modal(`<h2>📜 ${T('之前的公告')}（${all.length}）</h2>
   <div style="max-height:58vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin:6px 0">${all.map(x=>`<div style="display:flex;gap:6px"><button class="btn alt" style="flex:1;text-align:left;font-size:14px;padding:6px 12px" data-act="noticeold" data-id="${esc(x.id)}"><small style="opacity:.7">${noticeDate(x)}</small><br>${x.rem?esc(x.title||T('公告')):T(x.title)}</button>${adm?`<button class="btn alt" style="font-size:14px;padding:6px 10px" data-act="noticeedit" data-id="${esc(x.id)}">✏️</button><button class="btn alt" style="font-size:14px;padding:6px 10px" data-act="noticedel" data-id="${esc(x.id)}">🗑️</button>`:''}</div>`).join('')}</div>
   <div class="btns"><button class="btn alt" data-act="notice">${T('返回')}</button></div>`)}
-function noticeEdit(id){const n=noticeAll().find(x=>x.id===String(id));if(!n||!isAdmin())return;
+function noticeEdit(id){const n=noticeAll().find(x=>x.id===String(id));if(!n||!canPost())return;
   modal(`<h2>✏️ 編輯公告</h2><p style="font-size:14px">改的是已經發出去的這則：玩家不會再被跳一次提示，下次打開遊戲或翻歷史公告時就會看到新內容（只顯示中文原文，不會自動翻譯）。${n.rem?'':'這則是內建公告，儲存後會用線上版本蓋過去。'}</p>
   <input class="nickin" id="etitle" maxlength="40" style="font-size:16px;padding:7px 10px" placeholder="標題" value="${esc(n.title||'')}" autocomplete="off">
   <textarea class="fbtext" id="etext" maxlength="2000" placeholder="公告內容">${esc(n.text||'')}</textarea>
   <input class="nickin" id="esign" maxlength="40" style="font-size:16px;padding:7px 10px" placeholder="署名" value="${esc(n.sign||'')}" autocomplete="off">
   <div class="btns"><button class="btn" data-act="noticeeditsave" data-id="${esc(n.id)}">儲存</button><button class="btn alt" data-act="noticelist">返回</button></div>`)}
-async function noticeEditSave(id){const n=noticeAll().find(x=>x.id===String(id)),ti=$('etitle'),tx=$('etext'),sg=$('esign');if(!n||!tx||!isAdmin())return;
+async function noticeEditSave(id){const n=noticeAll().find(x=>x.id===String(id)),ti=$('etitle'),tx=$('etext'),sg=$('esign');if(!n||!tx||!canPost())return;
   const text=tx.value.trim();if(text.length<2){toast('公告內容太短了');return}
   const d={id:n.id,title:ti.value.trim(),text,sign:sg.value.trim(),edited:Date.now()};if(n.at)d.at=n.at;
   try{await CL.api.editNotice(d,n.id===NOTICE.id);NOTICE_HIST[n.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;toast('公告已更新 ✏️');showNotice(true,n.id)}catch(e){toast('儲存失敗：'+String(e&&e.code||e))}}
-async function noticeDelete(id){const n=noticeAll().find(x=>x.id===String(id));if(!n||!isAdmin())return;
+async function noticeDelete(id){const n=noticeAll().find(x=>x.id===String(id));if(!n||!canPost())return;
   if(!confirm('確定刪除這則公告？\n「'+(n.title||'公告')+'」\n刪除後所有玩家都看不到，無法復原。'))return;
   const builtin=NOTICES.some(x=>x.id===n.id),next=noticeAll().filter(x=>x.rem&&x.id!==n.id)[0]||null;
   try{await CL.api.delNotice(n.id,builtin,next);
@@ -3450,13 +3452,15 @@ function inboxNotice(){const n=NOTICE_REMOTE?NOTICE:{title:'',text:'',sign:'作�
   <input class="nickin" id="ntitle" maxlength="40" style="font-size:16px;padding:7px 10px" placeholder="標題" value="${esc(n.title||'')}" autocomplete="off">
   <textarea class="fbtext" id="ntext" maxlength="2000" placeholder="公告內容">${esc(n.text||'')}</textarea>
   <input class="nickin" id="nsign" maxlength="40" style="font-size:16px;padding:7px 10px" placeholder="署名" value="${esc(n.sign||'')}" autocomplete="off">
-  <div class="btns"><button class="btn" data-act="inbnoticesend">發布</button><button class="btn alt" data-act="inbox">返回</button></div>`)}
+  <div class="btns"><button class="btn" data-act="inbnoticesend">發布</button><button class="btn alt" data-act="${isAdmin()?'inbox':'notice'}">返回</button></div>`)}
 async function inboxNoticeSend(){const ti=$('ntitle'),tx=$('ntext'),sg=$('nsign');if(!tx)return;const text=tx.value.trim();if(text.length<2){toast('公告內容太短了');return}
   const d={id:new Date().toISOString().slice(0,16),title:ti.value.trim(),text,sign:sg.value.trim()};
-  try{await CL.api.setNotice(d);NOTICE_HIST[d.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;noticeSeen();toast('公告已發布 📢');inboxDraw()}catch(e){toast('發布失敗：'+String(e&&e.code||e))}}
+  try{await CL.api.setNotice(d);NOTICE_HIST[d.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;noticeSeen();toast('公告已發布 📢');if(isAdmin())inboxDraw();else showNotice(true)}catch(e){toast('發布失敗：'+String(e&&e.code||e))}}
 /* ===== public chat room (Realtime Database 'chat' — no daily write cap; 5 s per-user rate limit and bans enforced by RTDB rules) ===== */
 const ADMIN_EMAIL='harrychu0201@gmail.com';
 function isAdmin(){return !!(CL.user&&CL.user.email===ADMIN_EMAIL)}
+/* announcement posters: the owner adds their uid under posters/<uid> in Realtime Database; they can post, edit and delete announcements (not feedback, bans or vote stats) */
+const canPost=()=>isAdmin()||CL.isPoster===true;
 const CHT={msgs:[],unsub:null,open:null,last:0,hide:{},block:{},me:null,banned:false,back:false,seenAt:0,live:false,err:false};
 try{const o=JSON.parse(localStorage.getItem('izakaya-chat')||'{}');CHT.hide=o.hide||{};CHT.block=o.block||{}}catch(e){}
 function chatSave(){try{localStorage.setItem('izakaya-chat',JSON.stringify({hide:CHT.hide,block:CHT.block}))}catch(e){}}
