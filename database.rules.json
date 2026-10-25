@@ -344,6 +344,28 @@
         ".write": "auth != null && (auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
         ".validate": "newData.val() === true || !newData.exists()"
       }
+    },
+    "fbpub": {
+      ".read": true,
+      "$id": {
+        ".write": "(!data.exists() && newData.exists() && newData.child('t').val() === now) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
+        ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,40}$/)",
+        "cat": {
+          ".validate": "newData.isString() && newData.val().length <= 20"
+        },
+        "text": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 800"
+        },
+        "re": {
+          ".validate": "newData.isString() && newData.val().length <= 1000"
+        },
+        "t": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
     }
   }
 }

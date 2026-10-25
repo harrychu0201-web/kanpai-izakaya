@@ -2495,6 +2495,8 @@ document.addEventListener('click',e=>{
   else if(act==='noticeold')showNotice(true,a.dataset.id);
   else if(act==='noticelist')noticeList();
   else if(act==='noticenew')inboxNotice();
+  else if(act==='fbboard')showFbBoard();
+  else if(act==='fbpubsync')fbPubSync();
   else if(act==='noticeedit')noticeEdit(a.dataset.id);
   else if(act==='noticeeditsave')noticeEditSave(a.dataset.id);
   else if(act==='noticedel')noticeDelete(a.dataset.id);
@@ -3052,15 +3054,19 @@ async function cloudInit(){
       gclaimGet:uid=>rt((rd,r)=>rd.get(rd.ref(r,'gclaim/'+uid)).then(s=>s.val()||{})),
       gclaimSet:(uid,m)=>rt((rd,r)=>{const u={};for(const k in m)u['gclaim/'+uid+'/'+k]=m[k];return rd.update(rd.ref(r),u)}),
       // feedback, replies, notice and reports live in Realtime Database too (Firestore's free daily quota kept running out)
-      addFb:d=>rt((rd,r)=>{const id=rd.push(rd.ref(r,'fb')).key;return rd.set(rd.ref(r,'fb/'+id),Object.assign({},d,{t:rd.serverTimestamp()}))}),
+      addFb:d=>rt((rd,r)=>{const id=rd.push(rd.ref(r,'fb')).key,ts=rd.serverTimestamp();
+        // the private record keeps uid/contact; the public board (fbpub) only gets what every player may see
+        return rd.update(rd.ref(r),{['fb/'+id]:Object.assign({},d,{t:ts}),['fbpub/'+id]:{cat:d.cat,text:d.text,t:ts}})}),
+      fbPubList:n=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'fbpub'),rd.orderByChild('t'),rd.limitToLast(n))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.reverse()})),
+      fbPubBackfill:rows=>rt((rd,r)=>{const u={};rows.forEach(f=>{u['fbpub/'+f.id]=Object.assign({cat:f.cat||'other',text:String(f.text).slice(0,800),t:f.t},f.re?{re:f.re}:{})});return rd.update(rd.ref(r),u).then(()=>rows.length)}),
       fbList:n=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'fb'),rd.orderByChild('t'),rd.limitToLast(n))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.reverse()})),
       fbOld:async()=>(await fs.getDocs(fs.query(fs.collection(db,'feedback'),fs.orderBy('at','desc'),fs.limit(60)))).docs.map(d=>Object.assign({id:'fs_'+d.id,old:true},d.data())),
-      fbDel:id=>rt((rd,r)=>rd.remove(rd.ref(r,'fb/'+id))),
+      fbDel:id=>rt((rd,r)=>rd.update(rd.ref(r),{['fb/'+id]:null,['fbpub/'+id]:null})),
       // a reply either starts a thread (fbreply/uid/id) or, if one exists already, adds to its msgs and pops it up again for the player
       fbReply:(f,text)=>rt((rd,r)=>{const ts=rd.serverTimestamp(),thr=f.thr||f.id,base='fbreply/'+f.uid+'/'+thr,u={};
         if(f.thr||(f.re&&!f.old)){const mid=rd.push(rd.ref(r,base+'/msgs')).key;u[base+'/msgs/'+mid]={a:true,text,t:ts};u[base+'/t']=ts;u[base+'/seen']=null}
         else u[base]={q:String(f.text||'').slice(0,300),text,t:ts};
-        if(!f.old)u['fb/'+f.id+'/re']=text;return rd.update(rd.ref(r),u)}),
+        if(!f.old)u['fb/'+f.id+'/re']=text;if(!f.old&&!f.thr)u['fbpub/'+f.id+'/re']=text;return rd.update(rd.ref(r),u)}),
       // the player answers back: goes into their own thread and into the author's inbox as a 're' item
       replyBack:(uid,thr,text,d)=>rt((rd,r)=>{const ts=rd.serverTimestamp(),mid=rd.push(rd.ref(r,'fbreply/'+uid+'/'+thr+'/msgs')).key,fid=rd.push(rd.ref(r,'fb')).key;
         return rd.update(rd.ref(r),{['fbreply/'+uid+'/'+thr+'/msgs/'+mid]:{text,t:ts},['fb/'+fid]:Object.assign({cat:'re',text,uid,thr,t:ts},d)})}),
@@ -3364,8 +3370,22 @@ function showFb(){
   <input class="nickin" id="fbcontact" maxlength="60" style="font-size:16px;padding:7px 10px" placeholder="${T('聯絡方式（選填，例如 Threads 帳號）')}" value="${esc(FB.contact)}" autocomplete="off" oninput="FB.contact=this.value">
   <p class="fbsmall" style="margin:0">${CL.user?T('作者回覆後，你打開遊戲就會看到 💌'):T('登入後再送出，作者就能直接在遊戲裡回覆你喔')}</p>
   <p class="fbsmall" id="fbmsg"></p></div>
-  <div class="btns"><button class="btn" data-act="fbsend">${T('送出')}</button><button class="btn alt" data-act="closem">${T('返回')}</button><button class="btn alt" data-act="notice">📢 ${T('公告')}</button>${CL.user?`<button class="btn alt" data-act="myre">💌 ${T('作者的回覆')}</button>`:''}${isAdmin()?`<button class="btn" data-act="inbox">📬 收件匣</button>`:''}</div>`);
+  <div class="btns"><button class="btn alt" data-act="fbboard">👀 ${T('大家的意見')}</button><button class="btn" data-act="fbsend">${T('送出')}</button><button class="btn alt" data-act="closem">${T('返回')}</button><button class="btn alt" data-act="notice">📢 ${T('公告')}</button>${CL.user?`<button class="btn alt" data-act="myre">💌 ${T('作者的回覆')}</button>`:''}${isAdmin()?`<button class="btn" data-act="inbox">📬 收件匣</button>`:''}</div>`);
   setTimeout(()=>{const t=$('fbtext');if(t&&!('ontouchstart' in window))t.focus()},50)}
+const FBB={rows:[],q:'',err:''};
+async function showFbBoard(){
+  modal(`<h2>👀 大家的意見</h2><p style="font-size:14px">送出前先搜尋看看有沒有人已經提過，可以少一點重複的問題 🙏</p>
+  <input class="nickin" id="fbq" placeholder="搜尋關鍵字…" style="font-size:16px;padding:7px 10px" value="${esc(FBB.q)}" oninput="FBB.q=this.value;fbBoardDraw()" autocomplete="off">
+  <div id="fbboard" style="max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin:8px 0"><p class="fbsmall">載入中…</p></div>
+  <div class="btns"><button class="btn" data-act="fb">我也要寫意見</button><button class="btn alt" data-act="closem">返回</button></div>`);
+  try{if(!CL.api)throw 0;FBB.rows=await CL.api.fbPubList(200);FBB.err=''}catch(e){FBB.err=String(e&&e.code||'')}
+  fbBoardDraw()}
+function fbBoardDraw(){const b=$('fbboard');if(!b)return;
+  if(FBB.err!==''&&!FBB.rows.length){b.innerHTML=`<p class="fbsmall">意見板暫時讀不到，晚點再試</p>`;return}
+  const q=FBB.q.trim().toLowerCase(),rows=FBB.rows.filter(f=>f.text&&(!q||(String(f.text)+' '+(f.re||'')).toLowerCase().includes(q)));
+  b.innerHTML=rows.length?rows.map(f=>`<div class="inbit${f.re?' done':''}"><p class="inbh">${esc(FBCATN[f.cat]||f.cat||'')} · ${chatTime(f.t||0)}</p><p class="inbtx">${esc(f.text)}</p>${f.re?`<p class="inbre">✅ 作者回覆：${esc(f.re)}</p>`:''}</div>`).join(''):`<p class="fbsmall">${q?'沒有找到相關的意見，可以直接送出囉':'還沒有意見'}</p>`}
+async function fbPubSync(){const rows=INB.rows.filter(f=>!f.old&&!f.thr&&f.cat!=='re'&&f.text&&typeof f.t==='number');
+  try{const n=await CL.api.fbPubBackfill(rows);toast('已同步 '+n+' 則到公開板 👀')}catch(e){toast('同步失敗：'+String(e&&e.code||e))}}
 async function sendFb(){const t=$('fbtext'),c=$('fbcontact'),m=$('fbmsg');if(!t)return;
   const text=t.value.trim(),contact=(c?c.value:'').trim().slice(0,60);FB.text=t.value;FB.contact=c?c.value:'';
   const say=x=>{if(m)m.textContent=x};
@@ -3436,7 +3456,7 @@ function inboxDraw(){
       <div class="btns" style="justify-content:flex-start"><button class="btn" data-act="inbsend">${INB.busy?'送出中…':'送出回覆'}</button><button class="btn alt" data-act="inbre" data-id="">取消</button></div>`
     :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
   modal(`<h2>📬 收件匣（${INB.rows.length}）</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
-  <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button><button class="btn alt" data-act="inbold">${INB.old.length?'已載入舊意見':'載入 Firestore 舊意見'}</button><button class="btn alt" data-act="inbnotice">📢 發布公告</button><button class="btn alt" data-act="noticelist">📜 編輯公告</button></div>
+  <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button><button class="btn alt" data-act="inbold">${INB.old.length?'已載入舊意見':'載入 Firestore 舊意見'}</button><button class="btn alt" data-act="inbnotice">📢 發布公告</button><button class="btn alt" data-act="fbpubsync">👀 同步到公開板</button><button class="btn alt" data-act="noticelist">📜 編輯公告</button></div>
   ${all.length?all.map(item).join(''):'<p style="font-size:14px">還沒有新的意見。</p>'}
   <div class="btns"><button class="btn alt" data-act="fb">返回</button></div>`);
   const t=$('inbtext');if(t&&!('ontouchstart' in window))t.focus()}
