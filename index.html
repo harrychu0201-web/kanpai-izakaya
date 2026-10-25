@@ -307,6 +307,14 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 @keyframes mobmad{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 .cust.mob[data-m=worry]:not(.walk) .spr img.m-worry{animation:mobfret 1.2s infinite ease-in-out}
 @keyframes mobfret{50%{transform:translateY(2px) rotate(-1deg)}}
+.hg-badge{position:absolute;top:-6px;right:-6px;font-size:30px;line-height:1;pointer-events:none;z-index:4;filter:drop-shadow(0 2px 0 #3a1a10)}
+.cal{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow:auto;margin-top:6px}
+.cal-m{display:flex;align-items:center;gap:6px;font-size:13px}.cal-m>b{width:38px;flex:none}
+.cal-g{display:flex;flex-wrap:wrap;gap:2px}
+.cal-d{width:22px;height:22px;line-height:22px;text-align:center;font-size:11px;border-radius:5px;background:#f3dfb4;color:#7a4a2a;font-weight:700}
+.cal-d.done{background:#c98b4a;color:#fff6e0}
+.cal-d.now{outline:2px solid #c0392b}
+.cal-d.hol{font-size:13px;background:#ffe36a;color:#3a1a10}
 .heart{position:absolute;pointer-events:none;font-size:30px;color:#ff5a8a;-webkit-text-stroke:2px #3a1a10;paint-order:stroke;animation:rise 1.2s forwards;z-index:6}
 html,body{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none;touch-action:manipulation}
 #rot{position:fixed;inset:0;z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#1a0e08f2;color:#f3dfb4;font-size:20px;font-weight:900;text-align:center;padding:24px}
@@ -728,9 +736,21 @@ function pickToday(){if(DEMO||(ST.today&&ST.today.day===ST.day))return;const d=S
   if(d>=4&&Math.random()<.6){const ks=['rain','fest','group','sale','critic'];t.ev=pick(ks);
     if(t.ev==='sale'){const c=unlocked(d).filter(k=>ITEMS[k].cost&&k!=='beer');t.sale=pick(c.length?c:['edamame'])}
     if(t.ev==='group')t.at=rnd(.3,.7)*DAYLEN;if(t.ev==='critic')t.at=rnd(.15,.5)*DAYLEN}
-  if(d>=5&&Math.random()<.3){t.rob=true;t.robAt=rnd(.25,.7)*DAYLEN}
+  const hd=holOf(d);if(hd)t.hol=hd.id;
+  if(d>=5&&((hd&&hd.rob)||Math.random()<.3)){t.rob=true;t.robAt=rnd(.25,.7)*DAYLEN}
   if(CHEAT())tstForce(t);
   ST.today=t;save()}
+/* ===== calendar: day 1 = 1/1, every 365 days is one year; holidays bring special guests ===== */
+const CAL_M=[31,28,31,30,31,30,31,31,30,31,30,31];
+const HOLS={'2/14':{id:'valentine',zh:'情人節',ic:'💝',rob:true},'10/31':{id:'halloween',zh:'萬聖節',ic:'🎃'},'12/25':{id:'xmas',zh:'聖誕節',ic:'🎄'}};
+const HOLGUESTS={
+  valentine:[{id:'v1',ic:'🌹',zh:'落單的情侶',line:'今天我們要吃得很浪漫……'},{id:'v2',ic:'🍫',zh:'送巧克力的少女',line:'這是給老闆的……不是給你！'}],
+  halloween:[{id:'h1',ic:'🧟',zh:'殭屍客',line:'嗚……腦……不，我要吃烤串！'},{id:'h2',ic:'🧛',zh:'吸血鬼',line:'請給我一杯……紅色的飲料'},{id:'h3',ic:'🧙',zh:'魔女',line:'我施法讓今晚客人變多！'}],
+  xmas:[{id:'x1',ic:'🎅',zh:'聖誕老人',line:'雪橇停在門口了，來杯熱的！'},{id:'x2',ic:'⛄',zh:'雪人客',line:'好冷……先來碗熱湯吧！'}]};
+function calOf(day){const y=Math.floor((day-1)/365)+1;let n=(day-1)%365,m=0;while(n>=CAL_M[m]){n-=CAL_M[m];m++}return {y,m:m+1,d:n+1,idx:((day-1)%365)+1}}
+function holOf(day){const c=calOf(day);return HOLS[c.m+'/'+c.d]||null}
+function holInfo(id){return Object.values(HOLS).find(h=>h.id===id)||null}
+function dateStr(day){const c=calOf(day);return c.m+'/'+c.d}
 function evLabel(e){const v=EVS[e.ev];return v?v[0]+' '+T(v[1]):''}
 function saleCands(){return unlocked(ST.day).filter(k=>ITEMS[k].cost&&k!=='beer')}
 function evDesc(e){const v=EVS[e.ev];return v?T(v[2],e.sale?dishTitle(e.sale):''):''}
@@ -1638,8 +1658,9 @@ function spawn(){
   const free=[];R.seats.forEach((c,i)=>{if(!c)free.push(i)});if(!free.length)return;
   const i=pick(free),order=genOrder();
   const max=(46+order.length*13)*patMult()*(1+order.reduce((s,k)=>s+lvOf(k.split(':')[0])*.04,0))*Math.max(.7,1-ST.day*.015)*(evNow().ev==='rain'?1.3:1);
-  const look=R.forceLook||pickChar();R.forceLook=null;
-  const c={seat:i,look,critic:look.spr==='kuroda'&&evNow().ev==='critic'&&!R.criticDone,order,filled:order.map(()=>false),pat:max,max,st:'in',t:0,fig:'ok'};
+  const hv=evNow().hol,hgs=HOLGUESTS[hv]||[],hg=!R.forceLook&&hgs.length&&Math.random()<.45?pick(hgs):null;
+  const look=R.forceLook||(hg?pick(MOBS):pickChar());R.forceLook=null;
+  const c={seat:i,look,hg,critic:look.spr==='kuroda'&&evNow().ev==='critic'&&!R.criticDone,order,filled:order.map(()=>false),pat:max,max,st:'in',t:0,fig:'ok'};
   c.tr=TRAITS[look.spr]||{};if(c.tr.pat){c.max*=c.tr.pat;c.pat=c.max}
   R.seats[i]=c;R.spawned++;sfx('door');if(c.look.spr&&PROF[c.look.spr]&&!DEMO){const rr=loadRec();rr.met=rr.met||{};if(!rr.met[c.look.spr]){rr.met[c.look.spr]=1;saveRec(rr)}}
   const el=document.createElement('div');el.className='cust walk';el.dataset.seat=i;el.dataset.m='ok';if(c.look.spr){el.classList.add('sp');el.dataset.c=c.look.spr;if(c.look.mob)el.classList.add('mob')}{const tx=seatX(i,seatsN())-80;el.style.left=tx+'px';el.style.transform=`translateX(${-(tx+170)}px)`}
@@ -1647,7 +1668,8 @@ function spawn(){
     if(ex){c.extra=ex;
       if(!ex.ok){ST.wish=ST.wish||{};ST.wish[ex.base]=(ST.wish[ex.base]||0)+1;save();
         if(ST.wish[ex.base]===WISHN)setTimeout(()=>toast('最近好像有很多客人想吃'+ITEMS[ex.base].zh+'…打烊後去商店看看！'),1200)}}}
-  el.innerHTML=custFig(c.look,'ok')+`<div class="bubble hide"></div>`;
+  el.innerHTML=custFig(c.look,'ok')+`<div class="bubble hide"></div>`+(hg?`<div class="hg-badge">${hg.ic}</div>`:'');
+  if(hg&&!DEMO){const rr=loadRec();rr.hg=rr.hg||{};rr.hg[hg.id]=(rr.hg[hg.id]||0)+1;saveRec(rr);setTimeout(()=>{if(R)toast(T('{0}來了！',T(hg.zh)))},300)}
   $('custLayer').appendChild(el);c.el=el;seatClasses();
   c.walkT=(seatX(i,seatsN())-80+170)/WALKV;el.style.transitionDuration=c.walkT.toFixed(2)+'s';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.transform='translateX(0)'}));
@@ -1694,7 +1716,7 @@ function renderCust(){
 }
 function leave(c,happy){sfx(happy?'coin':'angry');
   c.st='bye';c.happy=happy;
-  if(happy){const bx=c.extra&&c.extra.done,total=c.order.reduce((s,k)=>s+priceOf(k),0)+(bx?priceOf(c.extra.key):0),p=c.tipP!=null?c.tipP:Math.max(0,c.pat/c.max),tip=Math.round(total*(.35+(bx?BONUSTIP:0))*p*(ST.up.cat?1.3:1)*(CUR==='rm'&&rmUp('tanuki',0)?1.3:1)*(1+tipBonus())*(evNow().ev==='fest'?1.2:1)/10)*10;
+  if(happy){const bx=c.extra&&c.extra.done,total=c.order.reduce((s,k)=>s+priceOf(k),0)+(bx?priceOf(c.extra.key):0),p=c.tipP!=null?c.tipP:Math.max(0,c.pat/c.max),tip=Math.round(total*(.35+(bx?BONUSTIP:0))*p*(ST.up.cat?1.3:1)*(CUR==='rm'&&rmUp('tanuki',0)?1.3:1)*(1+tipBonus())*(evNow().ev==='fest'?1.2:1)*(c.hg?1.15:1)/10)*10;
     R.earned+=total+tip;R.served++;popup(seatX(c.seat,seatsN()),180,'+'+yen(total+tip));{const h=document.createElement('div');h.className='heart';h.textContent='♥';h.style.left=(seatX(c.seat,seatsN())+38)+'px';h.style.top='150px';$('fx').appendChild(h);setTimeout(()=>h.remove(),1200)}c.el.classList.add('hop')}
   else{R.lost++;popup(seatX(c.seat,seatsN()),180,T('生氣走了'),true)}
   renderCust();renderHUD();
@@ -2000,6 +2022,23 @@ function mishapTako(i){
   setTimeout(()=>{if(!R||!v.el||v.st!=='wait')return;mishapHit(v,tx,pick(['好燙！','頭上長出章魚燒了','咦，這是外送？','咚！好香…']),'ouch');renderCust()},560);
   popup(from.x,from.y-60,T('翻過頭了！'));mishapLog('takofly')}
 const CMFACE='<svg viewBox="0 0 40 24" width="34" height="20"><circle cx="11" cy="9" r="5.5" fill="#fff"/><circle cx="29" cy="9" r="5.5" fill="#fff"/><circle cx="12" cy="10" r="2.4" fill="#222"/><circle cx="28" cy="10" r="2.4" fill="#222"/><path d="M14 19q6 3.5 12 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
+function showCalendar(){
+  const rec=loadRec(),allDone=(rec.maxDay||0)>=365,cal=calOf(ST.day),cur=cal.idx,reached=i=>i<=cur||ST.day>365;
+  let off=0;const months=CAL_M.map((n,m)=>{const start=off;off+=n;let cells='';
+    for(let d=1;d<=n;d++){const i=start+d,h=HOLS[(m+1)+'/'+d],r=reached(i),show=h&&(r||allDone);
+      cells+=`<span class="cal-d${r?' done':''}${i===cur?' now':''}${show?' hol':''}" title="${m+1}/${d}">${show?h.ic:d}</span>`}
+    return `<div class="cal-m"><b>${m+1} 月</b><div class="cal-g">${cells}</div></div>`}).join('');
+  modal(`<h2>${T('日曆')} <span style="font-size:16px;color:#7a4a2a">${T('第 {0} / 365 天',cur)}${cal.y>1?T('（第 {0} 年）',cal.y):''}</span></h2>
+  <p style="font-size:14px">${T('每過 365 天就是一整年。走過的日子會亮起來，節日的客人要走到那天才會出現。')}</p>
+  ${allDone?'':`<p style="font-size:13px">${T('還沒走完一整年，後面的節日還藏著。')}</p>`}
+  <div class="cal">${months}</div>
+  <div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`)}
+function showHolDex(){
+  const hg=loadRec().hg||{},all=Object.values(HOLGUESTS).flat(),n=all.filter(g=>hg[g.id]).length;
+  modal(`<h2>${T('節日客圖鑑')} <span style="font-size:16px;color:#7a4a2a">${T('已遇見 {0} / {1}',n,all.length)}</span></h2>
+  <p style="font-size:14px">${T('只有節日那天才會來的特別客人，第一次遇見就會登記在這裡。')}</p>
+  ${Object.entries(HOLGUESTS).map(([h,gs])=>`<h3 style="margin:8px 0 4px">${T(holInfo(h).zh)}</h3><div class="mdx">${gs.map(g=>hg[g.id]?`<div class="mdx-c"><div class="ic">${g.ic}</div><div><b>${T(g.zh)}</b><small>${T('遇見 {0} 次',hg[g.id])}</small><p class="q">${T(g.line)}</p></div></div>`:`<div class="mdx-c lock"><div class="ic">${g.ic}</div><div><b>？？？</b><p>${T('節日那天可能會遇見。')}</p></div></div>`).join('')}</div>`).join('')}
+  <div class="btns"><button class="btn" data-act="dex">${T('返回')}</button></div>`)}
 function showMishapDex(){
   const m=loadRec().mishap||{},ks=Object.keys(MISHAPS),n=ks.filter(k=>m[k]).length,done=!!loadRec().mishapReward;
   modal(`<h2>${T('事故圖鑑')} <span style="font-size:16px;color:#7a4a2a">${T('已發現 {0} / {1}',n,ks.length)}</span></h2>
@@ -2140,7 +2179,7 @@ function showDex(){const met=metSet(),n=CHARS.filter(c=>met[c.spr]).length;
   modal(`<h2>${T('常客圖鑑')} <span style="font-size:16px;color:#7a4a2a">${T('已遇見 {0} / {1}',n,CHARS.length)}</span></h2>
   ${sel?`<div class="dex-d"><img src="${SPR[sel].happy}" alt=""><div><b>${T(c.name)}</b><small>${T(p[0])}</small><p>${T(p[1])}</p><p class="q">${Q[0]}${T(p[2].replace(/^「|」$/g,''))}${Q[1]}</p><p class="fav">${T('愛點：{0}',T(p[3]))}</p></div></div>`:`<p style="font-size:14px">${T('在店裡遇見的常客會登記在這裡，點頭像看介紹。')}</p>`}
   <div class="dex">${CHARS.map(x=>met[x.spr]?`<button class="dex-c ${x.spr===sel?'on':''}" data-act="dex" data-id="${x.spr}"><img src="${SPR[x.spr].ok}" alt=""><span>${T({kuroda:'黑田',nakamura:'課長',ryuji:'龍二',sachiko:'幸子'}[x.spr]||x.name.split(' ').pop())}</span></button>`:`<div class="dex-c lock"><img src="${SPR[x.spr].ok}" alt=""><span>？？？</span></div>`).join('')}</div>
-  <div class="btns"><button class="btn alt" data-act="mishapdex">😵 ${T('事故圖鑑')}</button><button class="btn" data-act="closem">${T('返回')}</button></div>`)}
+  <div class="btns"><button class="btn alt" data-act="mishapdex">😵 ${T('事故圖鑑')}</button><button class="btn alt" data-act="holdex">🎉 ${T('節日客圖鑑')}</button><button class="btn alt" data-act="calendar">📅 ${T('日曆')}</button><button class="btn" data-act="closem">${T('返回')}</button></div>`)}
 function showRecords(){const r=loadRec();modal(`<h2>${T('經營紀錄')}</h2><div class="goalrow" style="flex-direction:column;align-items:flex-start;gap:8px">
   <span>${T('最遠撐到：第 {0} 天',r.maxDay||0)}</span><span>${T('錢包最高：{0}',yen(r.maxCoins||0))}</span><span>${T('累計營收：{0}',yen(r.earned||0))}</span><span>${T('單日最高淨利：{0}',yen(r.bestDay||0))}</span><span>${T('破產次數：{0} 次',r.bankrupt||0)}</span><span>${T('買下店面：{0}',r.ownDay?T('第 {0} 天',r.ownDay):T(r.owned?'做到了！':'還沒'))}</span></div>
   <div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`)}
@@ -2183,7 +2222,10 @@ function showDayIntro(){
   R=null;setCur(ST.where);renderHUD();drawBg();$('custLayer').innerHTML='';$('stations').innerHTML='';
   const news=Object.keys(ITEMS).filter(k=>ITEMS[k].day===ST.day),show=CUR==='rm'?(ST.rm&&!ST.rm.seen?['ramen','gyoza','lsour']:(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop==='rm')):(ST.day===1?['beer','edamame','negima']:news.concat(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop!=='rm'));
   const due=(ST.dues||[]).filter(d=>d.left===1).reduce((s,d)=>s+d.amt,0);pickToday();const TD=evNow();
-  modal(`<h2>${T('第 {0} 天',ST.day)}</h2>
+  const HI=TD.hol?holInfo(TD.hol):null;
+  modal(`<h2>${T('第 {0} 天',ST.day)} <span style="font-size:16px;color:#7a4a2a">${dateStr(ST.day)}</span></h2>
+  ${HI?`<div class="evbox"><span class="ei">${HI.ic}</span><div><b>${T('今天是{0}！',T(HI.zh))}</b><br>${T('會有特別的客人上門，每位都能登記進節日客圖鑑。')}</div></div>`:''}
+  ${ST.day===365?`<p class="hint">${T('你撐過了一整年！日曆上的每個節日都解鎖了，可以到「📅 日曆」看看。')}</p>`:''}
   ${ST.rm?`<div class="pickrow"><button class="btn ${CUR==='iz'?'':'alt'}" data-act="where" data-id="iz">🏮 ${T('居酒屋本店')}</button><button class="btn ${CUR==='rm'?'':'alt'}" data-act="where" data-id="rm">🍜 ${T('深夜拉麵屋台')}</button></div>`:''}
   ${ST.owned&&!ST.rm?`<p class="hint">${T('商店上方多了「🍜 深夜拉麵屋台」，可以開第二家店！')}</p>`:''}
   ${due?`<div class="bank"><b>${T('今天是還款日！')}</b>${T('打烊時會從錢包還銀行 {0}，記得多賺一點，不然還完錢包見底又要再借。',yen(due))}</div>`:''}
@@ -2376,6 +2418,8 @@ document.addEventListener('click',e=>{
   else if(act==='homeshop'){ST=load();if(ST){SHOPHOME=true;SHOPTAB=SHOPTAB||'menu';showShop()}}
   else if(act==='dex'){DEXSEL=a.dataset.id||null;showDex()}
   else if(act==='mishapdex')showMishapDex();
+  else if(act==='holdex')showHolDex();
+  else if(act==='calendar')showCalendar();
   else if(act==='closem'){closeModal();if(FR.dirty){FR.dirty=0;showHome()}}
   else if(act==='home')showHome();
   else if(act==='start'){goFS();startDay();refitBurst();let seen=false;try{seen=localStorage.getItem('izakaya-iostip')==='1'}catch(e){}if(IOS&&!STANDALONE&&!seen)setTimeout(()=>{if(R&&!TUT)iosTip()},400)}
@@ -2639,6 +2683,7 @@ function robIn(){
   el.innerHTML=`<div class="spr">${['ok','happy','worry','hit','walk'].map(m=>`<img class="r-${m}" src="${ROBSPR[m]}" alt="" draggable="false">`).join('')}</div><div class="bubble hide"><div class="rtxt"></div><div class="rbar"><i></i></div></div>`;
   el.style.transform=`translateX(${-(x+200)}px)`;$('custLayer').appendChild(el);clampBubbles();
   R.rob={el,st:'in',t:0,hp:GUNS[(ST.weapon||1)-1].hits,dur:8};
+  if(evNow().hol==='valentine')robSay(T('情人節沒人陪……把巧克力交出來！'));
   requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.transform='translateX(0)'}))}
 function holster(){if(R&&R.aim){R.aim=false;$('game').classList.remove('aim');renderStations()}}
 function robTake(){const r=R.rob;r.st='took';holster();r.t=0;robSet('happy');robSay(T('嘿嘿，謝啦！'));
