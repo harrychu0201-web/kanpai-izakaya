@@ -723,9 +723,10 @@ function keepScroll(){const c=document.querySelector('.card');shopScroll=c?c.scr
 function hasDec(id){return id==='noren'?!!(ST&&(ST.up.decor||(ST.dec&&ST.dec.noren))):!!(ST&&ST.dec&&ST.dec[id])}
 function patMult(){if(CUR==='rm')return 1+RDECOR.reduce((s,d)=>s+(rmDec(d.id)?d.b:0),0);return 1+DECOR.reduce((s,d)=>s+(hasDec(d.id)?d.b:0),0)}
 let DAYLEN=159,RUSH=[1.9,1.3,.75,.62,1.0,.72,1.1,1.8];
-const PERIOD=h=>T(h<18?'傍晚':h<20?'晚餐尖峰':h<21?'飯後':h<22.5?'續攤尖峰':h<24+20/60?'深夜':'打烊前');
-function hourNow(){return 16+Math.min(1,R.t/DAYLEN)*8.5}
-function clockStr(){const h=hourNow(),hh=Math.floor(h),mm=Math.floor((h-hh)*60/5)*5;return `${hh>=24?'00':hh}:${String(mm).padStart(2,'0')}`}
+const PERIOD=h=>T(h<18?'傍晚':h<20?'晚餐尖峰':h<21?'飯後':h<22.5?'續攤尖峰':h<lastHr()?'深夜':'打烊前');
+function lastHr(){return 24+20/60+((R&&R.extH)||0)}
+function hourNow(){return 16+Math.min(1,R.t/DAYLEN)*(8.5+((R&&R.extH)||0))}
+function clockStr(){const h=hourNow(),hh=Math.floor(h),mm=Math.floor((h-hh)*60/5)*5;return `${String(hh>=24?hh-24:hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`}
 function baseGap(){const e=evNow().ev;return 4.6*Math.max(.7,1-ST.day*.025)*(e==='rain'?1/.7:e==='fest'?1/1.6:1)}
 function expectedCust(){let n=0;const hl=DAYLEN/8.5;for(let i=0;i<8;i++)n+=hl/(baseGap()*RUSH[i]);n+=hl/3/(baseGap()*RUSH[7]);return Math.min(n,seatsN()*DAYLEN/30)}
 let KEY='izakaya-cook-v1';
@@ -1713,8 +1714,8 @@ function step(dt){
   {const al=R.pgAl||(R.pgAl={});pages().forEach(p=>{const lv=pgLevel(p),was=al[p]||0;if(lv>was){sfx('alarm');if(p!==KP)toast(T(lv===2?'{0}要翻面了！':'{0}快焦了！',pgName(p)))}al[p]=lv})}
   R.cool-=dt;
   const hr=hourNow();
-  if(hr<24+20/60&&R.cool<=0&&R.seats.some(x=>!x)&&!(CHEAT()&&evNow().nocust)){spawn();R.cool=rnd(.75,1.25)*baseGap()*RUSH[Math.min(7,Math.floor(hr-16))]}
-  if(hr>=24+20/60&&!R.lastCall){R.lastCall=true;toast(T('最後點餐！不再接新客人'))}
+  if(hr<lastHr()&&R.cool<=0&&R.seats.some(x=>!x)&&!(CHEAT()&&evNow().nocust)){spawn();R.cool=rnd(.75,1.25)*baseGap()*RUSH[Math.min(7,Math.floor(hr-16))]}
+  if(hr>=lastHr()&&!R.lastCall){R.lastCall=true;toast(T('最後點餐！不再接新客人'))}
   evStep(dt,hr);
   R.seats.forEach(c=>{if(!c)return;c.t+=dt;
     if(c.st==='in'&&c.t>(c.walkT||1.15)){c.st='wait';c.waitAt=c.t;c.el.classList.remove('walk')}
@@ -1890,7 +1891,7 @@ function takeLoan(){if(!R||R.eloan||R.settled)return;const i=$('loanAmt'),a=Math
 /* ===== 道具・成就・簽到（獎勵中心） ===== */
 const PROPS={nb:{ic:'🛡️',n:'不焦符',d:'從使用的那一刻起，這一局的食物都不會燒焦（翻面失手也不糊）。',p:3000},
   pt:{ic:'💗',n:'耐心回復',d:'所有入座客人的耐心立刻回滿。',p:2000},
-  ext:{ic:'⏰',n:'延長營業',d:'今天的營業時間延長 30 秒。',p:4000}};
+  ext:{ic:'⏰',n:'延長營業',d:'今天營業時間延長 1 小時，最後點餐也延後 1 小時（同一局最多延長 3 次）。',p:4000}};
 const ACHS=[{id:'d10',n:'撐過第 10 天',c:r=>r.maxDay>=10,rw:{nb:1}},
   {id:'d20',n:'撐過第 20 天',c:r=>r.maxDay>=20,rw:{pt:2}},
   {id:'d30',n:'撐過第 30 天',c:r=>r.maxDay>=30,rw:{ext:2}},
@@ -1907,7 +1908,7 @@ function claimAch(id){const r=loadRec(),a=ACHS.find(x=>x.id===id);if(!a||!a.c(r)
 function useProp(k){if(!R||R.over||R.settled||!PROPS[k])return;const r=loadRec(),inv=r.inv||{};if(!(inv[k]>0))return;
   if(k==='nb'){if(R.fxNb){toast(T('這一局已經用過不焦符了'));return}R.fxNb=1}
   else if(k==='pt'){if(!R.seats.some(c=>c)){toast(T('現在沒有客人'));return}R.seats.forEach(c=>{if(c)c.pat=c.max})}
-  else if(k==='ext'){DAYLEN+=30}
+  else if(k==='ext'){if((R.extH||0)>=3){toast(T('營業時間已經延到上限了'));return}R.extH=(R.extH||0)+1;DAYLEN+=159/8.5}
   r.inv[k]--;saveRec(r);toast(T('使用了 {0}',PROPS[k].n));showRewards()}
 function buyProp(k){const p=PROPS[k];if(!p||R)return;const s=load();if(!s)return;if((s.coins||0)<p.p){toast(T('金幣不夠'));return}arcWallet(-p.p);invAdd({[k]:1});toast(T('買到 {0}',p.n));showRewards()}
 function curCard(){return document.querySelector('#homeModal .card')||document.querySelector('#modalLayer .card')}
@@ -2868,9 +2869,9 @@ function shopGuns(){return `<h3 class="sh">${T('防身用品・趕走劫匪')}</
 function robSet(m){const r=R.rob;if(r&&r.el)r.el.dataset.m=m}
 function evStep(dt,hr){
   const e=R.ev||{};
-  if(e.ev==='group'&&!R.groupDone&&R.t>=e.at&&hr<24+20/60){R.groupDone=true;let n=0;R.seats.forEach(c=>{if(!c)n++});if(n>=2){toast(T('團體客來了！'));for(let i=0;i<n;i++)setTimeout(()=>{if(R&&!R.over)spawn()},i*350)}}
-  if(e.ev==='critic'&&!R.criticDone&&!R.criticIn&&R.t>=e.at&&hr<24+20/60&&R.seats.some(x=>!x)&&!R.seats.some(c=>c&&c.look.spr==='kuroda')){R.criticIn=true;R.forceLook=CHARS.find(c=>c.spr==='kuroda');spawn();toast(T('美食評論家來了！10 秒內送齊有獎金'))}
-  if(e.rob&&!R.robDone&&!R.rob&&R.t>=e.robAt&&hr<24+20/60)robIn();
+  if(e.ev==='group'&&!R.groupDone&&R.t>=e.at&&hr<lastHr()){R.groupDone=true;let n=0;R.seats.forEach(c=>{if(!c)n++});if(n>=2){toast(T('團體客來了！'));for(let i=0;i<n;i++)setTimeout(()=>{if(R&&!R.over)spawn()},i*350)}}
+  if(e.ev==='critic'&&!R.criticDone&&!R.criticIn&&R.t>=e.at&&hr<lastHr()&&R.seats.some(x=>!x)&&!R.seats.some(c=>c&&c.look.spr==='kuroda')){R.criticIn=true;R.forceLook=CHARS.find(c=>c.spr==='kuroda');spawn();toast(T('美食評論家來了！10 秒內送齊有獎金'))}
+  if(e.rob&&!R.robDone&&!R.rob&&R.t>=e.robAt&&hr<lastHr())robIn();
   const r=R.rob;if(!r)return;
   r.t+=dt;
   if(r.st==='in'&&r.t>=1.4){r.el.classList.remove('in');
