@@ -2485,7 +2485,7 @@ document.addEventListener('click',e=>{
   else if(act==='rplsend')replyBack();
   else if(act==='inbox')showInbox(!!a.dataset.id);
   else if(act==='inbold')inboxOld();
-  else if(act==='inbre'){INB.open=a.dataset.id||null;INB.draft='';inboxDraw()}
+  else if(act==='inbre'){INB.open=a.dataset.id||null;inboxDraw()}
   else if(act==='inbsend')inboxSend();
   else if(act==='inbdel')inboxDel(a.dataset.id);
   else if(act==='inbclaim')inboxClaim(a.dataset.id,!!a.dataset.rel);
@@ -3453,7 +3453,11 @@ async function replyBack(){const u=CL.user,x=RPL.list.find(y=>y.id===RPL.open),t
     RPL.last=Date.now();x.msgs=Object.assign({},x.msgs,{['_'+Date.now()]:{text,t:Date.now()}});RPL.open=null;RPL.draft='';RPL.busy=false;replyDraw();toast(T('已送給作者 💌'))}
   catch(e){console.warn('reply back',e);RPL.busy=false;replyDraw();const m2=$('rplmsg');if(m2)m2.textContent=T('送出失敗，請稍後再試')+' ('+String(e&&(e.code||e.message)||e).slice(0,60)+')'}}
 /* ===== author's inbox (admin only) ===== */
-const INB={rows:[],old:[],open:null,draft:'',busy:false,err:'',claims:{}};
+/* reply drafts are kept per feedback item (so each reply is written on its own, and a draft survives switching items or closing the box); this device only */
+const FBDRAFT_KEY='izakaya-fb-drafts';
+function fbDraftLoad(){try{return JSON.parse(localStorage.getItem(FBDRAFT_KEY)||'{}')||{}}catch(e){return {}}}
+function fbDraftSet(id,v){if(!INB.drafts)INB.drafts={};if(v)INB.drafts[id]=v;else delete INB.drafts[id];try{localStorage.setItem(FBDRAFT_KEY,JSON.stringify(INB.drafts))}catch(e){}}
+const INB={rows:[],old:[],open:null,busy:false,err:'',claims:{},drafts:fbDraftLoad()};
 const FBCATN=Object.fromEntries(FBCATS);FBCATN.re='↩️ 玩家回你';
 async function showInbox(reload){if(!canInbox())return;
   if(reload||!INB.rows.length){INB.err='';modal(`<h2>📬 收件匣</h2><p style="font-size:14px">載入中…</p>`);
@@ -3465,7 +3469,7 @@ function inboxDraw(){
     return `<div class="inbit${f.re?' done':''}"><p class="inbh">${esc(FBCATN[f.cat]||f.cat||'')} · ${chatTime(f.t||f.at||0)} ${f.lang?' · '+esc(f.lang):''} · 第 ${+f.day||0} 天${f.old?' · 舊資料':''}</p>
     ${f.ctx?`<p class="inbh">回你說的：${esc(f.ctx)}</p>`:''}<p class="inbtx">${esc(f.text||'')}</p>${f.contact?`<p class="inbh">聯絡：${esc(f.contact)}</p>`:''}
     ${f.re?`<p class="inbre">✅ 已回覆：${esc(f.re)}</p>`:''}
-    ${op?`<textarea class="fbtext" id="inbtext" maxlength="1000" oninput="INB.draft=this.value" placeholder="回覆給這位玩家…">${esc(INB.draft)}</textarea>
+    ${!op&&INB.drafts[f.id]?'<p class="inbh">📝 有未送出的草稿</p>':''}${op?`<textarea class="fbtext" id="inbtext" data-id="${esc(f.id)}" maxlength="1000" oninput="fbDraftSet(this.dataset.id,this.value)" placeholder="回覆給這位玩家…">${esc(INB.drafts[f.id]||'')}</textarea>
       <div class="btns" style="justify-content:flex-start"><button class="btn" data-act="inbsend">${INB.busy?'送出中…':'送出回覆'}</button><button class="btn alt" data-act="inbre" data-id="">取消</button></div>`
     :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
   modal(`<h2>📬 收件匣（${INB.rows.length}）</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
@@ -3475,9 +3479,9 @@ function inboxDraw(){
   const t=$('inbtext');if(t&&!('ontouchstart' in window))t.focus()}
 async function inboxOld(){if(INB.old.length)return;try{INB.old=await CL.api.fbOld();toast('載入了 '+INB.old.length+' 則舊意見')}catch(e){toast('舊意見讀取失敗（Firestore 額度可能還沒重置）')}inboxDraw()}
 async function inboxSend(){const f=INB.rows.concat(INB.old).find(x=>x.id===INB.open),t=$('inbtext');if(!f||!t||INB.busy)return;
-  const text=t.value.trim().slice(0,1000);INB.draft=t.value;if(!text){toast('先寫點什麼再送出');return}
+  const text=t.value.trim().slice(0,1000);fbDraftSet(f.id,t.value);if(!text){toast('先寫點什麼再送出');return}
   INB.busy=true;inboxDraw();
-  try{await CL.api.fbReply(f,text);f.re=text;INB.open=null;INB.draft='';logAct('回覆意見',f.id);toast('已回覆 💌')}catch(e){toast('回覆失敗：'+String(e&&e.code||e))}
+  try{await CL.api.fbReply(f,text);f.re=text;INB.open=null;fbDraftSet(f.id,'');logAct('回覆意見',f.id);toast('已回覆 💌')}catch(e){toast('回覆失敗：'+String(e&&e.code||e))}
   INB.busy=false;inboxDraw()}
 async function inboxDel(id){const row=INB.rows.find(x=>x.id===id);if(!row||!confirm('確定刪除這則意見？\n刪除後會移到垃圾桶，作者可以還原，玩家也看不到了。'))return;try{await CL.api.fbDel(id,row);logAct('刪除意見',id);INB.rows=INB.rows.filter(x=>x.id!==id)}catch(e){toast('刪除失敗：'+String(e&&e.code||e))}inboxDraw()}
 async function inboxClaim(id,rel){try{if(rel)await CL.api.claimRelease(id,CL.user.uid);else if(!await CL.api.claimSet(id,CL.user.uid,CL.user.displayName||'管理員')){toast('已經被別人認領了');INB.claims=await CL.api.claimGet();inboxDraw();return}INB.claims=await CL.api.claimGet();inboxDraw()}catch(e){toast('操作失敗：'+String(e&&e.code||e))}}
