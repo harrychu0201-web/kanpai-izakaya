@@ -2335,15 +2335,18 @@ const bgmK=()=>SND.bgmV/70,sfxK=()=>SND.sfxV/70;
 SND.bgm=new Audio();SND.bgm.loop=false;SND.bgm.setAttribute('playsinline','');SND.bgmSrc=null;
 // background music: a list of tracks (the original first). Playing one ends -> short synth interlude -> next track.
 const TRACKS=[{f:'bgm.mp3',n:'經典配樂'},{f:'track-midnight.mp3',n:'Midnight at the Izakaya'},{f:'track-hillside.mp3',n:'Morning On The Hillside'},{f:'track-last-dance.mp3',n:'Last Dance at the Tavern'},{f:'track-last-order.mp3',n:'After the Last Order'}];
-SND.bgm.addEventListener('ended',()=>{if(!SND.bgmSrc){SND.bgm.currentTime=0;bgmPlay();return}SND.synthTurn=true;SND.step=0;if(SND.ctx)SND.next=SND.ctx.currentTime+.1;bgmSwap((SND.want+1)%TRACKS.length,false)});
+SND.bgm.addEventListener('ended',()=>{if(!SND.bgmSrc){SND.bgm.currentTime=0;bgmPlay();return}bgmSwap((SND.want+1)%TRACKS.length,true)});
 // switch to track i: download once (blob URL cached), then point the audio element at it
 function bgmSwap(i,play){SND.want=i;const a=SND.bgm;
-  const apply=u=>{if(SND.want!==i)return;SND.trackI=i;SND.bgmSrc=u;SND.pend=false;SND.bgmFail=false;a.pause();a.src=u;if(play)bgmPlay()};
+  const apply=u=>{if(SND.want!==i)return;SND.trackI=i;SND.bgmSrc=u;SND.pend=false;SND.bgmFail=false;a.pause();a.src=u;if(play)bgmPlay();bgmPre((i+1)%TRACKS.length)};
   if(SND.tsrc[i]){apply(SND.tsrc[i]);return}
   SND.pend=true;
   fetch(TRACKS[i].f).then(r=>{if(!r.ok)throw 0;return r.blob()}).then(b=>{SND.tsrc[i]=URL.createObjectURL(b);apply(SND.tsrc[i])})
     .catch(()=>{if(SND.want===i){SND.pend=false;if(i===0){SND.bgmFail=true;a.pause()}}});
 }
+// quietly download the next track a few seconds after this one starts, so the switch is instant and gap-free
+function bgmPre(n){if(SND.tsrc[n]||SND.pre===n)return;SND.pre=n;setTimeout(()=>{if(SND.tsrc[n]){return}
+  fetch(TRACKS[n].f).then(r=>{if(!r.ok)throw 0;return r.blob()}).then(b=>{if(!SND.tsrc[n])SND.tsrc[n]=URL.createObjectURL(b)}).catch(()=>{}).then(()=>{if(SND.pre===n)SND.pre=null})},8000)}
 function bgmTrack(d){const n=TRACKS.length,i=(SND.want+d+n)%n;try{localStorage.setItem('izakaya-track',String(i))}catch(e){}bgmSwap(i,true)}
 try{const t=+localStorage.getItem('izakaya-track');if(t>=0&&t<TRACKS.length)SND.trackI=SND.want=t}catch(e){}
 const SILENT=(()=>{const n=800,b=new Uint8Array(44+n),v=new DataView(b.buffer),w=(o,t)=>{for(let i=0;i<4;i++)b[o+i]=t.charCodeAt(i)};
@@ -2368,7 +2371,7 @@ function bgmSet(on){
   SND.bgmOn=!!on;try{localStorage.setItem('izakaya-bgm',on?'1':'0')}catch(e){}
   if(SND.ctx){const t=SND.ctx.currentTime;SND.mus.gain.setTargetAtTime(on?.26*bgmK():0,t,.1);if(SND.bgmG)SND.bgmG.gain.setTargetAtTime(on?BGM_VOL*bgmK():0,t,.1)}
   if(SND.bgm&&!SND.bgmG)SND.bgm.volume=on?Math.min(1,BGM_VOL*bgmK()):0
-  if(SND.bgm){if(on&&!SND.synthTurn&&!(R&&CUR==='rm'))bgmPlay();else SND.bgm.pause()}
+  if(SND.bgm){if(on&&!SND.synthTurn)bgmPlay();else SND.bgm.pause()}
 }
 function sfxSet(on){
   SND.sfxOn=!!on;SND.on=SND.sfxOn;try{localStorage.setItem('izakaya-sfx',on?'1':'0');localStorage.setItem('izakaya-snd',on?'1':'0')}catch(e){}
@@ -2417,7 +2420,7 @@ function taiko(t,v){const x=SND.ctx,o=x.createOscillator(),g=x.createGain();o.ty
   g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0008,t+.45);o.connect(g);g.connect(SND.mus);o.start(t);o.stop(t+.5);noise(SND.mus,t,.05,v*.3,600)}
 function wood(t,v,f){tone(SND.mus,f||1250,t,.05,v,'sine');tone(SND.mus,(f||1250)*1.5,t,.03,v*.4,'sine')}
 function sndTick(){const x=SND.ctx;if(!x||x.state!=='running')return;
-  const useSynth=SND.bgmFail||SND.synthTurn||(R&&CUR==='rm');
+  const useSynth=SND.bgmFail;
   if(useSynth&&SND.bgm&&!SND.bgm.paused)SND.bgm.pause();
   else if(!useSynth&&SND.bgmOn&&SND.bgm&&SND.bgm.paused)bgmPlay();
   if(!useSynth||!SND.bgmOn){SND.next=Math.max(SND.next,x.currentTime+.1);return}
