@@ -2498,9 +2498,11 @@ function showShop(){
 function advance(){if(ST.pendingNext){ST.day++;ST.pendingNext=false;save();cloudUpload(true)}showDayIntro()}
 
 /* pause button: the HUD re-renders several times a second (clock, wallet), which can swap the button out between pointerdown and click and lose the tap; so pause on pointerdown and ignore the matching click */
+let HUDDOWN={act:null,t:-1e9};/* 🎒 and 🏦 sit in the HUD too, which re-renders constantly, so act on pointerdown and ignore the matching click (same trick as pause) */
+document.getElementById('hud').addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('[data-act="rewards"],[data-act="bank"]');if(!b||e.button>0||!R||R.over||R.settled)return;HUDDOWN={act:b.dataset.act,t:performance.now()};if(b.dataset.act==='rewards'){R.paused=true;showRewards()}else bankWin()});
 let PAUSEDOWN=-1e9;document.getElementById('hud').addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('[data-act="pause"]');if(!b||e.button>0||!R||R.paused||R.over)return;PAUSEDOWN=performance.now();pause()});
 document.addEventListener('click',e=>{
-  const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;if(act==='pause'&&performance.now()-PAUSEDOWN<800)return;if(ARC.busy&&/^(cont|newgame|asknew|homeshop|arcade|arcslot|arcpin)$/.test(act))return;
+  const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;if(act==='pause'&&performance.now()-PAUSEDOWN<800)return;if(HUDDOWN.act===act&&performance.now()-HUDDOWN.t<800)return;if(ARC.busy&&/^(cont|newgame|asknew|homeshop|arcade|arcslot|arcpin)$/.test(act))return;
   if(/^(buy|lvup|staffup|rmstaff)/.test(act)&&!a.disabled&&!a.classList.contains('poor'))sfx('buy');else if(!['snd','sndg','start'].includes(act))sfx('click');
   if(act==='newgame'){slBackup(lsGet(KEY),'new');closeHome();ST=fresh();save();showDayIntro()}
   else if(act==='cont'){goFS();closeHome();ST=load();advance()}
