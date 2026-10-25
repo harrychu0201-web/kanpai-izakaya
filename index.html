@@ -3157,11 +3157,11 @@ function chatDraw(scroll){const l=$('chatlist');if(!l)return;const near=l.scroll
 async function chatSend(){const i=$('cin'),m=$('cmsg');if(!i||!CL.user||!CL.api)return;const say=x=>{if(m)m.textContent=x};
   const name=(loadRec().nick||'').slice(0,12),text=chatClean(i.value);
   if(!text){return}if(!name){showNick();CHT.back=true;return}
-  const w=5000-(Date.now()-CHT.last);if(w>0){say(T('慢一點～ {0} 秒後才能再發',Math.ceil(w/1000)));return}
-  CHT.last=Date.now();i.value='';say('');
+  const w=5600-(Date.now()-CHT.last);if(w>0){say(T('慢一點～ {0} 秒後才能再發',Math.ceil(w/1000)));return}
+  const prev=CHT.last;CHT.last=Date.now();i.value='';say('');
   try{const sent=CL.api.chatSend(CL.user.uid,name,text,isAdmin());if(await Promise.race([sent.then(()=>1),new Promise(r=>setTimeout(r,8000,0))])===0){sent.catch(()=>{});say(T('送出失敗，請稍後再試'));return}const l=$('chatlist');if(l)l.scrollTop=l.scrollHeight}
   catch(e){console.warn('chat send',e);i.value=text;CHT.last=0;const c=String(e&&e.code||'');
-    if(/permission/i.test(c)){const b=await CL.api.banned(CL.user.uid).catch(()=>false);if(b){CHT.banned=true;showChat();return}say(T('發太快了，等幾秒再試'))}else say(T('送出失敗，請稍後再試'))}}
+    if(/permission/i.test(c)){const b=await CL.api.banned(CL.user.uid).catch(()=>false);if(b){CHT.banned=true;showChat();return}say(prev&&Date.now()-prev<8000?T('發太快了，等幾秒再試'):T('伺服器規則拒絕了這則訊息（不是你發太快），請回報作者'))}else say(T('送出失敗，請稍後再試'))}}
 function chatBlocks(){const ks=Object.keys(CHT.block);
   modal(`<h2>${T('封鎖名單')}</h2>${ks.length?`<div class="how">${ks.map(u=>`<div class="how-row" style="justify-content:space-between"><b>${esc(CHT.block[u]||'?')}</b><button class="btn alt" style="font-size:14px;padding:4px 12px" data-act="cunblock" data-id="${esc(u)}">${T('解除封鎖')}</button></div>`).join('')}</div>`:`<p>${T('沒有封鎖任何人。')}</p>`}
   <div class="btns"><button class="btn" data-act="chat">${T('回到聊天室')}</button></div>`)}
