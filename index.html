@@ -380,7 +380,7 @@ body.ovl #game.wide .cust .bubble{top:-90px}
 .sideb svg{width:min(6.2vw,13vh,84px)!important;height:min(6.2vw,13vh,84px)!important}
 .sideb span{font-size:min(1.3vw,3vh,19px)!important}
 .home.port .side{top:22vh!important}.home.port .side-r{top:22vh!important}
-@media (orientation:landscape){html.iphone .home .side{left:max(clamp(10px,2.2vw,34px),env(safe-area-inset-left,0px),60px)!important}html.iphone .home .side-r{right:max(clamp(10px,2.2vw,34px),env(safe-area-inset-right,0px),60px)!important}}
+@media (orientation:landscape){html.iphone .home .side:not(.side-r){left:max(clamp(10px,2.2vw,34px),env(safe-area-inset-left,0px),60px)!important}}
 body.lite .steam svg{display:none}
 body.lite .steam .mist{filter:none;left:-34px;top:-60px;width:68px;height:70px;background:radial-gradient(ellipse at 50% 60%,#ffffff70 0,#ffffff30 40%,#fff0 70%);animation:litepuff 2.6s infinite ease-out}
 body.lite .steam .mist::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;animation:litepuff 2.6s -1.3s infinite ease-out}
