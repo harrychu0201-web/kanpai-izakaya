@@ -99,6 +99,14 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .bubble::after{content:"";position:absolute;left:calc(50% - var(--dx,0px) / var(--bs,1));bottom:-15px;margin-left:-10px;border:10px solid transparent;border-top:14px solid var(--soot);border-bottom:0}
 .bubble::before{content:"";position:absolute;left:calc(50% - var(--dx,0px) / var(--bs,1));bottom:-9px;margin-left:-7px;border:7px solid transparent;border-top:10px solid #fffaf0;border-bottom:0;z-index:1}
 .bubble.hide{transform:translateX(calc(-50% + var(--dx,0px))) scale(0)}
+/* compact bubble (set by layoutBubbles when the table is full): shorter patience bar, slightly smaller dishes and tighter padding, so a second row of orders still fits above the heads without shrinking the whole bubble */
+.bubble.cmp{gap:3px;padding:4px 8px 6px 6px;border-width:2.5px;border-radius:14px}
+.bubble.cmp .pat{width:10px;height:50px}
+.bubble.cmp .oi{width:46px;height:50px}.bubble.cmp .oi svg{width:46px;height:46px}
+.bubble.cmp .oi.ex{margin-left:5px;padding:2px}
+.bubble.cmp .oi .vt b{font-size:14px;padding:0 4px}
+.port .bubble.cmp .oi{width:38px;height:42px}.port .bubble.cmp .oi svg{width:38px;height:38px}.port .bubble.cmp .pat{height:44px}
+.bubble.nt::before,.bubble.nt::after{display:none}
 .cust.hurry .bubble{box-shadow:0 0 0 3px #e74c3c,0 0 14px #e74c3c;animation:hurry .6s ease-in-out infinite alternate}
 /* bonus add-on order (加碼點單): one optional extra dish per customer, dashed gold chip; a dish you haven't unlocked is greyed with a lock */
 .oi.ex{margin-left:8px;padding:3px;border:2.5px dashed #d9a21b;border-radius:12px;background:#fff6d6;box-sizing:content-box}
@@ -1475,9 +1483,11 @@ function clampBubbles(){const g=$('game');if(!g)return;const ovl=document.body.c
   document.querySelectorAll('#custLayer .robber').forEach(e=>{const b=e.querySelector('.bubble');if(!b)return;b.style.top='';if(!ovl)return;
     const gr=g.getBoundingClientRect(),sc=gr.height/H,lim=hudLim();if(!sc)return;const d=parseFloat(getComputedStyle(b).top)||0,cy=(e.getBoundingClientRect().top-gr.top)/sc;if(cy+d<lim)b.style.top=Math.round(lim-cy)+'px'});
   layoutBubbles(true)}
-/* order bubbles: measure the real width of every waiting customer's bubble and place them so none overlap.
-   1) one row, sliding bubbles sideways (the tail still points at the customer); 2) two staggered rows;
-   3) the same again with smaller bubbles. Only re-runs when the set of orders or the screen layout changes. */
+/* order bubbles: measure the real size of every waiting customer's bubble and place them so none overlap AND none leave the screen.
+   Plans are tried from big dishes to small ones: normal or compact bubble (.cmp), full size or shrunk (--bs), one row or two staggered rows.
+   A plan is rejected if the bubbles do not fit sideways, or if the rows would not fit between the top limit (screen edge / floating HUD) and the customers;
+   when the room above the heads is short, the lowest row is let down over the customers' hair (tail hidden, .nt) instead of being pushed off the top.
+   Only re-runs when the set of orders or the screen layout changes. */
 let BLSIG='';
 function fitRow(a,s,loose){const gap=6,m=4,n=a.length;if(!n)return [];const w=a.map(o=>o.w*s),L=a.map((o,i)=>o.x-w[i]/2);
   for(let i=0;i<n;i++)L[i]=Math.max(L[i],m,i?L[i-1]+w[i-1]+gap:m);
@@ -1486,25 +1496,36 @@ function fitRow(a,s,loose){const gap=6,m=4,n=a.length;if(!n)return [];const w=a.
   return a.map((o,i)=>Math.round(L[i]+w[i]/2-o.x))}
 function layoutBubbles(force){if(!R)return;const g=$('game');if(!g)return;
   const vis=R.seats.filter(c=>c&&c.st==='wait'),ovl=document.body.classList.contains('ovl');
-  const sig=[LAY,W,KY,ovl,R.seats.length].join()+'|'+vis.map(c=>c.seat+':'+c.order.join()).join(';');
+  const sig=[LAY,W,KY,ovl,R.seats.length].join()+'|'+vis.map(c=>c.seat+':'+c.order.join()+(c.extra?'+'+c.extra.key:'')).join(';');
   if(!force&&sig===BLSIG)return;BLSIG=sig;
-  R.seats.forEach(c=>{if(!c)return;const b=c.el.querySelector('.bubble');if(!b)return;b.style.top='';b.style.removeProperty('--dx');b.style.removeProperty('--bs');c.el.style.zIndex=''});
+  R.seats.forEach(c=>{if(!c)return;const b=c.el.querySelector('.bubble');if(!b)return;b.style.top='';b.style.removeProperty('--dx');b.style.removeProperty('--bs');b.classList.remove('cmp','nt');c.el.style.zIndex=''});
   if(!vis.length)return;
-  const gr=g.getBoundingClientRect(),sc=gr.height/H||1,lim=hudLim();
-  const it=vis.map(c=>{const b=c.el.querySelector('.bubble');return {c,b,x:seatX(c.seat,seatsN()),w:b.offsetWidth,h:b.offsetHeight,
-    base:(c.el.getBoundingClientRect().top-gr.top)/sc+(parseFloat(getComputedStyle(b).top)||0)}}).sort((p,q)=>p.x-q.x);
-  const vtop=(o,s,top)=>top+o.h-o.h*s; // visible top edge (bubbles shrink toward their tail)
-  const apply=(rows,s)=>{const r1=rows[0];let rowTop=Infinity;
-    r1.a.forEach((o,i)=>{let t=o.base;if(vtop(o,s,t)<lim)t=lim-(o.h-o.h*s);o.t=t;rowTop=Math.min(rowTop,vtop(o,s,t));o.dx=r1.d[i]});
-    if(rows[1])rows[1].a.forEach((o,i)=>{o.t=Math.min(o.base,rowTop-12-o.h);o.dx=rows[1].d[i];o.up=1});
-    it.forEach(o=>{o.b.style.setProperty('--dx',o.dx+'px');if(s!==1)o.b.style.setProperty('--bs',s);const cy=o.base-(parseFloat(getComputedStyle(o.b).top)||0);
-      if(Math.abs(o.t-o.base)>.5)o.b.style.top=Math.round(o.t-cy)+'px';o.c.el.style.zIndex=o.up?'1':'2'})};
-  for(const s of [1,.86,.74]){
-    const d=fitRow(it,s);if(d){apply([{a:it,d}],s);return}
-    const a1=it.filter((_,i)=>i%2===0),a2=it.filter((_,i)=>i%2===1),d1=fitRow(a1,s),d2=fitRow(a2,s);
-    if(d1&&d2){const rowTop=Math.min(...a1.map(o=>Math.max(vtop(o,s,o.base),lim)));if(a2.every(o=>rowTop-12-o.h*s>=lim-.5)){apply([{a:a1,d:d1},{a:a2,d:d2}],s);return}}
-  }
-  const a1=it.filter((_,i)=>i%2===0),a2=it.filter((_,i)=>i%2===1);apply([{a:a1,d:fitRow(a1,.74,1)},{a:a2,d:fitRow(a2,.74,1)}],.74)}
+  const gr=g.getBoundingClientRect(),sc=gr.height/H||1,lim=hudLim(),GAP=10,OVMAX=64;
+  const it=vis.map(c=>{const b=c.el.querySelector('.bubble');
+    // the bubble's CSS default top, read from a throw-away probe (reading the real bubble would catch its top transition half way)
+    const pr=document.createElement('div');pr.className='bubble hide';pr.style.cssText='transition:none;visibility:hidden';c.el.appendChild(pr);const t0=parseFloat(getComputedStyle(pr).top)||0;pr.remove();
+    const cy=(c.el.getBoundingClientRect().top-gr.top)/sc;
+    b.classList.remove('cmp');const wn=b.offsetWidth,hn=b.offsetHeight;b.classList.add('cmp');const wc=b.offsetWidth,hc=b.offsetHeight;b.classList.remove('cmp');
+    return {c,b,x:seatX(c.seat,seatsN()),cy,t0,wn,hn,wc,hc,bot:cy+t0+hn}}).sort((p,q)=>p.x-q.x); // bot = where the normal bubble's bottom edge naturally sits (just above the head)
+  const hOf=(o,P)=>(P.m==='c'?o.hc:o.hn)*P.s;
+  const split=()=>[it.filter((_,i)=>i%2===0),it.filter((_,i)=>i%2===1)];
+  const tryPlan=(P,loose)=>{it.forEach(o=>{o.w=P.m==='c'?o.wc:o.wn});let rows;
+    if(P.r===1){const d=fitRow(it,P.s,loose);if(!d)return null;rows=[{a:it,d}]}
+    else{const [a1,a2]=split(),d1=fitRow(a1,P.s,loose),d2=fitRow(a2,P.s,loose);if(!d1||!d2)return null;rows=[{a:a1,d:d1},{a:a2,d:d2}]}
+    const h1=Math.max(...rows[0].a.map(o=>hOf(o,P))),h2=rows[1]?Math.max(...rows[1].a.map(o=>hOf(o,P))):0,bot=Math.max(...it.map(o=>o.bot));
+    return {P,rows,bot,ov:Math.max(0,lim+h1+(rows[1]?GAP+h2:0)-bot)}};
+  const apply=B=>{const {P,rows,ov}=B;let r1top=Infinity;
+    rows[0].a.forEach((o,i)=>{o.vb=o.bot+ov;o.dx=rows[0].d[i];o.up=0;r1top=Math.min(r1top,o.vb-hOf(o,P))});
+    if(rows[1])rows[1].a.forEach((o,i)=>{o.vb=r1top-GAP;o.dx=rows[1].d[i];o.up=1});
+    it.forEach(o=>{const b=o.b;b.classList.toggle('cmp',P.m==='c');b.style.setProperty('--dx',o.dx+'px');if(P.s!==1)b.style.setProperty('--bs',P.s);
+      const top=o.vb-(P.m==='c'?o.hc:o.hn)-o.cy;if(Math.abs(top-o.t0)>.5)b.style.top=Math.round(top)+'px';
+      b.classList.toggle('nt',!o.up&&ov>6);o.c.el.style.zIndex=o.up?'1':'2'})};
+  let best=null;
+  for(const [m,s] of [['n',1],['c',1],['n',.86],['c',.86],['n',.74],['c',.74],['c',.66]])for(const r of (it.length>1?[1,2]:[1])){
+    const P={m,s,r},B=tryPlan(P);if(!B||B.ov>OVMAX)continue;
+    B.score=(m==='c'?46:52)*s-B.ov*.25-(r===2?3:0);if(!best||B.score>best.score)best=B}
+  if(!best){const P={m:'c',s:.66,r:it.length>1?2:1};best=tryPlan(P,1)}
+  apply(best)}
 
 function quotaOf(d){return Math.min(24,6+d*2)}
 function startDay(){setTimeout(()=>sfx('open'),80);$('game').classList.remove('aim');
