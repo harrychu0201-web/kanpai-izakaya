@@ -596,7 +596,7 @@ const TMW=76,ONW=76;
 function stepDef(g){return g&&STEPS[g.kind]}
 function needStep(g){const d=stepDef(g);return !!d&&(g.s||0)<d.t.length&&g.t>=d.t[g.s||0]&&cookState(g.t,g.kind)==='raw'}
 function stepLbl(g){return STEPS[g.kind].lbl[g.s||0]}
-const TKFLIP=4,TKGRACE=5,TKW=86; // takoyaki: must be flipped once after TKFLIP s of cooking, within TKGRACE s, or one side burns
+const TKFLIP=4,TKGRACE=7,TKW=86; // takoyaki: must be flipped once after TKFLIP s of cooking, within TKGRACE s, or one side burns
 const STN={buta:'teppan',gyu:'teppan',ika:'teppan',hotate:'teppan',ebiten:'tempura',kakifry:'tempura',gyoza:'rmpan',friedrice:'rmpan',koro:'rfry',tori:'rfry',katsu:'rfry',taiyaki:'tyaki',takoyaki:'tako',tamagoyaki:'tama',yakionigiri:'onig'};
 const RAWMAP={rawButa:'buta',rawGyu:'gyu',rawIka:'ika',rawHotate:'hotate',rawEbi:'ebiten',rawKaki:'kakifry',rawGyoza:'gyoza',rawRice:'friedrice',rawKoro:'koro',rawTori:'tori',rawKatsu:'katsu',rawTai:'taiyaki',rawTako:'takoyaki',rawTama:'tamagoyaki',rawOnig:'yakionigiri'};
 const INSTANT=['sake','edamame','highball','hiyayakko','lsour','ramune','goma','tsukemono','umeshu','reishu'];
