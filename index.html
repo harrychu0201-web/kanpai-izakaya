@@ -59,7 +59,9 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .goal span{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:16px;color:#6b4a30;text-shadow:0 1px 0 #000}
 .goal span.on{color:#fff6c2;text-shadow:0 0 6px #ff9a2a}
 .goal em{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--f-ui);font-weight:500;font-size:15px;color:#fff;text-shadow:0 1px 2px #000;font-variant-numeric:tabular-nums}
-.hud .icon-btn{width:36px;height:36px;border-radius:50%;background:#1a0e08;border:2px solid #5a3420;display:grid;place-items:center;font-size:13px}
+.hud .icon-btn{width:36px;height:36px;border-radius:50%;background:#1a0e08;border:2px solid #5a3420;display:grid;place-items:center;font-size:13px;line-height:1;padding:0;overflow:hidden;font-family:system-ui,-apple-system,sans-serif}
+.hud .icon-btn .ico{display:block;line-height:1}
+.hud .icon-btn svg{width:50%;height:50%;display:block;fill:#f3dfb4}
 .icon-btn.bankbtn{border-color:#e0a030;animation:bankp 1.2s ease-in-out infinite}@keyframes bankp{50%{box-shadow:0 0 0 4px #e0a03066}}
 
 /* stage */
@@ -2150,7 +2152,7 @@ function renderHUD(){document.body.classList.toggle('playing',!!R);
     <div class="pill clock"><b>${clockStr()}</b>${PERIOD(hourNow())}</div>${R.ev&&R.ev.ev?`<div class="pill ev" title="${esc(evDesc(R.ev))}">${evLabel(R.ev)}</div>`:''}`:'<div style="flex:1"></div>'}
     ${CUR==='rm'?(rmStaffLv()||rmStaff2Lv()||rmFryStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[rmStaffLv()?T('小葵')+'★'.repeat(rmStaffLv()-1):'',rmStaff2Lv()?T('山田')+'★'.repeat(rmStaff2Lv()-1):'',rmFryStaffLv()?T('大輔')+'★'.repeat(rmFryStaffLv()-1):''].filter(Boolean).join('・')}</b></div>`:''):ST.up.waiter||ST.up.helper?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[ST.up.waiter?T('小美')+(staffLv('waiter')>1?'★'.repeat(staffLv('waiter')-1):''):'',ST.up.helper?T('阿健')+(staffLv('helper')>1?'★'.repeat(staffLv('helper')-1):''):''].filter(Boolean).join('・')}</b></div>`:''}
     ${(()=>{const w=R?live():ST.coins;return `<div class="pill ${w<0?'neg':''}">${T('錢包')} <b>${w<0?'−':''}¥${Math.abs(Math.round(w)).toLocaleString('en-US')}</b></div>`})()}${ST.debt?`<div class="pill staff">${T('借款')} <b>${yen(ST.debt)}</b></div>`:''}
-    ${R&&!R.over&&!R.settled&&!DEMO?'<button class="icon-btn" data-act="rewards" aria-label="獎勵">🎒</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}">${sndIcon()}</button><button class="icon-btn fsbtn" data-act="fs" aria-label="${T('全螢幕')}">⛶</button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}">❚❚</button>`:''}`);
+    ${R&&!R.over&&!R.settled&&!DEMO?'<button class="icon-btn" data-act="rewards" aria-label="獎勵">🎒</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}"><span class="ico">${sndIcon()}</span></button><button class="icon-btn fsbtn" data-act="fs" aria-label="${T('全螢幕')}"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="#f3dfb4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>`:''}`);
 }
 
 /* ---- modals ---- */
