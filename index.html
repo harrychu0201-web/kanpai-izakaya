@@ -288,7 +288,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .tut-box p{margin:0;font-size:15px;line-height:1.6;font-weight:500}
 .tut-box .btn{font-size:15px;padding:7px 16px}
 .tut-n{font-size:12px;opacity:.6;font-weight:700}
-.home .side{position:absolute;left:clamp(10px,2.2vw,34px);top:24%;display:flex;flex-direction:column;gap:clamp(8px,1.6vh,18px);z-index:2}
+.home .side{position:absolute;left:max(clamp(10px,2.2vw,34px),env(safe-area-inset-left,0px));top:24%;display:flex;flex-direction:column;gap:clamp(8px,1.6vh,18px);z-index:2}
 .rdot{position:absolute;top:2px;right:8px;width:12px;height:12px;border-radius:50%;background:#e0412c;border:2px solid #fff;z-index:2}.sideb{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:0;padding:0;cursor:pointer;transition:transform .12s}
 .sideb:hover{transform:scale(1.08)}.sideb:active{transform:scale(.94)}
 .sideb svg{width:clamp(54px,6.2vw,84px);height:clamp(54px,6.2vw,84px);filter:drop-shadow(0 3px 0 #3a1a10) drop-shadow(0 4px 8px rgba(0,0,0,.45))}
@@ -375,7 +375,7 @@ body.ovl #game.wide .cust .bubble{top:-90px}
 .home .menu{bottom:3vh}
 }
 .home .side{top:14vh!important;gap:1.4vh!important}
-.home .side-r{left:auto!important;right:clamp(10px,2.2vw,34px);top:14vh!important}
+.home .side-r{left:auto!important;right:max(clamp(10px,2.2vw,34px),env(safe-area-inset-right,0px));top:14vh!important}
 .sideb svg{width:min(6.2vw,13vh,84px)!important;height:min(6.2vw,13vh,84px)!important}
 .sideb span{font-size:min(1.3vw,3vh,19px)!important}
 .home.port .side{top:22vh!important}.home.port .side-r{top:22vh!important}
