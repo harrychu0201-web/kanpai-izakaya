@@ -3021,10 +3021,10 @@ const FR_MAX=20,FR_GIFT=1000,FR={sort:'best',reg:null,data:null,t:0,view:'list',
 function fcodeOf(uid){const A='23456789ABCDEFGHJKMNPQRSTUVWXYZ';let a=0x811c9dc5|0,b=0x9747b28c|0;for(let i=0;i<uid.length;i++){const c=uid.charCodeAt(i);a=Math.imul(a^c,16777619);b=Math.imul(b^c,0x5bd1e995);b^=b>>>15}let s='';for(const h of [a,b]){let v=h>>>0;for(let i=0;i<4;i++){s+=A[v%31];v=Math.floor(v/31)}}return s}
 const fmtCode=c=>c.slice(0,4)+'-'+c.slice(4),frDay=()=>Math.floor((Date.now()+288e5)/864e5);
 /* shop rating: average stars over the last 7 days played (0–3 each), needs at least 3 days; rt is what friends see */
-const RT=[[2.5,5,'五星評價','客人排隊排到巷口，老闆娘忙到沒時間喝水！','夯爆了'],[2,4,'四星評價','常客多、口碑穩，偶爾還是有人嫌醬油太鹹。','頂級'],[1.5,3,'三星評價','還行啦，客人吃得飽，但不會特地再來。','人上人'],[1,2,'普通','客人留言：菜單看起來不錯，但上菜好慢喔。','npc'],[0,1,'低分居酒屋','客人吃完留下一句：下次不來了。','拉完了，跟💩一樣好吃👍']];
+const RT=[[2.5,5,'五星評價','客人排隊排到巷口，老闆娘忙到沒時間喝水！','夯爆了'],[2,4,'四星評價','常客多、口碑穩，偶爾還是有人嫌醬油太鹹。','頂級'],[1.5,3,'三星評價','還行啦，客人吃得飽，但不會特地再來。','人上人'],[1,2,'普通','客人留言：菜單看起來不錯，但上菜好慢喔。','npc'],[0,1,'差評','拉完了，跟💩一樣好吃👍','']];
 function shopRate(g){const ks=Object.keys(g.stars||{}).map(Number).sort((a,b)=>a-b);if(ks.length<3)return null;const last=ks.slice(-7);const avg=last.reduce((s,k)=>s+(g.stars[k]||0),0)/last.length;const t=RT.find(x=>avg>=x[0]);return t?{rt:t[1],avg:Math.round(avg*10)/10}:null}
 const rtTag=rt=>{const t=RT.find(x=>x[1]===rt);return t?` <small class="rtag r${rt}">${T(t[2])}</small>`:''};
-const rtFull=rt=>{const t=RT.find(x=>x[1]===rt);return t?`${T(t[2])}<br><small>${T(t[3])} <b>${T(t[4])}</b></small>`:T('還沒評價（至少營業 3 天）')};
+const rtFull=rt=>{const t=RT.find(x=>x[1]===rt);return t?`${T(t[2])}<br><small>${T(t[3])}${t[4]?` <b>${T(t[4])}</b>`:''}</small>`:T('還沒評價（至少營業 3 天）')};
 function lbxEntry(){const d=lbEntry();if(!d)return null;let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(!g)return null;
   delete d.days;d.day=Math.max(1,(g.day||1)+(g.pendingNext?1:0));d.ya=g.rm?1:0;d.k2=g.rm&&g.rm.k2?1:0;let c=0;for(const k in(g.dec||{}))if(g.dec[k])c++;if(g.rm&&g.rm.dec)for(const k in g.rm.dec)if(g.rm.dec[k])c++;d.dc=c;const sr=shopRate(g);if(sr)d.rt=sr.rt;return d}
 async function lbxPush(u){try{if(!CL.api.putLbx)return;let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return;const d=lbxEntry();if(!d)return;
