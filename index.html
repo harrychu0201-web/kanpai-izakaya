@@ -1448,7 +1448,7 @@ const STAFFLV={
     {cost:60000,wage:1800,d:'每 1.8 秒一份，清酒、毛豆、冷奴、威士忌蘇打也會幫忙拿。'}]},
   helper:{zh:'廚房學徒・阿健',flag:'helper',lv:[
     {cost:12000,wage:600,d:'做好的菜會收進保溫台（不會焦），焦掉的會丟掉。不會幫你下鍋。'},
-    {cost:28000,wage:1000,d:'幫忙顧火：燒烤台、油鍋、鐵板、炸鍋、章魚燒盤的東西快 20% 熟，章魚燒也會自己翻面（大約等 2.5 秒）。'},
+    {cost:28000,wage:1000,d:'幫忙顧火：燒烤台、油鍋、鐵板、炸鍋、章魚燒盤的東西快 20% 熟，章魚燒也會自己翻面（大約等 2.5 秒），而且翻面的時間比以前寬裕（現在有 7 秒可以翻）。'},
     {cost:55000,wage:1500,d:'客人的耐心剩一半以下時，會自動幫忙下鍋一份他點的串燒、炸物、鐵板料理，連三號廚房的章魚燒也會下（大約每 4 秒一次）。砧板的菜也還是要你做。'}]}};
 const HELPER_PAT=.5,HELPER_GAP=4; // Lv3 阿健: start cooking for a customer once their patience is at or below half, at most one dish every HELPER_GAP seconds
 function staffLv(id){const f=STAFFLV[id].flag;return ST.up[id+'Lv']||(ST.up[f]?1:0)}
