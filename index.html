@@ -2099,7 +2099,7 @@ function mishapTako(i){
   popup(from.x,from.y-60,T('翻過頭了！'));mishapLog('takofly')}
 const CMFACE='<svg viewBox="0 0 40 24" width="34" height="20"><circle cx="11" cy="9" r="5.5" fill="#fff"/><circle cx="29" cy="9" r="5.5" fill="#fff"/><circle cx="12" cy="10" r="2.4" fill="#222"/><circle cx="28" cy="10" r="2.4" fill="#222"/><path d="M14 19q6 3.5 12 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
 function showCalendar(){
-  const rec=loadRec(),allDone=(rec.maxDay||0)>=365,cal=calOf(ST.day),cur=cal.idx,reached=i=>i<=cur||ST.day>365;
+  const sv0=ST||load(),day=(sv0&&sv0.day)||1,rec=loadRec(),allDone=(rec.maxDay||0)>=365,cal=calOf(day),cur=cal.idx,reached=i=>i<=cur||day>365;
   let off=0;const months=CAL_M.map((n,m)=>{const start=off;off+=n;let cells='';
     for(let d=1;d<=n;d++){const i=start+d,h=HOLS[(m+1)+'/'+d],r=reached(i),show=h&&(r||allDone);
       cells+=`<span class="cal-d${r?' done':''}${i===cur?' now':''}${show?' hol':''}" title="${m+1}/${d}">${show?h.ic:d}</span>`}
