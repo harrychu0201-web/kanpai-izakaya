@@ -596,7 +596,7 @@ const TMW=76,ONW=76;
 function stepDef(g){return g&&STEPS[g.kind]}
 function needStep(g){const d=stepDef(g);return !!d&&(g.s||0)<d.t.length&&g.t>=d.t[g.s||0]&&cookState(g.t,g.kind)==='raw'}
 function stepLbl(g){return STEPS[g.kind].lbl[g.s||0]}
-const TKFLIP=4,TKGRACE=7,TKW=86; // takoyaki: must be flipped once after TKFLIP s of cooking, within TKGRACE s, or one side burns
+const TKFLIP=4,TKGRACE=7,TKW=86,TKAUTO=2.5; // TKAUTO: 阿健 (Lv2+) flips a takoyaki this many seconds after it asks, if you haven't // takoyaki: must be flipped once after TKFLIP s of cooking, within TKGRACE s, or one side burns
 const STN={buta:'teppan',gyu:'teppan',ika:'teppan',hotate:'teppan',ebiten:'tempura',kakifry:'tempura',gyoza:'rmpan',friedrice:'rmpan',koro:'rfry',tori:'rfry',katsu:'rfry',taiyaki:'tyaki',takoyaki:'tako',tamagoyaki:'tama',yakionigiri:'onig'};
 const RAWMAP={rawButa:'buta',rawGyu:'gyu',rawIka:'ika',rawHotate:'hotate',rawEbi:'ebiten',rawKaki:'kakifry',rawGyoza:'gyoza',rawRice:'friedrice',rawKoro:'koro',rawTori:'tori',rawKatsu:'katsu',rawTai:'taiyaki',rawTako:'takoyaki',rawTama:'tamagoyaki',rawOnig:'yakionigiri'};
 const INSTANT=['sake','edamame','highball','hiyayakko','lsour','ramune','goma','tsukemono','umeshu','reishu'];
@@ -1446,8 +1446,8 @@ const STAFFLV={
     {cost:60000,wage:1800,d:'每 1.8 秒一份，清酒、毛豆、冷奴、威士忌蘇打也會幫忙拿。'}]},
   helper:{zh:'廚房學徒・阿健',flag:'helper',lv:[
     {cost:12000,wage:600,d:'做好的菜會收進保溫台（不會焦），焦掉的會丟掉。不會幫你下鍋。'},
-    {cost:28000,wage:1000,d:'幫忙顧火：燒烤台、油鍋、鐵板、炸鍋、章魚燒盤的東西快 20% 熟。'},
-    {cost:55000,wage:1500,d:'客人的耐心剩一半以下時，會自動幫忙下鍋一份他點的串燒、炸物、鐵板料理，連三號廚房的章魚燒也會下（大約每 4 秒一次）。章魚燒要自己翻面，砧板的菜也還是要你做。'}]}};
+    {cost:28000,wage:1000,d:'幫忙顧火：燒烤台、油鍋、鐵板、炸鍋、章魚燒盤的東西快 20% 熟，章魚燒也會自己翻面（大約等 2.5 秒）。'},
+    {cost:55000,wage:1500,d:'客人的耐心剩一半以下時，會自動幫忙下鍋一份他點的串燒、炸物、鐵板料理，連三號廚房的章魚燒也會下（大約每 4 秒一次）。砧板的菜也還是要你做。'}]}};
 const HELPER_PAT=.5,HELPER_GAP=4; // Lv3 阿健: start cooking for a customer once their patience is at or below half, at most one dish every HELPER_GAP seconds
 function staffLv(id){const f=STAFFLV[id].flag;return ST.up[id+'Lv']||(ST.up[f]?1:0)}
 function wages(){let w=0;for(const id in STAFFLV){const l=staffLv(id);if(l)w+=Math.round(STAFFLV[id].lv[l-1].wage*dilOf(id)/100)}return w}
@@ -1702,7 +1702,7 @@ function step(dt){
   const cdt=dt*cookMul();R.rmpan.forEach(g=>{if(g)g.t+=dt});R.rfry.forEach(g=>{if(g)g.t+=dt});R.tyaki.forEach(g=>{if(g)g.t+=dt});R.mpot.forEach(g=>{if(g)g.t+=dt*(rmUp('fast',0)?1.4:1)});
   R.oden.cook.forEach(b=>b.t+=dt);{const ot=odenT(),dn=R.oden.cook.filter(b=>b.t>=ot).reduce((s,b)=>s+(b.n||2),0);if(dn){R.oden.n+=dn;R.oden.cook=R.oden.cook.filter(b=>b.t<ot);sfx('done')}}
   R.grill.forEach(g=>{if(g)g.t+=cdt});R.fryer.forEach(f=>{if(f)f.t+=cdt});R.teppan.forEach(g=>{if(g)g.t+=cdt});R.tempura.forEach(g=>{if(g)g.t+=cdt});
-  R.tako.forEach(g=>{if(!g)return;if(!g.fl&&g.t>=TKFLIP){g.t=TKFLIP;g.w=(g.w||0)+cdt;if(g.w>TKGRACE)g.t=burnAt('takoyaki')+.1}else g.t+=cdt}); // waits for the flip, burns if you miss it
+  R.tako.forEach((g,i)=>{if(!g)return;if(!g.fl&&g.t>=TKFLIP){g.t=TKFLIP;g.w=(g.w||0)+cdt;if(staffLv('helper')>=2&&g.w>=TKAUTO){g.fl=1;g.w=0;sfx('pick');if(KP===3){const c=srcCenter({src:'tako',i});popup(c.x,c.y-60,T('阿健翻面'))}renderStations();return}if(g.w>TKGRACE)g.t=burnAt('takoyaki')+.1}else g.t+=cdt}); // waits for the flip (you, or 阿健 at Lv2+), burns if missed
   ['tama','onig'].forEach(pn=>R[pn].forEach(g=>{if(!g)return;const d=STEPS[g.kind],s=g.s||0;if(s<d.t.length&&g.t>=d.t[s]){g.t=d.t[s];g.w=(g.w||0)+cdt;if(g.w>d.grace){g.t=burnAt(g.kind)+.1;g.bad=1}}else g.t+=cdt})); // same idea: pause at each step until tapped, ruined if you miss the window
   {let sz=0,dn=0,br=0;[[R.grill,0],[R.fryer,1],[R.teppan,0],[R.tempura,0],[R.rmpan,0],[R.mpot,0],[R.rfry,0],[R.tyaki,0],[R.tako,0],[R.tama,0],[R.onig,0]].forEach(([arr,fr])=>arr.forEach(g=>{if(!g)return;const k=fr?'karaage':g.kind,st=cookState(g.t,k);if(!g.s0){g.s0=1;sz=1}if(st==='done'&&!g.s1){g.s1=1;dn=1}if(st==='burnt'&&!g.s2){g.s2=1;br=1;if(!g.bad&&mishapRoll('charcoal')){g.cm=1;mishapLog('charcoal');toast('烤成炭人了！')}}}));if(br)sfx('burn');else if(dn)sfx('done');else if(sz)sfx('sizzle')}
   /* tension: when a kitchen newly has something about to burn (or takoyaki waiting for its flip) beep once, and if it is not the kitchen you are looking at, say which one */
