@@ -121,12 +121,12 @@
       }
     },
     "fb": {
-      ".read": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true",
+      ".read": "auth != null && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('admins').child(auth.uid).val() === true)",
       ".indexOn": [
         "t"
       ],
       "$id": {
-        ".write": "(!data.exists() && newData.exists() && (!newData.child('uid').exists() || (auth != null && newData.child('uid').val() === auth.uid)) && newData.child('t').val() === now) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
+        ".write": "(!data.exists() && newData.exists() && (!newData.child('uid').exists() || (auth != null && newData.child('uid').val() === auth.uid)) && newData.child('t').val() === now) || (auth != null && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('admins').child(auth.uid).val() === true))",
         ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['cat', 'text', 't'])",
         "cat": {
           ".validate": "newData.isString() && newData.val().length <= 20"
@@ -168,8 +168,8 @@
     },
     "fbreply": {
       "$uid": {
-        ".read": "(auth != null && auth.uid === $uid) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
-        ".write": "auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true",
+        ".read": "(auth != null && auth.uid === $uid) || (auth != null && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('admins').child(auth.uid).val() === true))",
+        ".write": "auth != null && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('admins').child(auth.uid).val() === true)",
         "$id": {
           ".validate": "newData.hasChildren(['text', 't'])",
           "q": {
@@ -348,7 +348,7 @@
     "fbpub": {
       ".read": true,
       "$id": {
-        ".write": "(!data.exists() && newData.exists() && newData.child('t').val() === now) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
+        ".write": "(!data.exists() && newData.exists() && newData.child('t').val() === now) || (auth != null && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('admins').child(auth.uid).val() === true))",
         ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,40}$/)",
         "cat": {
           ".validate": "newData.isString() && newData.val().length <= 20"
@@ -365,6 +365,14 @@
         "$other": {
           ".validate": false
         }
+      }
+    },
+    "admins": {
+      ".read": "auth != null && (auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && (auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
+        ".validate": "newData.val() === true || !newData.exists()"
       }
     }
   }

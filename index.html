@@ -3057,6 +3057,7 @@ async function cloudInit(){
       addFb:d=>rt((rd,r)=>{const id=rd.push(rd.ref(r,'fb')).key,ts=rd.serverTimestamp();
         // the private record keeps uid/contact; the public board (fbpub) only gets what every player may see
         return rd.update(rd.ref(r),{['fb/'+id]:Object.assign({},d,{t:ts}),['fbpub/'+id]:{cat:d.cat,text:d.text,t:ts}})}),
+      isStaff:uid=>rt((rd,r)=>rd.get(rd.ref(r,'admins/'+uid)).then(s=>s.val()===true)),
       fbPubList:n=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'fbpub'),rd.orderByChild('t'),rd.limitToLast(n))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.reverse()})),
       fbPubBackfill:rows=>rt((rd,r)=>{const u={};rows.forEach(f=>{u['fbpub/'+f.id]=Object.assign({cat:f.cat||'other',text:String(f.text).slice(0,800),t:f.t},f.re?{re:f.re}:{})});return rd.update(rd.ref(r),u).then(()=>rows.length)}),
       fbList:n=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'fb'),rd.orderByChild('t'),rd.limitToLast(n))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.reverse()})),
@@ -3111,7 +3112,7 @@ async function cloudLogin(){if(!CL.api)return;try{if(await CL.api.signIn()==='cl
 // Chrome severs the sign-in popup when the player picks "Use another account", so the popup seems to close by itself.
 // Workaround: add that account to the browser first, then it shows up in the account list and can be picked directly.
 function loginHelp(){if(!HOME)return;modal(`<h2>${T('登入視窗關掉了')}</h2><p>${T('如果你剛剛是按「使用其他帳戶」，Chrome 會把登入視窗切斷。')}</p><p>${T('先按「新增 Google 帳號」，在新分頁登入你要用的帳號，登好後回到遊戲再按一次登入，那個帳號就會直接出現在清單裡，點它就好。')}</p><div class="btns"><button class="btn" data-act="addacct">${T('新增 Google 帳號')}</button><button class="btn" data-act="login">${T('再試一次')}</button><button class="btn" data-act="closem">${T('知道了')}</button></div>`)}
-function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){CL.isPoster=false;if(CL.api)CL.api.isPoster(u.uid).then(v=>{CL.isPoster=v===true}).catch(()=>{});cloudSync();setTimeout(()=>replyCheck(0),2500)}if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
+function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){CL.isPoster=false;if(CL.api)CL.api.isPoster(u.uid).then(v=>{CL.isPoster=v===true}).catch(()=>{});CL.isStaff=false;if(CL.api)CL.api.isStaff(u.uid).then(v=>{CL.isStaff=v===true}).catch(()=>{});cloudSync();setTimeout(()=>replyCheck(0),2500)}if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
 async function cloudSync(){
   const u=CL.user;if(!u||TEST)return;
   try{const c=await CL.api.get(u.uid);if(CL.user!==u)return;CL.synced=true;
@@ -3370,7 +3371,7 @@ function showFb(){
   <input class="nickin" id="fbcontact" maxlength="60" style="font-size:16px;padding:7px 10px" placeholder="${T('聯絡方式（選填，例如 Threads 帳號）')}" value="${esc(FB.contact)}" autocomplete="off" oninput="FB.contact=this.value">
   <p class="fbsmall" style="margin:0">${CL.user?T('作者回覆後，你打開遊戲就會看到 💌'):T('登入後再送出，作者就能直接在遊戲裡回覆你喔')}</p>
   <p class="fbsmall" id="fbmsg"></p></div>
-  <div class="btns"><button class="btn alt" data-act="fbboard">👀 ${T('大家的意見')}</button><button class="btn" data-act="fbsend">${T('送出')}</button><button class="btn alt" data-act="closem">${T('返回')}</button><button class="btn alt" data-act="notice">📢 ${T('公告')}</button>${CL.user?`<button class="btn alt" data-act="myre">💌 ${T('作者的回覆')}</button>`:''}${isAdmin()?`<button class="btn" data-act="inbox">📬 收件匣</button>`:''}</div>`);
+  <div class="btns"><button class="btn alt" data-act="fbboard">👀 ${T('大家的意見')}</button><button class="btn" data-act="fbsend">${T('送出')}</button><button class="btn alt" data-act="closem">${T('返回')}</button><button class="btn alt" data-act="notice">📢 ${T('公告')}</button>${CL.user?`<button class="btn alt" data-act="myre">💌 ${T('作者的回覆')}</button>`:''}${canInbox()?`<button class="btn" data-act="inbox">📬 收件匣</button>`:''}</div>`);
   setTimeout(()=>{const t=$('fbtext');if(t&&!('ontouchstart' in window))t.focus()},50)}
 const FBB={rows:[],q:'',err:''};
 async function showFbBoard(){
@@ -3442,7 +3443,7 @@ async function replyBack(){const u=CL.user,x=RPL.list.find(y=>y.id===RPL.open),t
 /* ===== author's inbox (admin only) ===== */
 const INB={rows:[],old:[],open:null,draft:'',busy:false,err:''};
 const FBCATN=Object.fromEntries(FBCATS);FBCATN.re='↩️ 玩家回你';
-async function showInbox(reload){if(!isAdmin())return;
+async function showInbox(reload){if(!canInbox())return;
   if(reload||!INB.rows.length){INB.err='';modal(`<h2>📬 收件匣</h2><p style="font-size:14px">載入中…</p>`);
     try{INB.rows=await CL.api.fbList(150)}catch(e){INB.err=String(e&&e.code||e)}}
   inboxDraw()}
@@ -3472,15 +3473,17 @@ function inboxNotice(){const n=NOTICE_REMOTE?NOTICE:{title:'',text:'',sign:'作�
   <input class="nickin" id="ntitle" maxlength="40" style="font-size:16px;padding:7px 10px" placeholder="標題" value="${esc(n.title||'')}" autocomplete="off">
   <textarea class="fbtext" id="ntext" maxlength="2000" placeholder="公告內容">${esc(n.text||'')}</textarea>
   <input class="nickin" id="nsign" maxlength="40" style="font-size:16px;padding:7px 10px" placeholder="署名" value="${esc(n.sign||'')}" autocomplete="off">
-  <div class="btns"><button class="btn" data-act="inbnoticesend">發布</button><button class="btn alt" data-act="${isAdmin()?'inbox':'notice'}">返回</button></div>`)}
+  <div class="btns"><button class="btn" data-act="inbnoticesend">發布</button><button class="btn alt" data-act="${canInbox()?'inbox':'notice'}">返回</button></div>`)}
 async function inboxNoticeSend(){const ti=$('ntitle'),tx=$('ntext'),sg=$('nsign');if(!tx)return;const text=tx.value.trim();if(text.length<2){toast('公告內容太短了');return}
   const d={id:new Date().toISOString().slice(0,16),title:ti.value.trim(),text,sign:sg.value.trim()};
-  try{await CL.api.setNotice(d);NOTICE_HIST[d.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;noticeSeen();toast('公告已發布 📢');if(isAdmin())inboxDraw();else showNotice(true)}catch(e){toast('發布失敗：'+String(e&&e.code||e))}}
+  try{await CL.api.setNotice(d);NOTICE_HIST[d.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;noticeSeen();toast('公告已發布 📢');if(canInbox())inboxDraw();else showNotice(true)}catch(e){toast('發布失敗：'+String(e&&e.code||e))}}
 /* ===== public chat room (Realtime Database 'chat' — no daily write cap; 5 s per-user rate limit and bans enforced by RTDB rules) ===== */
 const ADMIN_EMAIL='harrychu0201@gmail.com';
 function isAdmin(){return !!(CL.user&&CL.user.email===ADMIN_EMAIL)}
 /* announcement posters: the owner adds their uid under posters/<uid> in Realtime Database; they can post, edit and delete announcements (not feedback, bans or vote stats) */
 const canPost=()=>isAdmin()||CL.isPoster===true;
+/* inbox staff: owner plus anyone under admins/<uid> in Realtime Database; they can read and reply to feedback and delete it (not bans, vote stats or chat tools) */
+const canInbox=()=>isAdmin()||CL.isStaff===true;
 const CHT={msgs:[],unsub:null,open:null,last:0,hide:{},block:{},me:null,banned:false,back:false,seenAt:0,live:false,err:false};
 try{const o=JSON.parse(localStorage.getItem('izakaya-chat')||'{}');CHT.hide=o.hide||{};CHT.block=o.block||{}}catch(e){}
 function chatSave(){try{localStorage.setItem('izakaya-chat',JSON.stringify({hide:CHT.hide,block:CHT.block}))}catch(e){}}
