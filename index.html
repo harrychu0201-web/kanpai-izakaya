@@ -282,6 +282,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .steam.smoke .mist{background:radial-gradient(ellipse at 50% 75%,#2a2a2acc 0,#2220 70%)}
 #tut{position:fixed;inset:0;z-index:80;pointer-events:none}
 #tut:not(:empty){pointer-events:auto}
+body.tutmode:has(.modal) #tut{display:none}
 .tut-hole{position:fixed;border-radius:14px;box-shadow:0 0 0 4px #ffd27a,0 0 0 9999px #140a06b8;pointer-events:none;transition:all .25s}
 .tut-dim{position:fixed;inset:0;background:#140a06b8}
 .tut-box{position:fixed;box-sizing:border-box;background:var(--paper);color:var(--soot);border:4px solid var(--soot);border-radius:18px;padding:14px 18px;box-shadow:0 8px 0 #00000055;display:flex;flex-direction:column;gap:8px}
@@ -2659,7 +2660,7 @@ document.addEventListener('click',e=>{
   else if(act==='loanpick'&&R){const i=$('loanAmt');if(i){i.value=a.dataset.amt;loanPreview()}}
   else if(act==='bank'&&R)bankWin();
   else if(act==='eloanok'&&R)takeLoan();
-  else if(act==='resume'&&R){R.paused=false;closeModal();last=performance.now()}
+  else if(act==='resume'&&R){R.paused=!!TUT;closeModal();last=performance.now()}
   else if(act==='quit'){showDayIntro()}
 });
 
@@ -2677,7 +2678,7 @@ const TUTS=[
  {t:'[data-act=pause]',h:'暫停',p:'需要休息就按這裡。打烊後可以去商店解鎖新菜、買裝潢、請店員。'},
  {t:null,h:'準備好了嗎？',p:'今晚也要開店了，加油！'}];
 function startTut(demo){
-  R.paused=true;TUT={i:0,demo};
+  R.paused=true;TUT={i:0,demo};document.body.classList.add('tutmode');{const hh=$('hud');if(hh){if(getComputedStyle(hh).position==='static')hh.style.position='relative';hh.style.zIndex='90'}}
   const c=spawnTut();renderStations();renderCust();renderHUD();tutShow();
 }
 function spawnTut(){
@@ -2701,7 +2702,7 @@ function tutShow(){
    <div class="btns"><button class="btn" data-tut="next">${T(last?(TUT.demo?'回到主頁':'開始營業'):'下一步')}</button>${!last?`<button class="btn alt" data-tut="skip">${T('跳過教學')}</button>`:''}${TUT.i>0&&!last?`<button class="btn alt" data-tut="prev">${T('上一步')}</button>`:''}</div></div>`;
 }
 function tutEnd(){
-  const demo=TUT&&TUT.demo;TUT=null;tutLayer().innerHTML='';
+  const demo=TUT&&TUT.demo;TUT=null;tutLayer().innerHTML='';document.body.classList.remove('tutmode');{const hh=$('hud');if(hh){hh.style.zIndex='';hh.style.position=''}}
   const rec=loadRec();rec.tut=true;saveRec(rec);
   if(demo){DEMO=false;showHome();return}
   R.seats.forEach(c=>{if(c)c.pat=c.max});R.paused=false;
