@@ -63,7 +63,7 @@
       }
     },
     "lb": {
-      ".read": "query.limitToFirst <= 100 || query.limitToLast <= 100",
+      ".read": "(query.limitToFirst != null && query.limitToFirst <= 100) || (query.limitToLast != null && query.limitToLast <= 100)",
       ".indexOn": [
         "best",
         "earned",
