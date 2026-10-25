@@ -1379,7 +1379,7 @@ function stHTML(name){
   if(name==='sake')return sv(`<rect x="4" y="44" width="76" height="40" rx="6" fill="#8a5a34" stroke="${O}" stroke-width="3"/><g transform="translate(4 -2) scale(.78)">${sakeG()}</g>`,'0 0 84 90')+`<span class="lbl">${T('清酒')}</span>`+lockDiv(ITEMS.sake.day);
   if(name==='edamame')return sv(`<g transform="translate(-4 -6) scale(.92)">${edamameG()}</g>`,'0 0 84 90')+`<span class="lbl">${JP('edamame')}</span>`;
   if(name==='rawN'||name==='rawT'){const k=name==='rawN'?'negima':'tsukune';
-    return sv(`<rect x="4" y="10" width="64" height="72" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/>${[0,1,2].map(i=>`<g transform="translate(${8+i*19} 13) scale(.48 .45)">${skewerV(k,'raw')}</g>`).join('')}`,'0 0 72 90')+`<span class="lbl">${JP(k)} ¥${ITEMS[k].cost}</span>`+lockDiv(ITEMS[k].day)}
+    return sv(`<rect x="4" y="10" width="64" height="72" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/>${[0,1,2].map(i=>`<g transform="translate(${8+i*19} 13) scale(.48 .45)">${skewerV(k,'raw')}</g>`).join('')}`,'0 0 72 90')+`<span class="lbl">${JP(k)} ¥${costOf(k)}</span>`+lockDiv(ITEMS[k].day)}
   if(name==='rawC')return sv(`<path d="M10 10h116q-4 40-58 40q-54 0-58-40z" fill="#c9ced4" stroke="${O}" stroke-width="3"/><g transform="translate(10 -28)">${karaagePieces('raw',8,0)}</g><g transform="translate(44 -30)">${karaagePieces('raw',8,0)}</g>`,'0 0 136 58')+`<span class="lbl">${T('生雞肉')} ¥200</span>`+lockDiv(ITEMS.karaage.day);
   if(RAWMAP[name]){const k=RAWMAP[name],big=name==='rawEbi'||name==='rawKaki';
     return (big?sv(`<path d="M6 6h91q-4 42-45 42q-42 0-46-42z" fill="#c9ced4" stroke="${O}" stroke-width="3"/><g transform="translate(8 -10) scale(.48)">${pieceArt(k,'raw')}</g><g transform="translate(48 -8) scale(.48)">${pieceArt(k,'raw')}</g>`,'0 0 103 58')
@@ -1465,7 +1465,8 @@ function warmHTML(){
   for(let i=0;i<m;i++){const x=4+i*sw;
     const w=R.warm[i];
     s+=`<div class="st slot" data-warm="${i}" style="left:${x+3}px;top:2px;width:${sw-6}px;height:50px">${w?`<div style="position:absolute;left:50%;top:${-6+(54-ic)/2}px;width:${ic}px;height:${ic}px;transform:translateX(-50%)">${icon(w.key)}</div>`:''}</div>`}
-  return s+`<span class="lbl" style="bottom:-10px">${T(n<5?'保溫台':'保溫台（不會焦）')}</span>`;
+  const used=R.warm.slice(0,m).filter(Boolean).length;
+  return s+`<span class="lbl" style="bottom:-10px">${T(n<5?'保溫台':'保溫台（不會焦）')} ${used}/${m}</span>`;
 }
 const GUNW=66;
 function gunAlert(){return !!(R&&!R.aim&&R.rob&&(R.rob.st==='in'||R.rob.st==='threat'))}
@@ -2344,7 +2345,7 @@ function showDayIntro(){
   ${ST.owned&&!ST.rm?`<p class="hint">${T('商店上方多了「🍜 深夜拉麵屋台」，可以開第二家店！')}</p>`:''}
   ${due?`<div class="bank"><b>${T('今天是還款日！')}</b>${T('打烊時會從錢包還銀行 {0}，記得多賺一點，不然還完錢包見底又要再借。',yen(due))}</div>`:''}
   ${!ST.owned&&ST.coins>=GOAL?`<div class="goalcard"><div><b>🏠 ${T('你已經存夠 {0} 了！',yen(GOAL))}</b><p>${T('現在就能買下整棟店面，之後再也不用付房租。')}</p></div><button class="btn" data-act="buyshop">${T('買下店面 {0}',yen(GOAL))}</button></div>`:''}
-  ${TD.ev?`<div class="evbox"><span class="ei">${EVS[TD.ev][0]}</span><div><b>${T('今日事件：{0}',T(EVS[TD.ev][1]))}</b><br>${evDesc(TD)}${TD.ev==='sale'?`<div class="salepick"><small>${T('想讓哪道菜特價？點一下就能換：')}</small><div>${saleCands().map(k=>`<button class="btn ${TD.sale===k?'':'alt'}" data-act="salepick" data-id="${k}">${dishTitle(k)}</button>`).join('')}</div></div>`:''}</div></div>`:''}
+  ${TD.ev?`<div class="evbox"><span class="ei">${EVS[TD.ev][0]}</span><div><b>${T('今日事件：{0}',T(EVS[TD.ev][1]))}</b><br>${evDesc(TD)}${TD.ev==='sale'?`<div class="salepick"><small>${T('想讓哪道菜特價？點一下就能換：')}</small><div>${saleCands().map(k=>`<button class="btn ${TD.sale===k?'':'alt'}" data-act="salepick" data-id="${k}">${dishTitle(k)} ¥${Math.round(ITEMS[k].cost*(1+.25*lvOf(k))*.5/10)*10}</button>`).join('')}</div></div>`:''}</div></div>`:''}
   ${TD.rob?`<p class="hint">${T('聽說附近最近不太平靜……')}${ST.weapon?'':T('（商店「武器」分頁有賣防身用品）')}</p>`:''}
   <p>${rentOf()?T('今天店租 {0}（每週調漲），打烊時會從淨利扣掉。',yen(rentOf()))+T('存到 {0} 後，到商店按「買下店面」就不用再付房租。',yen(GOAL)):''}${T('營業時間 16:00 到凌晨 00:30，晚餐（18–20 點）和續攤（21–22 點）客人最多，00:20 最後點餐，之後不再接新客人。淨利（營收扣掉食材成本）越高星星越多，拿到一顆星就能進到下一天。')}</p>
   ${show.length?`<div class="how">${show.map(k=>`<div class="how-row">${icon(k==='chazuke'?'chazuke:salmon':k==='sashimi'?'sashimi:maguro+tai':k)}<div><b>${dishTitle(k)}</b>${ST.day>1?`<span class="new">${T('新菜')}</span>`:''}<br>${T(HOW[k])}</div></div>`).join('')}</div>`:''}
