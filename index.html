@@ -2190,7 +2190,7 @@ function showRecords(){const r=loadRec();modal(`<h2>${T('經營紀錄')}</h2><di
   <span>${T('最遠撐到：第 {0} 天',r.maxDay||0)}</span><span>${T('錢包最高：{0}',yen(r.maxCoins||0))}</span><span>${T('累計營收：{0}',yen(r.earned||0))}</span><span>${T('單日最高淨利：{0}',yen(r.bestDay||0))}</span><span>${T('破產次數：{0} 次',r.bankrupt||0)}</span><span>${T('買下店面：{0}',r.ownDay?T('第 {0} 天',r.ownDay):T(r.owned?'做到了！':'還沒'))}</span></div>
   <div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`)}
 /* ===== 賺外快機：拉霸機／彈珠台（只在首頁玩，輸贏都算在存檔的錢包） ===== */
-const ARC={slotBet:200,pinBet:200,SYM:['🍺','🍢','🍣','🍙','💴'],PINMUL:[10,2.5,0.9,0.6,0.5,0.6,0.9,2.5,10],busy:false};
+const ARC={slotBet:200,pinBet:200,SYM:['🍺','🍢','🍣','🍙','💴'],PINMUL:[5,1.8,0.5,0.4,0.25,0.4,0.5,1.8,5],busy:false};
 function arcWallet(delta){const s=load();if(!s)return 0;if(delta){s.coins=Math.max(0,(s.coins||0)+delta);try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}touchLocal()}return s.coins||0}
 const arcCanPay=b=>arcWallet(0)>=b;
 function arcShowW(){const e=document.getElementById('arcW');if(e)e.textContent=T('錢包：{0}',yen(arcWallet(0)))}
@@ -2236,7 +2236,7 @@ function arcSpin(){
     arcMsg(same&&a===4?T('🎉 三個 💴！大獎 {0}！',yen(win)):same?T('三個一樣！拿到 {0}',yen(win)):m?T('兩個一樣，退回本金'):T('沒中，再來一把！'));
   },900+2*450+250);
 }
-function showArcPin(){modal(`${ARC_CSS}<h2>${T('彈珠台')}</h2><canvas id="arcCv" width="300" height="330" style="display:block;margin:0 auto;width:100%;max-width:300px;border-radius:12px"></canvas><p class="arc-msg" id="arcMsg">${T('中間最容易落下，但只拿回一半；兩邊的大獎很難中，中了是 10 倍！下注越多，輸贏越大。')}</p><p id="arcW" style="font-size:14px;text-align:center">${T('錢包：{0}',yen(arcWallet(0)))}</p>${arcBetRow('pin')}<div class="btns"><button class="btn" data-act="arcdrop">${T('投一顆')}</button><button class="btn alt" data-act="arcade">${T('返回')}</button></div>`);arcPinDraw(null,null)}
+function showArcPin(){modal(`${ARC_CSS}<h2>${T('彈珠台')}</h2><canvas id="arcCv" width="300" height="330" style="display:block;margin:0 auto;width:100%;max-width:300px;border-radius:12px"></canvas><p class="arc-msg" id="arcMsg">${T('中間最容易落下，但只拿回一小部分；兩邊的大獎很難中，中了是 5 倍！下注越多，輸贏越大。')}</p><p id="arcW" style="font-size:14px;text-align:center">${T('錢包：{0}',yen(arcWallet(0)))}</p>${arcBetRow('pin')}<div class="btns"><button class="btn" data-act="arcdrop">${T('投一顆')}</button><button class="btn alt" data-act="arcade">${T('返回')}</button></div>`);arcPinDraw(null,null)}
 function arcPinDraw(ball,hi){
   const cv=document.getElementById('arcCv');if(!cv)return;const g=cv.getContext('2d'),cx=150,sp=32;
   g.fillStyle='#2a1a10';g.fillRect(0,0,300,330);
