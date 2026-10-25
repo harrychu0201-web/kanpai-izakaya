@@ -2198,14 +2198,23 @@ function arcMsg(t){const e=document.getElementById('arcMsg');if(e)e.textContent=
 const ARC_STEP=100,ARC_CAP=10000;
 const arcBetOf=g=>g==='pin'?ARC.pinBet:ARC.slotBet;
 function arcBetMax(){return Math.max(ARC_STEP,Math.min(ARC_CAP,Math.floor(arcWallet(0)/ARC_STEP)*ARC_STEP))}
-function arcBetRow(g){return `<div class="btns" style="align-items:center"><button class="btn alt" data-act="arcbet" data-g="${g}" data-d="-1">−</button><span id="arcBetAmt" style="font-size:18px;font-weight:bold;min-width:110px;text-align:center">${yen(arcBetOf(g))}</span><button class="btn alt" data-act="arcbet" data-g="${g}" data-d="1">＋</button></div>`}
+function arcBetRow(g){return `<div class="btns" style="align-items:center"><button class="btn alt" data-act="arcbet" data-g="${g}" data-d="-1">−</button><span style="font-size:18px;font-weight:bold">¥</span><input id="arcBetAmt" type="number" inputmode="numeric" step="100" min="100" data-arcbet="${g}" value="${arcBetOf(g)}" style="width:110px;font-size:18px;font-weight:bold;text-align:center;padding:4px"><button class="btn alt" data-act="arcbet" data-g="${g}" data-d="1">＋</button></div>`}
 function arcBet(g,d){
   if(ARC.busy)return;
   const cur=arcBetOf(g),max=arcBetMax();
   const nb=Math.min(max,Math.max(ARC_STEP,cur+d*ARC_STEP));
   if(g==='pin')ARC.pinBet=nb;else ARC.slotBet=nb;
-  const e=document.getElementById('arcBetAmt');if(e)e.textContent=yen(nb);
+  const e=document.getElementById('arcBetAmt');if(e)e.value=nb;
 }
+function arcBetType(g,v){
+  if(ARC.busy)return;
+  const max=arcBetMax();
+  let n=Math.round((+v||ARC_STEP)/ARC_STEP)*ARC_STEP;
+  n=Math.min(max,Math.max(ARC_STEP,n));
+  if(g==='pin')ARC.pinBet=n;else ARC.slotBet=n;
+  const e=document.getElementById('arcBetAmt');if(e)e.value=n;
+}
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.arcbet)arcBetType(t.dataset.arcbet,t.value)});
 function showArcade(){modal(`<h2>${T('賺外快機')}</h2><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p><p style="font-size:14px">${T('試試你的小手氣~')}</p><div class="btns"><button class="btn" data-act="arcslot">🎰 ${T('拉霸機')}</button><button class="btn" data-act="arcpin">🔮 ${T('彈珠台')}</button><button class="btn alt" data-act="closem">${T('返回')}</button></div>`)}
 const ARC_CSS=`<style>.arc-reels{display:flex;gap:10px;justify-content:center;margin:14px 0}.arc-reels span{width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:38px;background:#fff8e6;border:3px solid #7a4a2a;border-radius:12px;box-shadow:inset 0 -4px 0 #e9d3a6}.arc-msg{font-size:15px;min-height:1.4em;text-align:center;margin:6px 0}</style>`;
 function showArcSlot(){modal(`${ARC_CSS}<h2>${T('拉霸機')}</h2><div class="arc-reels" id="arcReels"><span>🍺</span><span>🍢</span><span>🍣</span></div><p class="arc-msg" id="arcMsg">${T('三個 💴 大獎，三個一樣小獎，兩個一樣退本金。下注越多，輸贏越大。')}</p><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p>${arcBetRow('slot')}<div class="btns"><button class="btn" data-act="arcspin">${T('轉！')}</button><button class="btn alt" data-act="arcade">${T('返回')}</button></div>`)}
