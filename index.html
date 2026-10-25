@@ -2003,7 +2003,7 @@ function canAdd(b,id){if(b.base==='bowl')return (id==='rice'&&!b.rice)||((id==='
 function addIng(b,id){if(id==='bowl'||id==='boat')b.base=id;else if(id==='rice')b.rice=1;else if(id==='tsalmon'||id==='tume')b.top=id==='tsalmon'?'salmon':'ume';else if(id==='tea')b.tea=1;else b.fish.push(id)}
 function shake(c){c.el.classList.remove('shake');void c.el.offsetWidth;c.el.classList.add('shake')}
 /* ---- 搞笑事故 (mishaps): rare, harmless slapstick; each kind is logged in the 事故圖鑑 ---- */
-const MISHAP_P=2/9,MISHAP_REWARD=3000,DRINKS=['beer','sake','highball','lsour','ramune','umeshu','reishu'];
+const MISHAP_P=1/20,MISHAP_REWARD=3000,DRINKS=['beer','sake','highball','lsour','ramune','umeshu','reishu'];
 const MISHAPS={
   splash:{ic:'🍺',zh:'天降啤酒',d:'端酒的手一滑，整杯酒飛向隔壁的客人。',q:'我的頭上長出泡泡了？',hint:'端酒給客人的時候，有時會手滑…'},
   charcoal:{ic:'🍢',zh:'炭人誕生',d:'東西烤過頭，整個變成一個黑黑的小人，還睜著無辜的大眼睛。',q:'我、我熟了嗎？',hint:'有東西烤焦的時候，說不定會發生…'},
