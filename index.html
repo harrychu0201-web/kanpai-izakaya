@@ -163,6 +163,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .new{display:inline-block;background:var(--lacquer);color:#fff;font-size:11px;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:2px}
 .stars{font-size:54px;letter-spacing:6px;color:#d9c9a8;line-height:1}
 .stars .on{color:#f0b229}
+.rtag{font-size:12px;margin-left:6px;padding:1px 7px;border-radius:9px;background:#f0b229;color:#2a1a0a;white-space:nowrap;vertical-align:middle}.rtag.r1,.rtag.r2{background:#8a5a44;color:#fff}
 .goalrow{display:flex;gap:10px;flex-wrap:wrap;font-size:15px}
 .goalrow span{background:#f1e2c2;border-radius:999px;padding:3px 12px}
 .shop{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -3019,10 +3020,16 @@ async function saveNick(){const i=$('nickin');if(!i)return;const v=i.value.repla
 const FR_MAX=20,FR_GIFT=1000,FR={sort:'best',reg:null,data:null,t:0,view:'list',dirty:0};
 function fcodeOf(uid){const A='23456789ABCDEFGHJKMNPQRSTUVWXYZ';let a=0x811c9dc5|0,b=0x9747b28c|0;for(let i=0;i<uid.length;i++){const c=uid.charCodeAt(i);a=Math.imul(a^c,16777619);b=Math.imul(b^c,0x5bd1e995);b^=b>>>15}let s='';for(const h of [a,b]){let v=h>>>0;for(let i=0;i<4;i++){s+=A[v%31];v=Math.floor(v/31)}}return s}
 const fmtCode=c=>c.slice(0,4)+'-'+c.slice(4),frDay=()=>Math.floor((Date.now()+288e5)/864e5);
+/* shop rating: average stars over the last 7 days played (0–3 each), needs at least 3 days; rt is what friends see */
+const RT=[[2.5,5,'五星評價','客人排隊排到巷口，老闆娘忙到沒時間喝水！'],[2,4,'四星評價','常客多、口碑穩，偶爾還是有人嫌醬油太鹹。'],[1.5,3,'三星評價','還行啦，客人吃得飽，但不會特地再來。'],[1,2,'差評','客人留言：菜單看起來不錯，但上菜好慢喔。'],[0,1,'低分居酒屋','客人吃完留下一句：下次不來了。']];
+function shopRate(g){const ks=Object.keys(g.stars||{}).map(Number).sort((a,b)=>a-b);if(ks.length<3)return null;const last=ks.slice(-7);const avg=last.reduce((s,k)=>s+(g.stars[k]||0),0)/last.length;const t=RT.find(x=>avg>=x[0]);return t?{rt:t[1],avg:Math.round(avg*10)/10}:null}
+const rtTag=rt=>{const t=RT.find(x=>x[1]===rt);return t?` <small class="rtag r${rt}">${T(t[2])}</small>`:''};
+const rtFull=rt=>{const t=RT.find(x=>x[1]===rt);return t?`${T(t[2])}<br><small>${T(t[3])}</small>`:T('還沒評價（至少營業 3 天）')};
 function lbxEntry(){const d=lbEntry();if(!d)return null;let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(!g)return null;
-  delete d.days;d.day=Math.max(1,(g.day||1)+(g.pendingNext?1:0));d.ya=g.rm?1:0;d.k2=g.rm&&g.rm.k2?1:0;let c=0;for(const k in(g.dec||{}))if(g.dec[k])c++;if(g.rm&&g.rm.dec)for(const k in g.rm.dec)if(g.rm.dec[k])c++;d.dc=c;return d}
+  delete d.days;d.day=Math.max(1,(g.day||1)+(g.pendingNext?1:0));d.ya=g.rm?1:0;d.k2=g.rm&&g.rm.k2?1:0;let c=0;for(const k in(g.dec||{}))if(g.dec[k])c++;if(g.rm&&g.rm.dec)for(const k in g.rm.dec)if(g.rm.dec[k])c++;d.dc=c;const sr=shopRate(g);if(sr)d.rt=sr.rt;return d}
 async function lbxPush(u){try{if(!CL.api.putLbx)return;let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return;const d=lbxEntry();if(!d)return;
-  const k=JSON.stringify(d);if(LB.lastx===u.uid+k)return;await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d));LB.lastx=u.uid+k}catch(e){console.warn('lbx',e)}}
+  const k=JSON.stringify(d);if(LB.lastx===u.uid+k)return;try{await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d))}catch(e){if(!d.rt)throw e;const d2=Object.assign({},d);delete d2.rt;await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d2))} /* rules not updated yet: keep the rest of the snapshot */
+  LB.lastx=u.uid+k}catch(e){console.warn('lbx',e)}}
 async function frLoad(){const me=CL.user,a=CL.api,uid=me.uid;
   if(FR.reg!==uid){await a.regCode(uid,fcodeOf(uid));FR.reg=uid}
   const [fl,rq]=await Promise.all([a.frList(uid),a.frReq(uid)]);const rm=loadRec().frRm||{};
@@ -3040,11 +3047,11 @@ async function showFriends(){FR.view='list';
   frDraw()}
 function frDraw(){FR.view='list';if(!HOME||LB.tab!=='fr')return;
   const tb=LBT.find(x=>x[0]==='fr'),me=CL.user,mine=lbEntry(),D=FR.data,r=loadRec(),today=frDay(),ids=Object.keys(D.fl);
-  const rows=ids.map(k=>Object.assign({uid:k},D.lbs[k]||{}));rows.push({uid:me.uid,me:1,name:mine.name,best:mine.best,earned:mine.earned});
+  const rows=ids.map(k=>Object.assign({uid:k},D.lbs[k]||{}));rows.push({uid:me.uid,me:1,name:mine.name,best:mine.best,earned:mine.earned,rt:(shopRate(load()||{})||{}).rt});
   rows.sort((x,y)=>(y[FR.sort]||0)-(x[FR.sort]||0));
   const sum=D.pend.reduce((s,f)=>s+D.gifts[f].a,0);
   const list=rows.map((x,i)=>{const act=x.me?'':`<button class="btn alt frb" data-act="frvisit" data-id="${esc(x.uid)}">${T('參觀')}</button><button class="btn alt frb" data-act="frgift" data-id="${esc(x.uid)}" ${(r.frG||{})[x.uid]===today?'disabled':''}>🎁</button>`;
-    return `<div class="lbrow frrow ${x.me?'me':''}"><b>${i<3?['🥇','🥈','🥉'][i]:i+1}</b><span>${esc(x.name||T('玩家'))}</span><em>${yen(x[FR.sort]||0)}</em>${act}</div>`}).join('');
+    return `<div class="lbrow frrow ${x.me?'me':''}"><b>${i<3?['🥇','🥈','🥉'][i]:i+1}</b><span>${esc(x.name||T('玩家'))}${rtTag(x.rt)}</span><em>${yen(x[FR.sort]||0)}</em>${act}</div>`}).join('');
   modal(lbHead(tb)+(D.pend.length?`<div class="lbme"><span>🎁 ${T('收到 {0} 份禮物，共 {1}',D.pend.length,yen(sum))}</span><button class="btn" data-act="frclaim">${T('領取')}</button></div>`:'')
    +`<div class="lbme"><span>${T('你的好友碼')}：<b style="letter-spacing:2px">${fmtCode(fcodeOf(me.uid))}</b></span><button class="btn alt" data-act="frcopy">${T('複製')}</button><button class="btn alt" data-act="frshare">${T('分享')}</button></div>
    <div class="lbme"><input class="nickin" id="frin" maxlength="9" placeholder="${T('輸入好友碼')}" autocomplete="off" style="flex:1;min-width:0;font-size:16px;padding:6px 10px;text-transform:uppercase"><button class="btn" data-act="fradd">${T('加好友')}</button></div>
@@ -3079,7 +3086,7 @@ function showVisit(uid){const D=FR.data;if(!D)return;FR.view=uid;const x=D.lbs[u
   const row=(a,b)=>`<div class="lbrow frv"><span>${a}</span><em>${b}</em></div>`;
   modal(`<h2>🏮 ${esc(T('{0} 的店',x.name||T('玩家')))}</h2><div class="lblist">
    ${row(T('營業天數'),T('第 {0} 天',x.day||'?'))}${row(T('單日淨利'),yen(x.best||0))}${row(T('累計營收'),yen(x.earned||0))}
-   ${row(T('店面'),x.own?T('第 {0} 天買下',x.own):T('還在努力存錢'))}${row(T('拉麵屋台'),x.ya?T('已開張'):T('還沒開張'))}${row(T('二號廚房'),x.k2?T('已擴建'):T('還沒擴建'))}${row(T('裝飾'),T('{0} 件',x.dc||0))}</div>
+   ${row(T('店面'),x.own?T('第 {0} 天買下',x.own):T('還在努力存錢'))}${row(T('拉麵屋台'),x.ya?T('已開張'):T('還沒開張'))}${row(T('二號廚房'),x.k2?T('已擴建'):T('還沒擴建'))}${row(T('裝飾'),T('{0} 件',x.dc||0))}${row(T('店評價'),rtFull(x.rt))}</div>
    <div class="btns"><button class="btn" data-act="frgift" data-id="${esc(uid)}" ${sent?'disabled':''}>🎁 ${T('送禮物')}</button><button class="btn alt" data-act="frdel" data-id="${esc(uid)}">${T('移除好友')}</button><button class="btn alt" data-act="frback">${T('返回')}</button></div>`)}
 function frDelAsk(uid){const x=(FR.data&&FR.data.lbs[uid])||{};modal(`<h2>${T('移除好友')}</h2><p>${esc(T('要移除這位好友嗎？'))} ${esc(x.name||'')}</p><div class="btns"><button class="btn" data-act="frdelok" data-id="${esc(uid)}">${T('移除')}</button><button class="btn alt" data-act="frback">${T('取消')}</button></div>`)}
 async function frDel(uid){const me=CL.user;if(!me)return;try{await CL.api.frDel(me.uid,uid)}catch(e){console.warn('frdel',e);toast('好友功能暫時打不開，請稍後再試。');return}
