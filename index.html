@@ -3501,7 +3501,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)chatStop();
 function chatDraw(scroll){const l=$('chatlist');if(!l)return;const near=l.scrollHeight-l.scrollTop-l.clientHeight<60;
   const me=CL.user&&CL.user.uid,adm=isAdmin();
   const rows=CHT.msgs.filter(m=>!CHT.hide[m.id]&&!CHT.block[m.uid]);
-  const div=CHT.seenAt>0?rows.findIndex(m=>m.t>CHT.seenAt):-1;
+  const div=CHT.seenAt>0?rows.findIndex(m=>m.t>CHT.seenAt&&m.uid!==me):-1; // your own messages never count as 'new since you left'
   const off=!navigator.onLine;
   const warn=(CHT.err||off)&&rows.length?`<p class="chatwarn">${T(off?'目前離線，顯示上次的紀錄':'連線中斷，顯示上次的紀錄')}</p>`:'';
   l.innerHTML=warn+(rows.length?rows.map((m,i)=>{const mine=m.uid===me,op=CHT.open===m.id,lk=m.likes||{},nl=Object.keys(lk).length,lon=!!(me&&lk[me]);
