@@ -287,7 +287,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .tut-box .btn{font-size:15px;padding:7px 16px}
 .tut-n{font-size:12px;opacity:.6;font-weight:700}
 .home .side{position:absolute;left:clamp(10px,2.2vw,34px);top:24%;display:flex;flex-direction:column;gap:clamp(8px,1.6vh,18px);z-index:2}
-.sideb{display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:0;padding:0;cursor:pointer;transition:transform .12s}
+.rdot{position:absolute;top:2px;right:8px;width:12px;height:12px;border-radius:50%;background:#e0412c;border:2px solid #fff;z-index:2}.sideb{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:0;padding:0;cursor:pointer;transition:transform .12s}
 .sideb:hover{transform:scale(1.08)}.sideb:active{transform:scale(.94)}
 .sideb svg{width:clamp(54px,6.2vw,84px);height:clamp(54px,6.2vw,84px);filter:drop-shadow(0 3px 0 #3a1a10) drop-shadow(0 4px 8px rgba(0,0,0,.45))}
 .sideb span{font-family:var(--f-ui);font-weight:900;font-size:clamp(13px,1.3vw,19px);color:#f3dfb4;letter-spacing:.06em;text-shadow:2px 0 #3a1a10,-2px 0 #3a1a10,0 2px #3a1a10,0 -2px #3a1a10,1.5px 1.5px #3a1a10,-1.5px 1.5px #3a1a10,1.5px -1.5px #3a1a10,-1.5px -1.5px #3a1a10,0 3px 3px rgba(0,0,0,.5)}
@@ -718,7 +718,7 @@ let SHOPTAB='menu',shopScroll=0,shopKeep=false,SHOPJUMP=false;
 function keepScroll(){const c=document.querySelector('.card');shopScroll=c?c.scrollTop:0;shopKeep=true}
 function hasDec(id){return id==='noren'?!!(ST&&(ST.up.decor||(ST.dec&&ST.dec.noren))):!!(ST&&ST.dec&&ST.dec[id])}
 function patMult(){if(CUR==='rm')return 1+RDECOR.reduce((s,d)=>s+(rmDec(d.id)?d.b:0),0);return 1+DECOR.reduce((s,d)=>s+(hasDec(d.id)?d.b:0),0)}
-const DAYLEN=159,RUSH=[1.9,1.3,.75,.62,1.0,.72,1.1,1.8];
+let DAYLEN=159,RUSH=[1.9,1.3,.75,.62,1.0,.72,1.1,1.8];
 const PERIOD=h=>T(h<18?'傍晚':h<20?'晚餐尖峰':h<21?'飯後':h<22.5?'續攤尖峰':h<24+20/60?'深夜':'打烊前');
 function hourNow(){return 16+Math.min(1,R.t/DAYLEN)*8.5}
 function clockStr(){const h=hourNow(),hh=Math.floor(h),mm=Math.floor((h-hh)*60/5)*5;return `${hh>=24?'00':hh}:${String(mm).padStart(2,'0')}`}
@@ -1364,7 +1364,7 @@ function ingArt(id){
   if(id==='boat')return sashimiG([]);
   return `<rect x="10" y="30" width="80" height="42" rx="10" fill="${FISHC[id][0]}" stroke="${O}" stroke-width="4"/><path d="M20 42h60" stroke="${FISHC[id][1]}" stroke-width="5" opacity=".8"/>`;
 }
-function burnAt(kind){let b=COOK[kind]+12+(ST.up.warm?6:0);if(CUR==='rm'){if(kind==='noodle'&&rmUp('firm',0))b+=6;if((kind==='gyoza'||kind==='friedrice')&&rmUp('iron',0))b+=5;if(RFK.includes(kind)&&rmUp('oil',0))b+=5}return b}
+function burnAt(kind){let b=COOK[kind]+12+(ST.up.warm?6:0);if(CUR==='rm'){if(kind==='noodle'&&rmUp('firm',0))b+=6;if((kind==='gyoza'||kind==='friedrice')&&rmUp('iron',0))b+=5;if(RFK.includes(kind)&&rmUp('oil',0))b+=5}return R&&R.fxNb?b+9999:b}
 function cookState(t,kind){return t<COOK[kind]?'raw':t<burnAt(kind)?'done':'burnt'}
 const lockDiv=d=>ST.day<d?`<div class="locked">${T('第 {0} 天<br>開放',d)}</div>`:'';
 function stHTML(name){
@@ -1645,7 +1645,7 @@ function layoutBubbles(force){if(!R)return;const g=$('game');if(!g)return;
   apply(best)}
 
 function quotaOf(d){return Math.min(24,6+d*2)}
-function startDay(){setTimeout(()=>sfx('open'),80);$('game').classList.remove('aim');
+function startDay(){DAYLEN=159;setTimeout(()=>sfx('open'),80);$('game').classList.remove('aim');
   closeModal();
   setCur(ST.where);if(CUR==='rm'&&ST.rm)ST.rm.seen=true;
   const quota=expectedCust();
@@ -1702,8 +1702,8 @@ function step(dt){
   const cdt=dt*cookMul();R.rmpan.forEach(g=>{if(g)g.t+=dt});R.rfry.forEach(g=>{if(g)g.t+=dt});R.tyaki.forEach(g=>{if(g)g.t+=dt});R.mpot.forEach(g=>{if(g)g.t+=dt*(rmUp('fast',0)?1.4:1)});
   R.oden.cook.forEach(b=>b.t+=dt);{const ot=odenT(),dn=R.oden.cook.filter(b=>b.t>=ot).reduce((s,b)=>s+(b.n||2),0);if(dn){R.oden.n+=dn;R.oden.cook=R.oden.cook.filter(b=>b.t<ot);sfx('done')}}
   R.grill.forEach(g=>{if(g)g.t+=cdt});R.fryer.forEach(f=>{if(f)f.t+=cdt});R.teppan.forEach(g=>{if(g)g.t+=cdt});R.tempura.forEach(g=>{if(g)g.t+=cdt});
-  R.tako.forEach((g,i)=>{if(!g)return;if(!g.fl&&g.t>=TKFLIP){g.t=TKFLIP;g.w=(g.w||0)+cdt;if(staffLv('helper')>=2&&g.w>=TKAUTO){g.fl=1;g.w=0;sfx('pick');if(KP===3){const c=srcCenter({src:'tako',i});popup(c.x,c.y-60,T('阿健翻面'))}renderStations();return}if(g.w>TKGRACE)g.t=burnAt('takoyaki')+.1}else g.t+=cdt}); // waits for the flip (you, or 阿健 at Lv2+), burns if missed
-  ['tama','onig'].forEach(pn=>R[pn].forEach(g=>{if(!g)return;const d=STEPS[g.kind],s=g.s||0;if(s<d.t.length&&g.t>=d.t[s]){g.t=d.t[s];g.w=(g.w||0)+cdt;if(g.w>d.grace){g.t=burnAt(g.kind)+.1;g.bad=1}}else g.t+=cdt})); // same idea: pause at each step until tapped, ruined if you miss the window
+  R.tako.forEach((g,i)=>{if(!g)return;if(!g.fl&&g.t>=TKFLIP){g.t=TKFLIP;g.w=(g.w||0)+cdt;if(staffLv('helper')>=2&&g.w>=TKAUTO){g.fl=1;g.w=0;sfx('pick');if(KP===3){const c=srcCenter({src:'tako',i});popup(c.x,c.y-60,T('阿健翻面'))}renderStations();return}if(g.w>TKGRACE){if(R.fxNb){g.fl=1;g.w=0}else g.t=burnAt('takoyaki')+.1}}else g.t+=cdt}); // waits for the flip (you, or 阿健 at Lv2+), burns if missed
+  ['tama','onig'].forEach(pn=>R[pn].forEach(g=>{if(!g)return;const d=STEPS[g.kind],s=g.s||0;if(s<d.t.length&&g.t>=d.t[s]){g.t=d.t[s];g.w=(g.w||0)+cdt;if(g.w>d.grace){if(R.fxNb){g.s=(g.s||0)+1;g.w=0}else{g.t=burnAt(g.kind)+.1;g.bad=1}}}else g.t+=cdt})); // same idea: pause at each step until tapped, ruined if you miss the window
   {let sz=0,dn=0,br=0;[[R.grill,0],[R.fryer,1],[R.teppan,0],[R.tempura,0],[R.rmpan,0],[R.mpot,0],[R.rfry,0],[R.tyaki,0],[R.tako,0],[R.tama,0],[R.onig,0]].forEach(([arr,fr])=>arr.forEach(g=>{if(!g)return;const k=fr?'karaage':g.kind,st=cookState(g.t,k);if(!g.s0){g.s0=1;sz=1}if(st==='done'&&!g.s1){g.s1=1;dn=1}if(st==='burnt'&&!g.s2){g.s2=1;br=1;if(!g.bad&&mishapRoll('charcoal')){g.cm=1;mishapLog('charcoal');toast('烤成炭人了！')}}}));if(br)sfx('burn');else if(dn)sfx('done');else if(sz)sfx('sizzle')}
   /* tension: when a kitchen newly has something about to burn (or takoyaki waiting for its flip) beep once, and if it is not the kitchen you are looking at, say which one */
   {const al=R.pgAl||(R.pgAl={});pages().forEach(p=>{const lv=pgLevel(p),was=al[p]||0;if(lv>was){sfx('alarm');if(p!==KP)toast(T(lv===2?'{0}要翻面了！':'{0}快焦了！',pgName(p)))}al[p]=lv})}
@@ -1863,16 +1863,63 @@ function crisisCook(){
 function sky(){const e=$('sky');if(!e||!R)return;const h=hourNow();const c=h<17.5?['#ffb04a',.25]:h<18.3?['#ff6a2a',.35]:h<19?['#7a3a6a',.6]:['#070b1c',.96];e.setAttribute('fill',c[0]);e.setAttribute('opacity',c[1]);const m=$('moon');if(m)m.setAttribute('opacity',h>=19?1:h>=18.6?.4:0)}
 function live(){return R&&!R.settled?ST.coins+R.earned-R.cost-R.stolen-R.fines:ST.coins}
 function canPay(n){if(live()>=n)return true;toast(T('錢包沒錢了，買不起食材！'));askLoan();return false}
-const ELOAN=10000,ELOAN_BACK=12000;
+const LOAN_MIN=1000,LOAN_MAX=100000,LOAN_PRESETS=[5000,10000,30000,50000];
 function askLoan(){if(!R||R.over||R.settled||R.eloan||R.eloanAsked||DEMO)return;R.eloanAsked=true;setTimeout(()=>{if(R&&!R.over&&!R.settled&&!document.querySelector('.modal'))bankWin()},250)}
+function loanRate(){if(R.eloanRate==null)R.eloanRate=Math.round((5+Math.random()*20)*2)/2;return R.eloanRate}
+function loanBack(a){return Math.round(a*(1+loanRate()/100)/100)*100}
+function loanPreviewHTML(v){const a=Math.round(+v||0);if(a<LOAN_MIN||a>LOAN_MAX)return T('借款金額請填 {0} 到 {1} 之間',yen(LOAN_MIN),yen(LOAN_MAX));const b=loanBack(a);return T('借 {0}，3 天後要還 <b>{1}</b>（利息 {2}）',yen(a),yen(b),yen(b-a))}
+function loanPreview(){const e=$('loanPrev'),i=$('loanAmt');if(e&&i)e.innerHTML=loanPreviewHTML(i.value)}
 function bankWin(){if(!R||R.over||R.settled)return;R.paused=true;
   if(R.eloan){modal(`<h2>${T('🏦 銀行窗口')}</h2><p>${T('今天已經借過一次了，銀行窗口一天只能借一次。剩下的時間就用手上的錢好好撐過去吧！')}</p><div class="btns"><button class="btn" data-act="resume">${T('繼續營業')}</button></div>`);return}
-  modal(`<h2>${T('🏦 銀行窗口・緊急借款')}</h2><p>${T('營業中錢包不夠用？銀行可以先借你 {0} 買食材，<b>3 天後打烊時要還 {1}</b>（多 20% 利息），會直接從錢包扣。一天只能借一次。',yen(ELOAN),yen(ELOAN_BACK))}</p>
+  modal(`<h2>${T('🏦 銀行窗口・緊急借款')}</h2><p>${T('營業中錢包不夠用？銀行可以先借你錢買食材，<b>3 天後打烊時連本帶利還</b>，會直接從錢包扣。一天只能借一次。')}</p>
+  <p style="font-size:14px">${T('今天的利率是 <b>{0}%</b>。利率每次借款都會隨機抽（5% 到 25%）。',loanRate())}</p>
+  <div class="btns">${LOAN_PRESETS.map(v=>`<button class="btn alt" data-act="loanpick" data-amt="${v}">${yen(v)}</button>`).join('')}</div>
+  <p style="font-size:14px">${T('自己填金額：')} <input id="loanAmt" type="number" min="${LOAN_MIN}" max="${LOAN_MAX}" step="1000" value="10000" oninput="loanPreview()" style="width:9em;font:inherit;padding:4px 6px"></p>
+  <p id="loanPrev" style="font-size:14px">${loanPreviewHTML(10000)}</p>
   <div class="tipcard"><b>${T('💡 借錢前先想三秒')}</b><p>${T('借來的錢不是賺來的錢，之後要連利息一起還。只拿來買食材、把今天撐完；別借錢買裝潢或武器。最好的辦法是平常就別把錢花光，留一筆週轉金給營業用。')}</p></div>
   ${ST.debt?`<p style="font-size:14px">${T('目前還欠銀行 {0}，再借的話要還的會更多。',yen(ST.debt))}</p>`:''}
-  <div class="btns"><button class="btn" data-act="eloanok">${T('借 {0}',yen(ELOAN))}</button><button class="btn alt" data-act="resume">${T('先不用，繼續營業')}</button></div>`)}
-function takeLoan(){if(!R||R.eloan||R.settled)return;R.eloan=true;ST.coins+=ELOAN;ST.debt=(ST.debt||0)+ELOAN_BACK;
-  ST.dues=ST.dues||[];ST.dues.push({amt:ELOAN_BACK,left:4});save();R.paused=false;closeModal();last=performance.now();renderHUD();toast(T('借到 {0}，3 天後要還 {1}',yen(ELOAN),yen(ELOAN_BACK)))}
+  <div class="btns"><button class="btn" data-act="eloanok">${T('借款')}</button><button class="btn alt" data-act="resume">${T('先不用，繼續營業')}</button></div>`)}
+function takeLoan(){if(!R||R.eloan||R.settled)return;const i=$('loanAmt'),a=Math.round(+(i&&i.value)||0);if(a<LOAN_MIN||a>LOAN_MAX){toast(T('借款金額請填 {0} 到 {1} 之間',yen(LOAN_MIN),yen(LOAN_MAX)));return}
+  const back=loanBack(a);R.eloan=true;ST.coins+=a;ST.debt=(ST.debt||0)+back;
+  ST.dues=ST.dues||[];ST.dues.push({amt:back,left:4});save();R.paused=false;closeModal();last=performance.now();renderHUD();toast(T('借到 {0}，3 天後要還 {1}',yen(a),yen(back)))}
+
+/* ===== 道具・成就・簽到（獎勵中心） ===== */
+const PROPS={nb:{ic:'🛡️',n:'不焦符',d:'從使用的那一刻起，這一局的食物都不會燒焦（翻面失手也不糊）。',p:3000},
+  pt:{ic:'💗',n:'耐心回復',d:'所有入座客人的耐心立刻回滿。',p:2000},
+  ext:{ic:'⏰',n:'延長營業',d:'今天的營業時間延長 30 秒。',p:4000}};
+const ACHS=[{id:'d10',n:'撐過第 10 天',c:r=>r.maxDay>=10,rw:{nb:1}},
+  {id:'d20',n:'撐過第 20 天',c:r=>r.maxDay>=20,rw:{pt:2}},
+  {id:'d30',n:'撐過第 30 天',c:r=>r.maxDay>=30,rw:{ext:2}},
+  {id:'rv1',n:'累計營收 ¥500,000',c:r=>(r.earned||0)>=500000,rw:{pt:1,nb:1}},
+  {id:'rv2',n:'累計營收 ¥2,000,000',c:r=>(r.earned||0)>=2000000,rw:{nb:2,ext:1}},
+  {id:'rv3',n:'累計營收 ¥10,000,000',c:r=>(r.earned||0)>=10000000,rw:{nb:3,pt:3,ext:3}}];
+function dayKey(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function rwText(rw){return Object.keys(rw).map(k=>PROPS[k].ic+PROPS[k].n+' ×'+rw[k]).join('、')}
+function invAdd(rw){const r=loadRec();r.inv=r.inv||{};for(const k in rw)r.inv[k]=(r.inv[k]||0)+rw[k];saveRec(r)}
+function rewardDue(){const r=loadRec();return !(r.ci&&r.ci.last===dayKey())||ACHS.some(a=>a.c(r)&&!(r.ach&&r.ach[a.id]))}
+function claimCheckin(){const r=loadRec();if(r.ci&&r.ci.last===dayKey())return;const y=dayKey(new Date(Date.now()-864e5));const n=r.ci&&r.ci.last===y?(r.ci.streak||0)+1:1;r.ci={last:dayKey(),streak:n};saveRec(r);
+  const rw=n%7===0?{nb:1,pt:1,ext:1}:{[['nb','pt','ext'][Math.floor(Math.random()*3)]]:1};invAdd(rw);toast(T('簽到成功！連續 {0} 天，獲得 {1}',n,rwText(rw)));showRewards()}
+function claimAch(id){const r=loadRec(),a=ACHS.find(x=>x.id===id);if(!a||!a.c(r)||(r.ach&&r.ach[id]))return;r.ach=r.ach||{};r.ach[id]=1;saveRec(r);invAdd(a.rw);toast(T('成就達成：{0}，獲得 {1}',a.n,rwText(a.rw)));showRewards()}
+function useProp(k){if(!R||R.over||R.settled||!PROPS[k])return;const r=loadRec(),inv=r.inv||{};if(!(inv[k]>0))return;
+  if(k==='nb'){if(R.fxNb){toast(T('這一局已經用過不焦符了'));return}R.fxNb=1}
+  else if(k==='pt'){if(!R.seats.some(c=>c)){toast(T('現在沒有客人'));return}R.seats.forEach(c=>{if(c)c.pat=c.max})}
+  else if(k==='ext'){DAYLEN+=30}
+  r.inv[k]--;saveRec(r);toast(T('使用了 {0}',PROPS[k].n));showRewards()}
+function buyProp(k){const p=PROPS[k];if(!p||R)return;const s=load();if(!s)return;if((s.coins||0)<p.p){toast(T('金幣不夠'));return}arcWallet(-p.p);invAdd({[k]:1});toast(T('買到 {0}',p.n));showRewards()}
+function showRewards(){const inR=!!R&&!R.over&&!R.settled,r=loadRec(),inv=r.inv||{},s=load(),coins=s?s.coins||0:0;
+  const ci=!(r.ci&&r.ci.last===dayKey()),streak=r.ci?r.ci.streak||0:0;
+  const row=(ic,title,desc,btn)=>`<div style="display:grid;grid-template-columns:38px 1fr auto;gap:8px;align-items:center;background:#fffaf0;border:2px solid var(--soot);border-radius:10px;padding:6px 8px;margin-bottom:6px"><span style="font-size:24px;text-align:center">${ic}</span><span style="font-size:14px;line-height:1.4"><b>${title}</b><br>${desc}</span><span>${btn||''}</span></div>`;
+  const ciRow=row('📅',T('每日簽到'),T('連續簽到 {0} 天。連續 7 天會有額外獎勵。',streak),ci?`<button class="btn" data-act="checkin">${T('簽到')}</button>`:`<span style="font-size:13px">${T('今天已簽到')}</span>`);
+  const achHTML=ACHS.map(a=>{const got=!!(r.ach&&r.ach[a.id]),ok=a.c(r);return row(got?'✅':ok?'🎉':'🔒',T(a.n),T('獎勵：{0}',rwText(a.rw)),got?`<span style="font-size:13px">${T('已領取')}</span>`:`<button class="btn" data-act="achclaim" data-id="${a.id}" ${ok?'':'disabled'}>${T('領取')}</button>`)}).join('');
+  const propHTML=Object.keys(PROPS).map(k=>{const p=PROPS[k],n=inv[k]||0,used=k==='nb'&&inR&&R.fxNb;const btn=inR?`<button class="btn" data-act="useprop" data-id="${k}" ${n>0&&!used?'':'disabled'}>${T('使用')}</button>`:'';return row(p.ic,T(p.n)+' ×'+n,T(p.d),btn)}).join('');
+  const shopHTML=(!R&&s)?Object.keys(PROPS).map(k=>{const p=PROPS[k];return row(PROPS[k].ic,T(p.n),T(p.d),`<button class="btn ${coins<p.p?'poor':''}" data-act="buyprop" data-id="${k}" ${coins<p.p?'disabled':''}>${yen(p.p)}</button>`)}).join(''):'';
+  modal(`<h2>${T('🎁 獎勵中心')}</h2>
+  <h3 style="margin:8px 0 4px">${T('📅 每日簽到')}</h3>${ciRow}
+  <h3 style="margin:8px 0 4px">${T('🏆 成就')}</h3>${achHTML}
+  <h3 style="margin:8px 0 4px">${T('🎒 持有道具')}${inR?'':' · '+T('營業中可使用')}</h3>${propHTML}
+  ${shopHTML?`<h3 style="margin:8px 0 4px">${T('🛒 道具商店（用金幣購買）')}</h3>${shopHTML}`:''}
+  <div class="btns">${inR?`<button class="btn" data-act="resume">${T('繼續營業')}</button>`:`<button class="btn" data-act="closem">${T('返回')}</button>`}</div>`)}
+
 function charge(n,x,y){if(!n)return;R.cost+=n;const d=document.createElement('div');d.className='pop cost';d.style.left=x+'px';d.style.top=y+'px';d.textContent='-'+yen(n);$('fx').appendChild(d);setTimeout(()=>d.remove(),1000)}
 function net(){return R?R.earned-R.cost-R.wage-R.rent-R.stolen-R.fines:0}
 function popup(x,y,txt,bad){const d=document.createElement('div');d.className='pop'+(bad?' bad':'');d.style.left=x+'px';d.style.top=y+'px';d.textContent=txt;$('fx').appendChild(d);{const hw=d.offsetWidth/2+6;if(hw>6)d.style.left=Math.min(W-hw,Math.max(hw,x))+'px'}setTimeout(()=>d.remove(),1200)}
@@ -2103,7 +2150,7 @@ function renderHUD(){document.body.classList.toggle('playing',!!R);
     <div class="pill clock"><b>${clockStr()}</b>${PERIOD(hourNow())}</div>${R.ev&&R.ev.ev?`<div class="pill ev" title="${esc(evDesc(R.ev))}">${evLabel(R.ev)}</div>`:''}`:'<div style="flex:1"></div>'}
     ${CUR==='rm'?(rmStaffLv()||rmStaff2Lv()||rmFryStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[rmStaffLv()?T('小葵')+'★'.repeat(rmStaffLv()-1):'',rmStaff2Lv()?T('山田')+'★'.repeat(rmStaff2Lv()-1):'',rmFryStaffLv()?T('大輔')+'★'.repeat(rmFryStaffLv()-1):''].filter(Boolean).join('・')}</b></div>`:''):ST.up.waiter||ST.up.helper?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[ST.up.waiter?T('小美')+(staffLv('waiter')>1?'★'.repeat(staffLv('waiter')-1):''):'',ST.up.helper?T('阿健')+(staffLv('helper')>1?'★'.repeat(staffLv('helper')-1):''):''].filter(Boolean).join('・')}</b></div>`:''}
     ${(()=>{const w=R?live():ST.coins;return `<div class="pill ${w<0?'neg':''}">${T('錢包')} <b>${w<0?'−':''}¥${Math.abs(Math.round(w)).toLocaleString('en-US')}</b></div>`})()}${ST.debt?`<div class="pill staff">${T('借款')} <b>${yen(ST.debt)}</b></div>`:''}
-    ${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}">${sndIcon()}</button><button class="icon-btn fsbtn" data-act="fs" aria-label="${T('全螢幕')}">⛶</button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}">❚❚</button>`:''}`);
+    ${R&&!R.over&&!R.settled&&!DEMO?'<button class="icon-btn" data-act="rewards" aria-label="獎勵">🎒</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}">${sndIcon()}</button><button class="icon-btn fsbtn" data-act="fs" aria-label="${T('全螢幕')}">⛶</button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}">❚❚</button>`:''}`);
 }
 
 /* ---- modals ---- */
@@ -2139,6 +2186,7 @@ const SIDEI={
  asknew:['#5a3420','#2e170c',`<path d="M32 16a16 16 0 1 1-15 10" fill="none" stroke="#f3dfb4" stroke-width="6" stroke-linecap="round"/><path d="M10 18l8 10l9-9z" fill="#f3dfb4"/>`],
  tut:['#5a3420','#2e170c',`<path d="M12 20q10-5 20 2q10-7 20-2v26q-10-5-20 2q-10-7-20-2z" fill="#f3dfb4" stroke="#7a3a12" stroke-width="2.5" stroke-linejoin="round"/><path d="M32 22v26" stroke="#7a3a12" stroke-width="2.5"/><path d="M40 17v14l3-3l3 3v-15" fill="#e0412c"/>`],
  howto:['#5a3420','#2e170c',`<rect x="15" y="12" width="34" height="40" rx="5" fill="#f3dfb4" stroke="#7a4a2a" stroke-width="2.5"/><path d="M26 27q0-7 6-7t6 6q0 4-6 7v4" fill="none" stroke="#8a2a1a" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="44" r="3.4" fill="#8a2a1a"/>`],
+ rewards:['#5a3420','#2e170c',`<rect x="16" y="26" width="32" height="22" rx="3" fill="#f3dfb4" stroke="#7a3a12" stroke-width="2.5"/><rect x="13" y="19" width="38" height="9" rx="2" fill="#e0412c" stroke="#7a3a12" stroke-width="2"/><path d="M32 19v29" stroke="#7a3a12" stroke-width="2.5"/>`],
  arcade:['#5a3420','#2e170c',`<rect x="12" y="16" width="40" height="32" rx="6" fill="#f3dfb4" stroke="#7a3a12" stroke-width="2.5"/><circle cx="23" cy="32" r="5" fill="#e0412c"/><circle cx="41" cy="32" r="5" fill="#c9a227"/><path d="M28 32h8" stroke="#7a3a12" stroke-width="2.5"/>`],
  snd:['#5a3420','#2e170c',`<path d="M22 40V18l24-5v22" fill="none" stroke="#f3dfb4" stroke-width="4" stroke-linejoin="round"/><ellipse cx="18" cy="41" rx="6" ry="5" fill="#f3dfb4"/><ellipse cx="42" cy="37" rx="6" ry="5" fill="#f3dfb4"/>`],
  homeshop:['#5a3420','#2e170c',`<path d="M14 24h36l-3 26a4 4 0 0 1-4 3H21a4 4 0 0 1-4-3z" fill="#f3dfb4" stroke="#7a4a2a" stroke-width="2.5" stroke-linejoin="round"/><path d="M24 26v-5a8 8 0 0 1 16 0v5" fill="none" stroke="#f3dfb4" stroke-width="3.5" stroke-linecap="round"/><text x="32" y="46" text-anchor="middle" font-size="17" font-weight="900" fill="#8a2a1a" font-family="sans-serif">¥</text>`],
@@ -2148,7 +2196,7 @@ const SIDEI={
  records:['#5a3420','#2e170c',`<rect x="13" y="38" width="9" height="12" rx="2" fill="#f3dfb4"/><rect x="27" y="28" width="9" height="22" rx="2" fill="#f3dfb4"/><rect x="41" y="18" width="9" height="32" rx="2" fill="#f3dfb4"/><path d="M12 52h40" stroke="#f3dfb4" stroke-width="3" stroke-linecap="round"/><circle cx="18" cy="24" r="7" fill="#ffd43a" stroke="#a87a10" stroke-width="2"/><path d="M18 20v8" stroke="#a87a10" stroke-width="2"/>`]};
 function placeChat(){const c=document.querySelector('.home .chatfab'),l=document.querySelector('.home .side [data-act=lb] svg'),h=document.querySelector('.home');if(!c||!h)return;if(!l){c.style.left=c.style.top='';c.style.bottom='';return}
   const hr=h.getBoundingClientRect(),lr=l.getBoundingClientRect();c.style.left=(lr.right-hr.left+10)+'px';c.style.top=((lr.top+lr.bottom)/2-hr.top-c.offsetHeight/2)+'px';c.style.bottom='auto'}
-function sideBtn(act,label){const [a,b,ic]=SIDEI[act];return `<button class="sideb" data-act="${act}"><svg viewBox="0 0 64 64"><defs><linearGradient id="sg-${act}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><circle cx="32" cy="32" r="29" fill="url(#sg-${act})" stroke="#3a1a10" stroke-width="3.5"/><circle cx="32" cy="32" r="25.5" fill="none" stroke="#c9963e" stroke-width="2.5"/><ellipse cx="32" cy="16" rx="17" ry="6" fill="#fff" opacity=".1"/>${ic}</svg><span>${T(label)}</span></button>`}
+function sideBtn(act,label){const [a,b,ic]=SIDEI[act];return `<button class="sideb" data-act="${act}"><svg viewBox="0 0 64 64"><defs><linearGradient id="sg-${act}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><circle cx="32" cy="32" r="29" fill="url(#sg-${act})" stroke="#3a1a10" stroke-width="3.5"/><circle cx="32" cy="32" r="25.5" fill="none" stroke="#c9963e" stroke-width="2.5"/><ellipse cx="32" cy="16" rx="17" ry="6" fill="#fff" opacity=".1"/>${ic}</svg>${act==='rewards'&&rewardDue()?'<i class="rdot"></i>':''}<span>${T(label)}</span></button>`}
 function plaque(act,label,sub,primary){return `<button class="plq ${primary?'pri':''}" data-act="${act}"><span class="plan">${sv(lanternG(''),'0 0 60 84')}</span><span class="plt">${T(label)}${sub?`<small>${sub}</small>`:''}</span></button>`}
 let SHOPHOME=false,TYPING=0;
 document.addEventListener('pointerdown',e=>{const a=document.activeElement;TYPING=a&&/^(INPUT|TEXTAREA)$/.test(a.tagName)&&a.closest('.modal')&&e.target.classList.contains('modal')?performance.now():0},true);
@@ -2159,7 +2207,7 @@ function showHome(){
   const saved=load();
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
   <div class="htitle"><h1 class="logo"><img src="img/logo-9e60dada.webp" alt="${T('乾杯！居酒屋')}" draggable="false"></h1><div class="sub">${T('～ 巷子裡的小居酒屋 ～')}</div></div>
-  <div class="menu">${saved?(FB_CONFIG?plaque('frhome','好友'):'')+plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1)+plaque('asknew','新的一局'):plaque('newgame','開始營業','',1)}</div><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','賺外快'):''}${sideBtn('howto','說明')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side side-r">${sideBtn('records','經營紀錄')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反應'):''}</div><div class="topl"><button class="langbtn ntbtn" data-act="slots" aria-label="${T('存檔欄位')}">💾<span class="ntl"> ${T('存檔')}</span></button><button class="langbtn ntbtn" data-act="share" aria-label="${T('分享')}">🔗<span class="ntl"> ${T('分享')}</span></button><button class="langbtn ntbtn" data-act="dc" aria-label="Discord">🎮<span class="ntl"> Discord</span></button></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${NOTICE?`<button class="langbtn ntbtn" data-act="notice" aria-label="${T('公告')}">📢<span class="ntl"> ${T('公告')}</span></button>`:''}${acctBtn()}<button class="langbtn" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>${LANGS.find(l=>l[0]===LANG)[1]}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}<div id="homeModal"></div></div>`;
+  <div class="menu">${saved?(FB_CONFIG?plaque('frhome','好友'):'')+plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1)+plaque('asknew','新的一局'):plaque('newgame','開始營業','',1)}</div><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','賺外快'):''}${sideBtn('howto','說明')+sideBtn('rewards','獎勵')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side side-r">${sideBtn('records','經營紀錄')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反應'):''}</div><div class="topl"><button class="langbtn ntbtn" data-act="slots" aria-label="${T('存檔欄位')}">💾<span class="ntl"> ${T('存檔')}</span></button><button class="langbtn ntbtn" data-act="share" aria-label="${T('分享')}">🔗<span class="ntl"> ${T('分享')}</span></button><button class="langbtn ntbtn" data-act="dc" aria-label="Discord">🎮<span class="ntl"> Discord</span></button></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${NOTICE?`<button class="langbtn ntbtn" data-act="notice" aria-label="${T('公告')}">📢<span class="ntl"> ${T('公告')}</span></button>`:''}${acctBtn()}<button class="langbtn" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>${LANGS.find(l=>l[0]===LANG)[1]}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}<div id="homeModal"></div></div>`;
   placeChat();requestAnimationFrame(placeChat);setTimeout(placeChat,300);
   if(noticeDue()){if(NOTICE_LOADED||!FB_CONFIG)setTimeout(()=>{if(HOME&&!document.querySelector('#homeModal .modal')){NAUTOREQ=true;showNotice()}},400);else setTimeout(noticePop,3500)}else if(CL.pick)setTimeout(cloudAsk,0);
 }
@@ -2167,7 +2215,8 @@ const HOWTO=[['做菜、送菜','客人頭上的對話框是他點的菜。點�
   ['營業時間','每天 16:00 到凌晨 00:30。晚餐和續攤時段客人最多，00:20 最後點餐，之後不再接客。淨利夠高就能拿星星，至少一顆星才能進到下一天。'],
   ['錢包與食材','每用一份食材都要從錢包付錢，錢包沒錢就買不了食材。打烊時扣掉食材、店員日薪和店租，虧錢的話直接從錢包扣。'],
   ['銀行與破產','錢包見底時，銀行會借你 ¥30,000 周轉。但錢包見底第 3 次就會破產，所有東西歸零，從第 1 天重新開始。'],
-  ['緊急借款','營業中錢不夠買食材時，可以按 🏦 或從暫停選單找銀行窗口，借 ¥10,000，3 天後打烊時還 ¥12,000。一天只能借一次，借錢有利息，理性消費、留好週轉金才是長久之計。'],
+  ['緊急借款','營業中錢不夠買食材時，可以按 🏦 或從暫停選單找銀行窗口，自己決定借多少（¥1,000 到 ¥100,000）。利率每次借款都隨機（5% 到 25%），3 天後打烊時連本帶利還。一天只能借一次，理性消費、留好週轉金才是長久之計。'],
+  ['道具、成就與簽到','每天按 🎁 簽到，連續簽到 7 天有額外獎勵。撐過第 10、20、30 天，或累計營收破百萬，都會有成就可以領。營業中按 🎒 使用道具：不焦符讓這一局之後的食物不會燒焦，耐心回復讓客人耐心回滿，延長營業多營業 30 秒。道具也能用金幣在首頁的道具商店買。'],
   ['商店','用賺來的錢解鎖新菜、升級菜色、雇用和升級店員、買裝潢。存到 ¥800,000 就能買下整棟店面。'],
   ['這個遊戲的由來','這個遊戲的起點，是有一次路過居酒屋，被裡面的氛圍吸引。做著做著才發現，那份氛圍的背後，是有人站了一整天，把同樣的動作重複了好幾年。「一日之所需，百工斯為備。」希望你玩完之後，下次去吃飯時，也會對店員多說一聲謝謝。']];
 const SHARE_URL='https://harrychu0201-web.github.io/kanpai-izakaya/';
@@ -2355,7 +2404,7 @@ function showDayIntro(){
 function endDay(){sfx('end');$('game').classList.remove('aim');
   R.held=null;renderStations();
   const e=net(),stars=R.goals.filter(v=>e+R.rent>=v).length;
-  R.settled=true;ST.coins=ST.coins+e;ST.stars[ST.day]=Math.max(ST.stars[ST.day]||0,stars);
+  R.settled=true;DAYLEN=159;ST.coins=ST.coins+e;ST.stars[ST.day]=Math.max(ST.stars[ST.day]||0,stars);
   const rec=loadRec();rec.maxDay=Math.max(rec.maxDay||0,ST.day);rec.earned=(rec.earned||0)+R.earned;rec.bestDay=Math.max(rec.bestDay||0,Math.round(e));
   let bank='';
   ST.dues=ST.dues||(ST.debt?[{amt:ST.debt,left:3}]:[]);
@@ -2590,6 +2639,12 @@ document.addEventListener('click',e=>{
   else if(act==='where'){ST.where=a.dataset.id==='rm'&&ST.rm?'rm':'iz';setCur(ST.where);if(ST.today&&ST.today.ev==='sale'){const c=unlocked(ST.day).filter(k=>ITEMS[k].cost&&k!=='beer');ST.today.sale=pick(c.length?c:['beer'])}save();showDayIntro()}
   else if(act==='buy'){const u=UPS.find(x=>x.id===a.dataset.id);if(u&&u.ok()&&ST.coins>=u.cost){keepScroll();ST.coins-=u.cost;u.go();save();drawBg();showShop();renderHUD()}}
   else if(act==='pause'&&R)pause();
+  else if(act==='rewards'){if(R&&!R.over&&!R.settled)R.paused=true;showRewards()}
+  else if(act==='checkin')claimCheckin();
+  else if(act==='achclaim')claimAch(a.dataset.id);
+  else if(act==='useprop')useProp(a.dataset.id);
+  else if(act==='buyprop')buyProp(a.dataset.id);
+  else if(act==='loanpick'&&R){const i=$('loanAmt');if(i){i.value=a.dataset.amt;loanPreview()}}
   else if(act==='bank'&&R)bankWin();
   else if(act==='eloanok'&&R)takeLoan();
   else if(act==='resume'&&R){R.paused=false;closeModal();last=performance.now()}
