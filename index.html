@@ -3336,11 +3336,11 @@ async function noticeVote(val){if(!CL.user||!CL.api||NV.v==null||!NV.id)return;c
 function showNotice(again,id){const au=NAUTOREQ;NAUTOREQ=false;const all=noticeAll(),old=id!=null,n=old?all.find(x=>x.id===String(id)):NOTICE;if(!n){closeModal();return}const rem=!!n.rem;NSHOW=String(n.id);NAUTO=au&&!old;
   const text=rem?n.text:T(n.text),sign=rem?(n.sign||''):T(n.sign),dt=noticeDate(n);
   modal(`<div class="notice"><h2>📢 ${rem?(n.title?esc(n.title):T('公告')):T(n.title)}</h2>${dt?`<p style="font-size:12px;opacity:.7;margin-top:-6px">${dt}${n.edited?' · 已編輯':''}</p>`:''}<p>${esc(text)}</p>${sign?`<p class="sign">${esc(sign)}</p>`:''}<div class="nvbox" id="nvbox"></div></div>
-  <div class="btns"><button class="btn" data-act="noticeok">${T('知道了')}</button>${all.length>1?`<button class="btn alt" data-act="noticelist">📜 ${T('之前的公告')}</button>`:''}${FB_CONFIG?`<button class="btn alt" data-act="fb">${T('意見反應')}</button>`:''}${canPost()?`<button class="btn alt" data-act="noticenew">📢 發布</button>`:''}${canPost()?`<button class="btn alt" data-act="noticeedit" data-id="${esc(n.id)}">✏️ 編輯</button><button class="btn alt" data-act="noticedel" data-id="${esc(n.id)}">🗑️ 刪除</button>`:''}</div>`);noticeVoteInit(n)}
+  <div class="btns"><button class="btn" data-act="noticeok">${T('知道了')}</button>${all.length>1?`<button class="btn alt" data-act="noticelist">📜 ${T('之前的公告')}</button>`:''}${FB_CONFIG?`<button class="btn alt" data-act="fb">${T('意見反應')}</button>`:''}${canPost()?`<button class="btn alt" data-act="noticenew">📢 發布</button>`:''}${canPost()?`<button class="btn alt" data-act="noticeedit" data-id="${esc(n.id)}">✏️ 編輯</button>`:''}${canDelNotice()?`<button class="btn alt" data-act="noticedel" data-id="${esc(n.id)}">🗑️ 刪除</button>`:''}</div>`);noticeVoteInit(n)}
 /* the "past announcements" screen: every announcement, newest first, in a box that scrolls so it never takes over the screen */
 function noticeList(){const all=noticeAll(),adm=canPost();
   modal(`<h2>📜 ${T('之前的公告')}（${all.length}）</h2>
-  <div style="max-height:58vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin:6px 0">${all.map(x=>`<div style="display:flex;gap:6px"><button class="btn alt" style="flex:1;text-align:left;font-size:14px;padding:6px 12px" data-act="noticeold" data-id="${esc(x.id)}"><small style="opacity:.7">${noticeDate(x)}</small><br>${x.rem?esc(x.title||T('公告')):T(x.title)}</button>${adm?`<button class="btn alt" style="font-size:14px;padding:6px 10px" data-act="noticeedit" data-id="${esc(x.id)}">✏️</button><button class="btn alt" style="font-size:14px;padding:6px 10px" data-act="noticedel" data-id="${esc(x.id)}">🗑️</button>`:''}</div>`).join('')}</div>
+  <div style="max-height:58vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin:6px 0">${all.map(x=>`<div style="display:flex;gap:6px"><button class="btn alt" style="flex:1;text-align:left;font-size:14px;padding:6px 12px" data-act="noticeold" data-id="${esc(x.id)}"><small style="opacity:.7">${noticeDate(x)}</small><br>${x.rem?esc(x.title||T('公告')):T(x.title)}</button>${adm?`<button class="btn alt" style="font-size:14px;padding:6px 10px" data-act="noticeedit" data-id="${esc(x.id)}">✏️</button>`:''}${canDelNotice()?`<button class="btn alt" style="font-size:14px;padding:6px 10px" data-act="noticedel" data-id="${esc(x.id)}">🗑️</button>`:''}</div>`).join('')}</div>
   <div class="btns"><button class="btn alt" data-act="notice">${T('返回')}</button></div>`)}
 function noticeEdit(id){const n=noticeAll().find(x=>x.id===String(id));if(!n||!canPost())return;
   modal(`<h2>✏️ 編輯公告</h2><p style="font-size:14px">改的是已經發出去的這則：玩家不會再被跳一次提示，下次打開遊戲或翻歷史公告時就會看到新內容（只顯示中文原文，不會自動翻譯）。${n.rem?'':'這則是內建公告，儲存後會用線上版本蓋過去。'}</p>
@@ -3352,7 +3352,7 @@ async function noticeEditSave(id){const n=noticeAll().find(x=>x.id===String(id))
   const text=tx.value.trim();if(text.length<2){toast('公告內容太短了');return}
   const d={id:n.id,title:ti.value.trim(),text,sign:sg.value.trim(),edited:Date.now()};if(n.at)d.at=n.at;
   try{await CL.api.editNotice(d,n.id===NOTICE.id);NOTICE_HIST[n.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;logAct('編輯公告',n.id,{title:String(d.title||'').slice(0,40)});toast('公告已更新 ✏️');showNotice(true,n.id)}catch(e){toast('儲存失敗：'+String(e&&e.code||e))}}
-async function noticeDelete(id){const n=noticeAll().find(x=>x.id===String(id));if(!n||!canPost())return;
+async function noticeDelete(id){const n=noticeAll().find(x=>x.id===String(id));if(!n||!canDelNotice())return;
   if(!confirm('確定刪除這則公告？\n「'+(n.title||'公告')+'」\n刪除後所有玩家都看不到，無法復原。'))return;
   const builtin=NOTICES.some(x=>x.id===n.id),next=noticeAll().filter(x=>x.rem&&x.id!==n.id)[0]||null;
   try{await CL.api.delNotice(n.id,builtin,next);logAct('刪除公告',n.id,{title:String(n.title||'').slice(0,40)});
@@ -3495,7 +3495,9 @@ async function inboxNoticeSend(){const ti=$('ntitle'),tx=$('ntext'),sg=$('nsign'
 const ADMIN_EMAIL='harrychu0201@gmail.com';
 function isAdmin(){return !!(CL.user&&CL.user.email===ADMIN_EMAIL)}
 /* announcement posters: the owner adds their uid under posters/<uid> in Realtime Database; they can post, edit and delete announcements (not feedback, bans or vote stats) */
-const canPost=()=>isAdmin()||CL.isPoster===true;
+/* staff, posters and the owner can add and edit announcements; only the owner and posters can delete them */
+const canPost=()=>isAdmin()||CL.isPoster===true||CL.isStaff===true;
+const canDelNotice=()=>isAdmin()||CL.isPoster===true;
 /* inbox staff: owner plus anyone under admins/<uid> in Realtime Database; they can read and reply to feedback and delete it (not bans, vote stats or chat tools) */
 const canInbox=()=>isAdmin()||CL.isStaff===true;
 const CHT={msgs:[],unsub:null,open:null,last:0,hide:{},block:{},me:null,banned:false,back:false,seenAt:0,live:false,err:false};
