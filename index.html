@@ -2367,7 +2367,7 @@ function endDay(){sfx('end');$('game').classList.remove('aim');
     ST.coins+=30000;ST.debt=(ST.debt||0)+30000;ST.dues.push({amt:30000,left:3});
     bank+=`<div class="bank"><b>${T('錢包見底了！')}</b>${T('只好跟銀行借 ¥30,000 周轉（第 {0} 次借錢），<b>3 天後打烊時要還</b>，會直接從錢包扣。',ST.loans)}${ST.loans===2?'<br><b>'+T('再見底一次就會破產，一切歸零！')+'</b>':T('錢包見底第 3 次就會破產。')}</div>`}
   rec.maxCoins=Math.max(rec.maxCoins||0,ST.coins);saveRec(rec);
-  const passed=stars>=1;ST.pendingNext=passed;save();renderHUD();
+  const passed=stars>=1;ST.pendingNext=passed;save();cloudUpload(true);renderHUD();
   modal(`<h2>${T(passed?'打烊囉！':'今天生意不太好…')}</h2>
   <div class="stars">${[0,1,2].map(i=>`<span class="${i<stars?'on':''}">★</span>`).join('')}</div>
   <div class="goalrow"><span>${T('營收 {0}',yen(R.earned))}</span><span>${T('食材成本 −{0}',yen(R.cost))}</span>${R.wage?`<span>${T('店員日薪 −{0}',yen(R.wage))}</span>`:''}${R.rent?`<span>${T('店租 −{0}',yen(R.rent))}</span>`:''}${ST.owned?`<span>${T('自有店面・免房租')}</span>`:''}${R.stolen?`<span>${T('被搶 −{0}',yen(R.stolen))}</span>`:''}${R.fines?`<span>${T('罰款 −{0}',yen(R.fines))}</span>`:''}<span>${T('淨利 {0}',yen(e))}</span></div><div class="goalrow"><span>${T('滿意 {0} 位',R.served)}</span><span>${T('生氣 {0} 位',R.lost)}</span></div>
@@ -2444,7 +2444,7 @@ function showShop(){
   const c=document.querySelector('.card');if(c&&shopScroll!=null&&shopKeep)c.scrollTop=shopScroll;shopKeep=false;
   if(SHOPJUMP){SHOPJUMP=false;const n=c&&c.querySelector('.shopnav');if(n)c.scrollTop=n.getBoundingClientRect().top-c.getBoundingClientRect().top+c.scrollTop-c.clientTop}
 }
-function advance(){if(ST.pendingNext){ST.day++;ST.pendingNext=false;save()}showDayIntro()}
+function advance(){if(ST.pendingNext){ST.day++;ST.pendingNext=false;save();cloudUpload(true)}showDayIntro()}
 
 document.addEventListener('click',e=>{
   const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;if(ARC.busy&&/^(cont|newgame|asknew|homeshop|arcade|arcslot|arcpin)$/.test(act))return;
@@ -2526,7 +2526,7 @@ document.addEventListener('click',e=>{
   else if(act==='addacct'){try{window.open('https://accounts.google.com/AddSession','_blank','noopener,noreferrer')}catch(e){}}
   else if(act==='acct')showAcct();
   else if(act==='logout'){closeModal();CL.api&&CL.api.signOut()}
-  else if(act==='syncnow'){cloudUpload(true);showAcct()}
+  else if(act==='syncnow'){cloudUpload(true).then(()=>showAcct())}
   else if(act==='pickcloud'){const c=CL.pick;CL.pick=null;closeModal();if(c)applyCloud(c)}
   else if(act==='picklocal'){if(CL.pick)slBackup(CL.pick.game,'cloud');CL.pick=null;closeModal();cloudUpload(true)}
   else if(act==='setlang')setLang(a.dataset.id);
