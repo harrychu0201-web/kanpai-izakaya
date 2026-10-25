@@ -2511,7 +2511,7 @@ document.addEventListener('click',e=>{
   else if(act==='noticevote')noticeVote(+a.dataset.v);
   else if(act==='noticeok'){noticeSeen(NAUTO&&NSHOW?NSHOW:null);closeModal();if(NAUTO&&noticeDue()){NAUTOREQ=true;showNotice()}else if(CL.pick)cloudAsk()}
   else if(act==='lbtab'){LB.tab=a.dataset.id;showLB()}
-  else if(act==='frshare')frShare();else if(act==='frcopy'){const me=CL.user;if(me)copyTxt(fmtCode(fcodeOf(me.uid)),'已複製好友碼')}else if(act==='ccopy'){const m=CHT.msgs.find(x=>x.id===CHT.open);CHT.open=null;if(m)copyTxt(chatClean(m.text),'已複製訊息');chatDraw()}
+  else if(act==='frshare')frShare();else if(act==='frcopy'){const me=CL.user;if(me)copyTxt(fmtCode(fcodeOf(me.uid)),'已複製好友碼')}else if(act==='cfadd'){const m=CHT.msgs.find(x=>x.id===CHT.open);CHT.open=null;if(m)chatAddFriend(m);else chatDraw()}else if(act==='ccopy'){const m=CHT.msgs.find(x=>x.id===CHT.open);CHT.open=null;if(m)copyTxt(chatClean(m.text),'已複製訊息');chatDraw()}
   else if(act==='fradd')frAdd();
   else if(act==='frclaim')frClaim();
   else if(act==='frsort'){FR.sort=a.dataset.id;frDraw()}
@@ -3572,10 +3572,18 @@ function chatDraw(scroll){const l=$('chatlist');if(!l)return;const near=l.scroll
   l.innerHTML=warn+(rows.length?rows.map((m,i)=>{const mine=m.uid===me,op=CHT.open===m.id,lk=m.likes||{},nl=Object.keys(lk).length,lon=!!(me&&lk[me]);
     const q=m.rp&&!CHT.block[m.rp.uid]?`<span class="crq" data-act="cjump" data-id="${esc(m.rp.id)}">↪ ${esc(m.rp.name)}：${esc(m.rp.text)}</span>`:'';
     return `${i===div?`<div class="cdiv" id="cdiv">${T('以下是你離開後的新訊息')}</div>`:''}<div class="cmsg ${mine?'me':''}" data-act="cmsg" data-id="${esc(m.id)}"><div class="cbody">${q}<div class="crow"><span class="cn" style="color:${chatColor(m.uid)}">${m.adm?'👑 ':''}${esc(m.name||'?')}</span><span class="ct">${esc(chatClean(m.text))}</span>${nl?`<span class="clk ${lon?'on':''}">👍 ${nl}</span>`:''}</div></div><span class="cw">${chatTime(m.t)}</span></div>
-    ${op?`<div class="cmenu"><button class="btn alt" data-act="creply">${T('回覆')}</button>${mine||!CL.user?'':`<button class="btn alt" data-act="clike">${lon?T('取消讚'):'👍 '+T('讚')}</button>`}<button class="btn alt" data-act="ccopy">${T('複製文字')}</button>${mine?'':`<button class="btn alt" data-act="chide">${T('隱藏這則')}</button><button class="btn alt" data-act="cblock">${T('封鎖這個人')}</button><button class="btn alt" data-act="creport">${T('檢舉')}</button>`}${adm?`<button class="btn" data-act="cdel">${T('刪除')}</button>${mine?'':`<button class="btn" data-act="cban">${T('禁言')}</button>`}`:''}${mine&&!adm?`<span style="font-size:12px;color:#9a7a5a">${T('這是你發的訊息')}</span>`:''}</div>`:''}`}).join('')
+    ${op?`<div class="cmenu"><button class="btn alt" data-act="creply">${T('回覆')}</button>${mine||!CL.user||(FR.data&&FR.data.fl[m.uid])?'':`<button class="btn alt" data-act="cfadd">➕ ${T('加好友')}</button>`}${mine||!CL.user?'':`<button class="btn alt" data-act="clike">${lon?T('取消讚'):'👍 '+T('讚')}</button>`}<button class="btn alt" data-act="ccopy">${T('複製文字')}</button>${mine?'':`<button class="btn alt" data-act="chide">${T('隱藏這則')}</button><button class="btn alt" data-act="cblock">${T('封鎖這個人')}</button><button class="btn alt" data-act="creport">${T('檢舉')}</button>`}${adm?`<button class="btn" data-act="cdel">${T('刪除')}</button>${mine?'':`<button class="btn" data-act="cban">${T('禁言')}</button>`}`:''}${mine&&!adm?`<span style="font-size:12px;color:#9a7a5a">${T('這是你發的訊息')}</span>`:''}</div>`:''}`}).join('')
     :`<p style="font-size:14px">${T(CHT.live?'還沒有人說話，來打聲招呼吧！':(off?'目前離線，還沒有可以顯示的紀錄':'載入中…'))}</p>`);
   if(scroll===true?near||!CHT.drawn:false)l.scrollTop=l.scrollHeight;
   if(!CHT.drawn&&rows.length){CHT.drawn=true;const jump=()=>{const dv=$('cdiv');if(dv)l.scrollTop+=dv.getBoundingClientRect().top-l.getBoundingClientRect().top-6;else l.scrollTop=l.scrollHeight};jump();requestAnimationFrame(jump);setTimeout(jump,250)}}
+async function chatAddFriend(m){const me=CL.user;if(!me||!CL.api||!m||!m.uid)return;
+  if(m.uid===me.uid){toast(T('不能加自己當好友。'));chatDraw();return}
+  if(FR.data&&FR.data.fl[m.uid]){toast(T('已經是好友了。'));chatDraw();return}
+  if(FR.data&&Object.keys(FR.data.fl).length>=FR_MAX){toast(T('好友最多 {0} 位。',FR_MAX));chatDraw();return}
+  try{await CL.api.frAdd(me.uid,m.uid);const r=loadRec();if(r.frRm&&r.frRm[m.uid]){delete r.frRm[m.uid];saveRec(r)}
+    if(FR.data)FR.data.fl[m.uid]=1;FR.t=0;toast(T('已加入好友！'))}
+  catch(e){console.warn('chatfadd',e);toast(T('加好友失敗，請稍後再試。'))}
+  chatDraw()}
 async function chatSend(){const i=$('cin'),m=$('cmsg');if(!i||!CL.user||!CL.api)return;const say=x=>{if(m)m.textContent=x};
   const name=(loadRec().nick||'').slice(0,12),text=chatClean(i.value);
   if(!text){return}if(!name){showNick();CHT.back=true;return}
