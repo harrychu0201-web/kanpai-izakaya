@@ -2487,6 +2487,8 @@ document.addEventListener('click',e=>{
   else if(act==='inbre'){INB.open=a.dataset.id||null;INB.draft='';inboxDraw()}
   else if(act==='inbsend')inboxSend();
   else if(act==='inbdel')inboxDel(a.dataset.id);
+  else if(act==='inbclaim')inboxClaim(a.dataset.id,!!a.dataset.rel);
+  else if(act==='inblog')showLog();
   else if(act==='inbnotice')inboxNotice();
   else if(act==='inbnoticesend')inboxNoticeSend();
   else if(act==='fbcat'){FB.cat=a.dataset.id;const t=$('fbtext');FB.text=t?t.value:FB.text;const c=$('fbcontact');FB.contact=c?c.value:FB.contact;showFb()}
@@ -3059,11 +3061,16 @@ async function cloudInit(){
         // the private record keeps uid/contact; the public board (fbpub) only gets what every player may see
         return rd.update(rd.ref(r),{['fb/'+id]:Object.assign({},d,{t:ts}),['fbpub/'+id]:{cat:d.cat,text:d.text,t:ts}})}),
       isStaff:uid=>rt((rd,r)=>rd.get(rd.ref(r,'admins/'+uid)).then(s=>s.val()===true)),
+      logAdd:d=>rt((rd,r)=>rd.push(rd.ref(r,'log'),Object.assign({},d,{t:rd.serverTimestamp()}))),
+      logList:n=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'log'),rd.orderByChild('t'),rd.limitToLast(n))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.reverse()})),
+      claimGet:()=>rt((rd,r)=>rd.get(rd.ref(r,'claim')).then(s=>s.val()||{})),
+      claimSet:(id,uid,name)=>rt((rd,r)=>rd.runTransaction(rd.ref(r,'claim/'+id),cur=>{if(cur&&cur.by&&cur.by!==uid)return;return {by:uid,name:name||'管理員'}}).then(res=>!!(res.committed&&res.snapshot.val()&&res.snapshot.val().by===uid))),
+      claimRelease:(id,uid)=>rt((rd,r)=>rd.runTransaction(rd.ref(r,'claim/'+id),cur=>{if(cur&&cur.by===uid)return null;return}).then(res=>!!res.committed)),
       fbPubList:n=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'fbpub'),rd.orderByChild('t'),rd.limitToLast(n))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.reverse()})),
       fbPubBackfill:rows=>rt((rd,r)=>{const u={};rows.forEach(f=>{u['fbpub/'+f.id]=Object.assign({cat:f.cat||'other',text:String(f.text).slice(0,800),t:f.t},f.re?{re:f.re}:{})});return rd.update(rd.ref(r),u).then(()=>rows.length)}),
       fbList:n=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'fb'),rd.orderByChild('t'),rd.limitToLast(n))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.reverse()})),
       fbOld:async()=>(await fs.getDocs(fs.query(fs.collection(db,'feedback'),fs.orderBy('at','desc'),fs.limit(60)))).docs.map(d=>Object.assign({id:'fs_'+d.id,old:true},d.data())),
-      fbDel:id=>rt((rd,r)=>rd.update(rd.ref(r),{['fb/'+id]:null,['fbpub/'+id]:null})),
+      fbDel:(id,row)=>rt((rd,r)=>{const u={['fb/'+id]:null,['fbpub/'+id]:null,['claim/'+id]:null};if(row){const c=Object.assign({},row);delete c.id;u['trash/'+id]=Object.assign(c,{by:CL.user.uid,delT:rd.serverTimestamp()})}return rd.update(rd.ref(r),u)}),
       // a reply either starts a thread (fbreply/uid/id) or, if one exists already, adds to its msgs and pops it up again for the player
       fbReply:(f,text)=>rt((rd,r)=>{const ts=rd.serverTimestamp(),thr=f.thr||f.id,base='fbreply/'+f.uid+'/'+thr,u={};
         if(f.thr||(f.re&&!f.old)){const mid=rd.push(rd.ref(r,base+'/msgs')).key;u[base+'/msgs/'+mid]={a:true,text,t:ts};u[base+'/t']=ts;u[base+'/seen']=null}
@@ -3343,11 +3350,11 @@ function noticeEdit(id){const n=noticeAll().find(x=>x.id===String(id));if(!n||!c
 async function noticeEditSave(id){const n=noticeAll().find(x=>x.id===String(id)),ti=$('etitle'),tx=$('etext'),sg=$('esign');if(!n||!tx||!canPost())return;
   const text=tx.value.trim();if(text.length<2){toast('公告內容太短了');return}
   const d={id:n.id,title:ti.value.trim(),text,sign:sg.value.trim(),edited:Date.now()};if(n.at)d.at=n.at;
-  try{await CL.api.editNotice(d,n.id===NOTICE.id);NOTICE_HIST[n.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;toast('公告已更新 ✏️');showNotice(true,n.id)}catch(e){toast('儲存失敗：'+String(e&&e.code||e))}}
+  try{await CL.api.editNotice(d,n.id===NOTICE.id);NOTICE_HIST[n.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;logAct('編輯公告',n.id,{title:String(d.title||'').slice(0,40)});toast('公告已更新 ✏️');showNotice(true,n.id)}catch(e){toast('儲存失敗：'+String(e&&e.code||e))}}
 async function noticeDelete(id){const n=noticeAll().find(x=>x.id===String(id));if(!n||!canPost())return;
   if(!confirm('確定刪除這則公告？\n「'+(n.title||'公告')+'」\n刪除後所有玩家都看不到，無法復原。'))return;
   const builtin=NOTICES.some(x=>x.id===n.id),next=noticeAll().filter(x=>x.rem&&x.id!==n.id)[0]||null;
-  try{await CL.api.delNotice(n.id,builtin,next);
+  try{await CL.api.delNotice(n.id,builtin,next);logAct('刪除公告',n.id,{title:String(n.title||'').slice(0,40)});
     delete NOTICE_HIST[n.id];if(builtin){NOTICE_DEL[nkey(n.id)]=true;try{localStorage.setItem('izakaya-notice-del',JSON.stringify(NOTICE_DEL))}catch(e){}}
     NOTICE=noticeAll()[0]||null;NOTICE_REMOTE=!!(NOTICE&&NOTICE.rem);toast('公告已刪除 🗑️');
     if(noticeAll().length)noticeList();else closeModal()}catch(e){toast('刪除失敗：'+String(e&&e.code||e))}}
@@ -3387,7 +3394,7 @@ function fbBoardDraw(){const b=$('fbboard');if(!b)return;
   const q=FBB.q.trim().toLowerCase(),rows=FBB.rows.filter(f=>f.text&&(!q||(String(f.text)+' '+(f.re||'')).toLowerCase().includes(q)));
   b.innerHTML=rows.length?rows.map(f=>`<div class="inbit${f.re?' done':''}"><p class="inbh">${esc(FBCATN[f.cat]||f.cat||'')} · ${chatTime(f.t||0)}</p><p class="inbtx">${esc(f.text)}</p>${f.re?`<p class="inbre">✅ 作者回覆：${esc(f.re)}</p>`:''}</div>`).join(''):`<p class="fbsmall">${q?'沒有找到相關的意見，可以直接送出囉':'還沒有意見'}</p>`}
 async function fbPubSync(){const rows=INB.rows.filter(f=>!f.old&&!f.thr&&f.cat!=='re'&&f.text&&typeof f.t==='number');
-  try{const n=await CL.api.fbPubBackfill(rows);toast('已同步 '+n+' 則到公開板 👀')}catch(e){toast('同步失敗：'+String(e&&e.code||e))}}
+  try{const n=await CL.api.fbPubBackfill(rows);logAct('同步公開板',n+' 則');toast('已同步 '+n+' 則到公開板 👀')}catch(e){toast('同步失敗：'+String(e&&e.code||e))}}
 async function sendFb(){const t=$('fbtext'),c=$('fbcontact'),m=$('fbmsg');if(!t)return;
   const text=t.value.trim(),contact=(c?c.value:'').trim().slice(0,60);FB.text=t.value;FB.contact=c?c.value:'';
   const say=x=>{if(m)m.textContent=x};
@@ -3442,11 +3449,11 @@ async function replyBack(){const u=CL.user,x=RPL.list.find(y=>y.id===RPL.open),t
     RPL.last=Date.now();x.msgs=Object.assign({},x.msgs,{['_'+Date.now()]:{text,t:Date.now()}});RPL.open=null;RPL.draft='';RPL.busy=false;replyDraw();toast(T('已送給作者 💌'))}
   catch(e){console.warn('reply back',e);RPL.busy=false;replyDraw();const m2=$('rplmsg');if(m2)m2.textContent=T('送出失敗，請稍後再試')+' ('+String(e&&(e.code||e.message)||e).slice(0,60)+')'}}
 /* ===== author's inbox (admin only) ===== */
-const INB={rows:[],old:[],open:null,draft:'',busy:false,err:''};
+const INB={rows:[],old:[],open:null,draft:'',busy:false,err:'',claims:{}};
 const FBCATN=Object.fromEntries(FBCATS);FBCATN.re='↩️ 玩家回你';
 async function showInbox(reload){if(!canInbox())return;
   if(reload||!INB.rows.length){INB.err='';modal(`<h2>📬 收件匣</h2><p style="font-size:14px">載入中…</p>`);
-    try{INB.rows=await CL.api.fbList(150)}catch(e){INB.err=String(e&&e.code||e)}}
+    try{INB.rows=await CL.api.fbList(150);INB.claims=await CL.api.claimGet()}catch(e){INB.err=String(e&&e.code||e)}}
   inboxDraw()}
 function inboxDraw(){
   const all=INB.rows.concat(INB.old);
@@ -3456,9 +3463,9 @@ function inboxDraw(){
     ${f.re?`<p class="inbre">✅ 已回覆：${esc(f.re)}</p>`:''}
     ${op?`<textarea class="fbtext" id="inbtext" maxlength="1000" oninput="INB.draft=this.value" placeholder="回覆給這位玩家…">${esc(INB.draft)}</textarea>
       <div class="btns" style="justify-content:flex-start"><button class="btn" data-act="inbsend">${INB.busy?'送出中…':'送出回覆'}</button><button class="btn alt" data-act="inbre" data-id="">取消</button></div>`
-    :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
+    :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':(()=>{const cl=(INB.claims||{})[f.id],mine=!!cl&&cl.by===(CL.user&&CL.user.uid);return (cl&&!mine?`<span class="inbh">🙋 ${esc(cl.name||'管理員')} 處理中</span>`:'')+(mine?`<button class="btn alt" data-act="inbclaim" data-id="${esc(f.id)}" data-rel="1">釋放</button>`:(cl?'':`<button class="btn alt" data-act="inbclaim" data-id="${esc(f.id)}">🙋 認領</button>`))})()}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
   modal(`<h2>📬 收件匣（${INB.rows.length}）</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
-  <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button><button class="btn alt" data-act="inbold">${INB.old.length?'已載入舊意見':'載入 Firestore 舊意見'}</button><button class="btn alt" data-act="inbnotice">📢 發布公告</button><button class="btn alt" data-act="fbpubsync">👀 同步到公開板</button><button class="btn alt" data-act="noticelist">📜 編輯公告</button></div>
+  <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button><button class="btn alt" data-act="inbold">${INB.old.length?'已載入舊意見':'載入 Firestore 舊意見'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="fbpubsync">👀 同步到公開板</button><button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
   ${all.length?all.map(item).join(''):'<p style="font-size:14px">還沒有新的意見。</p>'}
   <div class="btns"><button class="btn alt" data-act="fb">返回</button></div>`);
   const t=$('inbtext');if(t&&!('ontouchstart' in window))t.focus()}
@@ -3466,9 +3473,14 @@ async function inboxOld(){if(INB.old.length)return;try{INB.old=await CL.api.fbOl
 async function inboxSend(){const f=INB.rows.concat(INB.old).find(x=>x.id===INB.open),t=$('inbtext');if(!f||!t||INB.busy)return;
   const text=t.value.trim().slice(0,1000);INB.draft=t.value;if(!text){toast('先寫點什麼再送出');return}
   INB.busy=true;inboxDraw();
-  try{await CL.api.fbReply(f,text);f.re=text;INB.open=null;INB.draft='';toast('已回覆 💌')}catch(e){toast('回覆失敗：'+String(e&&e.code||e))}
+  try{await CL.api.fbReply(f,text);f.re=text;INB.open=null;INB.draft='';logAct('回覆意見',f.id);toast('已回覆 💌')}catch(e){toast('回覆失敗：'+String(e&&e.code||e))}
   INB.busy=false;inboxDraw()}
-async function inboxDel(id){if(!confirm('確定刪除這則意見？'))return;try{await CL.api.fbDel(id);INB.rows=INB.rows.filter(x=>x.id!==id)}catch(e){toast('刪除失敗：'+String(e&&e.code||e))}inboxDraw()}
+async function inboxDel(id){const row=INB.rows.find(x=>x.id===id);if(!row||!confirm('確定刪除這則意見？\n刪除後會移到垃圾桶，作者可以還原，玩家也看不到了。'))return;try{await CL.api.fbDel(id,row);logAct('刪除意見',id);INB.rows=INB.rows.filter(x=>x.id!==id)}catch(e){toast('刪除失敗：'+String(e&&e.code||e))}inboxDraw()}
+async function inboxClaim(id,rel){try{if(rel)await CL.api.claimRelease(id,CL.user.uid);else if(!await CL.api.claimSet(id,CL.user.uid,CL.user.displayName||'管理員')){toast('已經被別人認領了');INB.claims=await CL.api.claimGet();inboxDraw();return}INB.claims=await CL.api.claimGet();inboxDraw()}catch(e){toast('操作失敗：'+String(e&&e.code||e))}}
+async function showLog(){modal(`<h2>📋 操作紀錄</h2><p class="fbsmall">最近 100 筆，只有作者看得到，這些紀錄無法被修改或刪除。</p><div id="logbox" style="max-height:55vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin:8px 0"><p class="fbsmall">載入中…</p></div><div class="btns"><button class="btn alt" data-act="inbox">返回收件匣</button></div>`);
+  try{const rows=await CL.api.logList(100);const b=$('logbox');if(b)b.innerHTML=rows.length?rows.map(x=>`<div class="inbit"><p class="inbh">${chatTime(x.t||0)} · ${esc(x.name||'')}</p><p class="inbtx">${esc(x.act||'')}${x.target?' · '+esc(String(x.target).slice(0,40)):''}${x.title?'：'+esc(String(x.title).slice(0,40)):''}</p></div>`).join(''):'<p class="fbsmall">還沒有紀錄</p>'}catch(e){const b=$('logbox');if(b)b.innerHTML=`<p class="fbsmall">讀取失敗：${esc(String(e&&e.code||e))}</p>`}}
+/* audit log: append-only in the database; failures here never block the action itself */
+const logAct=(act,target,extra)=>{try{if(!CL.user||!CL.api)return;CL.api.logAdd(Object.assign({act,target:String(target||''),by:CL.user.uid,name:CL.user.displayName||'管理員'},extra||{})).catch(()=>{})}catch(e){}};
 function inboxNotice(){const n=NOTICE_REMOTE?NOTICE:{title:'',text:'',sign:'作者敬上'};
   modal(`<h2>📢 發布公告</h2><p style="font-size:14px">送出後，所有玩家下次打開遊戲會看到一次（只顯示中文原文，不會自動翻譯）。</p>
   <input class="nickin" id="ntitle" maxlength="40" style="font-size:16px;padding:7px 10px" placeholder="標題" value="${esc(n.title||'')}" autocomplete="off">
@@ -3477,7 +3489,7 @@ function inboxNotice(){const n=NOTICE_REMOTE?NOTICE:{title:'',text:'',sign:'作�
   <div class="btns"><button class="btn" data-act="inbnoticesend">發布</button><button class="btn alt" data-act="${canInbox()?'inbox':'notice'}">返回</button></div>`)}
 async function inboxNoticeSend(){const ti=$('ntitle'),tx=$('ntext'),sg=$('nsign');if(!tx)return;const text=tx.value.trim();if(text.length<2){toast('公告內容太短了');return}
   const d={id:new Date().toISOString().slice(0,16),title:ti.value.trim(),text,sign:sg.value.trim()};
-  try{await CL.api.setNotice(d);NOTICE_HIST[d.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;noticeSeen();toast('公告已發布 📢');if(canInbox())inboxDraw();else showNotice(true)}catch(e){toast('發布失敗：'+String(e&&e.code||e))}}
+  try{await CL.api.setNotice(d);logAct('發布公告',d.id,{title:String(d.title||'').slice(0,40)});NOTICE_HIST[d.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;noticeSeen();toast('公告已發布 📢');if(canInbox())inboxDraw();else showNotice(true)}catch(e){toast('發布失敗：'+String(e&&e.code||e))}}
 /* ===== public chat room (Realtime Database 'chat' — no daily write cap; 5 s per-user rate limit and bans enforced by RTDB rules) ===== */
 const ADMIN_EMAIL='harrychu0201@gmail.com';
 function isAdmin(){return !!(CL.user&&CL.user.email===ADMIN_EMAIL)}
