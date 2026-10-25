@@ -1908,7 +1908,11 @@ function useProp(k){if(!R||R.over||R.settled||!PROPS[k])return;const r=loadRec()
   else if(k==='ext'){DAYLEN+=30}
   r.inv[k]--;saveRec(r);toast(T('使用了 {0}',PROPS[k].n));showRewards()}
 function buyProp(k){const p=PROPS[k];if(!p||R)return;const s=load();if(!s)return;if((s.coins||0)<p.p){toast(T('金幣不夠'));return}arcWallet(-p.p);invAdd({[k]:1});toast(T('買到 {0}',p.n));showRewards()}
-function showRewards(){const inR=!!R&&!R.over&&!R.settled,r=loadRec(),inv=r.inv||{},s=load(),coins=s?s.coins||0:0;
+function curCard(){return document.querySelector('#homeModal .card')||document.querySelector('#modalLayer .card')}
+function showRewards(){const c0=curCard(),top=c0?c0.scrollTop:0;renderRewards();const c=curCard();if(c&&top)c.scrollTop=top;syncRewardDot();syncHomeCoins()}
+function syncRewardDot(){const b=document.querySelector('.plq[data-act="rewards"]');if(!b)return;const on=rewardDue(),d=b.querySelector('.rdot');if(on&&!d)b.insertAdjacentHTML('afterbegin','<i class="rdot" style="top:-6px;right:-6px"></i>');else if(!on&&d)d.remove()}
+function syncHomeCoins(){const sm=document.querySelector('.plq[data-act="cont"] small'),s=load();if(!sm||!s)return;sm.textContent=sm.textContent.replace(/¥[\d,]+\s*$/,yen(s.coins||0))}
+function renderRewards(){const inR=!!R&&!R.over&&!R.settled,r=loadRec(),inv=r.inv||{},s=load(),coins=s?s.coins||0:0;
   const ci=!(r.ci&&r.ci.last===dayKey()),streak=r.ci?r.ci.streak||0:0;
   const row=(ic,title,desc,btn)=>`<div style="display:grid;grid-template-columns:38px 1fr auto;gap:8px;align-items:center;background:#fffaf0;border:2px solid var(--soot);border-radius:10px;padding:6px 8px;margin-bottom:6px"><span style="font-size:24px;text-align:center">${ic}</span><span style="font-size:14px;line-height:1.4"><b>${title}</b><br>${desc}</span><span>${btn||''}</span></div>`;
   const ciRow=row('📅',T('每日簽到'),T('連續簽到 {0} 天。連續 7 天會有額外獎勵。',streak),ci?`<button class="btn" data-act="checkin">${T('簽到')}</button>`:`<span style="font-size:13px">${T('今天已簽到')}</span>`);
@@ -1919,7 +1923,7 @@ function showRewards(){const inR=!!R&&!R.over&&!R.settled,r=loadRec(),inv=r.inv|
   <h3 style="margin:8px 0 4px">${T('📅 每日簽到')}</h3>${ciRow}
   <h3 style="margin:8px 0 4px">${T('🏆 成就')}</h3>${achHTML}
   <h3 style="margin:8px 0 4px">${T('🎒 持有道具')}${inR?'':' · '+T('營業中可使用')}</h3>${propHTML}
-  ${shopHTML?`<h3 style="margin:8px 0 4px">${T('🛒 道具商店（用金幣購買）')}</h3>${shopHTML}`:''}
+  ${shopHTML?`<h3 style="margin:8px 0 4px">${T('🛒 道具商店（用金幣購買）')} · ${T('餘額 {0}',yen(coins))}</h3>${shopHTML}`:''}
   <div class="btns">${inR?`<button class="btn" data-act="resume">${T('繼續營業')}</button>`:`<button class="btn" data-act="closem">${T('返回')}</button>`}</div>`)}
 
 function charge(n,x,y){if(!n)return;R.cost+=n;const d=document.createElement('div');d.className='pop cost';d.style.left=x+'px';d.style.top=y+'px';d.textContent='-'+yen(n);$('fx').appendChild(d);setTimeout(()=>d.remove(),1000)}
@@ -2210,7 +2214,7 @@ function showHome(){
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
   <div class="htitle"><h1 class="logo"><img src="img/logo-9e60dada.webp" alt="${T('乾杯！居酒屋')}" draggable="false"></h1><div class="sub">${T('～ 巷子裡的小居酒屋 ～')}</div></div>
   <div class="menu">${saved?(FB_CONFIG?plaque('frhome','好友'):'')+plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1)+plaque('asknew','新的一局'):plaque('newgame','開始營業','',1)}${plaque('rewards','獎勵')}</div><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','賺外快'):''}${sideBtn('howto','說明')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side side-r">${sideBtn('records','經營紀錄')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反應'):''}</div><div class="topl"><button class="langbtn ntbtn" data-act="slots" aria-label="${T('存檔欄位')}">💾<span class="ntl"> ${T('存檔')}</span></button><button class="langbtn ntbtn" data-act="share" aria-label="${T('分享')}">🔗<span class="ntl"> ${T('分享')}</span></button><button class="langbtn ntbtn" data-act="dc" aria-label="Discord">🎮<span class="ntl"> Discord</span></button></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${NOTICE?`<button class="langbtn ntbtn" data-act="notice" aria-label="${T('公告')}">📢<span class="ntl"> ${T('公告')}</span></button>`:''}${acctBtn()}<button class="langbtn" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>${LANGS.find(l=>l[0]===LANG)[1]}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}<div id="homeModal"></div></div>`;
-  placeChat();requestAnimationFrame(placeChat);setTimeout(placeChat,300);
+  placeChat();requestAnimationFrame(placeChat);setTimeout(placeChat,300);syncRewardDot();
   if(noticeDue()){if(NOTICE_LOADED||!FB_CONFIG)setTimeout(()=>{if(HOME&&!document.querySelector('#homeModal .modal')){NAUTOREQ=true;showNotice()}},400);else setTimeout(noticePop,3500)}else if(CL.pick)setTimeout(cloudAsk,0);
 }
 const HOWTO=[['做菜、送菜','客人頭上的對話框是他點的菜。點做好的菜拿起來，再點客人送上。快速點兩下可以把菜收進保溫台，就不會焦。'],
