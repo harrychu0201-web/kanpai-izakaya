@@ -2492,6 +2492,9 @@ document.addEventListener('click',e=>{
   else if(act==='inblog')showLog();
   else if(act==='inbnotice')inboxNotice();
   else if(act==='inbnoticesend')inboxNoticeSend();
+  else if(act==='nprev')noticePreview();
+  else if(act==='nsavedraft')noticeDraftSave();
+  else if(act==='ndraftdel')noticeDraftDel();
   else if(act==='fbcat'){FB.cat=a.dataset.id;const t=$('fbtext');FB.text=t?t.value:FB.text;const c=$('fbcontact');FB.contact=c?c.value:FB.contact;showFb()}
   else if(act==='fbsend')sendFb();
   else if(act==='notice')showNotice(true);
@@ -3482,15 +3485,27 @@ async function showLog(){modal(`<h2>📋 操作紀錄</h2><p class="fbsmall">最
   try{const rows=await CL.api.logList(100);const b=$('logbox');if(b)b.innerHTML=rows.length?rows.map(x=>`<div class="inbit"><p class="inbh">${chatTime(x.t||0)} · ${esc(x.name||'')}</p><p class="inbtx">${esc(x.act||'')}${x.target?' · '+esc(String(x.target).slice(0,40)):''}${x.title?'：'+esc(String(x.title).slice(0,40)):''}</p></div>`).join(''):'<p class="fbsmall">還沒有紀錄</p>'}catch(e){const b=$('logbox');if(b)b.innerHTML=`<p class="fbsmall">讀取失敗：${esc(String(e&&e.code||e))}</p>`}}
 /* audit log: append-only in the database; failures here never block the action itself */
 const logAct=(act,target,extra)=>{try{if(!CL.user||!CL.api)return;CL.api.logAdd(Object.assign({act,target:String(target||''),by:CL.user.uid,name:CL.user.displayName||'管理員'},extra||{})).catch(()=>{})}catch(e){}};
-function inboxNotice(){const n=NOTICE_REMOTE?NOTICE:{title:'',text:'',sign:'作者敬上'};
-  modal(`<h2>📢 發布公告</h2><p style="font-size:14px">送出後，所有玩家下次打開遊戲會看到一次（只顯示中文原文，不會自動翻譯）。</p>
+/* announcement drafts: kept only on this device (localStorage), so an admin can write, preview and come back later without publishing */
+const NDRAFT_KEY='izakaya-notice-draft';
+function noticeDraftGet(){try{return JSON.parse(localStorage.getItem(NDRAFT_KEY)||'null')}catch(e){return null}}
+function noticeDraftRead(){const f=k=>{const e=$(k);return e?e.value.trim():''};return {title:f('ntitle'),text:f('ntext'),sign:f('nsign')}}
+function noticeDraftSave(quiet){const d=noticeDraftRead();if(!d.title&&!d.text&&!d.sign){try{localStorage.removeItem(NDRAFT_KEY)}catch(e){}if(!quiet)toast('草稿是空的，已清除');return false}
+  d.saved=Date.now();try{localStorage.setItem(NDRAFT_KEY,JSON.stringify(d));if(!quiet)toast('草稿已存 💾');return true}catch(e){if(!quiet)toast('存草稿失敗');return false}}
+function noticeDraftDel(){try{localStorage.removeItem(NDRAFT_KEY)}catch(e){}toast('草稿已清除');inboxNotice()}
+function noticePreview(){noticeDraftSave(true);const d=noticeDraftRead();
+  if(d.text.length<2){toast('公告內容太短了');return}
+  modal(`<div class="notice"><h2>📢 ${esc(d.title||'公告')}</h2><p style="font-size:12px;opacity:.7;margin-top:-6px">【預覽】玩家看到的樣子，還沒發布</p><p>${esc(d.text)}</p>${d.sign?`<p class="sign">${esc(d.sign)}</p>`:''}</div>
+  <div class="btns"><button class="btn alt" data-act="inbnotice">← 回去修改</button></div>`)}
+function inboxNotice(){const dr=noticeDraftGet();const n=dr?{title:dr.title||'',text:dr.text||'',sign:dr.sign||''}:NOTICE_REMOTE?NOTICE:{title:'',text:'',sign:'作者敬上'};
+  const when=dr&&dr.saved?new Date(dr.saved+288e5).toISOString().slice(5,16).replace('T',' '):'';
+  modal(`<h2>📢 發布公告</h2><p style="font-size:14px">送出後，所有玩家下次打開遊戲會看到一次（只顯示中文原文，不會自動翻譯）。</p>${dr?`<p style="font-size:12px;opacity:.75;margin:0 0 4px">📝 載入的是草稿（${when} 存的，只存在這台裝置）</p>`:''}
   <input class="nickin" id="ntitle" maxlength="40" style="font-size:16px;padding:7px 10px" placeholder="標題" value="${esc(n.title||'')}" autocomplete="off">
   <textarea class="fbtext" id="ntext" maxlength="2000" placeholder="公告內容">${esc(n.text||'')}</textarea>
   <input class="nickin" id="nsign" maxlength="40" style="font-size:16px;padding:7px 10px" placeholder="署名" value="${esc(n.sign||'')}" autocomplete="off">
-  <div class="btns"><button class="btn" data-act="inbnoticesend">發布</button><button class="btn alt" data-act="${canInbox()?'inbox':'notice'}">返回</button></div>`)}
+  <div class="btns"><button class="btn" data-act="inbnoticesend">發布</button><button class="btn alt" data-act="nprev">👁 預覽</button><button class="btn alt" data-act="nsavedraft">💾 存草稿</button>${dr?'<button class="btn alt" data-act="ndraftdel">🗑 清除草稿</button>':''}<button class="btn alt" data-act="${canInbox()?'inbox':'notice'}">返回</button></div>`)}
 async function inboxNoticeSend(){const ti=$('ntitle'),tx=$('ntext'),sg=$('nsign');if(!tx)return;const text=tx.value.trim();if(text.length<2){toast('公告內容太短了');return}
   const d={id:new Date().toISOString().slice(0,16),title:ti.value.trim(),text,sign:sg.value.trim()};
-  try{await CL.api.setNotice(d);logAct('發布公告',d.id,{title:String(d.title||'').slice(0,40)});NOTICE_HIST[d.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;noticeSeen();toast('公告已發布 📢');if(canInbox())inboxDraw();else showNotice(true)}catch(e){toast('發布失敗：'+String(e&&e.code||e))}}
+  try{await CL.api.setNotice(d);logAct('發布公告',d.id,{title:String(d.title||'').slice(0,40)});NOTICE_HIST[d.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;noticeSeen();try{localStorage.removeItem(NDRAFT_KEY)}catch(e){}toast('公告已發布 📢');if(canInbox())inboxDraw();else showNotice(true)}catch(e){toast('發布失敗：'+String(e&&e.code||e))}}
 /* ===== public chat room (Realtime Database 'chat' — no daily write cap; 5 s per-user rate limit and bans enforced by RTDB rules) ===== */
 const ADMIN_EMAIL='harrychu0201@gmail.com';
 function isAdmin(){return !!(CL.user&&CL.user.email===ADMIN_EMAIL)}
