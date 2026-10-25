@@ -1104,7 +1104,7 @@ const RDECOR=[
   {id:'hanabi',zh:'夜空煙火',d:'屋台後面的夜空放起煙火。',cost:45000,b:.1}];
 function rmDec(id){return !!(ST&&ST.rm&&ST.rm.dec&&ST.rm.dec[id])}
 const RSTAFF={zh:'屋台幫手・小葵',lv:[
-  {cost:20000,wage:700,d:'煮好的麵會撈進拉麵碗（沒碗就先放一個），快焦的煎餃、炒飯會收進保溫台，糊掉焦掉的會丟掉。'},
+  {cost:20000,wage:700,d:'煮好的麵會撈進拉麵碗（沒碗就先放一個），煮好的煎餃、炒飯會收進保溫台，糊掉焦掉的會丟掉。'},
   {cost:45000,wage:1100,d:'也會照客人點的，幫碗裡的麵放上配料。'},
   {cost:80000,wage:1600,d:'也會把做好的拉麵、保溫台的菜、關東煮和飲料送給客人，大約每 2.2 秒一份。'}]};
 const RSTAFF2={zh:'屋台廚手・山田',lv:[
@@ -1759,7 +1759,8 @@ function readySources(){
   out.push({src:'edamame',key:'edamame',inf:1});
   return out;
 }
-function waiting(){return R.seats.filter(c=>c&&c.st==='wait').sort((a,b)=>a.pat/a.max-b.pat/b.max)}
+/* serving & cooking order: first customer to sit down (waitAt) goes first, both shops */
+function waiting(){return R.seats.filter(c=>c&&c.st==='wait').sort((a,b)=>(a.waitAt||0)-(b.waitAt||0))}
 function rmStaffStep(dt){
   const l=rmStaffLv(),m=dilMul('rmstaff');if(!l||!m)return;
   R.rstT=(R.rstT??1)-dt*m;if(R.rstT<=0){R.rstT=.8;rmHelperAct(l)}
@@ -1769,7 +1770,8 @@ function rmPop(t){popup(50,KY-218,T(t))}
 function shoPop(t){popup(W-62,KY-218,T(t))}
 /* Yamada: starts food for orders nobody is making yet */
 function rmDemand(){const d={ramen:0,gyoza:0,friedrice:0,oden:0,koro:0,tori:0,katsu:0};
-  for(const c of R.seats){if(!c||(c.st!=='wait'&&c.st!=='in'))continue;c.order.forEach((k,j)=>{if(c.filled[j])return;const b=k.split(':')[0];if(b in d)d[b]++})}
+  for(const c of R.seats){if(!c||(c.st!=='wait'&&c.st!=='in'))continue;c.order.forEach((k,j)=>{if(c.filled[j])return;const b=k.split(':')[0];if(b in d)d[b]++})
+    if(c.extra&&c.extra.ok&&!c.extra.done){const b=c.extra.key.split(':')[0];if(b in d)d[b]++}}
   R.mpot.forEach((g,i)=>{if(g&&i<mpotN()&&cookState(g.t,'noodle')!=='burnt')d.ramen--});
   R.bowls.forEach((b,i)=>{if(b&&i<bowlsN()&&b.men)d.ramen--});
   R.warm.forEach(w=>{if(!w)return;const b=w.key.split(':')[0];if(b in d)d[b]--});
@@ -1800,9 +1802,10 @@ function rmHelperAct(l){
       if(j!=null){R.bowls[j].men=1;R.mpot[i]=null;sfx('warm');rmPop('小葵撈麵');renderStations();return}}}
   for(const pn of ['rmpan','rfry','tyaki'])for(let i=0;i<R[pn].length;i++){const g=R[pn][i];if(g&&cookState(g.t,g.kind)==='burnt'&&!hd(pn,i)){R[pn][i]=null;renderStations();return}}
   const slot=R.warm.findIndex((w,k)=>!w&&k<warmN());
-  if(slot>=0)for(const pn of ['rmpan','rfry','tyaki'])for(let i=0;i<R[pn].length;i++){const g=R[pn][i];if(g&&cookState(g.t,g.kind)==='done'&&(burnAt(g.kind)-g.t)<4.5&&!hd(pn,i)){R.warm[slot]={key:g.kind};R[pn][i]=null;rmPop('小葵收好了');renderStations();return}}
+  if(slot>=0)for(const pn of ['rmpan','rfry','tyaki'])for(let i=0;i<R[pn].length;i++){const g=R[pn][i];if(g&&cookState(g.t,g.kind)==='done'&&!hd(pn,i)){R.warm[slot]={key:g.kind};R[pn][i]=null;rmPop('小葵收好了');renderStations();return}}
   if(l>=2){const need={chashu:0,egg:0,corn:0};
     for(const c of waiting())c.order.forEach((k,j)=>{if(!c.filled[j]&&k.startsWith('ramen:'))need[k.slice(6)]=(need[k.slice(6)]||0)+1});
+    for(const c of waiting())if(c.extra&&c.extra.ok&&!c.extra.done&&c.extra.key.startsWith('ramen:'))need[c.extra.key.slice(6)]=(need[c.extra.key.slice(6)]||0)+1;
     R.bowls.forEach(b=>{if(b&&b.top&&b.top in need)need[b.top]--});
     R.warm.forEach(w=>{if(w&&w.key.startsWith('ramen:')&&w.key.slice(6) in need)need[w.key.slice(6)]--});
     for(const j of bowlOrder()){const b=R.bowls[j];if(!b||!b.men||b.top)continue;
@@ -1852,8 +1855,10 @@ function crisisCook(){
   R.warm.forEach(w=>{if(w&&w.key in have)have[w.key]++});if(R.held&&R.held.key in have)have[R.held.key]++;
   const need={};kinds.forEach(k=>need[k]=0);
   for(const c of waiting())c.order.forEach((k,j)=>{if(!c.filled[j]&&k in need)need[k]++});
-  for(const c of waiting()){if(c.pat/c.max>HELPER_PAT)break;
-    for(let j=0;j<c.order.length;j++){const k=c.order[j];if(c.filled[j]||!(k in need)||have[k]>=need[k])continue;
+  for(const c of waiting())if(c.extra&&c.extra.ok&&!c.extra.done&&c.extra.key in need)need[c.extra.key]++;
+  for(const c of waiting()){if(c.pat/c.max>HELPER_PAT)continue;
+    const sl=c.order.map((k,j)=>({k,j,open:!c.filled[j]}));if(c.extra&&c.extra.ok&&!c.extra.done)sl.push({k:c.extra.key,j:'x',open:true});
+    for(const {k,open} of sl){if(!open||!(k in need)||have[k]>=need[k])continue;
       let pn,i;
       if(k==='negima'||k==='tsukune'){pn='grill';i=R.grill.findIndex((g,x)=>!g&&x<ST.up.grill)}
       else if(k==='karaage'){pn='fryer';i=R.fryer.findIndex((f,x)=>!f&&x<ST.up.fryer)}
