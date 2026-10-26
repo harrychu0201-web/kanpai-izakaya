@@ -1933,15 +1933,24 @@ function curCard(){return document.querySelector('#homeModal .card')||document.q
 function showRewards(){const c0=curCard(),top=c0?c0.scrollTop:0;renderRewards();const c=curCard();if(c&&top)c.scrollTop=top;syncRewardDot();syncHomeCoins()}
 function syncRewardDot(){const b=document.querySelector('.plq[data-act="rewards"]');if(!b)return;const on=rewardDue(),d=b.querySelector('.rdot');if(on&&!d)b.insertAdjacentHTML('afterbegin','<i class="rdot" style="top:-6px;right:-6px"></i>');else if(!on&&d)d.remove()}
 function syncHomeCoins(){const sm=document.querySelector('.plq[data-act="cont"] small'),s=load();if(!sm||!s)return;sm.textContent=sm.textContent.replace(/¥[\d,]+\s*$/,yen(s.coins||0))}
+function weekDays(){const t=new Date(),dow=(t.getDay()+6)%7,out=[];for(let i=0;i<7;i++)out.push(new Date(t.getFullYear(),t.getMonth(),t.getDate()-dow+i));return out}
+function signedSet(r){const s={};if(r.ci&&r.ci.last){const [y,m,d]=r.ci.last.split('-').map(Number);for(let i=0;i<(r.ci.streak||0);i++)s[dayKey(new Date(y,m-1,d-i))]=1}return s}
+function checkinWeekHTML(r){const today=dayKey(),signed=signedSet(r),wd=['一','二','三','四','五','六','日'];
+  return weekDays().map((d,i)=>{const k=dayKey(d),isT=k===today;let btn;
+    if(signed[k])btn=`<span style="font-size:13px;font-weight:900;color:#2e7d32">✅ ${T('已簽到')}</span>`;
+    else if(isT)btn=`<button class="btn" data-act="checkin">${T('簽到')}</button>`;
+    else if(k<today)btn=`<span style="font-size:13px;color:#a33">${T('未簽到')}</span>`;
+    else btn=`<span style="font-size:13px;color:#888">${T('未開放')}</span>`;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;background:${isT?'#ffe9b8':'#fffaf0'};border:2px solid var(--soot);border-radius:10px;padding:6px 8px;margin-bottom:6px"><span style="font-size:14px"><b>${d.getMonth()+1}/${d.getDate()} (${wd[i]})</b>${isT?' · <b>'+T('今天')+'</b>':''}</span>${btn}</div>`}).join('')}
 function renderRewards(){const inR=!!R&&!R.over&&!R.settled,r=loadRec(),inv=r.inv||{},s=load(),coins=s?s.coins||0:0;
-  const ci=!(r.ci&&r.ci.last===dayKey()),streak=r.ci?r.ci.streak||0:0;
+  const streak=r.ci?r.ci.streak||0:0;
   const row=(ic,title,desc,btn)=>`<div style="display:grid;grid-template-columns:38px 1fr auto;gap:8px;align-items:center;background:#fffaf0;border:2px solid var(--soot);border-radius:10px;padding:6px 8px;margin-bottom:6px"><span style="font-size:24px;text-align:center">${ic}</span><span style="font-size:14px;line-height:1.4"><b>${title}</b><br>${desc}</span><span>${btn||''}</span></div>`;
-  const ciRow=row('📅',T('每日簽到'),T('連續簽到 {0} 天。連續 7 天會有額外獎勵。',streak),ci?`<button class="btn" data-act="checkin">${T('簽到')}</button>`:`<span style="font-size:13px">${T('今天已簽到')}</span>`);
+  const ciWeek=checkinWeekHTML(r);
   const achHTML=ACHS.map(a=>{const got=!!(r.ach&&r.ach[a.id]),ok=a.c(r);return row(got?'✅':ok?'🎉':'🔒',T(a.n),T('獎勵：{0}',rwText(a.rw)),got?`<span style="font-size:13px">${T('已領取')}</span>`:`<button class="btn" data-act="achclaim" data-id="${a.id}" ${ok?'':'disabled'}>${T('領取')}</button>`)}).join('');
   const propHTML=Object.keys(PROPS).map(k=>{const p=PROPS[k],n=inv[k]||0,used=k==='nb'&&inR&&R.fxNb;const btn=inR?`<button class="btn" data-act="useprop" data-id="${k}" ${n>0&&!used?'':'disabled'}>${T('使用')}</button>`:'';return row(p.ic,T(p.n)+' ×'+n,T(p.d),btn)}).join('');
   const shopHTML=(!R&&s)?Object.keys(PROPS).map(k=>{const p=PROPS[k];return row(PROPS[k].ic,T(p.n),T(p.d),`<button class="btn ${coins<p.p?'poor':''}" data-act="buyprop" data-id="${k}" ${coins<p.p?'disabled':''}>${yen(p.p)}</button>`)}).join(''):'';
   modal(`<h2>${T('🎁 獎勵中心')}</h2>
-  <h3 style="margin:8px 0 4px">${T('📅 每日簽到')}</h3>${ciRow}
+  <h3 style="margin:8px 0 4px">${T('📅 每日簽到')}</h3><p style="font-size:13px;margin:0 0 6px">${T('連續簽到 {0} 天。連續 7 天會有額外獎勵。只能簽當天，已簽到會顯示 ✅。',streak)}</p>${ciWeek}
   <h3 style="margin:8px 0 4px">${T('🏆 成就')}</h3>${achHTML}
   <h3 style="margin:8px 0 4px">${T('🎒 持有道具')}${inR?'':' · '+T('營業中可使用')}</h3>${propHTML}
   ${shopHTML?`<h3 style="margin:8px 0 4px">${T('🛒 道具商店（用金幣購買）')} · ${T('餘額 {0}',yen(coins))}</h3>${shopHTML}`:''}
