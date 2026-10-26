@@ -1277,11 +1277,14 @@ function suWages(){const l=suStaffLv();return l?SU_STAFF.lv[l-1].wage:0}
 function makiG(k,st){const f={kappamaki:'#6fae4a',tekkamaki:'#c8323c',salmonmaki:'#f7904f',ebimaki:'#f4a0a0'}[k]||'#c8323c';
   const raw=st==='raw',burnt=st==='burnt',rice=raw?'#eee6d0':burnt?'#9a8660':'#fbf7ec',fill=raw?'#f4ecd8':burnt?'#3a2a1c':f;
   let o='';for(let i=0;i<6;i++){const a=i/6*Math.PI*2-Math.PI/2,x=50+Math.cos(a)*25,y=50+Math.sin(a)*25;
-    o+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12" fill="#1f3a24" stroke="${O}" stroke-width="2.5"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="8.5" fill="${rice}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${fill}" stroke="${O}" stroke-width="1.2"/>`}
+    o+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12.5" fill="#1f3a24" stroke="${O}" stroke-width="2.5"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10.5" fill="${rice}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" fill="${fill}" stroke="${O}" stroke-width="1.2"/>`}
   return o}
 function nigiriG(k,st){const f={salmonnigiri:'#f7904f',tunanigiri:'#c8323c',tamagonigiri:'#f3c64a',ebinigiri:'#f4a0a0'}[k]||'#c8323c';
   const raw=st==='raw',burnt=st==='burnt',rice=raw?'#eee6d0':burnt?'#9a8660':'#fbf7ec',fill=raw?'#f4ecd8':burnt?'#3a2a1c':f;
-  return `<rect x="18" y="44" width="64" height="30" rx="14" fill="${rice}" stroke="${O}" stroke-width="3"/><rect x="14" y="28" width="72" height="24" rx="10" fill="${fill}" stroke="${O}" stroke-width="3"/>${k==='tamagonigiri'?'<rect x="44" y="44" width="12" height="30" fill="#1f3a24"/>':''}`}
+  const grains=[[30,60],[42,66],[54,62],[66,68],[36,72],[60,74]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.6" fill="#d9d0b8"/>`).join('');
+  return `<ellipse cx="50" cy="62" rx="34" ry="17" fill="${rice}" stroke="${O}" stroke-width="3"/>${grains}`+
+    `<g transform="rotate(-4 50 34)"><rect x="12" y="22" width="76" height="20" rx="9" fill="${fill}" stroke="${O}" stroke-width="3"/>${k==='tamagonigiri'?'':`<path d="M18 30h64" stroke="#fff" stroke-width="2" opacity=".35"/>`}</g>`+
+    (k==='tamagonigiri'?'<rect x="46" y="44" width="10" height="26" fill="#1f3a24"/>':'')}
 function suG(k,st){return k.endsWith('nigiri')?nigiriG(k,st):makiG(k,st)}
 function suStHTML(name){
   if(CUR!=='sushi')return null;
@@ -1469,7 +1472,7 @@ function ingArt(id){
   if(id==='boat')return sashimiG([]);
   return `<rect x="10" y="30" width="80" height="42" rx="10" fill="${FISHC[id][0]}" stroke="${O}" stroke-width="4"/><path d="M20 42h60" stroke="${FISHC[id][1]}" stroke-width="5" opacity=".8"/>`;
 }
-function burnAt(kind){let b=COOK[kind]+12+(ST.up.warm?6:0);if(CUR==='rm'){if(kind==='noodle'&&rmUp('firm',0))b+=6;if((kind==='gyoza'||kind==='friedrice')&&rmUp('iron',0))b+=5;if(RFK.includes(kind)&&rmUp('oil',0))b+=5}return R&&R.fxNb?b+9999:b}
+function burnAt(kind){if(SUKEYS.includes(kind))return 1e9;let b=COOK[kind]+12+(ST.up.warm?6:0);if(CUR==='rm'){if(kind==='noodle'&&rmUp('firm',0))b+=6;if((kind==='gyoza'||kind==='friedrice')&&rmUp('iron',0))b+=5;if(RFK.includes(kind)&&rmUp('oil',0))b+=5}return R&&R.fxNb?b+9999:b}
 function cookState(t,kind){return t<COOK[kind]?'raw':t<burnAt(kind)?'done':'burnt'}
 const lockDiv=d=>UDAY()<d?`<div class="locked">${T('第 {0} 天<br>開放',d)}</div>`:'';
 function stHTML(name){
