@@ -1348,7 +1348,7 @@ function spreadLand(W){const LAND=CUR==='rm'?LAND_R:LAND_IZ;KY=W>=1240?336:400;K
 function setCur(w){w=w==='rm'&&rmOwned()?'rm':'iz';if(w!==CUR){CUR=w;chooseLayout(true)}}
 function chooseLayout(force){
   const AE=document.activeElement;if(!force&&AE&&/^(INPUT|TEXTAREA)$/.test(AE.tagName))return; // soft keyboard resizes the viewport; re-laying out here would rebuild the home screen and close the open modal (chat / nickname)
-  const OV=document.body.classList.contains('ovl'),ww=$('wrap').clientWidth-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):24),ah=OV?(window.visualViewport?visualViewport.height:innerHeight):Math.max(300,window.innerHeight-60),want=(ww<760&&ww/ah<1.05)?'port':'land';
+  const OV=document.body.classList.contains('ovl'),ww=$('wrap').clientWidth-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):24),ah=OV?stableVisH():Math.max(300,window.innerHeight-60),want=(ww<760&&ww/ah<1.05)?'port':'land';
   const lockW=!!R&&LAY==='land'&&want==='land'&&W;const nw=want==='port'?600:lockW?W:Math.round(Math.max(960,Math.min(1500,600*ww/ah))/10)*10;
   if(want===LAY&&nw===W&&!force)return;
   LAY=want;W=nw;H=want==='port'?906:600;
@@ -3043,13 +3043,24 @@ if(window.visualViewport)visualViewport.addEventListener('resize',()=>fit());
 function visH(){let d=document.getElementById('dvhProbe');if(!d){d=document.createElement('div');d.id='dvhProbe';d.style.cssText='position:fixed;left:0;top:0;width:1px;height:100vh;height:100dvh;visibility:hidden;pointer-events:none';document.body.appendChild(d)}const a=window.innerHeight,b=window.visualViewport?visualViewport.height:a;return Math.max(200,Math.min(a,b))}
 /* fit() only ran on resize events; on Android the fullscreen / rotation animation reports a stale height first, so the board stayed too tall until the next HUD change (end of day). Re-run it a few times while the viewport settles. */
 function refitBurst(){[0,100,300,700,1400,2500].forEach(t=>setTimeout(fit,t))}
+/* 手機橫向時，瀏覽器的網址列／底部工具列一滑出一收起，可見高度就會跟著變，遊戲會整個跟著縮放（甚至重排）。
+   這裡在同一個方向內只記「看過的最小可見高度」：工具列收起時不動，只有第一次真的變小時才調整一次，之後就釘住。
+   打字（鍵盤彈出）或拖曳中不記錄，免得鍵盤把尺寸永遠縮小。方向改變（旋轉）時重新記。 */
+let STAB={o:'',h:0};
+function stableVisH(){
+  const o=innerWidth>innerHeight?'l':'p',v=visH();
+  if(STAB.o!==o||!STAB.h){STAB={o,h:v};return v}
+  const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');
+  if(!PTR&&!typing&&v<STAB.h)STAB.h=v;
+  return STAB.h;
+}
 function safeBottom(){let d=document.getElementById('sabProbe');if(!d){d=document.createElement('div');d.id='sabProbe';d.style.cssText='position:fixed;left:0;bottom:0;width:1px;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';document.body.appendChild(d)}return Math.max(d.offsetHeight||0,14)}/* min gap so Android gesture bar / iPhone home line never sits on the bottom row */
 let PTR=false,PENDFIT=false;document.addEventListener('pointerdown',()=>{PTR=true},true);['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,()=>{PTR=false;if(PENDFIT){PENDFIT=false;setTimeout(fit,50)}},true));
 function fit(){
   if(PTR){PENDFIT=true;return}
   document.body.classList.toggle('ovl',TOUCH&&innerWidth>innerHeight&&Math.min(screen.width,screen.height)<560&&!HOME);
   chooseLayout();
-  const box=$('box'),wcs=getComputedStyle($('wrap')),w=$('wrap').clientWidth-(document.body.classList.contains('ovl')?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),ovl=document.body.classList.contains('ovl'),maxH=Math.max(200,visH()-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)));
+  const box=$('box'),wcs=getComputedStyle($('wrap')),w=$('wrap').clientWidth-(document.body.classList.contains('ovl')?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),ovl=document.body.classList.contains('ovl'),maxH=Math.max(200,(ovl?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)));
   const s=Math.min(w/W,maxH/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
   $('game').style.transform=`scale(${s})`;
   $('game').style.setProperty('--fz',Math.min(1.8,Math.max(1,0.85/s)).toFixed(2));
