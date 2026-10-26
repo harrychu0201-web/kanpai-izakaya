@@ -1293,12 +1293,25 @@ function nigiriG(k,st){const f={salmonnigiri:'#f7904f',tunanigiri:'#c8323c',tama
     (k==='tamagonigiri'?'<rect x="46" y="44" width="10" height="26" fill="#1f3a24"/>':'')}
 function riceG(){return `<ellipse cx="50" cy="62" rx="36" ry="18" fill="#fbf7ec" stroke="${O}" stroke-width="3"/>`+[[30,58],[42,64],[54,60],[66,66],[36,70],[60,72],[48,54]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.8" fill="#d9d0b8"/>`).join('')}
 function suG(k,st){if(k==='rice')return riceG();return k.endsWith('nigiri')?nigiriG(k,st):makiG(k,st)}
+function suSlice(x,y,c,rot){return `<g transform="rotate(${rot} ${x+11} ${y+7})"><rect x="${x}" y="${y}" width="22" height="14" rx="6" fill="${c}" stroke="${O}" stroke-width="1.8"/><path d="M${x+4} ${y+4}h12" stroke="#fff" stroke-width="1.6" opacity=".5"/></g>`}
+function suPieces(kind){
+  const P={
+    kappa:[[14,24,'#6fae4a',-6],[14,44,'#8cc463',4],[36,24,'#6fae4a',4],[36,44,'#8cc463',-4]],
+    tuna:[[14,24,'#c8323c',-8],[36,24,'#d9485a',6],[14,44,'#b82a36',4],[36,44,'#c8323c',-6]],
+    salmon:[[14,24,'#f7904f',-8],[36,24,'#f7a466',6],[14,44,'#f48a48',4],[36,44,'#f7904f',-6]],
+    ebi:[[14,26,'#f4a0a0',-10],[36,26,'#f7b4b4',8],[25,46,'#f4a0a0',-4]],
+    tama:[[14,24,'#f3c64a',-4],[36,24,'#f7d26a',4],[14,44,'#f3c64a',3],[36,44,'#f0bb35',-3]],
+    sweetebi:[[14,24,'#f6a7b8',-8],[36,24,'#fbc0cc',6],[25,46,'#f6a7b8',-3]]
+  };
+  return (P[kind]||P.tuna).map(([x,y,c,r])=>suSlice(x,y,c,r)).join('');
+}
 function suStHTML(name){
   if(CUR!=='sushi')return null;
-  const FIL={rawKappa:['kappamaki','黃瓜','#6fae4a'],rawTuna:['tekkamaki','鮪魚','#c8323c'],rawSalmon:['salmonmaki','鮭魚','#f7904f'],rawSEbi:['ebimaki','蝦','#f4a0a0'],rawNSal:['salmonnigiri','鮭片','#f7904f'],rawNTuna:['tunanigiri','鮪片','#c8323c'],rawNTama:['tamagonigiri','玉片','#f3c64a'],rawNEbi:['ebinigiri','甜蝦片','#f4a0a0']};
-  if(name==='rawSRice')return sv(`<rect x="4" y="12" width="64" height="66" rx="8" fill="#b97d45" stroke="${O}" stroke-width="3"/><rect x="10" y="18" width="52" height="54" rx="5" fill="#f7ecd3" stroke="${O}" stroke-width="2"/><g transform="translate(1 8) scale(.7)">${riceG()}</g>`,'0 0 72 90')+`<span class="lbl" style="white-space:normal;line-height:1.05;font-size:11px">${T('飯')}<br>${T('免費')}</span>`;
-  if(FIL[name]){const[k,nm,c]=FIL[name];
-    return sv(`<rect x="4" y="12" width="64" height="66" rx="8" fill="#b97d45" stroke="${O}" stroke-width="3"/><rect x="10" y="18" width="52" height="54" rx="5" fill="#f7ecd3" stroke="${O}" stroke-width="2"/><ellipse cx="36" cy="46" rx="24" ry="14" fill="${c}" stroke="${O}" stroke-width="3"/><path d="M22 42h28" stroke="#fff" stroke-width="2" opacity=".4"/>`,'0 0 72 90')+`<span class="lbl" style="white-space:normal;line-height:1.05;font-size:11px">${T(nm)}<br>¥${costOf(k)}</span>`+(has(k)?'':`<div class="locked">${T('壽司店<br>購買')}</div>`)}
+  const box=(inner)=>`<rect x="4" y="12" width="64" height="66" rx="6" fill="#a8703a" stroke="${O}" stroke-width="3"/><rect x="5" y="13" width="62" height="4" rx="2" fill="#c98f52" opacity=".7"/><rect x="10" y="18" width="52" height="54" rx="4" fill="#fbf1dc" stroke="${O}" stroke-width="2"/>${inner}`;
+  if(name==='rawSRice')return sv(box(`<g transform="translate(6 10) scale(.6)">${riceG()}</g>`),'0 0 72 90')+`<span class="lbl" style="white-space:normal;line-height:1.05;font-size:11px">${T('飯')}<br>${T('免費')}</span>`;
+  const FIL={rawKappa:['kappamaki','黃瓜','kappa'],rawTuna:['tekkamaki','鮪魚','tuna'],rawSalmon:['salmonmaki','鮭魚','salmon'],rawSEbi:['ebimaki','蝦','ebi'],rawNSal:['salmonnigiri','鮭片','salmon'],rawNTuna:['tunanigiri','鮪片','tuna'],rawNTama:['tamagonigiri','玉片','tama'],rawNEbi:['ebinigiri','甜蝦片','sweetebi']};
+  if(FIL[name]){const[k,nm,pc]=FIL[name];
+    return sv(box(suPieces(pc)),'0 0 72 90')+`<span class="lbl" style="white-space:normal;line-height:1.05;font-size:11px">${T(nm)}<br>¥${costOf(k)}</span>`+(has(k)?'':`<div class="locked">${T('壽司店<br>購買')}</div>`)}
   return null}
 function makiHTML(){
   let s=`<svg viewBox="0 0 210 182" style="position:absolute;inset:0"><rect x="2" y="8" width="206" height="166" rx="12" fill="#6b4226" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="190" height="150" rx="6" fill="#d9bd7e"/><path d="M10 24h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 34h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 44h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 54h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 64h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 74h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 84h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 94h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 104h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 114h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 124h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 134h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 144h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 154h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/><path d="M10 164h190" stroke="#b08a4e" stroke-width="2" opacity=".6"/></svg>`;
