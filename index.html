@@ -754,6 +754,7 @@ let RKEY='izakaya-rec-v1';
 function loadRec(){try{return JSON.parse(localStorage.getItem(RKEY))||{}}catch(e){return {}}}
 function saveRec(r){try{localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}touchLocal()}
 function load(){try{const v=localStorage.getItem(KEY);const o=v?JSON.parse(v):null;if(o&&o.inter&&o.inter.neon){delete o.inter.neon;o.coins=(o.coins||0)+20000;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}return o}catch(e){return null}}
+const UDAY=()=>RP.on?RP.mainDay:(ST?ST.day:1); /* unlock/shop state follows the main save even while replaying an earlier day */
 const unlocked=(d,sh)=>{sh=sh||CUR;if(RP.on)d=Math.max(d,RP.mainDay);return Object.keys(ITEMS).filter(k=>{const it=ITEMS[k],s0=it.shop||'iz';if(s0!=='both'&&s0!==sh)return false;return it.buy?has(k)&&!(k==='goma'&&gomaOff()):(s0==='rm'||it.day<=d)})};
 /* ===== daily events (from day 4) + robbery (from day 5); picked once per day in showDayIntro ===== */
 const EVS={rain:['🌧','雨天','客人少三成，但耐心 +30%。'],fest:['🏮','附近有祭典','客人多六成，小費 +20%！'],group:['👥','團體客','營業中會有一群客人一次坐滿。'],
@@ -1010,7 +1011,7 @@ function custSVG(look,mood){
 function drawBg(){
   if(CUR==='rm'&&ST&&ST.rm){drawYatai();return}
   const TY=KY<400?38:0;
-  const day=ST?ST.day:1,P=LAY==='port'?{ts:27,ls:.8,tv:[372,168,.82],rec:[500,210,.6],bar:[480,266,.5],sx:186,sw:168,tag:118,sake:562,lx:[402,482],lp:[150,316],chime:176,scroll:116,board:186,sham:[290,226],notes:[262,250],cat:W-76}:(()=>{const d=(W-960)/2;return {ts:29,ls:1,tv:[KY<400?196:190+d*.3,KY<400?196:104,KY<400?.9:1],rec:[210+d*.3,214,.7],bar:[W-226,KY<400?232:276,.72],sx:KY<400?440:330+d,sw:KY<400?Math.min(520,W-238-24-440):300,tag:KY<400?190:150+Math.min(d,60),sake:650+d,lx:[734+d*1.4,820+d*1.6],lp:[300+d,588+d],chime:262+d*.4,scroll:128,board:638+d,sham:[704+d,84],notes:[676+d,110],cat:W-76}})();
+  const day=ST?UDAY():1,P=LAY==='port'?{ts:27,ls:.8,tv:[372,168,.82],rec:[500,210,.6],bar:[480,266,.5],sx:186,sw:168,tag:118,sake:562,lx:[402,482],lp:[150,316],chime:176,scroll:116,board:186,sham:[290,226],notes:[262,250],cat:W-76}:(()=>{const d=(W-960)/2;return {ts:29,ls:1,tv:[KY<400?196:190+d*.3,KY<400?196:104,KY<400?.9:1],rec:[210+d*.3,214,.7],bar:[W-226,KY<400?232:276,.72],sx:KY<400?440:330+d,sw:KY<400?Math.min(520,W-238-24-440):300,tag:KY<400?190:150+Math.min(d,60),sake:650+d,lx:[734+d*1.4,820+d*1.6],lp:[300+d,588+d],chime:262+d*.4,scroll:128,board:638+d,sham:[704+d,84],notes:[676+d,110],cat:W-76}})();
   const TW_=theme('wall'),TL=theme('light').c;
   let s=`<defs><linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${TW_.c[0]}"/><stop offset="1" stop-color="${TW_.c[1]}"/></linearGradient>
   <radialGradient id="glow" cx=".5" cy=".3" r=".7"><stop offset="0" stop-color="${TL}" stop-opacity=".35"/><stop offset="1" stop-color="${TL}" stop-opacity="0"/></radialGradient></defs>
@@ -1381,7 +1382,7 @@ function ingArt(id){
 }
 function burnAt(kind){let b=COOK[kind]+12+(ST.up.warm?6:0);if(CUR==='rm'){if(kind==='noodle'&&rmUp('firm',0))b+=6;if((kind==='gyoza'||kind==='friedrice')&&rmUp('iron',0))b+=5;if(RFK.includes(kind)&&rmUp('oil',0))b+=5}return R&&R.fxNb?b+9999:b}
 function cookState(t,kind){return t<COOK[kind]?'raw':t<burnAt(kind)?'done':'burnt'}
-const lockDiv=d=>ST.day<d?`<div class="locked">${T('第 {0} 天<br>開放',d)}</div>`:'';
+const lockDiv=d=>UDAY()<d?`<div class="locked">${T('第 {0} 天<br>開放',d)}</div>`:'';
 function stHTML(name){
   if(name==='trash3')name='trash2';
   const rmh=rmStHTML(name);if(rmh!=null)return rmh;
@@ -1414,7 +1415,7 @@ function stHTML(name){
       return `<div class="st" data-board="${i}" style="position:relative;inset:auto;flex:1">${sv(`<rect x="4" y="${n===1?14:3}" width="120" height="${n===1?106:56}" rx="12" fill="#e8c48e" stroke="${O}" stroke-width="4"/><g transform="translate(${n===1?14:38} ${n===1?22:2}) scale(${n===1?1:.56})">${art}</g>
       ${done?`<circle cx="112" cy="${n===1?24:14}" r="11" fill="#5fb33a" stroke="${O}" stroke-width="3"/><path d="M106 ${n===1?24:14}l4 4l7-8" stroke="#fff" stroke-width="3" fill="none"/>`:''}`,`0 0 128 ${h}`)}<span class="lbl"${n>1?' style="bottom:-4px;font-size:12px"':''}>${done?T('完成！點我拿起'):b.base?T('製作中…'):T('砧板')+(n>1?(i+1):'')}</span></div>`}).join('')}${lockDiv(ITEMS.chazuke.day)}</div>`}
   if(name==='ing'){
-    return `<div style="display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:7px;width:100%;height:100%">${ING.map(g=>{const lk=ITEMS[g.for].day>ST.day;
+    return `<div style="display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:7px;width:100%;height:100%">${ING.map(g=>{const lk=ITEMS[g.for].day>UDAY();
       return `<div class="st" data-ing="${g.id}" style="position:relative;inset:auto;background:#f1e2c2;border:2px solid ${O};border-radius:8px;opacity:${lk?.3:1};${lk?'cursor:default':''}">${sv(ingArt(g.id))}${(()=>{const t=T(g.zh),cjk=t.charCodeAt(0)>=0x2e80,n=[...t].length,big=cjk?n<=3:n<=5;return `<span class="lbl" style="font-size:${big?(cjk?(n===3?13:16):14):11}px;font-weight:${big?800:400};padding:0 ${big?3:4}px${big?'':';white-space:normal;text-align:center;line-height:1.15;width:94%;border-radius:8px'}">${t}</span>`})()}</div>`}).join('')}</div>`}
   return '';
 }
@@ -1763,7 +1764,7 @@ function readySources(){
   R.grill.forEach((g,i)=>{if(g&&cookState(g.t,g.kind)==='done')out.push({src:'grill',i,key:g.kind})});
   R.fryer.forEach((f,i)=>{if(f&&cookState(f.t,'karaage')==='done')out.push({src:'fryer',i,key:'karaage'})});
   R.boards.slice(0,boardsN()).forEach((b,i)=>{if(boardDone(i))out.push({src:'board',i,key:boardKey(i)})});
-  if(ST.day>=ITEMS.sake.day)out.push({src:'sake',key:'sake',inf:1});
+  if(UDAY()>=ITEMS.sake.day)out.push({src:'sake',key:'sake',inf:1});
   ['highball','hiyayakko','tsukemono','umeshu','reishu'].forEach(k=>{if(has(k))out.push({src:k,key:k,inf:1})});
   out.push({src:'edamame',key:'edamame',inf:1});
   return out;
@@ -2061,7 +2062,7 @@ function clickWarm(i,el){
   else{nope(el);toast(h&&h.src==='tap'?'啤酒不用保溫，直接送吧':'先點烤好、炸好或做好的菜，再點這裡放進來')}
   renderStations()}
 function clickIng(id,el){
-  const g=ING.find(x=>x.id===id);if(ITEMS[g.for].day>ST.day)return;
+  const g=ING.find(x=>x.id===id);if(ITEMS[g.for].day>UDAY())return;
   const n=boardsN();let bi=-1;
   if(id==='bowl'||id==='boat')bi=R.boards.findIndex((x,i)=>i<n&&!x.base);
   else{const order=[R.lastBoard,...[0,1].filter(i=>i!==R.lastBoard)].filter(i=>i<n);bi=order.find(i=>canAdd(R.boards[i],id));if(bi===undefined)bi=-1}
@@ -2516,7 +2517,7 @@ function showOwned(){
   <p><b>${T('商店上方多了「🍜 深夜拉麵屋台」，可以開第二家店！')}</b></p>
   <div class="btns"><button class="btn" data-act="shop">${T('回到商店')}</button><button class="btn alt" data-act="back">${ST.pendingNext?T('前往第 {0} 天',ST.day+1):T('返回')}</button></div>`);
 }
-function shopMenu(un){return `  <h3 class="sh">${T('新菜單・花錢解鎖')}${ST.day<7?T('（第 7 天開放）'):''}</h3>
+function shopMenu(un){return `  <h3 class="sh">${T('新菜單・花錢解鎖')}${UDAY()<7?T('（第 7 天開放）'):''}</h3>
   <div class="shop">${NEWD.concat(NEWD3).map(k=>{const own=has(k),it=ITEMS[k];return `<div class="up ${own?'done':''}"><b><span class="ui">${icon(k)}</span>${JP(k)}<span class="new" style="background:#2b3b6e">${T(it.st)}</span></b><p>${T('{0}。售價 {1}，食材 {2}。',T(it.zh),yen(it.price),yen(it.cost))}${!own&&wishCount(k)?` <b style="color:#c9533a">${T('已經有 {0} 位客人問過這道菜',wishCount(k))}</b>`:''}</p><div class="row"><span class="price">${yen(it.buy)}</span>${own?`<span>${T('已上菜單')}</span>`:ST.day<7?`<span style="font-size:12px">${T('第 7 天開放')}</span>`:`<button class="btn" data-act="buymenu" data-id="${k}" ${ST.coins<it.buy?'disabled':''}>${T('解鎖')}</button>`}</div></div>`}).join('')}</div>
   <h3 class="sh">${T('菜色升級・用更好的食材')}</h3>
   <div class="shop">${un.map(b=>lvCard(b)).join('')}</div>`}
@@ -2542,7 +2543,7 @@ function tabDot(k){try{const c=ST.coins;
     if(k==='rdeco')return RDECOR.some(d=>!rmDec(d.id)&&c>=d.cost);
     return false}
   if(k==='menu'){const un=unlocked(ST.day,'iz');
-    return (ST.day>=7&&NEWD.concat(NEWD3).some(x=>!has(x)&&c>=ITEMS[x].buy))||un.some(b=>{const u=upCost(b);return lvOf(b)<3&&u&&c>=u})}
+    return (UDAY()>=7&&NEWD.concat(NEWD3).some(x=>!has(x)&&c>=ITEMS[x].buy))||un.some(b=>{const u=upCost(b);return lvOf(b)<3&&u&&c>=u})}
   if(k==='deco')return DECOR.some(d=>!hasDec(d.id)&&c>=d.cost)||INTER.some(d=>!hasIn(d.id)&&!(d.need&&!(d.need==='cat'?ST.up.cat:false))&&c>=d.cost);
   if(k==='style')return Object.values(THEMES).some(g=>g.list.some(t=>t.cost&&!ownTh(t.id)&&c>=t.cost));
   if(k==='kit')return Object.entries(STAFFLV).some(([id,S])=>{const nx=S.lv[staffLv(id)];return nx&&c>=nx.cost})||UPS.some(u=>!u.done()&&u.ok()&&c>=u.cost);
@@ -2705,7 +2706,7 @@ document.addEventListener('click',e=>{
   else if(act==='buyin'){const d=INTER.find(x=>x.id===a.dataset.id);if(d&&!hasIn(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.inter=ST.inter||{};ST.inter[d.id]=true;save();drawBg();showShop();renderHUD()}}
   else if(act==='buyth'){const t=THEMES[a.dataset.cat].list.find(x=>x.id===a.dataset.id);if(t&&!ownTh(t.id)&&ST.coins>=t.cost){keepScroll();ST.coins-=t.cost;ST.thOwn=ST.thOwn||{};ST.thOwn[t.id]=true;ST.th=ST.th||{};ST.th[a.dataset.cat]=t.id;save();drawBg();showShop();renderHUD()}}
   else if(act==='useth'){keepScroll();ST.th=ST.th||{};ST.th[a.dataset.cat]=a.dataset.id;save();drawBg();showShop()}
-  else if(act==='buymenu'){const k=a.dataset.id,it=ITEMS[k];if(it&&!has(k)&&ST.day>=7&&ST.coins>=it.buy){keepScroll();ST.coins-=it.buy;ST.menu=ST.menu||{};ST.menu[k]=true;ST.fresh=(ST.fresh||[]).concat(k);save();drawBg();showShop();renderHUD()}}
+  else if(act==='buymenu'){const k=a.dataset.id,it=ITEMS[k];if(it&&!has(k)&&UDAY()>=7&&ST.coins>=it.buy){keepScroll();ST.coins-=it.buy;ST.menu=ST.menu||{};ST.menu[k]=true;ST.fresh=(ST.fresh||[]).concat(k);save();drawBg();showShop();renderHUD()}}
   else if(act==='lvup'){const b=a.dataset.id,c=upCost(b);if(c&&ST.coins>=c){keepScroll();ST.coins-=c;ST.lv=ST.lv||{};ST.lv[b]=lvOf(b)+1;save();showShop();renderHUD()}}
   else if(act==='buyshop'){if(!ST.owned&&ST.coins>=GOAL){ST.coins-=GOAL;ST.owned=true;save();drawBg();renderHUD();showOwned()}}
   else if(act==='buydec'){const d=DECOR.find(x=>x.id===a.dataset.id);if(d&&!hasDec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.dec=ST.dec||{};ST.dec[d.id]=true;save();drawBg();showShop();renderHUD()}}
@@ -3080,7 +3081,7 @@ function steamTick(){
     if(R.mpot)R.mpot.forEach((g,i)=>{if(g&&ok1('n','steam'))want.push([`[data-mp="${i}"]`,'steam',.18])});
     if(R.oden&&(R.oden.n||R.oden.cook.length)&&!LT)want.push(['#st-odenPot','soft',.2]);
     if(!LT)R.warm.forEach((w,i)=>{if(w&&HOTK(w.key))want.push([`[data-warm="${i}"]`,'soft',.15])});
-    if(!LT&&ST.day>=ITEMS.sake.day)want.push(['#st-sake','soft',.12]);
+    if(!LT&&UDAY()>=ITEMS.sake.day)want.push(['#st-sake','soft',.12]);
   }
   const gm=$('game'),gr=gm.getBoundingClientRect(),sc=(gr.width/gm.offsetWidth)||1,seen=new Set();
   for(const [sel,kind,dy] of want){const e=document.querySelector(sel);if(!e)continue;const r=e.getBoundingClientRect();if(!r.width)continue;
