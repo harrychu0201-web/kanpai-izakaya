@@ -1296,13 +1296,40 @@ function makiG(k,st){const f={kappamaki:'#6fae4a',tekkamaki:'#c8323c',salmonmaki
 function rollBedG(k,st){const f={kappamaki:'#6fae4a',tekkamaki:'#c8323c',salmonmaki:'#f7904f',ebimaki:'#f4a0a0'}[k]||'#c8323c';
   const raw=st==='raw',burnt=st==='burnt',rice=raw?'#eee6d0':burnt?'#9a8660':'#fbf7ec',fill=raw?'#f4ecd8':burnt?'#3a2a1c':f;
   return `<rect x="8" y="22" width="84" height="56" rx="6" fill="#1f3a24" stroke="${O}" stroke-width="3"/><rect x="12" y="26" width="76" height="48" rx="4" fill="${rice}"/><rect x="16" y="41" width="68" height="18" rx="9" fill="${fill}" stroke="${O}" stroke-width="2.5"/>`}
-function nigiriG(k,st){const f={salmonnigiri:'#f7904f',tunanigiri:'#c8323c',tamagonigiri:'#f3c64a',ebinigiri:'#f4a0a0'}[k]||'#c8323c';
-  const raw=st==='raw',burnt=st==='burnt',rice=raw?'#eee6d0':burnt?'#9a8660':'#fbf7ec',fill=raw?'#f4ecd8':burnt?'#3a2a1c':f;
+const SU_FISH={
+  tunanigiri:{b:'#b8233a',h:'#d9505f',d:'#7a1424'},
+  salmonnigiri:{b:'#f58a4e',h:'#ffb27c',d:'#fff3e6'},
+  tainigiri:{b:'#f6d6d2',h:'#fff6f2',d:'#e46b78'},
+  ebinigiri:{b:'#f7a7a8',h:'#ffd6d3',d:'#e8643c'},
+};
+const SU_TOP='M10 38 C9 26 30 18 52 18 C72 18 89 23 91 32 C92 39 85 43 70 43 C48 44 24 45 12 43 C10 42 10 40 10 38 Z';
+/* 飯：扁橢圓的小山，底部比頂部寬，右下一塊陰影，表面一粒粒米 */
+function suRiceG(rice,plain){
+  const grains=[[28,56],[38,64],[50,58],[62,66],[72,56],[46,71],[60,74],[34,72]].map(([x,y],i)=>`<ellipse cx="${x}" cy="${y}" rx="2.2" ry="1.4" transform="rotate(${i*37} ${x} ${y})" fill="#d9d0b8"/>`).join('');
+  const body='M13 60 C10 47 27 40 50 40 C73 40 90 47 87 60 C89 73 74 81 50 81 C26 81 11 73 13 60 Z';
+  return `<path d="${body}" fill="${rice}"/>`+(plain?'':`<path d="M30 79 C58 85 83 75 86 60 C80 71 62 76 30 79 Z" fill="#e4d8bd"/><path d="M26 50 Q50 42 74 50" stroke="#fff" stroke-width="3" fill="none" opacity=".7" stroke-linecap="round"/>`+grains)+`<path d="${body}" fill="none" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`;
+}
+/* 魚片：斜切的厚片，左上高光、表面紋路依魚種不同，底下一塊硬陰影 */
+function suTopG(k,st){
+  const f=SU_FISH[k],raw=st==='raw',burnt=st==='burnt',base=raw?'#f4ecd8':burnt?'#3a2a1c':f.b;
+  let d='';
+  if(!raw&&!burnt){
+    if(k==='tunanigiri')d=`<path d="M16 30Q42 22 84 27" stroke="${f.h}" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M18 39l9-7M38 40l9-8M58 40l8-7M76 37l6-5" stroke="${f.d}" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>`;
+    if(k==='salmonnigiri')d=`<path d="M18 38q5-6 10 0t10 0t10 0t10 0t10 0" stroke="${f.d}" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M22 28q10-4 22 0" stroke="${f.h}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/>`;
+    if(k==='tainigiri')d=`<path d="M13 37C15 27 32 22 52 21C70 21 84 24 88 30" stroke="${f.d}" stroke-width="3.4" fill="none" stroke-linecap="round"/><path d="M22 36Q50 30 82 35" stroke="${f.h}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/>`;
+    if(k==='ebinigiri')d=`<path d="M26 22q-5 11 1 21M42 20q-5 11 1 22M58 20q-5 11 1 22M74 22q-4 9 1 19" stroke="${f.d}" stroke-width="3.2" fill="none" stroke-linecap="round" opacity=".85"/><path d="M16 30Q40 24 60 25" stroke="${f.h}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>`;
+  }
+  return `<g transform="rotate(-4 50 34)"><path d="${SU_TOP}" transform="translate(2 3)" fill="${O}" opacity=".28"/><path d="${SU_TOP}" fill="${base}"/>${d}<path d="${SU_TOP}" fill="none" stroke="${O}" stroke-width="2.8" stroke-linejoin="round"/></g>`;
+}
+function nigiriG(k,st){const raw=st==='raw',burnt=st==='burnt',rice=raw?'#eee6d0':burnt?'#9a8660':'#fbf7ec';
+  if(SU_FISH[k])return suRiceG(rice,raw||burnt)+suTopG(k,st);
+  const f={salmonnigiri:'#f7904f',tunanigiri:'#c8323c',tamagonigiri:'#f3c64a',ebinigiri:'#f4a0a0'}[k]||'#c8323c';
+  const fill=raw?'#f4ecd8':burnt?'#3a2a1c':f;
   const grains=[[30,60],[42,66],[54,62],[66,68],[36,72],[60,74]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.6" fill="#d9d0b8"/>`).join('');
   return `<ellipse cx="50" cy="62" rx="34" ry="17" fill="${rice}" stroke="${O}" stroke-width="3"/>${grains}`+
     `<g transform="rotate(-4 50 34)"><rect x="12" y="22" width="76" height="20" rx="9" fill="${fill}" stroke="${O}" stroke-width="3"/>${k==='tamagonigiri'?'':`<path d="M18 30h64" stroke="#fff" stroke-width="2" opacity=".35"/>`}</g>`+
     (k==='tamagonigiri'?'<rect x="46" y="44" width="10" height="26" fill="#1f3a24"/>':'')}
-function riceG(){return `<ellipse cx="50" cy="62" rx="36" ry="18" fill="#fbf7ec" stroke="${O}" stroke-width="3"/>`+[[30,58],[42,64],[54,60],[66,66],[36,70],[60,72],[48,54]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.8" fill="#d9d0b8"/>`).join('')}
+function riceG(){return suRiceG('#fbf7ec',false)}
 function suG(k,st){if(k==='rice')return riceG();return k.endsWith('nigiri')?nigiriG(k,st):makiG(k,st)}
 function suSlice(x,y,c,rot){return `<g transform="rotate(${rot} ${x+11} ${y+7})"><rect x="${x}" y="${y}" width="22" height="14" rx="6" fill="${c}" stroke="${O}" stroke-width="1.8"/><path d="M${x+4} ${y+4}h12" stroke="#fff" stroke-width="1.6" opacity=".5"/></g>`}
 function suPieces(kind){
