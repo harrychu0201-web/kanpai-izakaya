@@ -2240,8 +2240,9 @@ function placeChat(){const h=document.querySelector('.home'),c=document.querySel
   const hr=h.getBoundingClientRect(),lr=l.getBoundingClientRect(),left=(lr.right-hr.left+10)+'px';
   c.style.left=left;c.style.top=((lr.top+lr.bottom)/2-hr.top-c.offsetHeight/2)+'px';c.style.bottom='auto';
   let y=parseFloat(c.style.top);
-  if(rw){rw.style.left=left;rw.style.bottom='auto';y-=rw.offsetHeight+8;rw.style.top=y+'px'}
-  if(rf){rf.style.left=left;rf.style.bottom='auto';y-=rf.offsetHeight+8;rf.style.top=y+'px'}
+  if(rf){rf.style.left=left;rf.style.bottom='auto';rf.style.top=(y-rf.offsetHeight-8)+'px'}
+  const rec=document.querySelector('.home .side-r [data-act=records] svg');
+  if(rw&&rec){const rr=rec.getBoundingClientRect();rw.style.left=(rr.left-hr.left-rw.offsetWidth-10)+'px';rw.style.bottom='auto';rw.style.top=((rr.top+rr.bottom)/2-hr.top-rw.offsetHeight/2)+'px'}
 }
 function sideBtn(act,label){const [a,b,ic]=SIDEI[act];return `<button class="sideb" data-act="${act}"><svg viewBox="0 0 64 64"><defs><linearGradient id="sg-${act}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><circle cx="32" cy="32" r="29" fill="url(#sg-${act})" stroke="#3a1a10" stroke-width="3.5"/><circle cx="32" cy="32" r="25.5" fill="none" stroke="#c9963e" stroke-width="2.5"/><ellipse cx="32" cy="16" rx="17" ry="6" fill="#fff" opacity=".1"/>${ic}</svg>${act==='rewards'&&rewardDue()?'<i class="rdot"></i>':''}<span>${T(label)}</span></button>`}
 function plaque(act,label,sub,primary){return `<button class="plq ${primary?'pri':''}" data-act="${act}"><span class="plan">${sv(lanternG(''),'0 0 60 84')}</span><span class="plt">${T(label)}${sub?`<small>${sub}</small>`:''}</span></button>`}
