@@ -1532,7 +1532,7 @@ function ingArt(id){
   return `<rect x="10" y="30" width="80" height="42" rx="10" fill="${FISHC[id][0]}" stroke="${O}" stroke-width="4"/><path d="M20 42h60" stroke="${FISHC[id][1]}" stroke-width="5" opacity=".8"/>`;
 }
 function burnAt(kind){if(SUKEYS.includes(kind)||kind==='rice')return 1e9;let b=COOK[kind]+12+(ST.up.warm?6:0);if(CUR==='rm'){if(kind==='noodle'&&rmUp('firm',0))b+=6;if((kind==='gyoza'||kind==='friedrice')&&rmUp('iron',0))b+=5;if(RFK.includes(kind)&&rmUp('oil',0))b+=5}return R&&R.fxNb?b+9999:b}
-function cookState(t,kind){return t<COOK[kind]?'raw':t<burnAt(kind)?'done':'burnt'}
+function cookState(t,kind){if(t<COOK[kind])return 'raw';if(ITEMS[kind]&&ITEMS[kind].shop==='sushi')return 'done';return t<burnAt(kind)?'done':'burnt'}
 const lockDiv=d=>UDAY()<d?`<div class="locked">${T('第 {0} 天<br>開放',d)}</div>`:'';
 function stHTML(name){
   if(name==='trash3')name='trash2';
