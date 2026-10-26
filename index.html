@@ -779,7 +779,7 @@ const $=id=>document.getElementById(id);
 
 let ST=null,R=null,cache=new Map();
 let TEST=false,TSPD=1; /* author test mode, see tstPanel */
-const CHEAT=()=>TEST||isAdmin(); /* author tools (forced events / speed) run on the real save too */
+const CHEAT=()=>TEST||isTester(); /* author tools (forced events / speed) run on the real save too */
 function fresh(){return {day:1,coins:3000,debt:0,loans:0,dues:[],dec:{},up:{seats:3,grill:3,fryer:2,warmN:3,tap:false,warm:false,decor:false,cat:false},stars:{}}}
 const RPKEY='izakaya-replay-v1';
 const RP={on:false,k:0,mainDay:0};
@@ -4089,6 +4089,7 @@ async function inboxNoticeSend(){const ti=$('ntitle'),tx=$('ntext'),sg=$('nsign'
 /* ===== public chat room (Realtime Database 'chat' — no daily write cap; 5 s per-user rate limit and bans enforced by RTDB rules) ===== */
 const ADMIN_EMAIL='harrychu0201@gmail.com';
 function isAdmin(){return !!(CL.user&&CL.user.email===ADMIN_EMAIL)}
+function isTester(){return isAdmin()||CL.isStaff===true} /* 測試面板：作者與 admins/ 管理員 */
 /* announcement posters: the owner adds their uid under posters/<uid> in Realtime Database; they can post, edit and delete announcements (not feedback, bans or vote stats) */
 /* staff, posters and the owner can add, edit and delete announcements */
 const canPost=()=>isAdmin()||CL.isPoster===true||CL.isStaff===true;
@@ -4180,7 +4181,7 @@ function acctRefresh(){const e=$('acct');if(e)e.outerHTML=acctBtn();const t=$('t
    Not persisted: reloading the page always comes back in normal mode with the real save. ===== */
 const TKEY='izakaya-cook-test',TRKEY='izakaya-rec-test',REAL_KEY=KEY,REAL_RKEY=RKEY;
 const TEVS=[['','隨機（照原本機率）'],['none','不要事件'],['rain','🌧 雨天'],['fest','🏮 祭典'],['group','👥 團體客'],['sale','🏷 食材特價'],['critic','📝 評論家']];
-function tstBtn(){if(!TEST&&!isAdmin())return '';return `<button class="langbtn tstbtn ${TEST?'on':''}" data-act="tstpanel">🧪 ${TEST?'測試中':'測試'}</button>`}
+function tstBtn(){if(!TEST&&!isTester())return '';return `<button class="langbtn tstbtn ${TEST?'on':''}" data-act="tstpanel">🧪 ${TEST?'測試中':'測試'}</button>`}
 function tstBadge(){let b=$('tstbadge');if(TEST&&!b){b=document.createElement('div');b.id='tstbadge';b.textContent='🧪 測試模式・不存雲端、不上排行榜';document.body.appendChild(b)}else if(!TEST&&b)b.remove()}
 function tstForce(t){const f=ST.tforce||{};
   if(f.ev==='none'){delete t.ev;delete t.sale;delete t.at}
@@ -4214,7 +4215,7 @@ function tstPanel(){
     <div class="tstr"><b>營業速度</b>${[1,2,4].map(n=>`<button class="btn ${TSPD===n?'':'alt'}" data-act="tstspd" data-id="${n}">${n}x</button>`).join('')}</div>
   </div><div class="btns">${TEST?`<button class="btn alt" data-act="tstreset">清空測試存檔</button><button class="btn alt" data-act="tstoff">離開測試模式</button>`:`<button class="btn alt" data-act="tstcopy">另開獨立測試存檔</button>`}<button class="btn" data-act="closem">關閉</button></div>`)}
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act^="tst"]');if(!a)return;const act=a.dataset.act;
-  if(!TEST&&!isAdmin())return;
+  if(!TEST&&!isTester())return;
   if(act==='tstpanel'){if(!HOME){toast('回到主畫面再開測試面板');return}tstPanel()}
   else if(act==='tston')tstSet(true,false);
   else if(act==='tstcopy'){if(CL.pick){toast('先選好要用哪份存檔');return}tstSet(true,true)}
