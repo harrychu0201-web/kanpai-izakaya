@@ -1016,8 +1016,29 @@ function custSVG(look,mood){
 }
 
 /* ================= background ================= */
+function drawSushiBg(){
+  const TY=KY<400?38:0;
+  let s=`<defs><linearGradient id="sswall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9f3ef"/><stop offset="1" stop-color="#bcd9cf"/></linearGradient><linearGradient id="sscase" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d6f0ff"/><stop offset="1" stop-color="#8fc7e0"/></linearGradient></defs>
+  <rect width="${W}" height="${KY}" fill="url(#sswall)"/>`;
+  for(let y=0,r=0;y<KY;y+=24,r++){s+=`<path d="M0 ${y}h${W}" stroke="#9fc4b8" stroke-width="2" opacity=".7"/>`;for(let x=(r%2)*28;x<W;x+=56)s+=`<path d="M${x} ${y}v24" stroke="#9fc4b8" stroke-width="2" opacity=".7"/>`}
+  s+=`<rect x="0" y="0" width="${W}" height="${22+TY}" fill="#7a4a2a"/><rect x="0" y="${18+TY}" width="${W}" height="9" fill="#5a3418"/>`;
+  const nw=Math.min(300,W*.3),nx=(W-nw)/2,ny=(TY?30:26)+TY;
+  s+=`<rect x="${nx}" y="${ny}" width="${nw}" height="56" rx="8" fill="#1d3b4a" stroke="${O}" stroke-width="3"/><text x="${W/2}" y="${ny+40}" text-anchor="middle" font-family="Noto Sans TC,Zen Maru Gothic,sans-serif" font-weight="900" font-size="30" fill="#fbf7ec">壽司</text>`;
+  const cy=KY-150;
+  s+=`<rect x="${W*.12}" y="${cy}" width="${W*.76}" height="92" rx="10" fill="url(#sscase)" stroke="${O}" stroke-width="4"/>`;
+  const cols=['#e0412c','#f7904f','#f4c7a1','#6fae4a','#f4a0a0','#fbf7ec'];
+  for(let i=0;i<Math.floor(W*.76/54);i++){const x=W*.12+14+i*54;s+=`<rect x="${x}" y="${cy+46}" width="40" height="14" rx="4" fill="${cols[i%cols.length]}" stroke="${O}" stroke-width="2"/><rect x="${x+4}" y="${cy+14}" width="32" height="26" rx="6" fill="#fbf7ec" stroke="${O}" stroke-width="2"/>`}
+  s+=`<rect x="0" y="${KY-70}" width="${W}" height="6" fill="#8a5a34"/>`;
+  s+=`<rect width="${W}" height="${KY}" fill="none"/>`;
+  $('bg').innerHTML=s;['bg','counter'].forEach(id=>{const e=$(id);e.setAttribute('viewBox',`0 0 ${W} ${H}`);e.setAttribute('width',W);e.setAttribute('height',H)});
+  $('counter').innerHTML=`<g transform="translate(0 ${KY-400})"><defs><linearGradient id="sct" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1d6a8"/><stop offset="1" stop-color="#c9a06a"/></linearGradient><linearGradient id="skit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef3f2"/><stop offset="1" stop-color="#c9d4d2"/></linearGradient></defs>
+  <rect x="-4" y="348" width="${W+8}" height="26" fill="url(#sct)" stroke="${O}" stroke-width="3"/><path d="M0 353h${W}" stroke="#fff6e0" stroke-width="3" opacity=".6"/>
+  <rect x="-4" y="374" width="${W+8}" height="26" fill="#4a6f66" stroke="${O}" stroke-width="3"/>
+  <rect x="0" y="400" width="${W}" height="${H-KY}" fill="url(#skit)"/>${Array.from({length:Math.ceil(W/64)},(_,i)=>`<path d="M${i*64} 400v${H-KY}" stroke="#a9b8b5" stroke-width="2" opacity=".6"/>`).join('')}</g>`;
+}
 function drawBg(){
   if(CUR==='rm'&&ST&&ST.rm){drawYatai();return}
+  if(CUR==='sushi'){drawSushiBg();return}
   const TY=KY<400?38:0;
   const day=ST?UDAY():1,P=LAY==='port'?{ts:27,ls:.8,tv:[372,168,.82],rec:[500,210,.6],bar:[480,266,.5],sx:186,sw:168,tag:118,sake:562,lx:[402,482],lp:[150,316],chime:176,scroll:116,board:186,sham:[290,226],notes:[262,250],cat:W-76}:(()=>{const d=(W-960)/2,wx=KY<400?440:330+d,ww=KY<400?Math.min(520,W-238-24-440):300,shx=(wx+ww+W-238)/2;return {ts:29,ls:1,tv:[KY<400?196:190+d*.3,KY<400?150:104,KY<400?.9:1],rec:[KY<400?330:210+d*.3,KY<400?228:214,.7],bar:[W-226,KY<400?232:276,.72],sx:wx,sw:ww,tag:KY<400?190:150+Math.min(d,60),sake:650+d,lx:[734+d*1.4,820+d*1.6],lp:[300+d,588+d],chime:262+d*.4,scroll:128,board:KY<400?wx+ww+190:638+d,sham:[shx,106],notes:[shx-28,132],cat:W-76}})();
   const TW_=theme('wall'),TL=theme('light').c;
@@ -1248,8 +1269,10 @@ function suUp(k,d){const S=ST||load();return (S&&S.sushi&&S.sushi.up&&S.sushi.up
 function suStaffLv(){return suUp('staff',0)}
 function suWages(){const l=suStaffLv();return l?SU_STAFF.lv[l-1].wage:0}
 function makiG(k,st){const f={kappamaki:'#6fae4a',tekkamaki:'#c8323c',salmonmaki:'#f7904f',ebimaki:'#f4a0a0'}[k]||'#c8323c';
-  const raw=st==='raw',burnt=st==='burnt',rice=raw?'#f7f3e8':burnt?'#8a7a5a':'#fbf7ec',fill=raw?'#f4ecd8':burnt?'#3a2a1c':f;
-  return `<circle cx="50" cy="50" r="40" fill="${raw?'#4a5a4a':'#1f3a24'}" stroke="${O}" stroke-width="4"/><circle cx="50" cy="50" r="27" fill="${rice}" stroke="${O}" stroke-width="3"/><circle cx="50" cy="50" r="12" fill="${fill}" stroke="${O}" stroke-width="2.5"/>${raw?'':'<path d="M30 40q6-8 14-6M58 60q8-2 12-10" stroke="#fff" stroke-width="2.5" fill="none" opacity=".5"/>'}`}
+  const raw=st==='raw',burnt=st==='burnt',rice=raw?'#eee6d0':burnt?'#9a8660':'#fbf7ec',fill=raw?'#f4ecd8':burnt?'#3a2a1c':f;
+  let o='';for(let i=0;i<6;i++){const a=i/6*Math.PI*2-Math.PI/2,x=50+Math.cos(a)*25,y=50+Math.sin(a)*25;
+    o+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12" fill="#1f3a24" stroke="${O}" stroke-width="2.5"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="8.5" fill="${rice}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${fill}" stroke="${O}" stroke-width="1.2"/>`}
+  return o}
 function suStHTML(name){
   if(CUR!=='sushi')return null;
   const SRC={rawKappa:['kappamaki','小黃瓜'],rawTuna:['tekkamaki','鮪魚'],rawSalmon:['salmonmaki','鮭魚'],rawSEbi:['ebimaki','蝦']};
@@ -3163,7 +3186,7 @@ stHTML=function(name){let h=_stHTML(name);if(!artOn())return h;
   return h};
 grillHTML=function(){const h=_grillHTML();if(!artFoodOn())return h;return h.replace(_svgRe,`<svg viewBox="0 0 250 182" style="position:absolute;inset:0">${AIMG('grill',0,6,250,176)}</svg>`)};
 fryerHTML=function(){const h=_fryerHTML();if(!artFoodOn())return h;return h.replace(_svgRe,`<svg viewBox="0 0 136 122" style="position:absolute;inset:0">${AIMG('fryer',0,4,136,118)}</svg>`)};
-drawBg=function(){_drawBg();if(!artOn()||(CUR==='rm'&&ST&&ST.rm))return;
+drawBg=function(){_drawBg();if(!artOn()||CUR==='sushi'||(CUR==='rm'&&ST&&ST.rm))return;
   const bg=$('bg');if(!bg)return;const ch=[...bg.children];
   let ti=ch.findIndex(e=>e.tagName==='g'&&e.firstElementChild&&e.firstElementChild.getAttribute('width')==='22'&&e.firstElementChild.getAttribute('height')==='52');if(ti<0)ti=ch.length;
   ch.forEach((e,i)=>{if(e.tagName==='defs')return;if(i<ti||(e.tagName==='g'&&e.innerHTML.includes('#d8402c')&&e.querySelector('text')&&!(e.firstElementChild&&e.firstElementChild.getAttribute('width')==='22')))e.style.display='none'});
