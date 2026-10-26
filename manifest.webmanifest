@@ -4,7 +4,7 @@
   "description": "卡通居酒屋料理經營遊戲",
   "start_url": "./index.html",
   "scope": "./",
-  "display": "fullscreen",
+  "display": "standalone",
   "orientation": "any",
   "background_color": "#24140c",
   "theme_color": "#24140c",
