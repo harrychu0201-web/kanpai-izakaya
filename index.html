@@ -3026,16 +3026,31 @@ function robDown(){const r=R.rob;r.st='down';holster();r.t=0;robSet('hit');r.el.
 function gamePt(e){const g=$('game'),rc=g.getBoundingClientRect(),k=rc.width/W;return {x:(e.clientX-rc.left)/k,y:(e.clientY-rc.top)/k}}
 function toggleGun(){if(!R||!ST.weapon)return;R.aim=!R.aim;if(R.aim)R.held=null;$('game').classList.toggle('aim',R.aim);if(R.aim)toast(T('拿起槍了：點畫面開槍，點槍架放回去'));renderStations()}
 let lastShot=0;
+const ALPHA_CACHE=new Map();
+function imgAlpha(img){const k=img.currentSrc||img.src;if(ALPHA_CACHE.has(k))return ALPHA_CACHE.get(k);let d=null;
+  try{const cv=document.createElement('canvas');cv.width=img.naturalWidth;cv.height=img.naturalHeight;const x=cv.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0);d={w:cv.width,h:cv.height,a:x.getImageData(0,0,cv.width,cv.height).data}}catch(e){d=null}
+  if(d&&d.w)ALPHA_CACHE.set(k,d);else d=null;return d}
+/* does the tap land on the customer's actual body (not its empty bounding box)? */
+function hitShape(el,cx,cy){
+  const sp=el.querySelector('.spr');
+  const img=sp&&[...sp.querySelectorAll('img')].find(i=>getComputedStyle(i).display!=='none');
+  if(img){const b=img.getBoundingClientRect();if(!img.naturalWidth||!b.width)return false;
+    if(cx<b.left||cx>b.right||cy<b.top||cy>b.bottom)return false;
+    const d=imgAlpha(img);if(!d)return true;
+    const x=Math.min(d.w-1,Math.max(0,Math.floor((cx-b.left)/b.width*d.w))),y=Math.min(d.h-1,Math.max(0,Math.floor((cy-b.top)/b.height*d.h)));
+    return d.a[(y*d.w+x)*4+3]>60}
+  const f=el.querySelector('.fig');if(!f)return true; // drawn with SVG shapes: hit only where a painted shape is under the tap
+  return document.elementsFromPoint(cx,cy).some(e=>f.contains(e)&&e!==f)}
 function shoot(e){const now=performance.now();if(now-lastShot<220)return;lastShot=now;
   const pt=gamePt(e),lv=ST.weapon||1;sfx(lv===3?'shotgun':'shot');
   const fx=$('fx'),gs=L.gunT,ox=gs?gs.x+gs.w*(gs.k||1)/2:W/2,oy=gs?gs.y+20:H-10,dx=pt.x-ox,dy=pt.y-oy,len=Math.hypot(dx,dy);
   const tr=document.createElement('div');tr.className='trail';tr.style.left=ox+'px';tr.style.top=oy+'px';tr.style.width=len+'px';tr.style.transform=`rotate(${Math.atan2(dy,dx)}rad)`;fx.appendChild(tr);setTimeout(()=>tr.remove(),200);
   const bm=document.createElement('div');bm.className='boom';bm.style.left=pt.x+'px';bm.style.top=pt.y+'px';bm.innerHTML=sv(`<path d="M50 4l9 26 27-10-15 24 25 12-28 4 6 28-24-17-24 17 6-28-28-4 25-12-15-24 27 10z" fill="#ffd23a" stroke="#ff7a1a" stroke-width="4" stroke-linejoin="round"/><circle cx="50" cy="52" r="12" fill="#fff6c0"/>`);fx.appendChild(bm);setTimeout(()=>bm.remove(),380);
   const r=R.rob,cx=e.clientX,cy=e.clientY,inside=el=>{if(!el)return false;const b=el.getBoundingClientRect();return cx>=b.left&&cx<=b.right&&cy>=b.top&&cy<=b.bottom};
-  if(r&&(r.st==='threat'||r.st==='in'||r.st==='scared')&&inside(r.el.querySelector('.spr'))){popup(pt.x,pt.y-30,'biu!');r.el.classList.remove('shake');void r.el.offsetWidth;r.el.classList.add('shake');if(--r.hp<=0)robDown();else sfx('ouch');return}
-  const c=R.seats.find(c=>c&&(c.st==='wait'||c.st==='in')&&inside(c.el.querySelector('.spr')||c.el.querySelector('.fig')));
+  if(r&&(r.st==='threat'||r.st==='in'||r.st==='scared')&&inside(r.el.querySelector('.spr'))&&hitShape(r.el,cx,cy)){popup(pt.x,pt.y-30,'biu!');r.el.classList.remove('shake');void r.el.offsetWidth;r.el.classList.add('shake');if(--r.hp<=0)robDown();else sfx('ouch');return}
+  const c=R.seats.find(c=>c&&(c.st==='wait'||c.st==='in')&&inside(c.el.querySelector('.spr')||c.el.querySelector('.fig'))&&hitShape(c.el,cx,cy));
   if(c)shootCust(c)}
-function shootCust(c){const fine=10000+1000*(ST.day-1);R.fines+=fine;sfx('ouch');
+function shootCust(c){const fine=5000;R.fines+=fine;sfx('ouch');
   popup(seatX(c.seat,seatsN()),120,T('打到客人！罰款 {0}',yen(fine)),true);
   if(c.look.spr&&PROF[c.look.spr]){ST.banned=ST.banned||{};ST.banned[c.look.spr]=ST.day+3;const ch=CHARS.find(x=>x.spr===c.look.spr);setTimeout(()=>toast(T('{0}嚇壞了，三天內都不敢再來',/^(zh|ja)/.test(LANG)?'「'+T(ch.name)+'」':T(ch.name))),600)}
   c.pat=0;leave(c,false);R.seats.forEach(o=>{if(o&&o!==c&&o.st==='wait')o.pat=Math.max(1,o.pat-o.max*.3)});renderHUD()}
