@@ -1442,11 +1442,11 @@ function stHTML(name){
   const suh=suStHTML(name);if(suh!=null)return suh;
   const rmh=rmStHTML(name);if(rmh!=null)return rmh;
   if(name==='tap'){const n=tapsN();
-    return `<div style="display:flex;gap:2px;width:100%;height:100%">${R.taps.slice(0,n).map((tp,i)=>{const lvl=tp.st==='empty'?0:tp.st==='filling'?tp.t/tapTime():1,vb=n===1?100:50,c=vb/2,sc=n===1?.72:.46;
+    return `<div style="display:flex;gap:2px;width:100%;height:100%">${R.taps.slice(0,n).map((tp,i)=>{const lvl=tp.st==='empty'?0:tp.st==='filling'?tp.t/tapTime():1,vb=n===1?100:50,c=vb/2,sc=n===1?.9:.6;
       return `<div class="st" data-tap="${i}" style="position:relative;inset:auto;flex:1">${sv(`${ARTFOOD&&ART?`<image href="${ARTIMG.tap}" x="${c-15.65}" y="0" width="31.3" height="92"/>`:`<rect x="${c-12}" y="6" width="24" height="70" rx="6" fill="#d7dce2" stroke="${O}" stroke-width="4"/><rect x="${c-8}" y="10" width="6" height="60" fill="#fff" opacity=".6"/><rect x="${c-16}" y="0" width="32" height="14" rx="5" fill="#1a1a1a" stroke="${O}" stroke-width="3"/>
       <path d="M${c} 76v12h-${n===1?10:6}" stroke="${O}" stroke-width="10" fill="none"/><path d="M${c} 76v12h-${n===1?10:6}" stroke="#c9ced4" stroke-width="4" fill="none"/>`}${tp.st==='filling'?`<path d="M${ARTFOOD&&ART?c-8.9:c-(n===1?10:6)} 92v${n===1?22:40}" stroke="#f4a62a" stroke-width="4"/>`:''}
       <rect x="3" y="166" width="${vb-6}" height="12" rx="4" fill="#8a9098" stroke="${O}" stroke-width="3"/>
-      <g transform="translate(${c-55*sc} ${n===1?98:128}) scale(${sc})">${beerG(lvl,tp.st==='full')}</g>`,`0 0 ${vb} 186`)}<span class="lbl"${n>1?' style="font-size:12px;padding:0 4px"':''}>${T(tp.st==='full'?'啤酒':(n===1?'自動裝杯中…':'裝杯中'))}</span></div>`}).join('')}</div>`}
+      <g transform="translate(${c-50*sc} ${164-90*sc}) scale(${sc})">${beerG(lvl,tp.st==='full')}</g>`,`0 0 ${vb} 186`)}<span class="lbl"${n>1?' style="font-size:12px;padding:0 4px"':''}>${T(tp.st==='full'?'啤酒':(n===1?'自動裝杯中…':'裝杯中'))}</span></div>`}).join('')}</div>`}
   if(name==='sake')return sv(`<rect x="4" y="44" width="76" height="40" rx="6" fill="#8a5a34" stroke="${O}" stroke-width="3"/><g transform="translate(4 -2) scale(.78)">${sakeG()}</g>`,'0 0 84 90')+`<span class="lbl">${T('清酒')}</span>`+lockDiv(ITEMS.sake.day);
   if(name==='edamame')return sv(`<g transform="translate(-4 -6) scale(.92)">${edamameG()}</g>`,'0 0 84 90')+`<span class="lbl">${JP('edamame')}</span>`;
   if(name==='rawN'||name==='rawT'){const k=name==='rawN'?'negima':'tsukune';
