@@ -2563,6 +2563,7 @@ document.addEventListener('click',e=>{
   else if(act==='rplsend')replyBack();
   else if(act==='inbox')showInbox(!!a.dataset.id);
   else if(act==='inbold')inboxOld();
+  else if(act==='inbdone'){INB.showDone=!INB.showDone;inboxDraw()}
   else if(act==='inbre'){INB.open=a.dataset.id||null;inboxDraw()}
   else if(act==='inbsend')inboxSend();
   else if(act==='inbdel')inboxDel(a.dataset.id);
@@ -3600,7 +3601,7 @@ async function showInbox(reload){if(!canInbox())return;
     try{INB.rows=await CL.api.fbList(150);INB.claims=await CL.api.claimGet()}catch(e){INB.err=String(e&&e.code||e)}}
   inboxDraw()}
 function inboxDraw(){
-  const all=INB.rows.concat(INB.old);
+  const all=INB.rows.concat(INB.old),nDone=all.filter(f=>f.re).length,shown=INB.showDone?all:all.filter(f=>!f.re);
   const item=f=>{const op=INB.open===f.id;
     return `<div class="inbit${f.re?' done':''}"><p class="inbh">${esc(FBCATN[f.cat]||f.cat||'')} · ${chatTime(f.t||f.at||0)} ${f.lang?' · '+esc(f.lang):''} · 第 ${+f.day||0} 天${f.old?' · 舊資料':''}</p>
     ${f.ctx?`<p class="inbh">回你說的：${esc(f.ctx)}</p>`:''}<p class="inbtx">${esc(f.text||'')}</p>${f.contact?`<p class="inbh">聯絡：${esc(f.contact)}</p>`:''}
@@ -3609,8 +3610,8 @@ function inboxDraw(){
       <div class="btns" style="justify-content:flex-start"><button class="btn" data-act="inbsend">${INB.busy?'送出中…':'送出回覆'}</button><button class="btn alt" data-act="inbre" data-id="">取消</button></div>`
     :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
   modal(`<h2>📬 收件匣（${INB.rows.length}）</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
-  <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button><button class="btn alt" data-act="inbold">${INB.old.length?'已載入舊意見':'載入 Firestore 舊意見'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="fbpubsync">👀 同步到公開板</button><button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
-  ${all.length?all.map(item).join(''):'<p style="font-size:14px">還沒有新的意見。</p>'}
+  <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button>${nDone?`<button class="btn alt" data-act="inbdone">${INB.showDone?'🙈 隱藏已回覆':'👁 顯示已回覆（'+nDone+'）'}</button>`:''}<button class="btn alt" data-act="inbold">${INB.old.length?'已載入舊意見':'載入 Firestore 舊意見'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="fbpubsync">👀 同步到公開板</button><button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
+  ${shown.length?shown.map(item).join(''):'<p style="font-size:14px">'+(nDone?'未回覆的意見都處理完了 🎉':'還沒有新的意見。')+'</p>'}
   <div class="btns"><button class="btn alt" data-act="fb">返回</button></div>`);
   const t=$('inbtext');if(t&&!('ontouchstart' in window))t.focus()}
 async function inboxOld(){if(INB.old.length)return;try{INB.old=await CL.api.fbOld();toast('載入了 '+INB.old.length+' 則舊意見')}catch(e){toast('舊意見讀取失敗（Firestore 額度可能還沒重置）')}inboxDraw()}
