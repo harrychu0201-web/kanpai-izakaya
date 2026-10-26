@@ -831,7 +831,7 @@ let ART=ARTSTYLE!=='old';
 let ARTFOOD=ARTSTYLE==='new';
 const ARTIMG={mug:'img/art-beermug-1.webp',tap:'img/art-beertap-1.webp'};
 let ARTN=0;
-function beerG(level=1,glow){return `<g transform="translate(50 96) scale(.84 1.1) translate(-50 -96)">${beerG0(level,glow)}</g>`}
+function beerG(level=1,glow){return `<g transform="translate(50 96) scale(.7 .95) translate(-50 -96)">${beerG0(level,glow)}</g>`}
 function beerG0(level=1,glow){
   if(ARTFOOD&&ART){const id='ab'+(++ARTN),top=96-level*70,g=glow?`<path d="M86 6v20M76 16h20" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`:'';
     return `<image href="${ARTIMG.mug}" x="22" y="26" width="56.1" height="70" opacity=".35"/>`+(level>0?`<clipPath id="${id}"><rect x="0" y="${top}" width="100" height="${100-top}"/></clipPath><image href="${ARTIMG.mug}" x="22" y="26" width="56.1" height="70" clip-path="url(#${id})"/>`:'')+g}
