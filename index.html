@@ -3494,11 +3494,14 @@ function stableVisH(){
   return STAB.h;
 }
 /* 同樣的道理套用在寬度：手機橫向時右側（或左側）系統導覽列滑出，可見寬度會變窄，同一個方向內只記最小寬度。 */
-let STABW={o:'',w:0};
+/* 只有小幅度的系統列抖動才用最小寬度釘住；寬度大變（例如 Z Flip 摺疊／展開、分割視窗）要立即重記，
+   並且變寬後等它穩定也要跟著變寬，不然遊戲會一直用摺疊小螢幕的寬度排版，畫面變得很小。 */
+let STABW={o:'',w:0},STABWGROW=false;
 function stableWrapW(){
   const o=innerWidth>innerHeight?'l':'p',v=$('wrap').clientWidth;
-  if(STABW.o!==o||!STABW.w){STABW={o,w:v};return v}
+  if(STABW.o!==o||!STABW.w||Math.abs(v-STABW.w)>120){STABW={o,w:v};return v}
   if(!PTR&&v<STABW.w)STABW.w=v;
+  if(!PTR&&v>STABW.w&&!STABWGROW){STABWGROW=true;setTimeout(()=>{STABWGROW=false;const v2=$('wrap').clientWidth;if(!PTR&&v2>STABW.w&&Math.abs(v2-v)<4){STABW.w=v2;fit()}},900)}
   return STABW.w;
 }
 function safeBottom(){let d=document.getElementById('sabProbe');if(!d){d=document.createElement('div');d.id='sabProbe';d.style.cssText='position:fixed;left:0;bottom:0;width:1px;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';document.body.appendChild(d)}return Math.max(d.offsetHeight||0,14)}/* min gap so Android gesture bar / iPhone home line never sits on the bottom row */
