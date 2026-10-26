@@ -739,7 +739,7 @@ function ownTh(id){return THEMES.wall.list.concat(THEMES.counter.list,THEMES.lig
 let SHOPTAB='menu',shopScroll=0,shopKeep=false,SHOPJUMP=false;
 function keepScroll(){const c=document.querySelector('.card');shopScroll=c?c.scrollTop:0;shopKeep=true}
 function hasDec(id){return id==='noren'?!!(ST&&(ST.up.decor||(ST.dec&&ST.dec.noren))):!!(ST&&ST.dec&&ST.dec[id])}
-function patMult(){if(CUR==='rm')return 1+RDECOR.reduce((s,d)=>s+(rmDec(d.id)?d.b:0),0);return 1+DECOR.reduce((s,d)=>s+(hasDec(d.id)?d.b:0),0)}
+function patMult(){if(CUR==='sushi')return 1+SDECOR.reduce((s,d)=>s+(sdec(d.id)?d.b:0),0);if(CUR==='rm')return 1+RDECOR.reduce((s,d)=>s+(rmDec(d.id)?d.b:0),0);return 1+DECOR.reduce((s,d)=>s+(hasDec(d.id)?d.b:0),0)}
 let DAYLEN=159,RUSH=[1.9,1.3,.75,.62,1.0,.72,1.1,1.8];
 const PERIOD=h=>T(h<18?'傍晚':h<20?'晚餐尖峰':h<21?'飯後':h<22.5?'續攤尖峰':h<lastHr()?'深夜':'打烊前');
 function lastHr(){return 24+20/60+((R&&R.extH)||0)}
@@ -1036,6 +1036,10 @@ function drawSushiBg(){
   s+=`<rect x="${W*.1}" y="${shelfY}" width="${W*.8}" height="12" rx="3" fill="url(#ssshelf)" stroke="${O}" stroke-width="3"/>`;
   const rims=['#c8323c','#3c6fa8','#fbf7ec','#c8323c','#3c6fa8'];
   for(let i=0;i<Math.floor(W*.8/70);i++){const x=W*.1+36+i*70;const n=3+(i%3);for(let j=0;j<n;j++){const y=shelfY-7-j*8;s+=`<ellipse cx="${x}" cy="${y}" rx="26" ry="7" fill="#fdfbf4" stroke="${O}" stroke-width="2.5"/>`}s+=`<ellipse cx="${x}" cy="${shelfY-7-n*8+4}" rx="19" ry="5" fill="${rims[i%rims.length]}" stroke="${O}" stroke-width="2"/>`}
+  if(sdec('sflags'))for(const fx of [W*.035,W*.965-22]){const fy=24+TY;s+=`<rect x="${fx+9}" y="${fy}" width="4" height="${Math.min(KY*.5,200)}" fill="#5a3a24"/><path d="M${fx} ${fy}h22v120l-11-12l-11 12z" fill="#a3261c" stroke="${O}" stroke-width="2.5"/><path d="M${fx+4} ${fy+40}h14" stroke="#fbf3e0" stroke-width="4"/>`}
+  if(sdec('slantern'))for(const lx of [W*.16,W*.84])s+=`<g transform="translate(${lx-22} ${40+TY}) scale(.6)">${lanternG('灯')}</g>`;
+  if(sdec('stable'))s+=`<rect x="${W*.5-50}" y="${KY-112}" width="100" height="12" rx="3" fill="#b67d47" stroke="${O}" stroke-width="3"/><path d="M${W*.5-38} ${KY-100}v48M${W*.5+38} ${KY-100}v48" stroke="${O}" stroke-width="5" stroke-linecap="round"/><circle cx="${W*.5+20}" cy="${KY-118}" r="5" fill="#fdfbf4" stroke="${O}" stroke-width="2"/>`;
+  if(sdec('schairs'))for(const cx of [W*.24,W*.76])s+=`<rect x="${cx-24}" y="${KY-122}" width="48" height="10" rx="3" fill="#9e6a38" stroke="${O}" stroke-width="2.5"/><path d="M${cx-17} ${KY-112}l-5 60M${cx+17} ${KY-112}l5 60" stroke="${O}" stroke-width="4" stroke-linecap="round"/>`;
   s+=`<rect x="0" y="${KY-70}" width="${W}" height="6" fill="#8a5a34"/>`;
   s+=`<rect width="${W}" height="${KY}" fill="none"/>`;
   $('bg').innerHTML=s;['bg','counter'].forEach(id=>{const e=$(id);e.setAttribute('viewBox',`0 0 ${W} ${H}`);e.setAttribute('width',W);e.setAttribute('height',H)});
@@ -1151,6 +1155,13 @@ const RDECOR=[
   {id:'stray',zh:'流浪貓',d:'一隻橘貓天天來吧台上睡覺，客人都捨不得走。',cost:22000,b:.06},
   {id:'noren2',zh:'藍染暖簾',d:'把黑色暖簾換成手染的藍色暖簾。',cost:28000,b:.07},
   {id:'hanabi',zh:'夜空煙火',d:'屋台後面的夜空放起煙火。',cost:45000,b:.1}];
+const SDECOR=[
+  {id:'sflags',zh:'紅白旗幟',d:'門口兩側插上紅白旗幟，遠遠就看得到。',cost:3000,b:.04},
+  {id:'slantern',zh:'紅色提燈',d:'掛起一對紅色提燈，店裡更有氣氛。',cost:6000,b:.05},
+  {id:'schairs',zh:'吧台木椅',d:'吧台後方放兩張木頭高腳椅，客人可以坐著等。',cost:9000,b:.06},
+  {id:'stable',zh:'木頭小方桌',d:'牆邊擺一張小方桌，客人等餐時有地方放東西。',cost:12000,b:.06},
+];
+function sdec(id){return !!(ST&&ST.sushi&&ST.sushi.dec&&ST.sushi.dec[id])}
 function rmDec(id){return !!(ST&&ST.rm&&ST.rm.dec&&ST.rm.dec[id])}
 const RSTAFF={zh:'屋台幫手・小葵',lv:[
   {cost:20000,wage:700,d:'煮好的麵會撈進拉麵碗（沒碗就先放一個），煮好的煎餃、炒飯會收進保溫台，糊掉焦掉的會丟掉。'},
@@ -2708,7 +2719,8 @@ function shopSushi(){
   const l=suStaffLv(),nx=SU_STAFF.lv[l];
   const menu=Object.keys(ITEMS).filter(k=>ITEMS[k].shop==='sushi').map(k=>`<div class="up"><b>${dishTitle(k)}</b><p>${T('售價 {0}・食材 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}</p>${has(k)?`<p>${T('已購買')}</p>`:`<button class="btn" data-act="susbuy" data-id="${k}" ${SV.coins<ITEMS[k].buy?'disabled':''}>${T('買下 {0}',yen(ITEMS[k].buy))}</button>`}</div>`).join('');
   const staff=`<div class="up"><b>${T(SU_STAFF.zh)}${l?' Lv'+l:''}</b><p>${l?T('目前雇用中，日薪 {0}',yen(SU_STAFF.lv[l-1].wage)):T('還沒雇用')}</p>${nx?`<p>${T(nx.d)}</p><button class="btn" data-act="suhire" ${SV.coins<nx.cost?'disabled':''}>${T(l?'升級 {0}':'雇用 {0}',yen(nx.cost))}</button>`:`<p>${T('已經是最高等級。')}</p>`}</div>`;
-  return `<div class="shopnav"></div><h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}</div><div class="btns"><button class="btn" data-act="susopen">${T('去壽司店營業')}</button></div>`;
+  const deco=`<h3 class="sh">${T('店內布置・讓客人更有耐心')}</h3><div class="shop">${SDECOR.map(d=>{const own=sdec(d.id);return `<div class="up ${own?'done':''}"><b>${T(d.zh)}<span class="new" style="background:#5c9a3a">${T('耐心 +{0}%',Math.round(d.b*100))}</span></b><p>${T(d.d)}</p><div class="row"><span class="price">${yen(d.cost)}</span>${own?`<span>${T('已布置')}</span>`:`<button class="btn" data-act="sudec" data-id="${d.id}" ${SV.coins<d.cost?'disabled':''}>${T('購買')}</button>`}</div></div>`}).join('')}</div>`;
+  return `<div class="shopnav"></div><h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}</div>${deco}<div class="btns"><button class="btn" data-act="susopen">${T('去壽司店營業')}</button></div>`;
 }
 function sushiHome(){modal(`<h2>🍣 ${T('壽司店')}</h2>${shopSushi()}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
 function showShop(){
@@ -2896,6 +2908,7 @@ document.addEventListener('click',e=>{
   else if(act==='sushihome')sushiHome();
   else if(act==='susopen'){closeHome();ST=load();if(!ST||!ST.sushi){ST=null;showHome();return}ST.where='sushi';setCur('sushi');save();advance()}
   else if(act==='susbuy'){const k=a.dataset.id;const home=!ST;if(home)ST=load();if(ST&&ITEMS[k]&&ITEMS[k].shop==='sushi'&&!has(k)&&ST.coins>=ITEMS[k].buy){keepScroll();ST.coins-=ITEMS[k].buy;ST.menu=ST.menu||{};ST.menu[k]=1;save()}if(home)ST=null;else renderHUD();sushiHome()}
+  else if(act==='sudec'){const d=SDECOR.find(x=>x.id===a.dataset.id);const home=!ST;if(home)ST=load();if(ST&&ST.sushi&&d&&!sdec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.sushi.dec=ST.sushi.dec||{};ST.sushi.dec[d.id]=true;save();if(!home){drawBg();renderHUD()}}if(home)ST=null;sushiHome()}
   else if(act==='sushishop')sushiHome();
   else if(act==='suhire'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi){const l=suStaffLv(),nx=SU_STAFF.lv[l];if(nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.sushi.up.staff=l+1;save()}}if(home)ST=null;else renderHUD();sushiHome()}
   else if(act==='rewards'){if(R&&!R.over&&!R.settled)R.paused=true;showRewards()}
