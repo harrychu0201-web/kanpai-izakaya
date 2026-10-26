@@ -3757,14 +3757,17 @@ function noticeAll(){const m=new Map();NOTICES.forEach(x=>m.set(x.id,x));
   Object.keys(NOTICE_HIST).forEach(k=>{const h=NOTICE_HIST[k];m.set(h.id,Object.assign({},m.get(h.id)||{},h,{rem:true}))});
   return [...m.values()].filter(x=>!NOTICE_DEL[nkey(x.id)]).sort((a,b)=>noticeAt(b)-noticeAt(a))}
 function noticeDate(x){const t=noticeAt(x);if(!t)return'';const s=new Date(t+288e5).toISOString();return x.at||/^\d{4}-\d\d-\d\dT/.test(String(x.id))?s.slice(0,10)+' '+s.slice(11,16):s.slice(0,10)}
+function noticeSeenList(){try{const a=JSON.parse(localStorage.getItem('izakaya-notice-seen')||'[]');return Array.isArray(a)?a.map(String):[]}catch(e){return []}}
 function noticeSeenId(){try{return localStorage.getItem('izakaya-notice')}catch(e){return null}}
-function noticeSeen(id){try{localStorage.setItem('izakaya-notice',id||NOTICE.id)}catch(e){}}
+function noticeSeen(id){const v=String(id||NOTICE.id);try{localStorage.setItem('izakaya-notice',v)}catch(e){}
+  try{const a=noticeSeenList();if(!a.includes(v)){a.push(v);localStorage.setItem('izakaya-notice-seen',JSON.stringify(a.slice(-200)))}}catch(e){}}
+function noticeIsSeen(id){const v=String(id);return noticeSeenList().includes(v)||noticeSeenId()===v}
 /* The auto pop-up must not run ahead of the database: the built-in newest one used to pop up before the posted ones arrived, and 知道了 then marked the (newer) posted one as read without ever showing it.
    So: wait for the database (3.5s at most), mark only the notice that was really shown, and if a newer one is still due afterwards, show it next. */
 function noticePop(){NOTICE_LOADED=true;if(!HOME||R)return;
   if(!document.querySelector('#homeModal .modal')){if(noticeDue()){NAUTOREQ=true;showNotice()}}
   else if(NAUTO&&NSHOW!=null&&NOTICE&&String(NSHOW)!==String(NOTICE.id)&&document.querySelector('#homeModal .notice')){NAUTOREQ=true;showNotice()}}
-function noticeDue(){const sid=noticeSeenId();return !!NOTICE&&NOTICE.id&&sid!==NOTICE.id&&!(sid&&NOTICE_DEL[nkey(sid)])}
+function noticeDue(){return !!NOTICE&&!!NOTICE.id&&!noticeIsSeen(NOTICE.id)&&!NOTICE_DEL[nkey(NOTICE.id)]}
 /* announcement reactions: noticevote/<id>/<uid> = 0 (seen) | 1 (like) | -1 (dislike). Only signed-in players are counted; only the author can read the totals (see database.rules.json). */
 let NV={id:null,v:null,st:null};
 async function noticeVoteInit(n){NV={id:String(n.id),v:null,st:null};noticeVoteDraw();if(!CL.api||!CL.user)return;
