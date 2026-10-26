@@ -1285,11 +1285,12 @@ const SU_STAFF={zh:'壽司職人・健太郎',lv:[
 function makiN(){return 3}
 function suUp(k,d){const S=ST||load();return (S&&S.sushi&&S.sushi.up&&S.sushi.up[k])||d}
 function suStaffLv(){return suUp('staff',0)}
-function suWages(){const l=suStaffLv();return l?SU_STAFF.lv[l-1].wage:0}
+function suWages(){const l=suStaffLv();return l?Math.round(SU_STAFF.lv[l-1].wage*dilOf('sushistaff')/100):0}
 function makiG(k,st){const f={kappamaki:'#6fae4a',tekkamaki:'#c8323c',salmonmaki:'#f7904f',ebimaki:'#f4a0a0'}[k]||'#c8323c';
   const raw=st==='raw',burnt=st==='burnt',rice=raw?'#eee6d0':burnt?'#9a8660':'#fbf7ec',fill=raw?'#f4ecd8':burnt?'#3a2a1c':f;
   let o='';for(let i=0;i<6;i++){const a=i/6*Math.PI*2-Math.PI/2,x=50+Math.cos(a)*25,y=50+Math.sin(a)*25;
-    o+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12.5" fill="#1f3a24" stroke="${O}" stroke-width="2.5"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10.5" fill="${rice}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" fill="${fill}" stroke="${O}" stroke-width="1.2"/>`}
+    const X=x.toFixed(1),Y=y.toFixed(1);
+    o+=`<circle cx="${X}" cy="${Y}" r="12.5" fill="#1f3a24" stroke="${O}" stroke-width="2.5"/><circle cx="${X}" cy="${Y}" r="10.2" fill="${rice}"/>`+[0,60,120,180,240,300].map(q=>{const r2=(q+30)*Math.PI/180;return `<circle cx="${(x+Math.cos(r2)*7.6).toFixed(1)}" cy="${(y+Math.sin(r2)*7.6).toFixed(1)}" r="1" fill="#d9d0b8"/>`}).join('')+`<circle cx="${X}" cy="${Y}" r="5" fill="${fill}" stroke="${O}" stroke-width="1.4"/><circle cx="${(x-1.6).toFixed(1)}" cy="${(y-1.8).toFixed(1)}" r="1.4" fill="#fff" opacity=".6"/>`}
   return o}
 /* 捲到一半：飯已經鋪在海苔上、餡料放在中間，還沒捲成圓截面 */
 function rollBedG(k,st){const f={kappamaki:'#6fae4a',tekkamaki:'#c8323c',salmonmaki:'#f7904f',ebimaki:'#f4a0a0'}[k]||'#c8323c';
@@ -1358,7 +1359,7 @@ function makiHTML(){
   return s+`<span class="lbl">${T('製作台')}</span>`}
 function suDemand(){const d={};for(const c of R.seats){if(!c||(c.st!=='wait'&&c.st!=='in'))continue;c.order.forEach((k,j)=>{if(!c.filled[j])d[k]=(d[k]||0)+1});if(c.extra&&c.extra.ok&&!c.extra.done)d[c.extra.key]=(d[c.extra.key]||0)+1}
   R.maki.forEach(g=>{if(g&&g.kind!=='rice'&&cookState(g.t,g.kind)!=='burnt')d[g.kind]=(d[g.kind]||0)-1});return d}
-function suStaffStep(dt){const l=suStaffLv();if(!l)return;R.suT=(R.suT??1)-dt;if(R.suT<=0){R.suT=l>=3?.6:l>=2?.8:1;suAct(l)}}
+function suStaffStep(dt){const l=suStaffLv();if(!l)return;const m=dilMul('sushistaff');if(!m)return;R.suT=(R.suT??1)-dt*m;if(R.suT<=0){R.suT=l>=3?.6:l>=2?.8:1;suAct(l)}}
 function suAct(l){
   if(l>=3)for(let i=0;i<R.maki.length;i++){const g=R.maki[i];if(g&&cookState(g.t,g.kind)==='burnt'&&!(R.held&&R.held.src==='maki'&&R.held.i===i)){R.maki[i]=null;renderStations();return}}
   if(l>=2){const src=[];R.maki.forEach((g,i)=>{if(g&&cookState(g.t,g.kind)==='done'&&!(R.held&&R.held.src==='maki'&&R.held.i===i))src.push({src:'maki',i,key:g.kind})});
@@ -1621,7 +1622,7 @@ function wages(){let w=0;for(const id in STAFFLV){const l=staffLv(id);if(l)w+=Ma
 function cookMul(){return staffLv('helper')>=2?1.2:1}
 /* 認真度：滿級後可調。0 = 休假（不上班、不領薪水），數字 = 速度倍率，薪水依比例增減 */
 const DIL_OPTS=[{v:0,n:'休假'},{v:50,n:'摸魚 50%'},{v:100,n:'普通'},{v:150,n:'拚命 150%'}];
-function dilOf(k){const v=ST.dil&&ST.dil[k];return v==null?100:v}
+function dilOf(k){const S=ST||load()||{};const v=S.dil&&S.dil[k];return v==null?100:v}
 function dilMul(k){return dilOf(k)/100}
 function dilHTML(k){const v=dilOf(k);return `<div class="row" style="flex-wrap:wrap;gap:4px;margin-top:6px"><span style="font-size:13px">${T('認真度')}</span>${DIL_OPTS.map(o=>`<button class="btn ${o.v===v?'':'alt'}" style="font-size:12px;padding:3px 8px" data-act="dil" data-id="${k}" data-v="${o.v}">${T(o.n)}</button>`).join('')}</div><p class="hint" style="font-size:12px">${T(v?'下次開店生效。認真度越高，動作越快，薪水也依比例變高。':'休假中：這位店員不會上班，也不領薪水。下次開店生效。')}</p>`}
 const emptyBoard=()=>({base:null,rice:0,top:null,tea:0,fish:[]});
@@ -2746,7 +2747,7 @@ function shopSushi(){
   const menu=Object.keys(ITEMS).filter(k=>ITEMS[k].shop==='sushi').map(k=>`<div class="up"><b>${dishTitle(k)}</b><p>${T('售價 {0}・食材 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}</p>${has(k)?`<p>${T('已購買')}</p>`:`<button class="btn" data-act="susbuy" data-id="${k}" ${SV.coins<ITEMS[k].buy?'disabled':''}>${T('買下 {0}',yen(ITEMS[k].buy))}</button>`}</div>`).join('');
   const staff=`<div class="up"><b>${T(SU_STAFF.zh)}${l?' Lv'+l:''}</b><p>${l?T('目前雇用中，日薪 {0}',yen(SU_STAFF.lv[l-1].wage)):T('還沒雇用')}</p>${nx?`<p>${T(nx.d)}</p><button class="btn" data-act="suhire" ${SV.coins<nx.cost?'disabled':''}>${T(l?'升級 {0}':'雇用 {0}',yen(nx.cost))}</button>`:`<p>${T('已經是最高等級。')}</p>`}</div>`;
   const deco=`<h3 class="sh">${T('店內布置・讓客人更有耐心')}</h3><div class="shop">${SDECOR.map(d=>{const own=sdec(d.id);return `<div class="up ${own?'done':''}"><b>${T(d.zh)}<span class="new" style="background:#5c9a3a">${T('耐心 +{0}%',Math.round(d.b*100))}</span></b><p>${T(d.d)}</p><div class="row"><span class="price">${yen(d.cost)}</span>${own?`<span>${T('已布置')}</span>`:`<button class="btn" data-act="sudec" data-id="${d.id}" ${SV.coins<d.cost?'disabled':''}>${T('購買')}</button>`}</div></div>`}).join('')}</div>`;
-  return `<div class="shopnav"></div><h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}</div>${deco}<div class="btns"><button class="btn" data-act="susopen">${T('去壽司店營業')}</button></div>`;
+  return `<div class="shopnav"></div><h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${l?`<div class="up">${dilHTML('sushistaff').replace('data-act="dil"','data-act="sudil"')}</div>`:''}</div>${deco}<div class="btns"><button class="btn" data-act="susopen">${T('去壽司店營業')}</button></div>`;
 }
 function sushiHome(){modal(`<h2>🍣 ${T('壽司店')}</h2>${shopSushi()}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
 function showShop(){
@@ -2935,6 +2936,7 @@ document.addEventListener('click',e=>{
   else if(act==='susopen'){closeHome();ST=load();if(!ST||!ST.sushi){ST=null;showHome();return}ST.where='sushi';setCur('sushi');save();advance()}
   else if(act==='susbuy'){const k=a.dataset.id;const home=!ST;if(home)ST=load();if(ST&&ITEMS[k]&&ITEMS[k].shop==='sushi'&&!has(k)&&ST.coins>=ITEMS[k].buy){keepScroll();ST.coins-=ITEMS[k].buy;ST.menu=ST.menu||{};ST.menu[k]=1;save()}if(home)ST=null;else renderHUD();sushiHome()}
   else if(act==='sudec'){const d=SDECOR.find(x=>x.id===a.dataset.id);const home=!ST;if(home)ST=load();if(ST&&ST.sushi&&d&&!sdec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.sushi.dec=ST.sushi.dec||{};ST.sushi.dec[d.id]=true;save();if(!home){drawBg();renderHUD()}}if(home)ST=null;sushiHome()}
+  else if(act==='sudil'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi){ST.dil=ST.dil||{};ST.dil.sushistaff=+a.dataset.v;save()}if(home)ST=null;sushiHome()}
   else if(act==='sushishop')sushiHome();
   else if(act==='suhire'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi){const l=suStaffLv(),nx=SU_STAFF.lv[l];if(nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.sushi.up.staff=l+1;save()}}if(home)ST=null;else renderHUD();sushiHome()}
   else if(act==='rewards'){if(R&&!R.over&&!R.settled)R.paused=true;showRewards()}
