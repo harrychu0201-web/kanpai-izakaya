@@ -3483,12 +3483,14 @@ function refitBurst(){[0,100,300,700,1400,2500].forEach(t=>setTimeout(fit,t))}
 /* 手機橫向時，瀏覽器的網址列／底部工具列一滑出一收起，可見高度就會跟著變，遊戲會整個跟著縮放（甚至重排）。
    這裡在同一個方向內只記「看過的最小可見高度」：工具列收起時不動，只有第一次真的變小時才調整一次，之後就釘住。
    打字（鍵盤彈出）或拖曳中不記錄，免得鍵盤把尺寸永遠縮小。方向改變（旋轉）時重新記。 */
-let STAB={o:'',h:0};
+let STAB={o:'',h:0},STABGROW=false;
 function stableVisH(){
   const o=innerWidth>innerHeight?'l':'p',v=visH();
   if(STAB.o!==o||!STAB.h){STAB={o,h:v};return v}
   const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');
   if(!PTR&&!typing&&v<STAB.h)STAB.h=v;
+  /* 工具列收起後可見高度變大：等它穩定約 0.9 秒，沒有拖曳、沒有打字時才把舞台放大到填滿，避免手機橫向底部留白 */
+  if(!PTR&&!typing&&v>STAB.h&&!STABGROW){STABGROW=true;setTimeout(()=>{STABGROW=false;const v2=visH();if(!PTR&&v2>STAB.h&&Math.abs(v2-v)<4){STAB.h=v2;fit()}},900)}
   return STAB.h;
 }
 /* 同樣的道理套用在寬度：手機橫向時右側（或左側）系統導覽列滑出，可見寬度會變窄，同一個方向內只記最小寬度。 */
