@@ -2782,7 +2782,7 @@ function showDayIntro(){
   modal(`<h2>${T('第 {0} 天',ST.day)} <span style="font-size:16px;color:#7a4a2a">${dateStr(ST.day)}</span></h2>
   ${HI?`<div class="evbox"><span class="ei">${HI.ic}</span><div><b>${T('今天是{0}！',T(HI.zh))}</b><br>${T('會有特別的客人上門，每位都能登記進節日客圖鑑。')}</div></div>`:''}
   ${ST.day===365?`<p class="hint">${T('你撐過了一整年！日曆上的每個節日都解鎖了，可以到「📅 日曆」看看。')}</p>`:''}
-  ${ST.rm||ST.sushi?`<div class="pickrow"><button class="btn ${CUR==='iz'?'':'alt'}" data-act="where" data-id="iz">🏮 ${T('居酒屋本店')}</button>${ST.rm?`<button class="btn ${CUR==='rm'?'':'alt'}" data-act="where" data-id="rm">🍜 ${T('深夜拉麵屋台')}</button>`:''}${ST.sushi?`<button class="btn ${CUR==='sushi'?'':'alt'}" data-act="where" data-id="sushi">🍣 ${T('海風壽司')}</button>`:''}</div>`:''}
+  ${ST.rm||ST.sushi||sushiDev()?`<div class="pickrow"><button class="btn ${CUR==='iz'?'':'alt'}" data-act="where" data-id="iz">🏮 ${T('居酒屋本店')}</button>${ST.rm?`<button class="btn ${CUR==='rm'?'':'alt'}" data-act="where" data-id="rm">🍜 ${T('深夜拉麵屋台')}</button>`:''}${ST.sushi?`<button class="btn ${CUR==='sushi'?'':'alt'}" data-act="where" data-id="sushi">🍣 ${T('海風壽司')}</button>`:sushiDev()?`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖（開發中）')}</small></button>`:''}</div>`:''}
   ${ST.owned&&!ST.rm?`<p class="hint">${T('商店上方多了「🍜 深夜拉麵屋台」，可以開第二家店！')}</p>`:''}
   ${due?`<div class="bank"><b>${T('今天是還款日！')}</b>${T('打烊時會從錢包還銀行 {0}，記得多賺一點，不然還完錢包見底又要再借。',yen(due))}</div>`:''}
   ${!ST.owned&&ST.coins>=GOAL?`<div class="goalcard"><div><b>🏠 ${T('你已經存夠 {0} 了！',yen(GOAL))}</b><p>${T('現在就能買下整棟店面，之後再也不用付房租。')}</p></div><button class="btn" data-act="buyshop">${T('買下店面 {0}',yen(GOAL))}</button></div>`:''}
