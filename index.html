@@ -2323,26 +2323,38 @@ const ARC_CSS=`<style>.arc-reels{display:flex;gap:10px;justify-content:center;ma
 const GACHA_PRICE=300,GACHA_PITY=10,GACHA_RATE={c:60,r:30,s:10};
 const GACHA_NAME={c:'普通',r:'稀有',s:'超稀有'},GACHA_COL={c:'#7a4a2a',r:'#2f7fb8',s:'#c8891a'};
 const GACHA_ITEMS=[
-{id:'lantern',n:'小燈籠',e:'🏮',r:'c',v:100},
-{id:'flag',n:'小旗子',e:'🎌',r:'c',v:100},
-{id:'sake',n:'迷你清酒',e:'🍶',r:'c',v:100},
-{id:'chopst',n:'筷架',e:'🥢',r:'c',v:100},
-{id:'taiyaki',n:'鯛魚燒',e:'🐟',r:'c',v:100},
-{id:'cat',n:'招財貓',e:'🐱',r:'r',v:300},
-{id:'hanafuda',n:'花札',e:'🎴',r:'r',v:300},
-{id:'ramenbowl',n:'拉麵小碗',e:'🍜',r:'r',v:300},
-{id:'red',n:'紅包袋',e:'🧧',r:'r',v:300},
-{id:'dragon',n:'金龍',e:'🐉',r:'s',v:1000},
-{id:'fuji',n:'富士山',e:'🗻',r:'s',v:1000}
+{id:'lantern',n:'小燈籠',e:'🏮',r:'c',v:100},{id:'flag',n:'小旗子',e:'🎌',r:'c',v:100},{id:'sake',n:'迷你清酒',e:'🍶',r:'c',v:100},{id:'chopst',n:'筷架',e:'🥢',r:'c',v:100},{id:'taiyaki',n:'鯛魚燒',e:'🐟',r:'c',v:100},
+{id:'takoyaki',n:'章魚燒',e:'🐙',r:'c',v:100},{id:'kushi',n:'烤串',e:'🍢',r:'c',v:100},{id:'peanut',n:'花生',e:'🥜',r:'c',v:100},{id:'sushi',n:'壽司',e:'🍣',r:'c',v:100},{id:'tempura',n:'天婦羅',e:'🍤',r:'c',v:100},
+{id:'onigiri',n:'飯糰',e:'🍙',r:'c',v:100},{id:'miso',n:'味噌湯',e:'🥣',r:'c',v:100},{id:'beer',n:'啤酒',e:'🍺',r:'c',v:100},{id:'chawan',n:'茶碗',e:'🍚',r:'c',v:100},{id:'gyoza',n:'餃子',e:'🥟',r:'c',v:100},
+{id:'dango',n:'糰子',e:'🍡',r:'c',v:100},{id:'squid',n:'魷魚',e:'🦑',r:'c',v:100},{id:'shrimp',n:'蝦',e:'🦐',r:'c',v:100},{id:'egg',n:'溫泉蛋',e:'🥚',r:'c',v:100},{id:'pan',n:'平底鍋',e:'🍳',r:'c',v:100},
+{id:'furin',n:'風鈴',e:'🎐',r:'c',v:100},{id:'hut',n:'小屋',e:'🏠',r:'c',v:100},{id:'salt',n:'鹽罐',e:'🧂',r:'c',v:100},{id:'tea',n:'熱茶',e:'🍵',r:'c',v:100},{id:'takeout',n:'外帶盒',e:'🥡',r:'c',v:100},
+{id:'fish',n:'烤魚',e:'🐠',r:'c',v:100},{id:'kamaboko',n:'魚板',e:'🍥',r:'c',v:100},{id:'senbei',n:'仙貝',e:'🍘',r:'c',v:100},{id:'icecream',n:'冰淇淋',e:'🍦',r:'c',v:100},{id:'melon',n:'西瓜',e:'🍉',r:'c',v:100},
+{id:'cat',n:'招財貓',e:'🐱',r:'r',v:300},{id:'hanafuda',n:'花札',e:'🎴',r:'r',v:300},{id:'ramenbowl',n:'拉麵小碗',e:'🍜',r:'r',v:300},{id:'red',n:'紅包袋',e:'🧧',r:'r',v:300},
+{id:'tanzaku',n:'七夕短冊',e:'🎋',r:'r',v:300},{id:'hina',n:'雛人形',e:'🎎',r:'r',v:300},{id:'dumpling',n:'月見團子',e:'🎑',r:'r',v:300},{id:'torii',n:'鳥居',e:'⛩',r:'r',v:300},{id:'koinobori',n:'鯉魚旗',e:'🎏',r:'r',v:300},
+{id:'bento',n:'便當',e:'🍱',r:'r',v:300},{id:'crab',n:'螃蟹',e:'🦀',r:'r',v:300},{id:'dice',n:'骰子',e:'🎲',r:'r',v:300},{id:'bell',n:'神社鈴',e:'🔔',r:'r',v:300},{id:'moon',n:'月餅',e:'🥮',r:'r',v:300},
+{id:'dragon',n:'金龍',e:'🐉',r:'s',v:1000},{id:'fuji',n:'富士山',e:'🗻',r:'s',v:1000},{id:'crown',n:'老闆王冠',e:'👑',r:'s',v:1000},{id:'kitsune',n:'九尾狐',e:'🦊',r:'s',v:1000}
 ];
+function gachaPct(it){return GACHA_RATE[it.r]/GACHA_ITEMS.filter(x=>x.r===it.r).length}
 function gachaGrid(g){
   return '<div class="gacha-grid">'+GACHA_ITEMS.map(it=>{const k=(g.c||{})[it.id]||0;
-    return `<div class="gacha-cell${k?'':' off'}" style="border-color:${GACHA_COL[it.r]}"><span class="gacha-e">${k?it.e:'❔'}</span><span class="gacha-n">${k?it.n:'？？？'}</span><span class="gacha-k">${k?'×'+k:''}</span></div>`}).join('')+'</div>'
+    return `<button class="gacha-cell${k?'':' off'}" data-act="gachaitem" data-id="${it.id}" style="border-color:${GACHA_COL[it.r]}" aria-label="${k?it.n:'？？？'}">${k?it.e:'❔'}${k>1?`<span class="gk">${k}</span>`:''}</button>`}).join('')+'</div>'
 }
-const GACHA_CSS=`<style>.gacha-cap{font-size:72px;text-align:center;margin:12px 0 4px;min-height:1.2em}.gacha-cap.shake{animation:gshake .12s linear 6}@keyframes gshake{25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}.gacha-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}.gacha-cell{border:2px solid;border-radius:10px;background:#fff8e6;padding:4px 2px;text-align:center;font-size:12px;line-height:1.2}.gacha-cell.off{background:#eee;opacity:.7}.gacha-e{display:block;font-size:24px}.gacha-n{display:block}.gacha-k{display:block;color:#7a4a2a;font-weight:bold}</style>`;
+const GACHA_CSS=`<style>.gacha-cap{font-size:72px;text-align:center;margin:12px 0 4px;min-height:1.2em}.gacha-cap.shake{animation:gshake .12s linear 6}@keyframes gshake{25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}.gacha-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin:10px 0}.gacha-cell{position:relative;border:1.5px solid;border-radius:8px;background:#fff8e6;padding:2px 0;font-size:18px;line-height:1.25;cursor:pointer;font-family:inherit;color:inherit;min-width:0}.gacha-cell.off{background:#eee;opacity:.75;font-size:12px}.gacha-cell .gk{position:absolute;right:1px;bottom:0;font-size:9px;color:#7a4a2a;font-weight:bold}.gacha-det{background:#fff8e6;border:2px solid #7a4a2a;border-radius:10px;padding:8px;margin-top:6px;text-align:center;font-size:14px;line-height:1.5}.gacha-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}.gacha-tbl td,.gacha-tbl th{border-bottom:1px solid #d9c3a0;padding:3px 2px;text-align:left}</style>`;
 function showGacha(){
   const g=loadRec().gacha||{c:{},p:0};
-  modal(`${GACHA_CSS}<h2>${T('扭蛋機')}</h2><p style="font-size:13px;text-align:center">${T('每顆 ¥{0}。重複的會換成錢包的錢；連續 {1} 顆沒有超稀有，下一顆保證超稀有。',GACHA_PRICE,GACHA_PITY)}</p><div class="gacha-cap" id="gcap">🥚</div><p class="arc-msg" id="arcMsg">${T('機率：普通 60%、稀有 30%、超稀有 10%')}</p><p id="arcW" style="font-size:14px;text-align:center">${T('錢包：{0}',yen(arcWallet(0)))}</p><p id="gPity" style="font-size:13px;text-align:center">${T('距離保底還差 {0} 顆',Math.max(0,GACHA_PITY-1-(g.p||0)))}</p><div class="btns"><button class="btn" data-act="gachapull">${T('扭一顆')} ¥${GACHA_PRICE}</button><button class="btn alt" data-act="arcade">${T('返回')}</button></div><div id="gGrid">${gachaGrid(g)}</div>`)
+  modal(`${GACHA_CSS}<h2>${T('扭蛋機')}</h2><p style="font-size:13px;text-align:center">${T('每顆 ¥{0}。重複的會換成錢包的錢；連續 {1} 顆沒有超稀有，下一顆保證超稀有。',GACHA_PRICE,GACHA_PITY)}</p><div class="gacha-cap" id="gcap">🥚</div><p class="arc-msg" id="arcMsg">${T('點下面的格子可以看稀有度和機率')}</p><p id="arcW" style="font-size:14px;text-align:center">${T('錢包：{0}',yen(arcWallet(0)))}</p><p id="gPity" style="font-size:13px;text-align:center">${T('距離保底還差 {0} 顆',Math.max(0,GACHA_PITY-1-(g.p||0)))}</p><div class="btns"><button class="btn" data-act="gachapull">${T('扭一顆')} ¥${GACHA_PRICE}</button><button class="btn alt" data-act="gachatable">📖 ${T('機率表')}</button><button class="btn alt" data-act="arcade">${T('返回')}</button></div><div id="gGrid">${gachaGrid(g)}</div><div id="gDetail"></div><div id="gTable"></div>`)
+}
+function showGachaItem(id){
+  const it=GACHA_ITEMS.find(x=>x.id===id);if(!it)return;
+  const k=((loadRec().gacha||{}).c||{})[id]||0;
+  const el=document.getElementById('gDetail');if(!el)return;
+  el.innerHTML=`<div class="gacha-det"><div style="font-size:40px">${k?it.e:'❔'}</div><b>${k?it.n:'？？？'}</b><div style="color:${GACHA_COL[it.r]};font-weight:bold">${T('稀有度：{0}',GACHA_NAME[it.r])}</div><div>${T('每顆出現機率：{0}%',gachaPct(it).toFixed(2))}</div><div>${T('重複退幣：¥{0}',it.v)}</div><div>${k?T('已收藏 {0} 個',k):T('還沒收藏')}</div></div>`;
+}
+function showGachaTable(){
+  const el=document.getElementById('gTable');if(!el)return;
+  if(el.innerHTML){el.innerHTML='';return}
+  const rows=['s','r','c'].map(r=>{const n=GACHA_ITEMS.filter(x=>x.r===r).length;return `<tr><td style="color:${GACHA_COL[r]};font-weight:bold">${GACHA_NAME[r]}</td><td>${n} 種</td><td>${GACHA_RATE[r]}%</td><td>${(GACHA_RATE[r]/n).toFixed(2)}%</td><td>¥${GACHA_ITEMS.find(x=>x.r===r).v}</td></tr>`}).join('');
+  el.innerHTML=`<div class="gacha-det" style="text-align:left"><b>${T('機率表')}</b><table class="gacha-tbl"><tr><th>${T('稀有度')}</th><th>${T('種類')}</th><th>${T('整體')}</th><th>${T('每種')}</th><th>${T('重複退幣')}</th></tr>${rows}</table><div style="font-size:12px;margin-top:6px">${T('保底：連續 {0} 顆沒有超稀有，下一顆一定是超稀有（抽到超稀有時重算）。',GACHA_PITY-1)}</div></div>`;
 }
 function gachaPull(){
   if(ARC.busy)return;
@@ -2591,6 +2603,8 @@ document.addEventListener('click',e=>{
   else if(act==='arcpin')showArcPin();
   else if(act==='gacha')showGacha();
   else if(act==='gachapull')gachaPull();
+  else if(act==='gachaitem')showGachaItem(a.dataset.id);
+  else if(act==='gachatable')showGachaTable();
   else if(act==='arcspin')arcSpin();
   else if(act==='arcbet')arcBet(a.dataset.g,+a.dataset.d);
   else if(act==='arcdrop')arcDrop();
