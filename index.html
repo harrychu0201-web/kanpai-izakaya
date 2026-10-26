@@ -1357,10 +1357,17 @@ function suGunkanBase(){
   return `<path d="${body}" transform="translate(2 3)" fill="${O}" opacity=".28"/><path d="${body}" fill="${NORI}" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M22 58V82M32 60V86M68 60V86M78 58V82" stroke="${NORI2}" stroke-width="2" opacity=".8"/><path d="M24 78Q50 84 76 78" stroke="#4a7a52" stroke-width="2.4" fill="none" opacity=".7"/><ellipse cx="50" cy="48" rx="32" ry="11" fill="#fcf8ee" stroke="${O}" stroke-width="3"/>`}
 function suGunkanG(id){return suGunkanBase()+`<g transform="translate(0 3)">${suBlobG(id)}</g>`}
 /* 壽司卷：兩塊切面，海苔一圈、飯一圈、中間是餡 */
+/* 壽司卷：從側上方看的兩塊短圓柱，上面看得到切面（海苔圈、飯、餡），側面是海苔 */
 function suMakiG(id){
   const fill={cucumber:'#79b955',tuna:'#c8323c',salmon:'#f7904f'}[id]||'#c8323c',hi={cucumber:'#bfe3a0',tuna:'#f08a92',salmon:'#ffd0aa'}[id]||'#fff';
-  const piece=(cx,cy)=>`<g transform="translate(${cx} ${cy})"><circle r="21" cx="2" cy="3" fill="${O}" opacity=".28"/><circle r="21" fill="${NORI}" stroke="${O}" stroke-width="3"/><circle r="16" fill="#fcf8ee"/>${suGrains([[-9,-8],[2,-12],[10,-6],[12,5],[3,12],[-8,9],[-13,0]])}<circle r="8" fill="${fill}" stroke="${O}" stroke-width="2"/><circle cx="-2.4" cy="-2.6" r="2.4" fill="${hi}"/></g>`;
-  return piece(29,64)+piece(71,64);
+  const piece=(cx,cy)=>{const rx=20,ry=11,h=20;
+    const side=`<path d="M${cx-rx} ${cy}V${cy+h}A${rx} ${ry} 0 0 0 ${cx+rx} ${cy+h}V${cy}Z" fill="${NORI}" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`+
+      `<path d="M${cx-rx} ${cy}V${cy+h}A${rx} ${ry} 0 0 0 ${cx-rx*.45} ${cy+h+ry*.9}V${cy+ry*.9}A${rx} ${ry} 0 0 1 ${cx-rx} ${cy}Z" fill="#14231a" opacity=".7"/>`+
+      `<path d="M${cx+rx*.55} ${cy+ry*.85}V${cy+h+ry*.8}" stroke="#5f9468" stroke-width="3" stroke-linecap="round" opacity=".7"/>`;
+    const grains=[[-9,-3],[-3,-6],[5,-6],[11,-2],[10,4],[3,6],[-6,6],[-12,2]].map(([x,y],i)=>`<ellipse cx="${cx+x}" cy="${cy+y*.9}" rx="2.6" ry="1.4" transform="rotate(${(i*47)%180-90} ${cx+x} ${cy+y*.9})" fill="#fffdf6" stroke="#e3d8bc" stroke-width=".8"/>`).join('');
+    const top=`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${NORI}" stroke="${O}" stroke-width="3"/><ellipse cx="${cx}" cy="${cy}" rx="${rx-4}" ry="${ry-2.6}" fill="#fcf8ee"/>${grains}<ellipse cx="${cx}" cy="${cy}" rx="7.5" ry="4.2" fill="${fill}" stroke="${O}" stroke-width="2"/><ellipse cx="${cx-2.2}" cy="${cy-1.4}" rx="2.6" ry="1.3" fill="${hi}"/>`;
+    return `<ellipse cx="${cx+2}" cy="${cy+h+ry-1}" rx="${rx+2}" ry="${ry*.7}" fill="${O}" opacity=".22"/>`+side+top};
+  return piece(30,50)+piece(70,58);
 }
 /* 手卷：海苔捲成圓錐，開口露出飯和配料 */
 /* 手卷：立體的海苔圓錐斜放，開口朝右上，看得到開口裡的飯、後面翹起的海苔角和側面陰影 */
@@ -1596,11 +1603,11 @@ const LAND_R={tap:{x:10,y:406,w:100,h:122},ramune:{x:10,y:534,w:100,h:58},lsour:
   rfry:{x:10,y:410,w:300,h:182,pg:2},rawKoro:{x:316,y:406,w:72,h:90,pg:2},rawTori:{x:316,y:502,w:72,h:90,pg:2},rawKatsu:{x:394,y:406,w:72,h:90,pg:2},goma:{x:394,y:502,w:72,h:90,pg:2},
   tyaki:{x:472,y:410,w:170,h:182,pg:2},rawTai:{x:648,y:406,w:84,h:90,pg:2},trash2:{x:648,y:540,w:84,h:52,pg:2},pgbtn:{x:786,y:354,w:166,h:44,pg:0}};
 /* 海風壽司 layouts (phase 1: tap + 捲壽司台 + 4 raw trays; warmT kept only because buildStations expects it) */
-const SU_LAND={tap:{x:10,y:406,w:100,h:122},maki:{x:122,y:410,w:290,h:182},
+const SU_LAND={tap:{x:10,y:406,w:100,h:186},maki:{x:122,y:410,w:290,h:182},
   rawSRice:{x:426,y:406,w:60,h:84},rawSNori:{x:492,y:406,w:60,h:84},rawNTama:{x:558,y:406,w:60,h:84},rawNSal:{x:624,y:406,w:60,h:84},rawNTuna:{x:690,y:406,w:60,h:84},rawNIka:{x:756,y:406,w:60,h:84},
   rawNTai:{x:426,y:494,w:60,h:84},rawNEbi:{x:492,y:494,w:60,h:84},rawNNegi:{x:558,y:494,w:60,h:84},rawNIkura:{x:624,y:494,w:60,h:84},rawNUni:{x:690,y:494,w:60,h:84},rawNKappa:{x:756,y:494,w:60,h:84},
   warmT:{x:262,y:346,w:440,h:54},pgbtn:{x:786,y:354,w:166,h:44,pg:0}};
-const SU_PORT={tap:{x:10,y:418,w:96,h:122,k:1.12},maki:{x:123.5,y:418,w:290,h:182,k:1.12},
+const SU_PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},maki:{x:123.5,y:418,w:290,h:182,k:1.12},
   rawSRice:{x:8,y:640,w:68,h:90,k:1.12},rawSNori:{x:100,y:640,w:68,h:90,k:1.12},rawNTama:{x:192,y:640,w:68,h:90,k:1.12},rawNSal:{x:284,y:640,w:68,h:90,k:1.12},rawNTuna:{x:376,y:640,w:68,h:90,k:1.12},rawNIka:{x:468,y:640,w:68,h:90,k:1.12},
   rawNTai:{x:8,y:762,w:68,h:90,k:1.12},rawNEbi:{x:100,y:762,w:68,h:90,k:1.12},rawNNegi:{x:192,y:762,w:68,h:90,k:1.12},rawNIkura:{x:284,y:762,w:68,h:90,k:1.12},rawNUni:{x:376,y:762,w:68,h:90,k:1.12},rawNKappa:{x:468,y:762,w:68,h:90,k:1.12},
   warmT:{x:8,y:340,w:360,h:54,k:1.12},pgbtn:{x:418,y:350,w:174,h:46,pg:0}};
@@ -1652,11 +1659,11 @@ function stHTML(name){
   const suh=suStHTML(name);if(suh!=null)return suh;
   const rmh=rmStHTML(name);if(rmh!=null)return rmh;
   if(name==='tap'){const n=tapsN();
-    return `<div style="display:flex;gap:2px;width:100%;height:100%">${R.taps.slice(0,n).map((tp,i)=>{const lvl=tp.st==='empty'?0:tp.st==='filling'?tp.t/tapTime():1,vb=n===1?100:50,c=vb/2,sc=n===1?1.38:.9;
-      return `<div class="st" data-tap="${i}" style="position:relative;inset:auto;flex:1">${sv(`${ARTFOOD&&ART?`<image href="${ARTIMG.tap}" x="${c-15.65}" y="0" width="31.3" height="92"/>`:`<rect x="${c-12}" y="6" width="24" height="70" rx="6" fill="#d7dce2" stroke="${O}" stroke-width="4"/><rect x="${c-8}" y="10" width="6" height="60" fill="#fff" opacity=".6"/><rect x="${c-16}" y="0" width="32" height="14" rx="5" fill="#1a1a1a" stroke="${O}" stroke-width="3"/>
-      <path d="M${c} 76v12h-${n===1?10:6}" stroke="${O}" stroke-width="10" fill="none"/><path d="M${c} 76v12h-${n===1?10:6}" stroke="#c9ced4" stroke-width="4" fill="none"/>`}${tp.st==='filling'?`<path d="M${ARTFOOD&&ART?c-8.9:c-(n===1?10:6)} 92v${n===1?22:40}" stroke="#f4a62a" stroke-width="4"/>`:''}
+    return `<div style="display:flex;gap:2px;width:100%;height:100%">${R.taps.slice(0,n).map((tp,i)=>{const lvl=tp.st==='empty'?0:tp.st==='filling'?tp.t/tapTime():1,vb=n===1?100:50,c=vb/2,sx=n===1?1.25:.92,sy=n===1?1.32:1.3;
+      return `<div class="st" data-tap="${i}" style="position:relative;inset:auto;flex:1">${sv(`${ARTFOOD&&ART?`<image href="${ARTIMG.tap}" x="${c-11}" y="0" width="21.9" height="64"/>`:`<rect x="${c-12}" y="6" width="24" height="46" rx="6" fill="#d7dce2" stroke="${O}" stroke-width="4"/><rect x="${c-8}" y="10" width="6" height="36" fill="#fff" opacity=".6"/><rect x="${c-16}" y="0" width="32" height="14" rx="5" fill="#1a1a1a" stroke="${O}" stroke-width="3"/>
+      <path d="M${c} 52v10h-${n===1?10:6}" stroke="${O}" stroke-width="10" fill="none"/><path d="M${c} 52v10h-${n===1?10:6}" stroke="#c9ced4" stroke-width="4" fill="none"/>`}${tp.st==='filling'?`<path d="M${ARTFOOD&&ART?c-6.2:c-(n===1?10:6)} 64v${n===1?16:20}" stroke="#f4a62a" stroke-width="4"/>`:''}
       <rect x="3" y="166" width="${vb-6}" height="12" rx="4" fill="#8a9098" stroke="${O}" stroke-width="3"/>
-      <g transform="translate(${c-50*sc} ${168-96*sc}) scale(${sc})">${beerG(lvl,tp.st==='full')}</g>`,`0 0 ${vb} 186`)}<span class="lbl"${n>1?' style="font-size:12px;padding:0 4px"':''}>${T(tp.st==='full'?'啤酒':(n===1?'自動裝杯中…':'裝杯中'))}</span></div>`}).join('')}</div>`}
+      <g transform="translate(${c-50*sx} ${168-96*sy}) scale(${sx} ${sy})">${beerG(lvl,tp.st==='full')}</g>`,`0 0 ${vb} 186`).replace('<svg ','<svg style="overflow:visible" ')}<span class="lbl"${n>1?' style="font-size:12px;padding:0 4px"':''}>${T(tp.st==='full'?'啤酒':(n===1?'自動裝杯中…':'裝杯中'))}</span></div>`}).join('')}</div>`}
   if(name==='sake')return sv(`<rect x="4" y="44" width="76" height="40" rx="6" fill="#8a5a34" stroke="${O}" stroke-width="3"/><g transform="translate(4 -2) scale(.78)">${sakeG()}</g>`,'0 0 84 90')+`<span class="lbl">${T('清酒')}</span>`+lockDiv(ITEMS.sake.day);
   if(name==='edamame')return sv(`<g transform="translate(-4 -6) scale(.92)">${edamameG()}</g>`,'0 0 84 90')+`<span class="lbl">${JP('edamame')}</span>`;
   if(name==='rawN'||name==='rawT'){const k=name==='rawN'?'negima':'tsukune';
@@ -2856,7 +2863,7 @@ function shopSushi(){
   const SV=ST||load()||{coins:0};
   if(!SV.sushi)return `<h3 class="sh">${T('海風壽司・花錢解鎖')}</h3><div class="shop"><div class="up"><b>🍣 ${T('開一家海風壽司')}</b><p>${T('（測試中，僅作者可見）一家壽司店：飯、海苔、魚片、配料分開準備，照順序疊起來，做成握壽司、軍艦、壽司卷和手卷，端給客人，不會焦。解鎖送玉子握壽司。')}</p><button class="btn" data-act="buysushi" ${SV.coins<SUSHI_PRICE?'disabled':''}>${T('花 {0} 解鎖',yen(SUSHI_PRICE))}</button></div></div>`;
   const l=suStaffLv(),nx=SU_STAFF.lv[l];
-  const menu=Object.keys(ITEMS).filter(k=>ITEMS[k].shop==='sushi').map(k=>`<div class="up"><b>${dishTitle(k)}</b><p>${T('售價 {0}・食材 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}</p>${has(k)?`<p>${T('已購買')}</p>`:`<button class="btn" data-act="susbuy" data-id="${k}" ${SV.coins<ITEMS[k].buy?'disabled':''}>${T('買下 {0}',yen(ITEMS[k].buy))}</button>`}</div>`).join('');
+  const menu=Object.keys(ITEMS).filter(k=>ITEMS[k].shop==='sushi').map(k=>`<div class="up" style="display:grid;grid-template-columns:64px 1fr;column-gap:10px;align-items:center"><div style="grid-row:span 3;width:64px;height:64px">${sv(suG(k))}</div><b>${dishTitle(k)}</b><p>${T('售價 {0}・食材 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}</p>${has(k)?`<p>${T('已購買')}</p>`:`<button class="btn" data-act="susbuy" data-id="${k}" ${SV.coins<ITEMS[k].buy?'disabled':''}>${T('買下 {0}',yen(ITEMS[k].buy))}</button>`}</div>`).join('');
   const staff=`<div class="up"><b>${T(SU_STAFF.zh)}${l?' Lv'+l:''}</b><p>${l?T('目前雇用中，日薪 {0}',yen(SU_STAFF.lv[l-1].wage)):T('還沒雇用')}</p>${nx?`<p>${T(nx.d)}</p><button class="btn" data-act="suhire" ${SV.coins<nx.cost?'disabled':''}>${T(l?'升級 {0}':'雇用 {0}',yen(nx.cost))}</button>`:`<p>${T('已經是最高等級。')}</p>`}</div>`;
   const deco=`<h3 class="sh">${T('店內布置・讓客人更有耐心')}</h3><div class="shop">${SDECOR.map(d=>{const own=sdec(d.id);return `<div class="up ${own?'done':''}"><b>${T(d.zh)}<span class="new" style="background:#5c9a3a">${T('耐心 +{0}%',Math.round(d.b*100))}</span></b><p>${T(d.d)}</p><div class="row"><span class="price">${yen(d.cost)}</span>${own?`<span>${T('已布置')}</span>`:`<button class="btn" data-act="sudec" data-id="${d.id}" ${SV.coins<d.cost?'disabled':''}>${T('購買')}</button>`}</div></div>`}).join('')}</div>`;
   return `<div class="shopnav"></div><h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${l?`<div class="up">${dilHTML('sushistaff').replace('data-act="dil"','data-act="sudil"')}</div>`:''}</div>${deco}<div class="btns"><button class="btn" data-act="susopen">${T('去海風壽司營業')}</button></div>`;
