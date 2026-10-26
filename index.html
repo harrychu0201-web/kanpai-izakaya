@@ -1871,7 +1871,9 @@ function crisisCook(){
       return true}}
   return false;
 }
-function sky(){const e=$('sky');if(!e||!R)return;const h=hourNow();const c=h<17.5?['#ffb04a',.25]:h<18.3?['#ff6a2a',.35]:h<19?['#7a3a6a',.6]:['#070b1c',.96];e.setAttribute('fill',c[0]);e.setAttribute('opacity',c[1]);const m=$('moon');if(m)m.setAttribute('opacity',h>=19?1:h>=18.6?.4:0)}
+function sky(){const e=$('sky');if(!R)return;const h=hourNow();const c=h<17.5?['#ffb04a',.25]:h<18.3?['#ff6a2a',.35]:h<19?['#7a3a6a',.6]:['#070b1c',.96];if(e){e.setAttribute('fill',c[0]);e.setAttribute('opacity',c[1])}const m=$('moon');if(m)m.setAttribute('opacity',h>=19?1:h>=18.6?.4:0);
+  /* art room: same sky colour on the art window, moon in the window, and the room dims a little as the evening goes on */
+  const as=$('artsky');if(as){as.setAttribute('fill',c[0]);as.setAttribute('opacity',c[1])}const am=$('artmoon');if(am)am.setAttribute('opacity',h>=19?1:h>=18.6?.4:0);const ad=$('artdim');if(ad)ad.setAttribute('opacity',h<17.5?0:h<18.3?.05:h<19?.12:.2)}
 function live(){return R&&!R.settled?ST.coins+R.earned-R.cost-R.stolen-R.fines:ST.coins}
 function canPay(n){if(live()>=n)return true;toast(T('錢包沒錢了，買不起食材！'));askLoan();return false}
 const LOAN_MIN=1000,LOAN_MAX=100000,LOAN_PRESETS=[5000,10000,30000,50000];
@@ -2975,7 +2977,9 @@ drawBg=function(){_drawBg();if(!artOn()||(CUR==='rm'&&ST&&ST.rm))return;
   ch.forEach((e,i)=>{if(e.tagName==='defs')return;if(i<ti||(e.tagName==='g'&&e.innerHTML.includes('#d8402c')&&e.querySelector('text')&&!(e.firstElementChild&&e.firstElementChild.getAttribute('width')==='22')))e.style.display='none'});
   const ih=Math.max(H,(H-KY)/.415),oy=H-ih,NS='http://www.w3.org/2000/svg';
   const mk=()=>{const im=document.createElementNS(NS,'image');im.setAttribute('href',ARTIMG.kitchen);im.setAttribute('x',0);im.setAttribute('y',oy);im.setAttribute('width',W);im.setAttribute('height',ih);im.setAttribute('preserveAspectRatio','xMidYMid slice');return im};
-  bg.insertBefore(mk(),bg.firstChild);
+  /* the art room has its own lit window, so the time of day is drawn on top of it: window sky tint, moon and a light room dim (see sky()) */
+  const mkBg=()=>{const s=document.createElementNS(NS,'svg');s.setAttribute('x',0);s.setAttribute('y',oy);s.setAttribute('width',W);s.setAttribute('height',ih);s.setAttribute('viewBox','0 0 1900 918');s.setAttribute('preserveAspectRatio','xMidYMid slice');s.innerHTML=`<image href="${ARTIMG.kitchen}" x="0" y="0" width="1900" height="918" preserveAspectRatio="none"/><rect id="artsky" x="652" y="158" width="716" height="248" fill="#ffb04a" opacity=".25" style="pointer-events:none"/><g id="artmoon" opacity="0" style="pointer-events:none"><circle cx="700" cy="196" r="22" fill="#fff6d6"/></g><rect id="artdim" x="0" y="0" width="1900" height="918" fill="#070b1c" opacity="0" style="pointer-events:none"/>`;return s};
+  bg.insertBefore(mkBg(),bg.firstChild);
   const ct=$('counter'),g=ct.firstElementChild;if(g)[...g.children].forEach(e=>{if(e.tagName==='rect'||e.tagName==='path')e.style.display='none'});
   const cy=Math.round(oy+ih*.507)-1,cp=document.createElementNS(NS,'clipPath');cp.setAttribute('id','artclip');const cr=document.createElementNS(NS,'rect');cr.setAttribute('x',0);cr.setAttribute('y',cy);cr.setAttribute('width',W);cr.setAttribute('height',H-cy);cp.appendChild(cr);
   const im2=mk();im2.setAttribute('clip-path','url(#artclip)');ct.insertBefore(im2,ct.firstChild);ct.insertBefore(cp,ct.firstChild)};
