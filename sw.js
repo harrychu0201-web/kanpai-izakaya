@@ -1,4 +1,4 @@
-const CACHE='izakaya-v310';
+const CACHE='izakaya-v311';
 // character art lives in img/ with the content hash in each file name, so a file never changes once published:
 // keep it in its own cache that survives version bumps (an update then only re-downloads the small page, not 2.4MB of art)
 const IMGCACHE='izakaya-img';
