@@ -1664,7 +1664,7 @@ function stHTML(name){
   const suh=suStHTML(name);if(suh!=null)return suh;
   const rmh=rmStHTML(name);if(rmh!=null)return rmh;
   if(name==='tap'){const n=tapsN();
-    return `<div style="display:flex;gap:2px;width:100%;height:100%">${R.taps.slice(0,n).map((tp,i)=>{const lvl=tp.st==='empty'?0:tp.st==='filling'?tp.t/tapTime():1,vb=n===1?100:50,c=vb/2,sx=n===1?1.02:.84,sy=n===1?1.12:1.06;
+    return `<div style="display:flex;gap:2px;width:100%;height:100%">${R.taps.slice(0,n).map((tp,i)=>{const lvl=tp.st==='empty'?0:tp.st==='filling'?tp.t/tapTime():1,vb=n===1?100:50,c=vb/2,sx=n===1?.98:.8,sy=n===1?.98:.8;
       return `<div class="st" data-tap="${i}" style="position:relative;inset:auto;flex:1">${sv(`${ARTFOOD&&ART?`<image href="${ARTIMG.tap}" x="${c-11}" y="0" width="21.9" height="64"/>`:`<rect x="${c-12}" y="6" width="24" height="46" rx="6" fill="#d7dce2" stroke="${O}" stroke-width="4"/><rect x="${c-8}" y="10" width="6" height="36" fill="#fff" opacity=".6"/><rect x="${c-16}" y="0" width="32" height="14" rx="5" fill="#1a1a1a" stroke="${O}" stroke-width="3"/>
       <path d="M${c} 52v10h-${n===1?10:6}" stroke="${O}" stroke-width="10" fill="none"/><path d="M${c} 52v10h-${n===1?10:6}" stroke="#c9ced4" stroke-width="4" fill="none"/>`}${tp.st==='filling'?`<path d="M${ARTFOOD&&ART?c-6.2:c-(n===1?10:6)} 64v${n===1?16:20}" stroke="#f4a62a" stroke-width="4"/>`:''}
       <rect x="3" y="166" width="${vb-6}" height="12" rx="4" fill="#8a9098" stroke="${O}" stroke-width="3"/>
