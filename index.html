@@ -595,15 +595,15 @@ const ITEMS={
   reishu:{tag:'冷酒',tz:'冷酒',jp:'冷酒もっきり',zh:'冷酒',price:900,cost:280,w:2,buy:48000,st:'飲料'},
   yakionigiri:{tag:'おにぎり',tz:'烤飯糰',jp:'焼きおにぎり',zh:'烤飯糰',price:650,cost:150,w:2,buy:60000,st:'烤網'},
   /* sushi shop (壽司店): rolls only in phase 1, unlocked by day; the shop itself is bought for ¥8,000,000 */
-  kappamaki:{tag:'かっぱ巻',tz:'小黃瓜捲',jp:'かっぱ巻き',zh:'小黃瓜捲',price:1500,cost:200,day:1,w:3,shop:'sushi',st:'捲壽司台'},
-  tekkamaki:{tag:'鉄火巻',tz:'鮪魚捲',jp:'鉄火巻き',zh:'鮪魚捲',price:1800,cost:260,day:1,w:3,shop:'sushi',st:'捲壽司台'},
-  salmonmaki:{tag:'サーモン巻',tz:'鮭魚捲',jp:'サーモン巻き',zh:'鮭魚捲',price:2100,cost:300,day:2,w:2,shop:'sushi',st:'捲壽司台'},
-  ebimaki:{tag:'海老巻',tz:'蝦捲',jp:'海老巻き',zh:'蝦捲',price:2600,cost:360,day:3,w:2,shop:'sushi',st:'捲壽司台'},
+  kappamaki:{tag:'かっぱ巻',tz:'小黃瓜捲',jp:'かっぱ巻き',zh:'小黃瓜捲',price:1500,cost:200,w:3,shop:'sushi',buy:3000,st:'捲壽司台'},
+  tekkamaki:{tag:'鉄火巻',tz:'鮪魚捲',jp:'鉄火巻き',zh:'鮪魚捲',price:1800,cost:260,w:3,shop:'sushi',buy:5000,st:'捲壽司台'},
+  salmonmaki:{tag:'サーモン巻',tz:'鮭魚捲',jp:'サーモン巻き',zh:'鮭魚捲',price:2100,cost:300,w:2,shop:'sushi',buy:12000,st:'捲壽司台'},
+  ebimaki:{tag:'海老巻',tz:'蝦捲',jp:'海老巻き',zh:'蝦捲',price:2600,cost:360,w:2,shop:'sushi',buy:30000,st:'捲壽司台'},
   /* 握壽司 (nigiri): same 壽司台 as the rolls */
-  salmonnigiri:{tag:'サーモン握り',tz:'鮭魚握',jp:'サーモン握り',zh:'鮭魚握壽司',price:1600,cost:220,day:2,w:2,shop:'sushi',st:'捲壽司台'},
-  tunanigiri:{tag:'まぐろ握り',tz:'鮪魚握',jp:'まぐろ握り',zh:'鮪魚握壽司',price:1900,cost:280,day:2,w:2,shop:'sushi',st:'捲壽司台'},
-  tamagonigiri:{tag:'玉子握り',tz:'玉子握',jp:'厚焼き玉子握り',zh:'玉子握壽司',price:1000,cost:120,day:1,w:3,shop:'sushi',st:'捲壽司台'},
-  ebinigiri:{tag:'甘えび握り',tz:'甜蝦握',jp:'甘えび握り',zh:'甜蝦握壽司',price:2400,cost:340,day:3,w:2,shop:'sushi',st:'捲壽司台'},
+  salmonnigiri:{tag:'サーモン握り',tz:'鮭魚握',jp:'サーモン握り',zh:'鮭魚握壽司',price:1600,cost:220,w:2,shop:'sushi',buy:15000,st:'捲壽司台'},
+  tunanigiri:{tag:'まぐろ握り',tz:'鮪魚握',jp:'まぐろ握り',zh:'鮪魚握壽司',price:1900,cost:280,w:2,shop:'sushi',buy:20000,st:'捲壽司台'},
+  tamagonigiri:{tag:'玉子握り',tz:'玉子握',jp:'厚焼き玉子握り',zh:'玉子握壽司',price:1000,cost:120,w:3,shop:'sushi',buy:4000,st:'捲壽司台'},
+  ebinigiri:{tag:'甘えび握り',tz:'甜蝦握',jp:'甘えび握り',zh:'甜蝦握壽司',price:2400,cost:340,w:2,shop:'sushi',buy:35000,st:'捲壽司台'},
 };
 const FISH={maguro:'鮪魚',salmon:'鮭魚',tai:'鯛魚'};
 const ING_COST={bowl:0,boat:0,rice:60,tsalmon:80,tume:60,tea:30,maguro:200,salmon:200,tai:200};
@@ -1287,7 +1287,7 @@ function suStHTML(name){
   if(CUR!=='sushi')return null;
   const SRC={rawKappa:['kappamaki','小黃瓜捲'],rawTuna:['tekkamaki','鮪魚捲'],rawSalmon:['salmonmaki','鮭魚捲'],rawSEbi:['ebimaki','蝦捲'],rawNSal:['salmonnigiri','鮭魚握'],rawNTuna:['tunanigiri','鮪魚握'],rawNTama:['tamagonigiri','玉子握'],rawNEbi:['ebinigiri','甜蝦握']};
   if(SRC[name]){const k=SRC[name][0];
-    return sv(`<rect x="4" y="12" width="64" height="66" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/><g transform="translate(1 8) scale(.7)">${suG(k,'raw')}</g>`,'0 0 72 90')+`<span class="lbl">${T(SRC[name][1])} ¥${costOf(k)}</span>`+lockDiv(ITEMS[k].day)}
+    return sv(`<rect x="4" y="12" width="64" height="66" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/><g transform="translate(1 8) scale(.7)">${suG(k,'raw')}</g>`,'0 0 72 90')+`<span class="lbl">${T(SRC[name][1])} ¥${costOf(k)}</span>`+(has(k)?'':`<div class="locked">${T('壽司店<br>購買')}</div>`)}
   return null}
 function makiHTML(){
   let s=`<svg viewBox="0 0 210 182" style="position:absolute;inset:0"><rect x="2" y="8" width="206" height="166" rx="12" fill="#2a2a2e" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="190" height="150" rx="6" fill="#c9b48a"/><path d="M14 30h182M14 150h182" stroke="#a8925e" stroke-width="2"/></svg>`;
@@ -2124,7 +2124,7 @@ function onTap(e){
   else if(k==='rawMen'){const i=R.mpot.findIndex((x,j)=>!x&&j<mpotN());if(i<0){nope(st);toast('麵鍋滿了')}else if(canPay(costOf('ramen'))){R.mpot[i]={kind:'noodle',t:0};const c=srcCenter({src:'mpot',i});charge(costOf('ramen'),c.x,c.y-50)}}
   else if(k==='odenRaw'){if(!has('oden'))return;const c1=costOf('oden'),k0=odenCap()-R.oden.n-R.oden.cook.reduce((s,b)=>s+(b.n||2),0);if(k0<=0){nope(st);toast('關東煮鍋滿了')}else{if(live()<c1)canPay(c1);else{R.oden.cook.push({t:0,n:1});const c=srcCenter({src:'oden'});charge(c1,c.x,c.y-50)}}}
   else if(k==='odenPot'){if(!has('oden'))return;if(R.oden.n>0)R.held={src:'oden',key:'oden'};else{nope(st);toast(R.oden.cook.length?'關東煮還在燉…':'先把關東煮料下鍋')}}
-  else if(RAWMAP[k]){const d=RAWMAP[k],pn=STN[d],arr=R[pn],i=arr.findIndex((x,j)=>!x&&j<panCap(pn));if(['rmpan','rfry','tyaki','tako','tama','onig'].includes(pn)&&!has(d)&&ITEMS[d].buy)return;if(i<0){nope(st);toast(pn==='teppan'?'鐵板滿了':pn==='rmpan'?'煎台滿了':pn==='maki'?'捲壽司台滿了':pn==='rfry'?'油鍋滿了':pn==='tako'?'章魚燒盤滿了':pn==='tama'?'玉子燒鍋滿了':pn==='onig'?'烤網滿了':pn==='tyaki'?'烤模都在用':'炸鍋滿了')}else if(canPay(costOf(d))){arr[i]={kind:d,t:0};const c=srcCenter({src:STN[d],i});charge(costOf(d),c.x,c.y-50)}}
+  else if(RAWMAP[k]){const d=RAWMAP[k],pn=STN[d],arr=R[pn],i=arr.findIndex((x,j)=>!x&&j<panCap(pn));if(['rmpan','rfry','tyaki','tako','tama','onig','maki'].includes(pn)&&!has(d)&&ITEMS[d].buy)return;if(i<0){nope(st);toast(pn==='teppan'?'鐵板滿了':pn==='rmpan'?'煎台滿了':pn==='maki'?'捲壽司台滿了':pn==='rfry'?'油鍋滿了':pn==='tako'?'章魚燒盤滿了':pn==='tama'?'玉子燒鍋滿了':pn==='onig'?'烤網滿了':pn==='tyaki'?'烤模都在用':'炸鍋滿了')}else if(canPay(costOf(d))){arr[i]={kind:d,t:0};const c=srcCenter({src:STN[d],i});charge(costOf(d),c.x,c.y-50)}}
   else if(k==='rawN'||k==='rawT'){const kind=k==='rawN'?'negima':'tsukune',i=R.grill.findIndex((g,j)=>!g&&j<ST.up.grill);if(i<0){nope(st);toast('燒烤台滿了')}else if(canPay(costOf(kind))){R.grill[i]={kind,t:0};charge(costOf(kind),L.grill.x+10+i*GW+22,L.grill.y+40)}}
   else if(k==='rawC'){const i=R.fryer.findIndex((f,j)=>!f&&j<ST.up.fryer);if(i<0){nope(st);toast('炸籃都在用')}else if(canPay(costOf('karaage'))){R.fryer[i]={t:0};charge(costOf('karaage'),L.fryer.x+12+i*38+18,L.fryer.y+30)}}
   else if(k==='trash'||k==='trash2'||k==='trash3'){if(R.held&&['grill','fryer','board','tap','warm','teppan','tempura','rmpan','maki','bowl','oden','rfry','tyaki','tako','tama','onig'].includes(R.held.src)){consume(R.held);R.held=null;toast('丟掉了')}else if(R.held)R.held=null;else if(CUR==='rm'){if(k==='trash2'||k==='trash3')return renderStations();const i=R.bowls[R.lastBowl]?R.lastBowl:R.bowls.findIndex(Boolean);if(i>=0){R.bowls[i]=null;toast('拉麵碗清空了')}}else{const i=R.boards[R.lastBoard]&&R.boards[R.lastBoard].base?R.lastBoard:R.boards.findIndex(b=>b.base);if(i>=0){R.boards[i]=emptyBoard();toast('砧板清空了')}}}
@@ -2585,7 +2585,7 @@ function showTitle(){
 }
 function showDayIntro(){
   R=null;setCur(ST.where);renderHUD();drawBg();$('custLayer').innerHTML='';$('stations').innerHTML='';
-  const news=Object.keys(ITEMS).filter(k=>ITEMS[k].day===ST.day),show=CUR==='sushi'?Object.keys(ITEMS).filter(k=>ITEMS[k].shop==='sushi'&&ITEMS[k].day===ST.day):CUR==='rm'?(ST.rm&&!ST.rm.seen?['ramen','gyoza','lsour']:(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop==='rm')):(ST.day===1?['beer','edamame','negima']:news.concat(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop!=='rm'&&ITEMS[k].shop!=='sushi'));
+  const news=Object.keys(ITEMS).filter(k=>ITEMS[k].day===ST.day),show=CUR==='sushi'?[]:CUR==='rm'?(ST.rm&&!ST.rm.seen?['ramen','gyoza','lsour']:(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop==='rm')):(ST.day===1?['beer','edamame','negima']:news.concat(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop!=='rm'&&ITEMS[k].shop!=='sushi'));
   const due=(ST.dues||[]).filter(d=>d.left===1).reduce((s,d)=>s+d.amt,0);pickToday();const TD=evNow();
   const HI=TD.hol?holInfo(TD.hol):null;
   modal(`<h2>${T('第 {0} 天',ST.day)} <span style="font-size:16px;color:#7a4a2a">${dateStr(ST.day)}</span></h2>
@@ -2600,7 +2600,7 @@ function showDayIntro(){
   <p>${rentOf()?T('今天店租 {0}（每週調漲），打烊時會從淨利扣掉。',yen(rentOf()))+T('存到 {0} 後，到商店按「買下店面」就不用再付房租。',yen(GOAL)):''}${T('營業時間 16:00 到凌晨 00:30，晚餐（18–20 點）和續攤（21–22 點）客人最多，00:20 最後點餐，之後不再接新客人。淨利（營收扣掉食材成本）越高星星越多，拿到一顆星就能進到下一天。')}</p>
   ${show.length?`<div class="how">${show.map(k=>`<div class="how-row">${icon(k==='chazuke'?'chazuke:salmon':k==='sashimi'?'sashimi:maguro+tai':k)}<div><b>${dishTitle(k)}</b>${ST.day>1?`<span class="new">${T('新菜')}</span>`:''}<br>${T(HOW[k])}</div></div>`).join('')}</div>`:''}
   ${ST.day===1?`<p style="font-size:14px">${T('忙不過來的時候，<b>快速點兩下</b>烤好的串燒、炸物或做好的砧板，就會自動放進吧台上的<b>保溫台</b>，不會焦，之後再從保溫台拿去送。每用一份食材都會扣成本，烤焦丟掉的就白花了。')}</p>`:''}
-  <div class="btns"><button class="btn" data-act="start">${T('開店營業')}</button><button class="btn alt" data-act="shop">${T('商店')}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
+  <div class="btns"><button class="btn" data-act="start">${T('開店營業')}</button>${CUR==='sushi'?`<button class="btn alt" data-act="sushishop">🍣 ${T('壽司店')}</button>`:`<button class="btn alt" data-act="shop">${T('商店')}</button>`}<button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
 }
 function endDay(){sfx('end');$('game').classList.remove('aim');
   R.held=null;renderStations();
@@ -2680,7 +2680,7 @@ function shopSushi(){
   const SV=ST||load()||{coins:0};
   if(!SV.sushi)return `<h3 class="sh">${T('壽司店・花錢解鎖')}</h3><div class="shop"><div class="up"><b>🍣 ${T('開一家壽司店')}</b><p>${T('（開發中，僅作者可見）解鎖後會開放壽司菜單與捲壽司站台。')}</p><button class="btn" data-act="buysushi" ${SV.coins<SUSHI_PRICE?'disabled':''}>${T('花 {0} 解鎖',yen(SUSHI_PRICE))}</button></div></div>`;
   const l=suStaffLv(),nx=SU_STAFF.lv[l];
-  const menu=Object.keys(ITEMS).filter(k=>ITEMS[k].shop==='sushi').map(k=>`<div class="up"><b>${dishTitle(k)}</b><p>${T('第 {0} 天開放・售價 {1}・食材 {2}',ITEMS[k].day,yen(ITEMS[k].price),yen(ITEMS[k].cost))}</p></div>`).join('');
+  const menu=Object.keys(ITEMS).filter(k=>ITEMS[k].shop==='sushi').map(k=>`<div class="up"><b>${dishTitle(k)}</b><p>${T('售價 {0}・食材 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}</p>${has(k)?`<p>${T('已購買')}</p>`:`<button class="btn" data-act="susbuy" data-id="${k}" ${SV.coins<ITEMS[k].buy?'disabled':''}>${T('買下 {0}',yen(ITEMS[k].buy))}</button>`}</div>`).join('');
   const staff=`<div class="up"><b>${T(SU_STAFF.zh)}${l?' Lv'+l:''}</b><p>${l?T('目前雇用中，日薪 {0}',yen(SU_STAFF.lv[l-1].wage)):T('還沒雇用')}</p>${nx?`<p>${T(nx.d)}</p><button class="btn" data-act="suhire" ${SV.coins<nx.cost?'disabled':''}>${T(l?'升級 {0}':'雇用 {0}',yen(nx.cost))}</button>`:`<p>${T('已經是最高等級。')}</p>`}</div>`;
   return `<div class="shopnav"></div><h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}</div><div class="btns"><button class="btn" data-act="susopen">${T('去壽司店營業')}</button></div>`;
 }
@@ -2869,6 +2869,8 @@ document.addEventListener('click',e=>{
   else if(act==='pause'&&R)pause();
   else if(act==='sushihome')sushiHome();
   else if(act==='susopen'){closeHome();ST=load();if(!ST||!ST.sushi){ST=null;showHome();return}ST.where='sushi';setCur('sushi');save();advance()}
+  else if(act==='susbuy'){const k=a.dataset.id;const home=!ST;if(home)ST=load();if(ST&&ITEMS[k]&&ITEMS[k].shop==='sushi'&&!has(k)&&ST.coins>=ITEMS[k].buy){keepScroll();ST.coins-=ITEMS[k].buy;ST.menu=ST.menu||{};ST.menu[k]=1;save()}if(home)ST=null;else renderHUD();sushiHome()}
+  else if(act==='sushishop')sushiHome();
   else if(act==='suhire'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi){const l=suStaffLv(),nx=SU_STAFF.lv[l];if(nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.sushi.up.staff=l+1;save()}}if(home)ST=null;else renderHUD();sushiHome()}
   else if(act==='rewards'){if(R&&!R.over&&!R.settled)R.paused=true;showRewards()}
   else if(act==='checkin')claimCheckin();
