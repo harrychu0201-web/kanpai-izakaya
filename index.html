@@ -328,8 +328,6 @@ html,body{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none;tou
 #rot svg{width:96px;height:96px;animation:rotph 1.8s infinite ease-in-out}
 @keyframes rotph{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
 @media (orientation:portrait) and (pointer:coarse){body.playing #rot{display:flex}}
-.hud .fsbtn{display:none}
-@media (pointer:coarse){.hud .fsbtn{display:grid}}
 @media (max-height:480px) and (orientation:landscape){#wrap{padding-block:2px 2px;gap:2px}.hud{min-height:0}.pill{padding:1px 8px}.goal{height:18px}}
 #game.wide .cust{margin-top:-64px}#game.wide .cust .bubble{top:-100px}
 .robber{position:absolute;top:150px;width:160px;height:210px;z-index:3;pointer-events:none;transition:transform 1.4s linear}
@@ -364,7 +362,7 @@ body.ovl .hud>*{pointer-events:auto}
 body.ovl .hud .pill{background:#1a0e08cc;font-size:11px;padding:1px 8px;border-width:1.5px}
 body.ovl .hud .pill b{font-size:12px}
 body.ovl .hud .goal{order:2;flex:0 0 22vw;flex-basis:22vw;max-width:22vw;height:18px}
-body.ovl .hud .day{order:0;margin-right:auto}body.ovl .hud .clock{order:1}body.ovl .hud .pill:not(.day):not(.clock){order:3}body.ovl .hud .icon-btn{order:5}body.ovl .hud .fsbtn{margin-left:auto}
+body.ovl .hud .day{order:0;margin-right:auto}body.ovl .hud .clock{order:1}body.ovl .hud .pill:not(.day):not(.clock){order:3}body.ovl .hud .icon-btn{order:5}
 body.ovl .hud,body.ovl .hud b{font-weight:500}
 body.ovl .hud .goal em{font-size:11px}
 body.ovl .hud .icon-btn{width:36px;height:36px;font-size:13px;touch-action:manipulation}
@@ -2167,7 +2165,7 @@ function renderHUD(){document.body.classList.toggle('playing',!!R);
     <div class="pill clock"><b>${clockStr()}</b>${PERIOD(hourNow())}</div>${R.ev&&R.ev.ev?`<div class="pill ev" title="${esc(evDesc(R.ev))}">${evLabel(R.ev)}</div>`:''}`:'<div style="flex:1"></div>'}
     ${CUR==='rm'?(rmStaffLv()||rmStaff2Lv()||rmFryStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[rmStaffLv()?T('小葵')+'★'.repeat(rmStaffLv()-1):'',rmStaff2Lv()?T('山田')+'★'.repeat(rmStaff2Lv()-1):'',rmFryStaffLv()?T('大輔')+'★'.repeat(rmFryStaffLv()-1):''].filter(Boolean).join('・')}</b></div>`:''):ST.up.waiter||ST.up.helper?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[ST.up.waiter?T('小美')+(staffLv('waiter')>1?'★'.repeat(staffLv('waiter')-1):''):'',ST.up.helper?T('阿健')+(staffLv('helper')>1?'★'.repeat(staffLv('helper')-1):''):''].filter(Boolean).join('・')}</b></div>`:''}
     ${(()=>{const w=R?live():ST.coins;return `<div class="pill ${w<0?'neg':''}">${T('錢包')} <b>${w<0?'−':''}¥${Math.abs(Math.round(w)).toLocaleString('en-US')}</b></div>`})()}${ST.debt?`<div class="pill staff">${T('借款')} <b>${yen(ST.debt)}</b></div>`:''}
-    ${R&&!R.over&&!R.settled&&!DEMO?'<button class="icon-btn bagbtn" data-act="rewards" aria-label="背包">'+T('背包')+'</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}"><span class="ico">${sndIcon()}</span></button><button class="icon-btn fsbtn" data-act="fs" aria-label="${T('全螢幕')}"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="#f3dfb4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>`:''}`);
+    ${R&&!R.over&&!R.settled&&!DEMO?'<button class="icon-btn bagbtn" data-act="rewards" aria-label="背包">'+T('背包')+'</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}"><span class="ico">${sndIcon()}</span></button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>`:''}`);
 }
 
 /* ---- modals ---- */
@@ -2629,7 +2627,6 @@ document.addEventListener('click',e=>{
   else if(act==='closem'){closeModal();if(FR.dirty){FR.dirty=0;showHome()}}
   else if(act==='home')showHome();
   else if(act==='start'){goFS();startDay();refitBurst();let seen=false;try{seen=localStorage.getItem('izakaya-iostip')==='1'}catch(e){}if(IOS&&!STANDALONE&&!seen)setTimeout(()=>{if(R&&!TUT)iosTip()},400)}
-  else if(act==='fs')toggleFS();
   else if(act==='iostipok'){closeModal();if(R&&IOSTIPR)R.paused=false;IOSTIPR=false;try{localStorage.setItem('izakaya-iostip','1')}catch(e){}}
   else if(act==='next'||act==='back'){if(SHOPHOME){SHOPHOME=false;showHome()}else advance()}
   else if(act==='retry'){ST.pendingNext=false;save();showDayIntro()}
@@ -3035,7 +3032,6 @@ function goFS(){if(!TOUCH||IOS||document.fullscreenElement||document.webkitFulls
 const IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),STANDALONE=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 function iosTip(){const w=$('modalLayer');const was=R&&R.paused;if(R)R.paused=true;modal(`<h2>${T('iPhone 要這樣全螢幕')}</h2><p>${T('iPhone 的 Safari 不支援網頁全螢幕，但可以把遊戲加到主畫面，之後從桌面圖示打開就會是全螢幕，跟 App 一樣。')}</p><div class="how"><div class="how-row"><div><b>1.</b> ${T('點 Safari 下方（或上方）的<b>分享</b>按鈕（方框加向上箭頭）')}</div></div><div class="how-row"><div><b>2.</b> ${T('往下滑，選<b>「加入主畫面」</b>')}</div></div><div class="how-row"><div><b>3.</b> ${T('回到手機桌面，點「乾杯！居酒屋」圖示開始玩')}</div></div></div><div class="btns"><button class="btn" data-act="iostipok">${T('知道了')}</button></div>`);IOSTIPR=!was}
 let IOSTIPR=false;
-function toggleFS(){if(IOS&&!STANDALONE){iosTip();return}if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}else goFS()}
 if(TOUCH&&!IOS){let fsTry=0;document.addEventListener('pointerup',function f(){goFS();if(document.fullscreenElement||document.webkitFullscreenElement||++fsTry>=2)document.removeEventListener('pointerup',f)})}
 if(TOUCH)document.body.classList.add('lite');
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>refitBurst()));window.addEventListener('orientationchange',()=>refitBurst());
