@@ -3039,7 +3039,17 @@ let IOSTIPR=false;
 if(TOUCH&&!IOS){let fsTry=0;document.addEventListener('pointerup',function f(){goFS();if(document.fullscreenElement||document.webkitFullscreenElement||++fsTry>=2)document.removeEventListener('pointerup',f)})}
 if(TOUCH)document.body.classList.add('lite');
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>refitBurst()));window.addEventListener('orientationchange',()=>refitBurst());
-if(window.visualViewport)visualViewport.addEventListener('resize',()=>fit());
+if(window.visualViewport){visualViewport.addEventListener('resize',()=>{fit();compVV()});visualViewport.addEventListener('scroll',compVV)}
+/* 手機橫向時，瀏覽器（Android 系統導覽列滑動時）會平移或縮放整個網頁的「可視區域」，網頁版面本身沒變，CSS 管不到。
+   這裡讀出平移量與縮放倍率，把遊戲外框反向位移、反向縮放，讓它在螢幕上維持不動。 */
+function compVV(){
+  const el=$('wrap');if(!el||!window.visualViewport)return;
+  const vv=visualViewport,land=innerWidth>innerHeight;
+  if(!TOUCH||!land){el.style.transform='';el.style.transformOrigin='';return}
+  if(!vv.offsetLeft&&!vv.offsetTop&&Math.abs(vv.scale-1)<.001){el.style.transform='';el.style.transformOrigin='';return} // 沒有平移時不套 transform（transform 會改變 fixed 定位子元素的基準）
+  el.style.transformOrigin='0 0';
+  el.style.transform=`translate(${vv.offsetLeft}px,${vv.offsetTop}px) scale(${1/vv.scale})`;
+}
 function visH(){let d=document.getElementById('dvhProbe');if(!d){d=document.createElement('div');d.id='dvhProbe';d.style.cssText='position:fixed;left:0;top:0;width:1px;height:100vh;height:100dvh;visibility:hidden;pointer-events:none';document.body.appendChild(d)}const a=window.innerHeight,b=window.visualViewport?visualViewport.height:a;return Math.max(200,Math.min(a,b))}
 /* fit() only ran on resize events; on Android the fullscreen / rotation animation reports a stale height first, so the board stayed too tall until the next HUD change (end of day). Re-run it a few times while the viewport settles. */
 function refitBurst(){[0,100,300,700,1400,2500].forEach(t=>setTimeout(fit,t))}
