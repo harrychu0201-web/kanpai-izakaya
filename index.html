@@ -2611,7 +2611,7 @@ function showDayIntro(){
   <p>${rentOf()?T('今天店租 {0}（每週調漲），打烊時會從淨利扣掉。',yen(rentOf()))+T('存到 {0} 後，到商店按「買下店面」就不用再付房租。',yen(GOAL)):''}${T('營業時間 16:00 到凌晨 00:30，晚餐（18–20 點）和續攤（21–22 點）客人最多，00:20 最後點餐，之後不再接新客人。淨利（營收扣掉食材成本）越高星星越多，拿到一顆星就能進到下一天。')}</p>
   ${show.length?`<div class="how">${show.map(k=>`<div class="how-row">${icon(k==='chazuke'?'chazuke:salmon':k==='sashimi'?'sashimi:maguro+tai':k)}<div><b>${dishTitle(k)}</b>${ST.day>1?`<span class="new">${T('新菜')}</span>`:''}<br>${T(HOW[k])}</div></div>`).join('')}</div>`:''}
   ${ST.day===1?`<p style="font-size:14px">${T('忙不過來的時候，<b>快速點兩下</b>烤好的串燒、炸物或做好的砧板，就會自動放進吧台上的<b>保溫台</b>，不會焦，之後再從保溫台拿去送。每用一份食材都會扣成本，烤焦丟掉的就白花了。')}</p>`:''}
-  <div class="btns"><button class="btn" data-act="start">${T('開店營業')}</button>${CUR==='sushi'?`<button class="btn alt" data-act="sushishop">🍣 ${T('壽司店')}</button>`:`<button class="btn alt" data-act="shop">${T('商店')}</button>`}<button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
+  <div class="btns"><button class="btn" data-act="start">${T('開店營業')}</button>${CUR==='sushi'?`<button class="btn alt" data-act="sushishop">${T('商店')}</button>`:`<button class="btn alt" data-act="shop">${T('商店')}</button>`}<button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
 }
 function endDay(){sfx('end');$('game').classList.remove('aim');
   R.held=null;renderStations();
