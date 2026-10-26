@@ -1283,6 +1283,10 @@ function makiG(k,st){const f={kappamaki:'#6fae4a',tekkamaki:'#c8323c',salmonmaki
   let o='';for(let i=0;i<6;i++){const a=i/6*Math.PI*2-Math.PI/2,x=50+Math.cos(a)*25,y=50+Math.sin(a)*25;
     o+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12.5" fill="#1f3a24" stroke="${O}" stroke-width="2.5"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10.5" fill="${rice}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" fill="${fill}" stroke="${O}" stroke-width="1.2"/>`}
   return o}
+/* 捲到一半：飯已經鋪在海苔上、餡料放在中間，還沒捲成圓截面 */
+function rollBedG(k,st){const f={kappamaki:'#6fae4a',tekkamaki:'#c8323c',salmonmaki:'#f7904f',ebimaki:'#f4a0a0'}[k]||'#c8323c';
+  const raw=st==='raw',burnt=st==='burnt',rice=raw?'#eee6d0':burnt?'#9a8660':'#fbf7ec',fill=raw?'#f4ecd8':burnt?'#3a2a1c':f;
+  return `<rect x="8" y="22" width="84" height="56" rx="6" fill="#1f3a24" stroke="${O}" stroke-width="3"/><rect x="12" y="26" width="76" height="48" rx="4" fill="${rice}"/><rect x="16" y="41" width="68" height="18" rx="9" fill="${fill}" stroke="${O}" stroke-width="2.5"/>`}
 function nigiriG(k,st){const f={salmonnigiri:'#f7904f',tunanigiri:'#c8323c',tamagonigiri:'#f3c64a',ebinigiri:'#f4a0a0'}[k]||'#c8323c';
   const raw=st==='raw',burnt=st==='burnt',rice=raw?'#eee6d0':burnt?'#9a8660':'#fbf7ec',fill=raw?'#f4ecd8':burnt?'#3a2a1c':f;
   const grains=[[30,60],[42,66],[54,62],[66,68],[36,72],[60,74]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.6" fill="#d9d0b8"/>`).join('');
@@ -1301,7 +1305,7 @@ function suStHTML(name){
 function makiHTML(){
   let s=`<svg viewBox="0 0 210 182" style="position:absolute;inset:0"><rect x="2" y="8" width="206" height="166" rx="12" fill="#2a2a2e" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="190" height="150" rx="6" fill="#c9b48a"/><path d="M14 30h182M14 150h182" stroke="#a8925e" stroke-width="2"/></svg>`;
   for(let i=0;i<makiN();i++){const x=10+i*64,g=R.maki[i];let inner='',bar='',st='';
-    if(g){st=cookState(g.t,g.kind);inner=sv(suG(g.kind,st));bar=g.kind==='rice'?'':cookBar(g.t,g.kind,st)}
+    if(g){st=cookState(g.t,g.kind);const rolling=g.base==='rice'&&g.kind.endsWith('maki')&&st!=='done';inner=sv(rolling?rollBedG(g.kind,st):suG(g.kind,st));bar=g.kind==='rice'?'':cookBar(g.t,g.kind,st)}
     s+=`<div class="st slot" data-mk="${i}" style="left:${x}px;top:18px;width:60px;height:146px;${st==='done'?'box-shadow:0 0 0 3px #ffc65a inset;background:#ffc65a22':''}"><div style="position:absolute;left:-2px;right:-2px;top:40px;height:64px">${inner}</div>${bar}</div>`}
   return s+`<span class="lbl">${T('製作台')}</span>`}
 function suDemand(){const d={};for(const c of R.seats){if(!c||(c.st!=='wait'&&c.st!=='in'))continue;c.order.forEach((k,j)=>{if(!c.filled[j])d[k]=(d[k]||0)+1});if(c.extra&&c.extra.ok&&!c.extra.done)d[c.extra.key]=(d[c.extra.key]||0)+1}
@@ -1314,7 +1318,7 @@ function suAct(l){
       if(c.extra&&c.extra.ok&&!c.extra.done){const h=src.find(x=>x.key===c.extra.key);if(h&&giveTo(c,'x',h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}}}
   const d=suDemand(),un=unlocked(ST.day,'sushi'),ks=SUKEYS.filter(k=>(d[k]||0)>0&&un.includes(k)).sort((a,b)=>d[b]-d[a]);
   for(const k of ks){let i=R.maki.findIndex(x=>x&&x.kind==='rice');if(i<0)i=R.maki.findIndex((x,j)=>!x&&j<makiN());const c=costOf(k);
-    if(i>=0&&live()>=c){R.maki[i]={kind:k,t:0};const p=srcCenter({src:'maki',i});charge(c,p.x,p.y-50);shoPop('健太郎捲'+ITEMS[k].zh);renderStations();return}}
+    if(i>=0&&live()>=c){const onRice=!!(R.maki[i]&&R.maki[i].kind==='rice');R.maki[i]={kind:k,t:0,...(onRice?{base:'rice'}:{})};const p=srcCenter({src:'maki',i});charge(c,p.x,p.y-50);shoPop('健太郎捲'+ITEMS[k].zh);renderStations();return}}
 }
 function rmpanHTML(){
   let s=`<svg viewBox="0 0 210 182" style="position:absolute;inset:0"><rect x="2" y="8" width="206" height="166" rx="12" fill="#1e1f22" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="190" height="150" rx="6" fill="#4a4e54"/><path d="M30 28l40 126M120 24l40 132" stroke="#fff" stroke-width="7" opacity=".06"/></svg>`;
@@ -2134,7 +2138,7 @@ function onTap(e){
   else if(k==='odenRaw'){if(!has('oden'))return;const c1=costOf('oden'),k0=odenCap()-R.oden.n-R.oden.cook.reduce((s,b)=>s+(b.n||2),0);if(k0<=0){nope(st);toast('關東煮鍋滿了')}else{if(live()<c1)canPay(c1);else{R.oden.cook.push({t:0,n:1});const c=srcCenter({src:'oden'});charge(c1,c.x,c.y-50)}}}
   else if(k==='odenPot'){if(!has('oden'))return;if(R.oden.n>0)R.held={src:'oden',key:'oden'};else{nope(st);toast(R.oden.cook.length?'關東煮還在燉…':'先把關東煮料下鍋')}}
   else if(k==='rawSRice'){const i=R.maki.findIndex((x,j)=>!x&&j<makiN());if(i<0){nope(st);toast('製作台滿了')}else{R.maki[i]={kind:'rice',t:0}}}
-  else if(RAWMAP[k]&&STN[RAWMAP[k]]==='maki'){const d=RAWMAP[k],i=R.maki.findIndex(x=>x&&x.kind==='rice');if(!has(d)){nope(st);toast('先到壽司店購買')}else if(i<0){nope(st);toast('先把壽司飯放上製作台')}else if(canPay(costOf(d))){R.maki[i]={kind:d,t:0};const c=srcCenter({src:'maki',i});charge(costOf(d),c.x,c.y-50)}}
+  else if(RAWMAP[k]&&STN[RAWMAP[k]]==='maki'){const d=RAWMAP[k],i=R.maki.findIndex(x=>x&&x.kind==='rice');if(!has(d)){nope(st);toast('先到壽司店購買')}else if(i<0){nope(st);toast('先把壽司飯放上製作台')}else if(canPay(costOf(d))){R.maki[i]={kind:d,t:0,base:'rice'};const c=srcCenter({src:'maki',i});charge(costOf(d),c.x,c.y-50)}}
   else if(RAWMAP[k]){const d=RAWMAP[k],pn=STN[d],arr=R[pn],i=arr.findIndex((x,j)=>!x&&j<panCap(pn));if(['rmpan','rfry','tyaki','tako','tama','onig','maki'].includes(pn)&&!has(d)&&ITEMS[d].buy)return;if(i<0){nope(st);toast(pn==='teppan'?'鐵板滿了':pn==='rmpan'?'煎台滿了':pn==='maki'?'捲壽司台滿了':pn==='rfry'?'油鍋滿了':pn==='tako'?'章魚燒盤滿了':pn==='tama'?'玉子燒鍋滿了':pn==='onig'?'烤網滿了':pn==='tyaki'?'烤模都在用':'炸鍋滿了')}else if(canPay(costOf(d))){arr[i]={kind:d,t:0};const c=srcCenter({src:STN[d],i});charge(costOf(d),c.x,c.y-50)}}
   else if(k==='rawN'||k==='rawT'){const kind=k==='rawN'?'negima':'tsukune',i=R.grill.findIndex((g,j)=>!g&&j<ST.up.grill);if(i<0){nope(st);toast('燒烤台滿了')}else if(canPay(costOf(kind))){R.grill[i]={kind,t:0};charge(costOf(kind),L.grill.x+10+i*GW+22,L.grill.y+40)}}
   else if(k==='rawC'){const i=R.fryer.findIndex((f,j)=>!f&&j<ST.up.fryer);if(i<0){nope(st);toast('炸籃都在用')}else if(canPay(costOf('karaage'))){R.fryer[i]={t:0};charge(costOf('karaage'),L.fryer.x+12+i*38+18,L.fryer.y+30)}}
