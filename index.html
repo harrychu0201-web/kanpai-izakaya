@@ -93,7 +93,7 @@ body.ovl .hud .icon-btn.bagbtn{width:auto;min-width:40px;height:36px;padding:0 9
 .cust.small.walk .fig{animation:none}
 .port .oi{width:44px;height:48px}.port .oi svg{width:44px;height:44px}.port .bubble{padding:5px 8px 7px 6px;gap:3px}.port .pat{height:56px}
 #game{-webkit-touch-callout:none}
-.cust .fig{position:absolute;left:0;top:0;width:160px;height:210px}
+.cust .fig{position:absolute;left:0;top:40px;width:160px;height:210px}
 .cust.walk .fig{animation:bob .28s infinite alternate}
 @keyframes bob{to{transform:translateY(-5px)}}
 .cust.shake .fig{animation:nope .3s}
@@ -247,11 +247,11 @@ body.ovl .hud .icon-btn.bagbtn{width:auto;min-width:40px;height:36px;padding:0 9
 .title-row{display:flex;gap:18px;align-items:center}
 .title-row svg{width:84px;flex:none}
 .cust.sp{top:168px}.cust.sp.low{top:196px}
-.cust.sp[data-c=emily] .spr{left:-40px;top:-16px;width:242px;height:302px}
-.cust.sp[data-c=kuroda] .spr{left:-37px;top:-40px;width:235px;height:294px}
-.cust.sp[data-c=ryuji] .spr{top:-36px}
-.cust.sp[data-c=riko] .spr{left:-66px;top:-26px;width:291px;height:364px}
-.cust .spr{position:absolute;left:-22px;top:-10px;width:205px;height:256px;pointer-events:none;transform-origin:50% 100%}
+.cust.sp[data-c=emily] .spr{left:-40px;top:24px;width:242px;height:302px}
+.cust.sp[data-c=kuroda] .spr{left:-37px;top:0px;width:235px;height:294px}
+.cust.sp[data-c=ryuji] .spr{top:4px}
+.cust.sp[data-c=riko] .spr{left:-66px;top:14px;width:291px;height:364px}
+.cust .spr{position:absolute;left:-22px;top:30px;width:205px;height:256px;pointer-events:none;transform-origin:50% 100%}
 .spr img{position:absolute;inset:0;width:100%;height:100%;display:none;-webkit-user-drag:none;user-select:none}
 .cust[data-m=ok] .spr .m-ok,.cust[data-m=happy] .spr .m-happy,.cust[data-m=worry] .spr .m-worry,.cust[data-m=angry] .spr .m-angry{display:block}
 .cust.walk .spr img{display:none!important}.cust.walk .spr img.m-walk{display:block!important}
@@ -332,7 +332,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none;tou
 #game.wide .cust{margin-top:-64px}#game.wide .cust .bubble{top:-100px}
 .robber{position:absolute;top:150px;width:160px;height:210px;z-index:3;pointer-events:none;transition:transform 1.4s linear}
 #game.wide .robber{margin-top:-64px}#game.wide .robber .bubble{top:-44px}body.ovl #game.wide .robber{margin-top:-46px}
-.robber .spr{position:absolute;left:-22px;top:-10px;width:205px;height:256px;transform-origin:50% 100%}
+.robber .spr{position:absolute;left:-22px;top:30px;width:205px;height:256px;transform-origin:50% 100%}
 .robber .spr img{position:absolute;inset:0;width:100%;height:100%;display:none}
 .robber[data-m=ok] .r-ok,.robber[data-m=happy] .r-happy,.robber[data-m=worry] .r-worry,.robber[data-m=hit] .r-hit,.robber[data-m=walk] .r-walk{display:block}
 .robber.in .r-walk{transform:scaleX(-1)}
