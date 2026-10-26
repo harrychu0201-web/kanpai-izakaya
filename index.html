@@ -3621,9 +3621,9 @@ async function inboxNoticeSend(){const ti=$('ntitle'),tx=$('ntext'),sg=$('nsign'
 const ADMIN_EMAIL='harrychu0201@gmail.com';
 function isAdmin(){return !!(CL.user&&CL.user.email===ADMIN_EMAIL)}
 /* announcement posters: the owner adds their uid under posters/<uid> in Realtime Database; they can post, edit and delete announcements (not feedback, bans or vote stats) */
-/* staff, posters and the owner can add and edit announcements; only the owner and posters can delete them */
+/* staff, posters and the owner can add, edit and delete announcements */
 const canPost=()=>isAdmin()||CL.isPoster===true||CL.isStaff===true;
-const canDelNotice=()=>isAdmin()||CL.isPoster===true;
+const canDelNotice=()=>isAdmin()||CL.isPoster===true||CL.isStaff===true;
 /* inbox staff: owner plus anyone under admins/<uid> in Realtime Database; they can read and reply to feedback and delete it (not bans, vote stats or chat tools) */
 const canInbox=()=>isAdmin()||CL.isStaff===true;
 const CHT={msgs:[],unsub:null,open:null,last:0,hide:{},block:{},me:null,banned:false,back:false,seenAt:0,live:false,err:false};
