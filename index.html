@@ -454,6 +454,7 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 .replayfab .sideb span{font-size:clamp(11px,1.1vw,15px)!important}
 .home.port .replayfab{bottom:220px}
 @media (max-height:560px) and (orientation:landscape){.chatfab{padding:5px 12px 5px 9px;font-size:13px;bottom:calc(max(14px,env(safe-area-inset-bottom,0px)) + 44px)}.chatfab b{font-size:18px}}
+.rewardfab{left:auto!important;right:max(14px,env(safe-area-inset-right,0px))!important;top:auto!important;bottom:calc(max(14px,env(safe-area-inset-bottom,0px)) + 40px)!important}.home.port .rewardfab{bottom:160px!important}
 .home.port .chatfab{bottom:160px;padding:4px 10px 4px 8px;font-size:12px;border-width:2px;box-shadow:0 3px 0 #3a1a10,0 4px 10px #0006}.home.port .chatfab b{font-size:16px}
 .chat{display:flex;flex-direction:column;gap:6px;min-height:0}
 .chatwarn{font-size:12px!important;color:#7a4a2a;background:#f1e2c2;border-radius:8px;padding:4px 10px}
@@ -1933,7 +1934,7 @@ function useProp(k){if(!R||R.over||R.settled||!PROPS[k])return;const r=loadRec()
 function buyProp(k){const p=PROPS[k];if(!p||R)return;const s=load();if(!s)return;if((s.coins||0)<p.p){toast(T('金幣不夠'));return}arcWallet(-p.p);invAdd({[k]:1});toast(T('買到 {0}',p.n));showRewards()}
 function curCard(){return document.querySelector('#homeModal .card')||document.querySelector('#modalLayer .card')}
 function showRewards(){const c0=curCard(),top=c0?c0.scrollTop:0;renderRewards();const c=curCard();if(c&&top)c.scrollTop=top;syncRewardDot();syncHomeCoins()}
-function syncRewardDot(){const b=document.querySelector('.plq[data-act="rewards"]');if(!b)return;const on=rewardDue(),d=b.querySelector('.rdot');if(on&&!d)b.insertAdjacentHTML('afterbegin','<i class="rdot" style="top:-6px;right:-6px"></i>');else if(!on&&d)d.remove()}
+function syncRewardDot(){const b=document.querySelector('.rewardfab');if(!b)return;const on=rewardDue(),d=b.querySelector('.rdot');if(on&&!d)b.insertAdjacentHTML('afterbegin','<i class="rdot" style="top:-6px;right:-6px"></i>');else if(!on&&d)d.remove()}
 function syncHomeCoins(){const sm=document.querySelector('.plq[data-act="cont"] small'),s=load();if(!sm||!s)return;sm.textContent=sm.textContent.replace(/¥[\d,]+\s*$/,yen(s.coins||0))}
 function weekDays(){const t=new Date(),dow=(t.getDay()+6)%7,out=[];for(let i=0;i<7;i++)out.push(new Date(t.getFullYear(),t.getMonth(),t.getDate()-dow+i));return out}
 function signedSet(r){const s={};if(r.ci&&r.ci.last){const [y,m,d]=r.ci.last.split('-').map(Number);for(let i=0;i<(r.ci.streak||0);i++)s[dayKey(new Date(y,m-1,d-i))]=1}return s}
@@ -2246,7 +2247,7 @@ function showHome(){if(RP.on)abandonReplay();
   const saved=load();
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
   <div class="htitle"><h1 class="logo"><img src="img/logo-9e60dada.webp" alt="${T('乾杯！居酒屋')}" draggable="false"></h1><div class="sub">${T('～ 巷子裡的小居酒屋 ～')}</div></div>
-  <div class="menu">${saved?(FB_CONFIG?plaque('frhome','好友'):'')+plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1)+plaque('asknew','新的一局'):plaque('newgame','開始營業','',1)}${plaque('rewards','獎勵')}</div><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','遊戲廳')+(FB_CONFIG?'':sideBtn('replay','選日重玩')):''}${sideBtn('howto','說明')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side side-r">${sideBtn('records','經營紀錄')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反應'):''}</div><div class="topl"><button class="langbtn ntbtn" data-act="slots" aria-label="${T('存檔欄位')}">💾<span class="ntl"> ${T('存檔')}</span></button><button class="langbtn ntbtn" data-act="share" aria-label="${T('分享')}">🔗<span class="ntl"> ${T('分享')}</span></button><button class="langbtn ntbtn" data-act="dc" aria-label="Discord">🎮<span class="ntl"> Discord</span></button></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${NOTICE?`<button class="langbtn ntbtn" data-act="notice" aria-label="${T('公告')}">📢<span class="ntl"> ${T('公告')}</span></button>`:''}${acctBtn()}<button class="langbtn" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>${LANGS.find(l=>l[0]===LANG)[1]}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}${FB_CONFIG&&saved?`<div class="replayfab">${sideBtn('replay','選日重玩')}</div>`:''}<div id="homeModal"></div></div>`;
+  <div class="menu">${saved?(FB_CONFIG?plaque('frhome','好友'):'')+plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1)+plaque('asknew','新的一局'):plaque('newgame','開始營業','',1)}${sushiDev()?plaque('sushihome','壽司店'):''}</div><button class="chatfab rewardfab" data-act="rewards">🎁 ${T('獎勵')}</button><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','遊戲廳')+(FB_CONFIG?'':sideBtn('replay','選日重玩')):''}${sideBtn('howto','說明')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side side-r">${sideBtn('records','經營紀錄')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反應'):''}</div><div class="topl"><button class="langbtn ntbtn" data-act="slots" aria-label="${T('存檔欄位')}">💾<span class="ntl"> ${T('存檔')}</span></button><button class="langbtn ntbtn" data-act="share" aria-label="${T('分享')}">🔗<span class="ntl"> ${T('分享')}</span></button><button class="langbtn ntbtn" data-act="dc" aria-label="Discord">🎮<span class="ntl"> Discord</span></button></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${NOTICE?`<button class="langbtn ntbtn" data-act="notice" aria-label="${T('公告')}">📢<span class="ntl"> ${T('公告')}</span></button>`:''}${acctBtn()}<button class="langbtn" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>${LANGS.find(l=>l[0]===LANG)[1]}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}${FB_CONFIG&&saved?`<div class="replayfab">${sideBtn('replay','選日重玩')}</div>`:''}<div id="homeModal"></div></div>`;
   placeChat();requestAnimationFrame(placeChat);setTimeout(placeChat,300);syncRewardDot();
   if(noticeDue()){if(NOTICE_LOADED||!FB_CONFIG)setTimeout(()=>{if(HOME&&!document.querySelector('#homeModal .modal')){NAUTOREQ=true;showNotice()}},400);else setTimeout(noticePop,3500)}else if(CL.pick)setTimeout(cloudAsk,0);
 }
@@ -2556,7 +2557,7 @@ function shopStaff(){return `<h3 class="sh">${T('店員・可以升級（日薪�
 function shopKit(){return shopStaff()+`<p class="hint">${T('武器（防身用品）已經移到「🔫 武器」分頁了')} <button class="btn alt" style="font-size:13px;padding:3px 10px" data-act="stab" data-id="gun">${T('前往武器')}</button></p>`+`  <h3 class="sh">${T('廚房設備')}</h3>
   <div class="shop">${UPS.map(u=>{const done=u.done(),can=u.ok();return `<div class="up ${done?'done':''}"><b>${T(u.zh)}</b><p>${T(u.d)}</p><div class="row"><span class="price">${yen(u.cost)}</span>${done?`<span>${T('已購買')}</span>`:can?`<button class="btn" data-act="buy" data-id="${u.id}" ${ST.coins<u.cost?'disabled':''}>${T('購買')}</button>`:`<span style="font-size:12px">${u.need?T(u.need):''}</span>`}</div></div>`}).join('')}</div>`}
 const RMTABS=['rmenu','rkit','rdeco'];
-const SUSTABS=['smenu'],SUSHI_PRICE=8000000;
+const SUSHI_PRICE=8000000;
 function sushiDev(){try{return isAdmin()&&localStorage.getItem('izakaya-sushi')==='1'}catch(e){return false}}
 /* red dot on a shop tab = something in it is affordable right now (guns are left out on purpose) */
 function tabDot(k){try{const c=ST.coins;
@@ -2578,17 +2579,17 @@ function shopSushi(){
   if(!ST.sushi)return `<h3 class="sh">${T('壽司店・花錢解鎖')}</h3><div class="shop"><div class="up"><b>🍣 ${T('開一家壽司店')}</b><p>${T('（開發中，僅作者可見）解鎖後會開放壽司菜單與捲壽司站台。')}</p><button class="btn" data-act="buysushi" ${ST.coins<SUSHI_PRICE?'disabled':''}>${T('花 {0} 解鎖',yen(SUSHI_PRICE))}</button></div></div>`;
   return `<h3 class="sh">${T('壽司菜單')}</h3><div class="shop"><div class="up"><b>${T('壽司店施工中')}</b><p>${T('下一步：捲壽司站台、壽司職人・健太郎。')}</p></div></div>`;
 }
+function sushiHome(){modal(`<h2>🍣 ${T('壽司店')}</h2>${shopSushi()}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
 function showShop(){
   if(SHOPTAB==='rm')SHOPTAB='rmenu';
   if(RMTABS.includes(SHOPTAB)&&!ST.owned)SHOPTAB='menu';
-  if(SUSTABS.includes(SHOPTAB)&&!sushiDev())SHOPTAB='menu';
-  const un=unlocked(ST.day,'iz'),TB=SHOPTAB,side=SUSTABS.includes(TB)?'sushi':RMTABS.includes(TB)?'rm':'iz';
+  const un=unlocked(ST.day,'iz'),TB=SHOPTAB,side=RMTABS.includes(TB)?'rm':'iz';
   const dotI=['menu','deco','style','kit'].some(tabDot),dotR=ST.owned&&RMTABS.some(tabDot);
   const dot=on=>on?'<i class="dot"></i>':'';
-  const tabs=side==='sushi'?[['smenu','菜單']]:side==='rm'?(ST.rm?[['rmenu','菜單'],['rkit','設備・店員'],['rdeco','布置']]:[]):[['menu','菜單'],['deco','布置'],['style','風格'],['kit','設備・店員'],['gun','🔫 武器']];
-  const body=side==='sushi'?shopSushi():side==='rm'?shopRm(TB==='rkit'?'kit':TB==='rdeco'?'deco':'menu'):TB==='menu'?shopMenu(un):TB==='deco'?shopDeco():TB==='style'?shopStyle():TB==='gun'?shopGuns():shopKit();
+  const tabs=side==='rm'?(ST.rm?[['rmenu','菜單'],['rkit','設備・店員'],['rdeco','布置']]:[]):[['menu','菜單'],['deco','布置'],['style','風格'],['kit','設備・店員'],['gun','🔫 武器']];
+  const body=side==='rm'?shopRm(TB==='rkit'?'kit':TB==='rdeco'?'deco':'menu'):TB==='menu'?shopMenu(un):TB==='deco'?shopDeco():TB==='style'?shopStyle():TB==='gun'?shopGuns():shopKit();
   modal(`<div class="shopnav"><div class="shoptop"><h2>${T('商店')}</h2><button class="xbtn" data-act="back" aria-label="${T('關閉')}">×</button></div><div class="goalrow"><span>${T('錢包')} ${yen(ST.coins)}</span><span>${T('客人耐心 +{0}%',Math.round((patMult()-1)*100))}</span><span>${T('小費 +{0}%',Math.round(tipBonus()*100))}</span></div>
-  <div class="pickrow shopsw"><button class="btn ${side==='iz'?'':'alt'}" data-act="stab" data-id="menu">🏮 ${T('居酒屋本店')}${side==='rm'?dot(dotI):''}</button>${ST.owned?`<button class="btn ${side==='rm'?'':'alt'}" data-act="stab" data-id="rmenu">🍜 ${T('深夜拉麵屋台')}${side==='iz'?dot(dotR):''}</button>`:`<button class="btn alt" disabled style="opacity:.55">🔒 ${T('深夜拉麵屋台')}</button>`}${sushiDev()?`<button class="btn ${side==='sushi'?'':'alt'}" data-act="stab" data-id="smenu">🍣 ${T('壽司店')}</button>`:''}</div>
+  <div class="pickrow shopsw"><button class="btn ${side==='iz'?'':'alt'}" data-act="stab" data-id="menu">🏮 ${T('居酒屋本店')}${side==='rm'?dot(dotI):''}</button>${ST.owned?`<button class="btn ${side==='rm'?'':'alt'}" data-act="stab" data-id="rmenu">🍜 ${T('深夜拉麵屋台')}${side==='iz'?dot(dotR):''}</button>`:`<button class="btn alt" disabled style="opacity:.55">🔒 ${T('深夜拉麵屋台')}</button>`}</div>
   ${tabs.length?`<div class="stabs">${tabs.map(([k,n])=>`<button class="stab ${TB===k?'on':''}" data-act="stab" data-id="${k}">${T(n)}${dot(tabDot(k))}</button>`).join('')}</div>`:''}
   </div>
   ${ST.owned?'':`<p class="hint">${T('買下整棟店面後，這裡會開放第二家店：深夜拉麵屋台。')}</p>`}
@@ -2745,7 +2746,7 @@ document.addEventListener('click',e=>{
   else if(act==='buydec'){const d=DECOR.find(x=>x.id===a.dataset.id);if(d&&!hasDec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.dec=ST.dec||{};ST.dec[d.id]=true;save();drawBg();showShop();renderHUD()}}
   else if(act==='buygun'){const i=+a.dataset.id,g=GUNS[i];if(g&&ST.coins<g.cost){sfx('nope');a.classList.remove('shakeb');void a.offsetWidth;a.classList.add('shakeb');const m=$('needg'+i);if(m){m.classList.remove('flash');void m.offsetWidth;m.classList.add('flash')}}else if(g&&(ST.weapon||0)<i+1&&ST.coins>=g.cost){keepScroll();ST.coins-=g.cost;ST.weapon=i+1;save();showShop();renderHUD()}}
   else if(act==='gun'&&R)toggleGun();
-  else if(act==='buysushi'){if(sushiDev()&&!ST.sushi&&ST.coins>=SUSHI_PRICE){keepScroll();ST.coins-=SUSHI_PRICE;ST.sushi={up:{},seen:false};save();showShop();renderHUD();toast(T('壽司店開張了！（開發中）'))}}
+  else if(act==='buysushi'){if(sushiDev()&&!ST.sushi&&ST.coins>=SUSHI_PRICE){keepScroll();ST.coins-=SUSHI_PRICE;ST.sushi={up:{},seen:false};save();sushiHome();renderHUD();toast(T('壽司店開張了！（開發中）'))}}
   else if(act==='buyrm'){if(ST.owned&&!ST.rm&&ST.coins>=RM_PRICE){keepScroll();ST.coins-=RM_PRICE;ST.rm={up:{},dec:{},seen:false};ST.where='rm';save();showShop();renderHUD();toast(T('屋台開張了！下一天開店前可以選要開哪一家'))}}
   else if(act==='buyk2'){if(ST.rm&&!rmK2()&&ST.coins>=K2_PRICE){keepScroll();ST.coins-=K2_PRICE;ST.rm.k2=1;ST.menu=ST.menu||{};ST.menu.koro=true;ST.fresh=(ST.fresh||[]).concat('koro');save();drawBg();showShop();renderHUD();toast(T('二號廚房擴建好了！開店時點吧台右邊的按鈕切換廚房'))}}
   else if(act==='gomatog'){if(ST.rm&&has('goma')){keepScroll();ST.rm.off=ST.rm.off||{};ST.rm.off.goma=!ST.rm.off.goma;save();drawBg();showShop()}}
@@ -2759,6 +2760,7 @@ document.addEventListener('click',e=>{
   else if(act==='where'){ST.where=a.dataset.id==='rm'&&ST.rm?'rm':'iz';setCur(ST.where);if(ST.today&&ST.today.ev==='sale'){const c=unlocked(ST.day).filter(k=>ITEMS[k].cost&&k!=='beer');ST.today.sale=pick(c.length?c:['beer'])}save();showDayIntro()}
   else if(act==='buy'){const u=UPS.find(x=>x.id===a.dataset.id);if(u&&u.ok()&&ST.coins>=u.cost){keepScroll();ST.coins-=u.cost;u.go();save();drawBg();showShop();renderHUD()}}
   else if(act==='pause'&&R)pause();
+  else if(act==='sushihome')sushiHome();
   else if(act==='rewards'){if(R&&!R.over&&!R.settled)R.paused=true;showRewards()}
   else if(act==='checkin')claimCheckin();
   else if(act==='achclaim')claimAch(a.dataset.id);
@@ -3893,7 +3895,7 @@ document.addEventListener('click',e=>{const a=e.target.closest('[data-act^="tst"
   else if(act==='tstcopy'){if(CL.pick){toast('先選好要用哪份存檔');return}tstSet(true,true)}
   else if(act==='tstoff')tstSet(false);
   else if(act==='tstday'){const d=Math.max(1,Math.min(999,parseInt($('tstday').value)||1));tstEdit(o=>{o.day=d;o.pendingNext=false;o.today=null})}
-  else if(act==='tstsushi'){if(!isAdmin())return;try{if(sushiDev())localStorage.removeItem('izakaya-sushi');else localStorage.setItem('izakaya-sushi','1')}catch(e){}tstPanel()}
+  else if(act==='tstsushi'){if(!isAdmin())return;try{if(sushiDev())localStorage.removeItem('izakaya-sushi');else localStorage.setItem('izakaya-sushi','1')}catch(e){}showHome();tstPanel()}
   else if(act==='tstcoin')tstEdit(o=>{o.coins=(o.coins||0)+(+a.dataset.id)});
   else if(act==='tstdebt')tstEdit(o=>{o.debt=0;o.loans=0;o.dues=[]});
   else if(act==='tstev'){const ev=$('tstev').value,rob=$('tstrob').value,cust=$('tstcust').value,bare=$('tstbare').value?1:0;tstEdit(o=>{o.tforce={ev,rob,cust};if(bare)o.tforce.bare=1;if(!ev&&!rob&&!cust&&!bare)delete o.tforce;o.today=null})}
