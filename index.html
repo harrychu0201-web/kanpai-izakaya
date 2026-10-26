@@ -1087,6 +1087,7 @@ const RUPS=[
   {id:'rmen5',zh:'第五支麵杓',d:'麵鍋 4 → 5 份。',cost:30000,ok:()=>mpotN()===4,go:()=>ST.rm.up.mpot=5,done:()=>mpotN()>=5,need:'先買第四支麵杓'},
   {id:'rpan4',zh:'加大煎台',d:'煎台 3 → 4 格。',cost:18000,ok:()=>rpanN()===3,go:()=>ST.rm.up.pan=4,done:()=>rpanN()>=4},
   {id:'rbowl2',zh:'第二個拉麵碗位',d:'可以同時組兩碗拉麵。',cost:20000,ok:()=>bowlsN()===1,go:()=>ST.rm.up.bowls=2,done:()=>bowlsN()>=2},
+  {id:'rbowl3',zh:'第三個拉麵碗位',d:'可以同時組三碗拉麵。',cost:35000,ok:()=>bowlsN()===2,go:()=>ST.rm.up.bowls=3,done:()=>bowlsN()>=3,need:'先買第二個拉麵碗位'},
   {id:'roden',zh:'大號關東煮鍋',d:'關東煮鍋 6 → 10 份，同時能燉的份數變多。',cost:16000,ok:()=>odenCap()===6,go:()=>ST.rm.up.oden=10,done:()=>odenCap()>=10},
   {id:'rwarm',zh:'屋台保溫台',d:'屋台的保溫台 3 → 5 格。',cost:15000,ok:()=>rmUp('warm',3)===3,go:()=>ST.rm.up.warm=5,done:()=>rmUp('warm',3)>=5},
   {id:'rwarm7',zh:'長型保溫台',d:'屋台的保溫台 5 → 7 格。',cost:40000,ok:()=>rmUp('warm',3)===5,go:()=>ST.rm.up.warm=7,done:()=>rmUp('warm',3)>=7,need:'先買屋台保溫台'},
@@ -1220,9 +1221,9 @@ function rmStHTML(name){
       ${o.n>0?`<g transform="translate(4 8) scale(.8)">${odenG(o.n).replace(/<path d="M6 52h88[^>]*>|<ellipse cx="50" cy="52"[^>]*>/g,'')}</g>`:''}`,'0 0 84 90')
       +(o.n?`<span class="burnt" style="background:#b8372a;top:0">×${o.n}</span>`:'')+(o.cook.length?`<i class="cbar"><i style="width:${Math.min(100,prog*100)}%;background:#ffc65a"></i></i>`:'')+`<span class="lbl">${T('關東煮')}</span>`+rmLock('oden')}
   if(name==='bowls'){const n=bowlsN();
-    return `<div style="display:flex;flex-direction:column;gap:3px;width:100%;height:100%">${R.bowls.slice(0,n).map((b,i)=>{const done=bowlDone(i),h=n===1?128:62;
-      return `<div class="st" data-bowl="${i}" style="position:relative;inset:auto;flex:1">${sv(`<rect x="4" y="${n===1?14:3}" width="102" height="${n===1?106:56}" rx="12" fill="#e8c48e" stroke="${O}" stroke-width="4"/>${b?`<g transform="translate(${n===1?8:31} ${n===1?18:2}) scale(${n===1?.94:.5})">${ramenG(b)}</g>`:`<circle cx="55" cy="${n===1?66:31}" r="${n===1?30:18}" fill="none" stroke="#b8905a" stroke-width="3" stroke-dasharray="6 5"/>`}
-      ${done?`<circle cx="94" cy="${n===1?24:14}" r="11" fill="#5fb33a" stroke="${O}" stroke-width="3"/><path d="M88 ${n===1?24:14}l4 4l7-8" stroke="#fff" stroke-width="3" fill="none"/>`:''}`,`0 0 110 ${h}`)}<span class="lbl"${n>1?' style="bottom:-4px;font-size:12px"':''}>${done?T('完成！點我拿起'):b?T(b.men?'放配料':'等麵'):T('拉麵碗')+(n>1?(i+1):'')}</span></div>`}).join('')}</div>`}
+    return `<div style="display:flex;flex-direction:column;gap:3px;width:100%;height:100%">${R.bowls.slice(0,n).map((b,i)=>{const done=bowlDone(i),h=n===1?128:n===2?62:40;
+      return `<div class="st" data-bowl="${i}" style="position:relative;inset:auto;flex:1">${sv(`<rect x="4" y="${n===1?14:n===2?3:2}" width="102" height="${n===1?106:n===2?56:36}" rx="12" fill="#e8c48e" stroke="${O}" stroke-width="4"/>${b?`<g transform="translate(${n===1?8:n===2?31:37} ${n===1?18:2}) scale(${n===1?.94:n===2?.5:.36})">${ramenG(b)}</g>`:`<circle cx="55" cy="${n===1?66:n===2?31:20}" r="${n===1?30:n===2?18:13}" fill="none" stroke="#b8905a" stroke-width="3" stroke-dasharray="6 5"/>`}
+      ${done?`<circle cx="94" cy="${n===1?24:n===2?14:11}" r="11" fill="#5fb33a" stroke="${O}" stroke-width="3"/><path d="M88 ${n===1?24:n===2?14:11}l4 4l7-8" stroke="#fff" stroke-width="3" fill="none"/>`:''}`,`0 0 110 ${h}`)}<span class="lbl"${n>1?' style="bottom:-4px;font-size:12px"':''}>${done?T('完成！點我拿起'):b?T(b.men?'放配料':'等麵'):T('拉麵碗')+(n>1?(i+1):'')}</span></div>`}).join('')}</div>`}
   if(name==='rmtop'){const tiles=[['bowl',ramenG({}),T('拉麵碗')],['chashu',`<g transform="translate(0 10)"><ellipse cx="38" cy="40" rx="22" ry="14" fill="#e8a888" stroke="${O}" stroke-width="3"/><ellipse cx="38" cy="40" rx="13" ry="8" fill="none" stroke="#c9785a" stroke-width="3"/><ellipse cx="62" cy="56" rx="20" ry="13" fill="#eab092" stroke="${O}" stroke-width="3"/></g>`,T('叉燒')],['egg',`<ellipse cx="50" cy="54" rx="26" ry="20" fill="#fff" stroke="${O}" stroke-width="3"/><ellipse cx="50" cy="54" rx="14" ry="11" fill="#f5a020"/>`,T('溏心蛋')],['corn',`${[[34,46],[46,42],[58,46],[40,56],[52,54],[64,56],[30,58],[46,66],[58,64]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="6" fill="#f7d33a" stroke="${O}" stroke-width="2"/>`).join('')}<rect x="54" y="26" width="22" height="16" rx="3" fill="#fff4b8" stroke="${O}" stroke-width="2.5" transform="rotate(-10 65 34)"/>`,T('奶油玉米')]];
     return `<div style="display:grid;grid-template-rows:repeat(${tiles.length},minmax(0,1fr));gap:3px;width:100%;height:100%">${tiles.map(([id,art,lb])=>{const lk=id!=='bowl'&&!topOn(id);
       return `<div class="st" data-tp="${id}" style="position:relative;inset:auto;background:#f1e2c2;border:2px solid ${O};border-radius:8px;opacity:${lk?.3:1};${lk?'cursor:default':''}">${sv(art)}<span class="lbl" style="font-size:10px;padding:0 5px">${lb}</span></div>`}).join('')}</div>`}
@@ -1247,7 +1248,7 @@ function mpotHTML(){
   return s+`<span class="lbl">${T('麵鍋')}</span>`}
 function bowlDone(i){const b=R.bowls[i];return !!b&&!!b.men&&!!b.top}
 function bowlKey(i){return 'ramen:'+R.bowls[i].top}
-function bowlOrder(){const n=bowlsN();return [R.lastBowl,...[0,1].filter(i=>i!==R.lastBowl)].filter(i=>i<n)}
+function bowlOrder(){const n=bowlsN();return [R.lastBowl,...[0,1,2].filter(i=>i!==R.lastBowl)].filter(i=>i<n)}
 function clickMen(i,el){const g=R.mpot[i];if(!g)return;const s=cookState(g.t,'noodle');
   if(s==='raw'){nope(el);toast('麵還沒煮好')}
   else if(s==='burnt'){R.mpot[i]=null;toast('麵煮糊了，丟掉了')}
@@ -1979,7 +1980,7 @@ function srcCenter(h){
   if(h.src==='tama')return at(L.tama,7+h.i*TMW+TMW/2,90);
   if(h.src==='onig')return at(L.onig,7+h.i*ONW+ONW/2,90);
   if(h.src==='mpot')return at(L.mpot,10+h.i*MPW+MPW/2,90);
-  if(h.src==='bowl')return at(L.bowls,55,bowlsN()===1?64:32+h.i*65);
+  if(h.src==='bowl')return at(L.bowls,55,bowlsN()===1?64:bowlsN()===2?32+h.i*65:20+h.i*43);
   if(h.src==='oden')return at(L.odenPot,42,45);
   const r=L[h.src];return at(r,r.w/2,r.h/2);
 }
