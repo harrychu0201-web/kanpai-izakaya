@@ -63,6 +63,8 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .hud .icon-btn{width:36px;height:36px;border-radius:50%;background:#1a0e08;border:2px solid #5a3420;display:grid;place-items:center;font-size:13px;line-height:1;padding:0;overflow:hidden;font-family:system-ui,-apple-system,sans-serif}
 .hud .icon-btn .ico{display:block;line-height:1}
 .hud .icon-btn svg{width:50%;height:50%;display:block;fill:#f3dfb4}
+.icon-btn.bagbtn{width:auto;min-width:36px;padding:0 10px;border-radius:999px;font-size:14px;font-weight:900;color:#f3dfb4;white-space:nowrap}
+body.ovl .hud .icon-btn.bagbtn{width:auto;min-width:40px;height:36px;padding:0 9px;font-size:13px}
 .icon-btn.bankbtn{border-color:#e0a030;animation:bankp 1.2s ease-in-out infinite}@keyframes bankp{50%{box-shadow:0 0 0 4px #e0a03066}}
 
 /* stage */
@@ -2165,7 +2167,7 @@ function renderHUD(){document.body.classList.toggle('playing',!!R);
     <div class="pill clock"><b>${clockStr()}</b>${PERIOD(hourNow())}</div>${R.ev&&R.ev.ev?`<div class="pill ev" title="${esc(evDesc(R.ev))}">${evLabel(R.ev)}</div>`:''}`:'<div style="flex:1"></div>'}
     ${CUR==='rm'?(rmStaffLv()||rmStaff2Lv()||rmFryStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[rmStaffLv()?T('小葵')+'★'.repeat(rmStaffLv()-1):'',rmStaff2Lv()?T('山田')+'★'.repeat(rmStaff2Lv()-1):'',rmFryStaffLv()?T('大輔')+'★'.repeat(rmFryStaffLv()-1):''].filter(Boolean).join('・')}</b></div>`:''):ST.up.waiter||ST.up.helper?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[ST.up.waiter?T('小美')+(staffLv('waiter')>1?'★'.repeat(staffLv('waiter')-1):''):'',ST.up.helper?T('阿健')+(staffLv('helper')>1?'★'.repeat(staffLv('helper')-1):''):''].filter(Boolean).join('・')}</b></div>`:''}
     ${(()=>{const w=R?live():ST.coins;return `<div class="pill ${w<0?'neg':''}">${T('錢包')} <b>${w<0?'−':''}¥${Math.abs(Math.round(w)).toLocaleString('en-US')}</b></div>`})()}${ST.debt?`<div class="pill staff">${T('借款')} <b>${yen(ST.debt)}</b></div>`:''}
-    ${R&&!R.over&&!R.settled&&!DEMO?'<button class="icon-btn" data-act="rewards" aria-label="獎勵">🎒</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}"><span class="ico">${sndIcon()}</span></button><button class="icon-btn fsbtn" data-act="fs" aria-label="${T('全螢幕')}"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="#f3dfb4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>`:''}`);
+    ${R&&!R.over&&!R.settled&&!DEMO?'<button class="icon-btn bagbtn" data-act="rewards" aria-label="背包">'+T('背包')+'</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}"><span class="ico">${sndIcon()}</span></button><button class="icon-btn fsbtn" data-act="fs" aria-label="${T('全螢幕')}"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="#f3dfb4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>`:''}`);
 }
 
 /* ---- modals ---- */
@@ -2231,7 +2233,7 @@ const HOWTO=[['做菜、送菜','客人頭上的對話框是他點的菜。點�
   ['錢包與食材','每用一份食材都要從錢包付錢，錢包沒錢就買不了食材。打烊時扣掉食材、店員日薪和店租，虧錢的話直接從錢包扣。'],
   ['銀行與破產','錢包見底時，銀行會借你 ¥30,000 周轉。但錢包見底第 3 次就會破產，所有東西歸零，從第 1 天重新開始。'],
   ['緊急借款','營業中錢不夠買食材時，可以按 🏦 或從暫停選單找銀行窗口，自己決定借多少（¥1,000 到 ¥100,000）。利率每次借款都隨機（5% 到 25%），3 天後打烊時連本帶利還。一天只能借一次，理性消費、留好週轉金才是長久之計。'],
-  ['道具、成就與簽到','每天按 🎁 簽到，連續簽到 7 天有額外獎勵。撐過第 10、20、30 天，或累計營收破百萬，都會有成就可以領。營業中按 🎒 使用道具：不焦符讓這一局之後的食物不會燒焦，耐心回復讓客人耐心回滿，延長營業多營業 30 秒。道具也能用金幣在首頁的道具商店買。'],
+  ['道具、成就與簽到','每天按 🎁 簽到，連續簽到 7 天有額外獎勵。撐過第 10、20、30 天，或累計營收破百萬，都會有成就可以領。營業中按「背包」使用道具：不焦符讓這一局之後的食物不會燒焦，耐心回復讓客人耐心回滿，延長營業多營業 30 秒。道具也能用金幣在首頁的道具商店買。'],
   ['商店','用賺來的錢解鎖新菜、升級菜色、雇用和升級店員、買裝潢。存到 ¥800,000 就能買下整棟店面。'],
   ['這個遊戲的由來','這個遊戲的起點，是有一次路過居酒屋，被裡面的氛圍吸引。做著做著才發現，那份氛圍的背後，是有人站了一整天，把同樣的動作重複了好幾年。「一日之所需，百工斯為備。」希望你玩完之後，下次去吃飯時，也會對店員多說一聲謝謝。']];
 const SHARE_URL='https://harrychu0201-web.github.io/kanpai-izakaya/';
@@ -2511,7 +2513,7 @@ function showShop(){
 function advance(){if(ST.pendingNext){ST.day++;ST.pendingNext=false;save();cloudUpload(true)}showDayIntro()}
 
 /* pause button: the HUD re-renders several times a second (clock, wallet), which can swap the button out between pointerdown and click and lose the tap; so pause on pointerdown and ignore the matching click */
-let HUDDOWN={act:null,t:-1e9};/* 🎒 and 🏦 sit in the HUD too, which re-renders constantly, so act on pointerdown and ignore the matching click (same trick as pause) */
+let HUDDOWN={act:null,t:-1e9};/* 背包 and 🏦 sit in the HUD too, which re-renders constantly, so act on pointerdown and ignore the matching click (same trick as pause) */
 document.getElementById('hud').addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('[data-act="rewards"],[data-act="bank"]');if(!b||e.button>0||!R||R.over||R.settled)return;HUDDOWN={act:b.dataset.act,t:performance.now()};if(b.dataset.act==='rewards'){R.paused=true;showRewards()}else bankWin()});
 let PAUSEDOWN=-1e9;document.getElementById('hud').addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('[data-act="pause"]');if(!b||e.button>0||!R||R.paused||R.over)return;PAUSEDOWN=performance.now();pause()});
 document.addEventListener('click',e=>{
