@@ -1363,16 +1363,23 @@ function suMakiG(id){
   return piece(29,64)+piece(71,64);
 }
 /* 手卷：海苔捲成圓錐，開口露出飯和配料 */
+/* 手卷：立體的海苔圓錐斜放，開口朝右上，看得到開口裡的飯、後面翹起的海苔角和側面陰影 */
 function suTemakiG(id){
-  const cone=`<path d="M50 96L14 40C14 30 30 24 50 24C70 24 86 30 86 40Z" transform="translate(2 3)" fill="${O}" opacity=".28"/><path d="M50 96L14 40C14 30 30 24 50 24C70 24 86 30 86 40Z" fill="${NORI}" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M34 52L46 78M64 50L54 76M24 42L40 66M78 42L62 68" stroke="${NORI2}" stroke-width="2" opacity=".8" stroke-linecap="round"/><path d="M22 40C24 33 36 29 50 29" stroke="#4a7a52" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>`;
-  const rice=`<ellipse cx="50" cy="30" rx="34" ry="11" fill="#fcf8ee" stroke="${O}" stroke-width="3"/>`;
-  const leaf=`<path d="M44 26L54 8L62 26Z" fill="#5fae4a" stroke="#2f6a2a" stroke-width="1.6"/>`;
-  const dots=[[54,26],[62,22],[70,27],[58,20],[66,30],[50,22]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="4.6" fill="#f5622a" stroke="#a83a14" stroke-width="1.2"/><circle cx="${x-1.4}" cy="${y-1.6}" r="1.4" fill="#ffd2b0"/>`).join('');
+  const shadow=`<ellipse cx="46" cy="94" rx="30" ry="5" fill="${O}" opacity=".22"/>`;
+  const flap=`<path d="M20 30L30 3Q50 -2 74 14L80 30A30 11 0 0 0 20 30Z" fill="#1c3122" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M31 8Q50 4 70 16" stroke="${NORI2}" stroke-width="2" fill="none" opacity=".7"/>`;
+  const rice=`<path d="M23 31C25 15 75 15 77 31Z" fill="#fcf8ee" stroke="${O}" stroke-width="2.6" stroke-linejoin="round"/><ellipse cx="50" cy="31" rx="27" ry="8" fill="#fcf8ee"/>`+suGrains([[32,26],[42,22],[56,22],[66,26],[48,29],[38,31],[62,31]]);
+  const cuke=(x,y,r)=>`<g transform="rotate(${r} ${x} ${y})"><path d="M${x-7} ${y+14}Q${x-9} ${y-10} ${x} ${y-16}Q${x+9} ${y-10} ${x+7} ${y+14}Z" fill="#cfe8a8" stroke="${O}" stroke-width="2.4" stroke-linejoin="round"/><path d="M${x+3} ${y+13}Q${x+6} ${y-6} ${x} ${y-14}" stroke="#4f8f36" stroke-width="3.4" fill="none" stroke-linecap="round"/></g>`;
+  const slab=(x,y,c,line,r)=>`<g transform="rotate(${r} ${x} ${y})"><path d="M${x-9} ${y+14}L${x-11} ${y-12}Q${x} ${y-19} ${x+11} ${y-12}L${x+9} ${y+14}Z" fill="${c}" stroke="${O}" stroke-width="2.4" stroke-linejoin="round"/><path d="M${x-7} ${y-6}L${x+7} ${y-9}M${x-7} ${y+1}L${x+7} ${y-2}M${x-7} ${y+8}L${x+7} ${y+5}" stroke="${line}" stroke-width="2.4" stroke-linecap="round" opacity=".9"/><path d="M${x-8} ${y-11}Q${x} ${y-16} ${x+8} ${y-11}" stroke="#fff" stroke-width="2" fill="none" opacity=".5"/></g>`;
+  const roe=(pts)=>pts.map(([x,y])=>`<circle cx="${x}" cy="${y}" r="4.4" fill="#f5622a" stroke="#a83a14" stroke-width="1.3"/><circle cx="${x-1.4}" cy="${y-1.5}" r="1.4" fill="#ffd2b0"/>`).join('');
+  const leaf=`<path d="M58 30Q56 10 70 2Q78 16 66 30Z" fill="#5fae4a" stroke="${O}" stroke-width="2.2" stroke-linejoin="round"/><path d="M63 28Q66 16 70 6" stroke="#9fd27f" stroke-width="1.6" fill="none"/>`;
   let top='';
-  if(id==='ikura')top=`<rect x="26" y="8" width="20" height="22" rx="3" fill="#f68a4c" stroke="${O}" stroke-width="2.4" transform="rotate(-8 36 19)"/><path d="M28 12L42 10M28 18L44 16" stroke="#fff1e2" stroke-width="2.4" opacity=".9" transform="rotate(-8 36 19)"/>${leaf}${dots}`;
-  else if(id==='salmon')top=`${leaf}<rect x="24" y="8" width="22" height="22" rx="3" fill="#f68a4c" stroke="${O}" stroke-width="2.4" transform="rotate(-6 35 19)"/><path d="M28 12L42 10M28 18L44 16M28 24L44 22" stroke="#fff1e2" stroke-width="2.2" opacity=".9" transform="rotate(-6 35 19)"/><rect x="52" y="10" width="18" height="20" rx="3" fill="#79b955" stroke="${O}" stroke-width="2.4" transform="rotate(6 61 20)"/>`;
-  else top=`${leaf}<rect x="26" y="8" width="20" height="22" rx="3" fill="#c8323c" stroke="${O}" stroke-width="2.4" transform="rotate(-6 36 19)"/><path d="M30 12L42 10" stroke="#f08a92" stroke-width="2.4" opacity=".9" transform="rotate(-6 36 19)"/><ellipse cx="62" cy="22" rx="12" ry="7" fill="#f0a0a8" stroke="${O}" stroke-width="2.2"/><ellipse cx="62" cy="22" rx="6.5" ry="3.6" fill="none" stroke="#fff" stroke-width="2.2"/>`;
-  return cone+rice+top;
+  if(id==='salmon')top=leaf+cuke(36,16,-14)+slab(50,14,'#f68a4c','#fff1e2',6);
+  else if(id==='tuna')top=leaf+cuke(36,16,-14)+slab(50,14,'#b4213a','#e06a78',6);
+  else top=leaf+cuke(34,16,-14)+roe([[44,24],[52,22],[60,25],[48,17],[56,16],[40,19],[52,28],[44,29]]);
+  const body=`<path d="M20 30A30 11 0 0 0 80 30L50 98Z" fill="${NORI}" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`;
+  const shade=`<path d="M20 30A30 11 0 0 0 35 39.5L50 98Z" fill="#14231a" opacity=".85"/><path d="M66 38Q62 64 52 90" stroke="#5f9468" stroke-width="3.4" fill="none" stroke-linecap="round" opacity=".75"/><path d="M42 41L48 60M58 41L55 56M30 37L44 72" stroke="${NORI2}" stroke-width="1.8" stroke-linecap="round" opacity=".8"/>`;
+  const rim=`<path d="M22 32.5A28 9.5 0 0 0 78 32.5" stroke="#4a7a52" stroke-width="2.4" fill="none" opacity=".9"/><path d="M20 30A30 11 0 0 0 80 30L50 98Z" fill="none" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`;
+  return shadow+`<g transform="rotate(-22 50 58) translate(6 11) scale(.86)">`+flap+rice+top+body+shade+rim+`</g>`;
 }
 function nigiriG(k){const id=k.slice(0,-6);return suRiceG(false)+(id==='tamago'?suTamagoG():suTopG(id))}
 function riceG(){return suRiceG(false)}
@@ -2854,7 +2861,7 @@ function shopSushi(){
   const deco=`<h3 class="sh">${T('店內布置・讓客人更有耐心')}</h3><div class="shop">${SDECOR.map(d=>{const own=sdec(d.id);return `<div class="up ${own?'done':''}"><b>${T(d.zh)}<span class="new" style="background:#5c9a3a">${T('耐心 +{0}%',Math.round(d.b*100))}</span></b><p>${T(d.d)}</p><div class="row"><span class="price">${yen(d.cost)}</span>${own?`<span>${T('已布置')}</span>`:`<button class="btn" data-act="sudec" data-id="${d.id}" ${SV.coins<d.cost?'disabled':''}>${T('購買')}</button>`}</div></div>`}).join('')}</div>`;
   return `<div class="shopnav"></div><h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${l?`<div class="up">${dilHTML('sushistaff').replace('data-act="dil"','data-act="sudil"')}</div>`:''}</div>${deco}<div class="btns"><button class="btn" data-act="susopen">${T('去海風壽司營業')}</button></div>`;
 }
-function sushiHome(){modal(`<h2>🍣 ${T('海風壽司')}</h2>${shopSushi()}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
+function sushiHome(){modal(`<h2>🍣 ${T('海風壽司')}</h2>${shopSushi()}<div class="btns"><button class="btn" data-act="${ST&&!R&&!HOME?'back':'closem'}">${T(ST&&!R&&!HOME?'回到今天':'關閉')}</button></div>`)} /* 從「今天」畫面打開的商店，關掉要回到今天，不然只剩空白廚房 */
 function showShop(){
   if(SHOPTAB==='rm')SHOPTAB='rmenu';
   if(RMTABS.includes(SHOPTAB)&&!ST.owned)SHOPTAB='menu';
