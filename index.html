@@ -1362,8 +1362,8 @@ function spreadLand(W){const LAND=CUR==='rm'?LAND_R:LAND_IZ;KY=W>=1240?336:400;K
 function setCur(w){w=w==='rm'&&rmOwned()?'rm':'iz';if(w!==CUR){CUR=w;chooseLayout(true)}}
 function chooseLayout(force){
   const AE=document.activeElement;if(!force&&AE&&/^(INPUT|TEXTAREA)$/.test(AE.tagName))return; // soft keyboard resizes the viewport; re-laying out here would rebuild the home screen and close the open modal (chat / nickname)
-  const OV=document.body.classList.contains('ovl'),ww=(TOUCH?stableWrapW():$('wrap').clientWidth)-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):24),ah=(OV||TOUCH)?stableVisH():Math.max(300,window.innerHeight-60),want=(ww<760&&ww/ah<1.05)?'port':'land';
-  const lockW=!!R&&LAY==='land'&&want==='land'&&W;const nw=want==='port'?600:lockW?W:Math.round(Math.max(960,Math.min(1500,600*ww/ah))/10)*10;
+  const OV=document.body.classList.contains('ovl'),ww=(OV?window.innerWidth:(TOUCH?stableWrapW():$('wrap').clientWidth))-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):24),ah=(OV||TOUCH)?stableVisH():Math.max(300,window.innerHeight-60),want=(ww<760&&ww/ah<1.05)?'port':'land';
+  const lockW=!!R&&LAY==='land'&&want==='land'&&W&&!OV;const nw=want==='port'?600:lockW?W:Math.round(Math.max(960,Math.min(OV?1800:1500,600*ww/ah))/10)*10;
   if(want===LAY&&nw===W&&!force)return;
   LAY=want;W=nw;H=want==='port'?906:600;
   if(want==='port'){L=CUR==='rm'?PORT_R:PORT;KY=400;KK=1}else{L=spreadLand(W)}
@@ -3180,7 +3180,7 @@ function fit(){
   if(PTR){PENDFIT=true;return}
   document.body.classList.toggle('ovl',TOUCH&&innerWidth>innerHeight&&Math.min(screen.width,screen.height)<560&&!HOME);
   chooseLayout();
-  const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=TOUCH?stableWrapW():$('wrap').clientWidth,w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)));
+  const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?window.innerWidth:(TOUCH?stableWrapW():$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)));
   const s=Math.min(w/W,maxH/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
   /* 左側錨定：用「釘住的寬度」排版，而不是目前寬度置中。手機橫向時，右側系統導覽列滑出會讓可見寬度變窄，置中的畫面就會整個左右移動。 */
   if(TOUCH){box.style.alignSelf='flex-start';box.style.marginLeft=Math.max(0,(w-W*s)/2)+'px'}else{box.style.alignSelf='';box.style.marginLeft=''}
