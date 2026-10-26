@@ -766,7 +766,7 @@ function save(){if(DEMO)return;try{localStorage.setItem(KEY,JSON.stringify(ST))}
 let RKEY='izakaya-rec-v1';
 function loadRec(){try{return JSON.parse(localStorage.getItem(RKEY))||{}}catch(e){return {}}}
 function saveRec(r){try{localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}touchLocal()}
-function load(){try{const v=localStorage.getItem(KEY);const o=v?JSON.parse(v):null;if(o&&o.inter&&o.inter.neon){delete o.inter.neon;o.coins=(o.coins||0)+20000;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}return o}catch(e){return null}}
+function load(){try{const v=localStorage.getItem(KEY);const o=v?JSON.parse(v):null;if(o&&o.where==='sushi')o.where='iz';if(o&&o.inter&&o.inter.neon){delete o.inter.neon;o.coins=(o.coins||0)+20000;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}return o}catch(e){return null}}
 const UDAY=()=>RP.on?RP.mainDay:(ST?ST.day:1); /* unlock/shop state follows the main save even while replaying an earlier day */
 const unlocked=(d,sh)=>{sh=sh||CUR;if(RP.on)d=Math.max(d,RP.mainDay);return Object.keys(ITEMS).filter(k=>{const it=ITEMS[k],s0=it.shop||'iz';if(s0!=='both'&&s0!==sh)return false;return it.buy?has(k)&&!(k==='goma'&&gomaOff()):(s0==='rm'||it.day<=d)})};
 /* ===== daily events (from day 4) + robbery (from day 5); picked once per day in showDayIntro ===== */
@@ -1506,7 +1506,7 @@ function spreadLand(W){const LAND=CUR==='sushi'?SU_LAND:CUR==='rm'?LAND_R:LAND_I
     const used=cols.reduce((s,c)=>s+(c.r-c.x0)*KK,0),free=Math.max(0,W-used),edge=Math.min(free*.08,40)+8,n=cols.length,gap=n>1?(free-edge*2)/(n-1):0;
     let cur=edge;cols.forEach(c=>{c.ks.forEach(k=>{const o=out[k];o.x=cur+(LAND[k].x-c.x0)*KK;o.y=KY+6+(LAND[k].y-406)*KK;o.k=KK});cur+=(c.r-c.x0)*KK+gap})});
   return out}
-function setCur(w){w=w==='sushi'&&ST&&ST.sushi?'sushi':w==='rm'&&rmOwned()?'rm':'iz';if(w!==CUR){CUR=w;chooseLayout(true)}}
+function setCur(w){w=w==='rm'&&rmOwned()?'rm':'iz';if(w!==CUR){CUR=w;chooseLayout(true)}}
 function chooseLayout(force){
   const AE=document.activeElement;if(!force&&AE&&/^(INPUT|TEXTAREA)$/.test(AE.tagName))return; // soft keyboard resizes the viewport; re-laying out here would rebuild the home screen and close the open modal (chat / nickname)
   const OV=document.body.classList.contains('ovl'),ww=(OV?window.innerWidth:(TOUCH?stableWrapW():$('wrap').clientWidth))-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):24),ah=(OV||TOUCH)?stableVisH():Math.max(300,window.innerHeight-60),want=(ww<760&&ww/ah<1.05)?'port':'land';
@@ -2655,7 +2655,7 @@ function showDayIntro(){
   modal(`<h2>${T('第 {0} 天',ST.day)} <span style="font-size:16px;color:#7a4a2a">${dateStr(ST.day)}</span></h2>
   ${HI?`<div class="evbox"><span class="ei">${HI.ic}</span><div><b>${T('今天是{0}！',T(HI.zh))}</b><br>${T('會有特別的客人上門，每位都能登記進節日客圖鑑。')}</div></div>`:''}
   ${ST.day===365?`<p class="hint">${T('你撐過了一整年！日曆上的每個節日都解鎖了，可以到「📅 日曆」看看。')}</p>`:''}
-  ${ST.rm||ST.sushi?`<div class="pickrow"><button class="btn ${CUR==='iz'?'':'alt'}" data-act="where" data-id="iz">🏮 ${T('居酒屋本店')}</button>${ST.rm?`<button class="btn ${CUR==='rm'?'':'alt'}" data-act="where" data-id="rm">🍜 ${T('深夜拉麵屋台')}</button>`:''}${ST.sushi?`<button class="btn ${CUR==='sushi'?'':'alt'}" data-act="where" data-id="sushi">🍣 ${T('壽司店')}</button>`:''}</div>`:''}
+  ${ST.rm?`<div class="pickrow"><button class="btn ${CUR==='iz'?'':'alt'}" data-act="where" data-id="iz">🏮 ${T('居酒屋本店')}</button>${ST.rm?`<button class="btn ${CUR==='rm'?'':'alt'}" data-act="where" data-id="rm">🍜 ${T('深夜拉麵屋台')}</button>`:''}</div>`:''}
   ${ST.owned&&!ST.rm?`<p class="hint">${T('商店上方多了「🍜 深夜拉麵屋台」，可以開第二家店！')}</p>`:''}
   ${due?`<div class="bank"><b>${T('今天是還款日！')}</b>${T('打烊時會從錢包還銀行 {0}，記得多賺一點，不然還完錢包見底又要再借。',yen(due))}</div>`:''}
   ${!ST.owned&&ST.coins>=GOAL?`<div class="goalcard"><div><b>🏠 ${T('你已經存夠 {0} 了！',yen(GOAL))}</b><p>${T('現在就能買下整棟店面，之後再也不用付房租。')}</p></div><button class="btn" data-act="buyshop">${T('買下店面 {0}',yen(GOAL))}</button></div>`:''}
@@ -2723,7 +2723,7 @@ function shopKit(){return shopStaff()+`<p class="hint">${T('武器（防身用�
   <div class="shop">${UPS.map(u=>{const done=u.done(),can=u.ok();return `<div class="up ${done?'done':''}"><b>${T(u.zh)}</b><p>${T(u.d)}</p><div class="row"><span class="price">${yen(u.cost)}</span>${done?`<span>${T('已購買')}</span>`:can?`<button class="btn" data-act="buy" data-id="${u.id}" ${ST.coins<u.cost?'disabled':''}>${T('購買')}</button>`:`<span style="font-size:12px">${u.need?T(u.need):''}</span>`}</div></div>`}).join('')}</div>`}
 const RMTABS=['rmenu','rkit','rdeco'];
 const SUSHI_PRICE=8000000;
-function sushiDev(){try{return isAdmin()&&localStorage.getItem('izakaya-sushi')==='1'}catch(e){return false}}
+function sushiDev(){return false} /* 壽司店已下架：入口全部關閉，程式碼保留 */
 /* red dot on a shop tab = something in it is affordable right now (guns are left out on purpose) */
 function tabDot(k){try{const c=ST.coins;
   if(RMTABS.includes(k)){
@@ -4078,8 +4078,7 @@ function tstPanel(){
   <p class="tsth">事件設定會套用到之後每一天，直到你改回「隨機」。</p>
   <div class="tstr"><b>拉麵店</b>${o&&o.rm?`<button class="btn alt" disabled>屋台已開張</button>`:`<button class="btn" data-act="tstrm">買店面＋開屋台</button>`}${o&&o.rm&&!o.rm.k2?`<button class="btn" data-act="tstk2">擴建二號廚房</button>`:''}<span style="font-size:13px">${!o?'':o.rm?(o.rm.k2?'屋台＋二號廚房都有了':'已有屋台，還沒擴建'):o.owned?'已買店面，還沒開屋台':'還沒買店面'}・不扣錢</span></div>
   <div class="tstr"><b>屋台炸物</b><button class="btn alt" data-act="tstfried">賣出 +50</button><span style="font-size:13px">${o&&o.rm?`目前 ${o.rm.fried||0} 份`:'還沒開屋台'}</span></div>
-  <div class="tstr"><b>壽司店開發</b>${isAdmin()?`<button class="btn ${sushiDev()?'':'alt'}" data-act="tstsushi">${sushiDev()?'顯示中（點了隱藏）':'已隱藏（點了顯示）'}</button>`:''}</div>
-  <div class="tstr"><b>營業速度</b>${[1,2,4].map(n=>`<button class="btn ${TSPD===n?'':'alt'}" data-act="tstspd" data-id="${n}">${n}x</button>`).join('')}</div>
+    <div class="tstr"><b>營業速度</b>${[1,2,4].map(n=>`<button class="btn ${TSPD===n?'':'alt'}" data-act="tstspd" data-id="${n}">${n}x</button>`).join('')}</div>
   </div><div class="btns">${TEST?`<button class="btn alt" data-act="tstreset">清空測試存檔</button><button class="btn alt" data-act="tstoff">離開測試模式</button>`:`<button class="btn alt" data-act="tstcopy">另開獨立測試存檔</button>`}<button class="btn" data-act="closem">關閉</button></div>`)}
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act^="tst"]');if(!a)return;const act=a.dataset.act;
   if(!TEST&&!isAdmin())return;
