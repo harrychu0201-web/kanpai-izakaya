@@ -377,11 +377,12 @@ body.ovl #game.wide .cust .bubble{top:-90px}
 .home .menu{bottom:3vh}
 }
 .home .side{top:14vh!important;gap:1.4vh!important}
-.home .side-r{left:auto!important;right:max(clamp(10px,2.2vw,34px),env(safe-area-inset-right,0px));top:14vh!important}
+.home .side-rw{position:absolute;display:flex;align-items:flex-start;gap:clamp(8px,1.4vw,16px);left:auto!important;right:max(clamp(10px,2.2vw,34px),env(safe-area-inset-right,0px));top:14vh!important;z-index:2}
+.home .side-rw>.side{position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important}
 .sideb svg{width:min(6.2vw,13vh,84px)!important;height:min(6.2vw,13vh,84px)!important}
 .sideb span{font-size:min(1.3vw,3vh,19px)!important}
-.home.port .side{top:22vh!important}.home.port .side-r{top:22vh!important}
-@media (orientation:landscape){html.iphone .home .side:not(.side-r){left:max(clamp(10px,2.2vw,34px),env(safe-area-inset-left,0px),60px)!important}}
+.home.port .side{top:22vh!important}.home.port .side-rw{top:22vh!important}
+@media (orientation:landscape){html.iphone .home .side:not(.side-r):not(.side-m){left:max(clamp(10px,2.2vw,34px),env(safe-area-inset-left,0px),60px)!important}}
 body.lite .steam svg{display:none}
 body.lite .steam .mist{filter:none;left:-34px;top:-60px;width:68px;height:70px;background:radial-gradient(ellipse at 50% 60%,#ffffff70 0,#ffffff30 40%,#fff0 70%);animation:litepuff 2.6s infinite ease-out}
 body.lite .steam .mist::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;animation:litepuff 2.6s -1.3s infinite ease-out}
@@ -2204,7 +2205,7 @@ function useProp(k){if(!R||R.over||R.settled||!PROPS[k])return;const r=loadRec()
 function buyProp(k){const p=PROPS[k];if(!p||R)return;const s=load();if(!s)return;if((s.coins||0)<p.p){toast(T('金幣不夠'));return}arcWallet(-p.p);invAdd({[k]:1});toast(T('買到 {0}',p.n));showRewards()}
 function curCard(){return document.querySelector('#homeModal .card')||document.querySelector('#modalLayer .card')}
 function showRewards(){const c0=curCard(),top=c0?c0.scrollTop:0;renderRewards();const c=curCard();if(c&&top)c.scrollTop=top;syncRewardDot();syncHomeCoins()}
-function syncRewardDot(){const b=document.querySelector('.rewardfab');if(!b)return;const on=rewardDue(),d=b.querySelector('.rdot');if(on&&!d)b.insertAdjacentHTML('afterbegin','<i class="rdot" style="top:-6px;right:-6px"></i>');else if(!on&&d)d.remove()}
+function syncRewardDot(){const b=document.querySelector('.plq[data-act="rwfr"]');if(!b)return;const on=rewardDue(),d=b.querySelector('.rdot');if(on&&!d)b.insertAdjacentHTML('afterbegin','<i class="rdot" style="top:-6px;right:-6px"></i>');else if(!on&&d)d.remove()}
 function syncHomeCoins(){const sm=document.querySelector('.plq[data-act="cont"] small'),s=load();if(!sm||!s)return;sm.textContent=sm.textContent.replace(/¥[\d,]+\s*$/,yen(s.coins||0))}
 function weekDays(){const t=new Date(),dow=(t.getDay()+6)%7,out=[];for(let i=0;i<7;i++)out.push(new Date(t.getFullYear(),t.getMonth(),t.getDate()-dow+i));return out}
 function signedSet(r){const s={};if(r.ci&&r.ci.last){const [y,m,d]=r.ci.last.split('-').map(Number);for(let i=0;i<(r.ci.streak||0);i++)s[dayKey(new Date(y,m-1,d-i))]=1}return s}
@@ -2495,6 +2496,9 @@ function homeArt(w,h,port){
 function homeLayer(){let l=$('homeLayer');if(!l){l=document.createElement('div');l.id='homeLayer';document.body.appendChild(l)}return l}
 function closeHome(){HOME=false;homeLayer().innerHTML='';setTimeout(fit,0)}
 const SIDEI={
+ share:['#5a3420','#2e170c',`<circle cx="20" cy="32" r="6.5" fill="#f3dfb4"/><circle cx="44" cy="20" r="6.5" fill="#f3dfb4"/><circle cx="44" cy="44" r="6.5" fill="#f3dfb4"/><path d="M20 32L44 20M20 32L44 44" stroke="#f3dfb4" stroke-width="3.5" stroke-linecap="round"/>`],
+ dc:['#4a4f9a','#252858',`<path d="M16 22q10-4 16-4q6 0 16 4l4 22q-8 6-20 6q-12 0-20-6z" fill="#f3dfb4" stroke="#7a3a12" stroke-width="2.5" stroke-linejoin="round"/><circle cx="26" cy="36" r="3.5" fill="#8a2a1a"/><circle cx="38" cy="36" r="3.5" fill="#8a2a1a"/>`],
+ notice:['#5a3420','#2e170c',`<path d="M14 26h8l18-10v28l-18-10h-8z" fill="#f3dfb4" stroke="#7a3a12" stroke-width="2.5" stroke-linejoin="round"/><path d="M22 36l3 9h5l-2.5-9" fill="none" stroke="#7a3a12" stroke-width="2.5" stroke-linejoin="round"/>`],
  replay:['#2f4a5a','#15252e',`<path d="M32 22L19 32L32 42Z" fill="#f3dfb4"/><path d="M46 22L33 32L46 42Z" fill="#f3dfb4"/>`],
  asknew:['#5a3420','#2e170c',`<path d="M32 16a16 16 0 1 1-15 10" fill="none" stroke="#f3dfb4" stroke-width="6" stroke-linecap="round"/><path d="M10 18l8 10l9-9z" fill="#f3dfb4"/>`],
  tut:['#5a3420','#2e170c',`<path d="M12 20q10-5 20 2q10-7 20-2v26q-10-5-20 2q-10-7-20-2z" fill="#f3dfb4" stroke="#7a3a12" stroke-width="2.5" stroke-linejoin="round"/><path d="M32 22v26" stroke="#7a3a12" stroke-width="2.5"/><path d="M40 17v14l3-3l3 3v-15" fill="#e0412c"/>`],
@@ -2531,7 +2535,7 @@ function showHome(){if(RP.on)abandonReplay();
   const saved=load();
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
   <div class="htitle"><h1 class="logo"><img src="img/logo-9e60dada.webp" alt="${T('乾杯！居酒屋')}" draggable="false"></h1><div class="sub">${T('～ 巷子裡的小居酒屋 ～')}</div></div>
-  <div class="menu">${saved?plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1)+plaque('asknew','新的一局')+plaque('branch','分店'):plaque('newgame','開始營業','',1)}</div><button class="chatfab rewardfab" data-act="rewards">🎁 ${T('獎勵')}</button>${saved&&FB_CONFIG?'<button class="chatfab frfab" data-act="frhome">👥 '+T('好友')+'</button>':''}<div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','遊戲廳')+(FB_CONFIG?'':sideBtn('replay','選日重玩')):''}${sideBtn('howto','說明')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side side-r">${sideBtn('records','經營紀錄')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反應'):''}</div><div class="topl"><button class="langbtn ntbtn" data-act="slots" aria-label="${T('存檔欄位')}">💾<span class="ntl"> ${T('存檔')}</span></button><button class="langbtn ntbtn" data-act="share" aria-label="${T('分享')}">🔗<span class="ntl"> ${T('分享')}</span></button><button class="langbtn ntbtn" data-act="dc" aria-label="Discord">🎮<span class="ntl"> Discord</span></button></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${NOTICE?`<button class="langbtn ntbtn" data-act="notice" aria-label="${T('公告')}">📢<span class="ntl"> ${T('公告')}</span></button>`:''}${acctBtn()}<button class="langbtn" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>${LANGS.find(l=>l[0]===LANG)[1]}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}${FB_CONFIG&&saved?`<div class="replayfab">${sideBtn('replay','選日重玩')}</div>`:''}<div id="homeModal"></div></div>`;
+  <div class="menu">${saved?plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1)+plaque('asknew','新的一局')+plaque('rwfr','獎勵 & 好友'):plaque('newgame','開始營業','',1)+plaque('rwfr','獎勵 & 好友')}</div><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','遊戲廳')+(FB_CONFIG?'':sideBtn('replay','選日重玩')):''}${sideBtn('howto','說明')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side-rw"><div class="side side-m">${sideBtn('share','分享')}${sideBtn('dc','Discord')}${NOTICE?sideBtn('notice','公告'):''}</div><div class="side side-r">${sideBtn('records','經營紀錄')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反應'):''}</div></div><div class="topl"><button class="langbtn ntbtn" data-act="slots" aria-label="${T('存檔欄位')}">💾<span class="ntl"> ${T('存檔')}</span></button></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${acctBtn()}<button class="langbtn" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>${LANGS.find(l=>l[0]===LANG)[1]}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}${FB_CONFIG&&saved?`<div class="replayfab">${sideBtn('replay','選日重玩')}</div>`:''}<div id="homeModal"></div></div>`;
   placeChat();requestAnimationFrame(placeChat);setTimeout(placeChat,300);syncRewardDot();
   if(noticeDue()){if(NOTICE_LOADED||!FB_CONFIG)setTimeout(()=>{if(HOME&&!document.querySelector('#homeModal .modal')){NAUTOREQ=true;showNotice()}},400);else setTimeout(noticePop,3500)}else if(CL.pick)setTimeout(cloudAsk,0);
 }
@@ -2904,6 +2908,7 @@ document.addEventListener('click',e=>{
   if(act==='newgame'){slBackup(lsGet(KEY),'new');closeHome();ST=fresh();save();showDayIntro()}
   else if(act==='cont'){goFS();closeHome();ST=load();advance()}
   else if(act==='branch')branchPick();
+  else if(act==='rwfr'){const fr=!!(FB_CONFIG&&load());modal(`<h2>${T('獎勵 & 好友')}</h2><p class="hint">${T('每日簽到、成就與道具，還有跟朋友一起比排行。')}</p><div class="pickrow"><button class="btn" data-act="rewards">🎁 ${T('獎勵中心')}</button>${fr?`<button class="btn alt" data-act="frhome">👥 ${T('好友')}</button>`:''}</div><div class="btns"><button class="btn alt" data-act="closem">${T('關閉')}</button></div>`)}
   else if(act==='pickbranch'){const o=load();if(!o)return;const id=a.dataset.id==='rm'&&o.rm?'rm':a.dataset.id==='sushi'&&o.sushi?'sushi':'iz';o.where=id;try{localStorage.setItem(KEY,JSON.stringify(o));touchLocal()}catch(e){}closeModal();toast(T('下次營業在{0}開店',T(id==='rm'?'深夜拉麵屋台':id==='sushi'?'海風壽司':'居酒屋本店')))}
   else if(act==='asknew')modal(`<h2>${T('開一家新店？')}</h2><p>${T('目前的存檔會被清除，從第 1 天重新開始。')}</p><div class="btns"><button class="btn" data-act="newgame">${T('確定重來')}</button><button class="btn alt" data-act="closem">${T('取消')}</button></div>`);
   else if(act==='replay')showReplay();
