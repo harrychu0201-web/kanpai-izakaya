@@ -740,16 +740,17 @@ let ST=null,R=null,cache=new Map();
 let TEST=false,TSPD=1; /* author test mode, see tstPanel */
 const CHEAT=()=>TEST||isAdmin(); /* author tools (forced events / speed) run on the real save too */
 function fresh(){return {day:1,coins:3000,debt:0,loans:0,dues:[],dec:{},up:{seats:3,grill:3,fryer:2,warmN:3,tap:false,warm:false,decor:false,cat:false},stars:{}}}
-const DSKEY='izakaya-daysnap-v1',DS_MAX=40;
-function dsLoad(){try{const o=JSON.parse(localStorage.getItem(DSKEY));return o&&typeof o==='object'?o:{}}catch(e){return {}}}
-function dsClear(){try{localStorage.removeItem(DSKEY)}catch(e){}}
-function dsSnap(){if(TEST||DEMO||!ST)return;try{const r=loadRec(),o=dsLoad();o[ST.day]={s:ST,inv:r.inv,ach:r.ach};Object.keys(o).map(Number).sort((a,b)=>b-a).slice(DS_MAX).forEach(k=>delete o[k]);localStorage.setItem(DSKEY,JSON.stringify(o))}catch(e){}}
+const RPKEY='izakaya-replay-v1';
+const RP={on:false,k:0,mainDay:0};
+try{localStorage.removeItem(RPKEY)}catch(e){} /* an unfinished replay after a reload is dropped; the real save is untouched */
+function pastSave(){if(RP.on||TEST||DEMO||!ST||!ST.today||ST.today.day!==ST.day)return;const t=Object.assign({},ST.today);delete t.day;ST.past=ST.past||{};ST.past[ST.day]=t;save()}
+function abandonReplay(){RP.on=false;RP.k=0;KEY=REAL_KEY;try{localStorage.removeItem(RPKEY)}catch(e){}}
 function save(){if(DEMO)return;try{localStorage.setItem(KEY,JSON.stringify(ST))}catch(e){}touchLocal()}
 let RKEY='izakaya-rec-v1';
 function loadRec(){try{return JSON.parse(localStorage.getItem(RKEY))||{}}catch(e){return {}}}
 function saveRec(r){try{localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}touchLocal()}
 function load(){try{const v=localStorage.getItem(KEY);const o=v?JSON.parse(v):null;if(o&&o.inter&&o.inter.neon){delete o.inter.neon;o.coins=(o.coins||0)+20000;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}return o}catch(e){return null}}
-const unlocked=(d,sh)=>{sh=sh||CUR;return Object.keys(ITEMS).filter(k=>{const it=ITEMS[k],s0=it.shop||'iz';if(s0!=='both'&&s0!==sh)return false;return it.buy?has(k)&&!(k==='goma'&&gomaOff()):(s0==='rm'||it.day<=d)})};
+const unlocked=(d,sh)=>{sh=sh||CUR;if(RP.on)d=Math.max(d,RP.mainDay);return Object.keys(ITEMS).filter(k=>{const it=ITEMS[k],s0=it.shop||'iz';if(s0!=='both'&&s0!==sh)return false;return it.buy?has(k)&&!(k==='goma'&&gomaOff()):(s0==='rm'||it.day<=d)})};
 /* ===== daily events (from day 4) + robbery (from day 5); picked once per day in showDayIntro ===== */
 const EVS={rain:['🌧','雨天','客人少三成，但耐心 +30%。'],fest:['🏮','附近有祭典','客人多六成，小費 +20%！'],group:['👥','團體客','營業中會有一群客人一次坐滿。'],
   sale:['🏷','食材特價','{0}的食材今天半價，點的人也變多。'],critic:['📝','美食評論家來訪','黑田今天一定會來。他坐下後 10 秒內送齊整張單，有獎金！']};
@@ -1448,7 +1449,7 @@ function lvOf(b){return (ST.lv&&ST.lv[b])||0}
 function priceOf(k){const b=k.split(':')[0];return Math.round(ITEMS[b].price*(1+.3*lvOf(b))/10)*10}
 function costOf(b){return Math.round(ITEMS[b].cost*(1+.25*lvOf(b))*(evNow().sale===b?.5:1)/10)*10}
 function upCost(b){const lv=lvOf(b);return lv>=3?0:Math.round(ITEMS[b].price*16*[1,3,7.5][lv]/500)*500}
-function rentOf(){if(ST.day<4||ST.owned)return 0;const wk=Math.floor((ST.day-1)/7);return Math.round((1000+800*wk)*(1+(ST.up.seats-3)*.25)/100)*100}
+function rentOf(){if(RP.on||ST.day<4||ST.owned)return 0;const wk=Math.floor((ST.day-1)/7);return Math.round((1000+800*wk)*(1+(ST.up.seats-3)*.25)/100)*100}
 const STAFFLV={
   waiter:{zh:'外場・小美',flag:'waiter',lv:[
     {cost:15000,wage:800,d:'把保溫台上的菜送給客人，大約每 2.6 秒一份。'},
@@ -1655,7 +1656,7 @@ function layoutBubbles(force){if(!R)return;const g=$('game');if(!g)return;
   apply(best)}
 
 function quotaOf(d){return Math.min(24,6+d*2)}
-function startDay(){dsSnap();DAYLEN=159;setTimeout(()=>sfx('open'),80);$('game').classList.remove('aim');
+function startDay(){pastSave();DAYLEN=159;setTimeout(()=>sfx('open'),80);$('game').classList.remove('aim');
   closeModal();
   setCur(ST.where);if(CUR==='rm'&&ST.rm)ST.rm.seen=true;
   const quota=expectedCust();
@@ -1896,7 +1897,7 @@ function bankWin(){if(!R||R.over||R.settled)return;R.paused=true;
   <div class="tipcard"><b>${T('💡 借錢前先想三秒')}</b><p>${T('借來的錢不是賺來的錢，之後要連利息一起還。只拿來買食材、把今天撐完；別借錢買裝潢或武器。最好的辦法是平常就別把錢花光，留一筆週轉金給營業用。')}</p></div>
   ${ST.debt?`<p style="font-size:14px">${T('目前還欠銀行 {0}，再借的話要還的會更多。',yen(ST.debt))}</p>`:''}
   <div class="btns"><button class="btn" data-act="eloanok">${T('借款')}</button><button class="btn alt" data-act="resume">${T('先不用，繼續營業')}</button></div>`)}
-function takeLoan(){if(!R||R.eloan||R.settled)return;const i=$('loanAmt'),a=Math.round(+(i&&i.value)||0);if(a<LOAN_MIN||a>LOAN_MAX){toast(T('借款金額請填 {0} 到 {1} 之間',yen(LOAN_MIN),yen(LOAN_MAX)));return}
+function takeLoan(){if(RP.on){toast(T('重玩時不能借款'));return}if(!R||R.eloan||R.settled)return;const i=$('loanAmt'),a=Math.round(+(i&&i.value)||0);if(a<LOAN_MIN||a>LOAN_MAX){toast(T('借款金額請填 {0} 到 {1} 之間',yen(LOAN_MIN),yen(LOAN_MAX)));return}
   const back=loanBack(a);R.eloan=true;ST.coins+=a;ST.debt=(ST.debt||0)+back;
   ST.dues=ST.dues||[];ST.dues.push({amt:back,left:4});save();R.paused=false;closeModal();last=performance.now();renderHUD();toast(T('借到 {0}，3 天後要還 {1}',yen(a),yen(back)))}
 
@@ -2224,7 +2225,7 @@ let SHOPHOME=false,TYPING=0;
 document.addEventListener('pointerdown',e=>{const a=document.activeElement;TYPING=a&&/^(INPUT|TEXTAREA)$/.test(a.tagName)&&a.closest('.modal')&&e.target.classList.contains('modal')?performance.now():0},true);
 document.addEventListener('click',e=>{if(!HOME)return;const m=e.target.closest('.modal');if(!m||e.target!==m)return;if(TYPING&&performance.now()-TYPING<1500){TYPING=0;const a=document.activeElement;if(a&&a.blur)a.blur();return}{const t=$('fbtext'),c=$('fbcontact');if(t){FB.text=t.value;FB.contact=c?c.value:FB.contact}}if(SHOPHOME)showHome();else closeModal()});
 
-function showHome(){
+function showHome(){if(RP.on)abandonReplay();
   if(CUR!=='iz'){CUR='iz';chooseLayout(true)}SHOPHOME=false;DEMO=false;if(TUT){TUT=null;tutLayer().innerHTML=''}HOME=true;R=null;ST=null;closeModal();setTimeout(fit,0);renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
   const saved=load();
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
@@ -2426,6 +2427,7 @@ function showDayIntro(){
 function endDay(){sfx('end');$('game').classList.remove('aim');
   R.held=null;renderStations();
   const e=net(),stars=R.goals.filter(v=>e+R.rent>=v).length;
+  if(RP.on){replayEnd(e,stars);return}
   R.settled=true;DAYLEN=159;ST.coins=ST.coins+e;ST.stars[ST.day]=Math.max(ST.stars[ST.day]||0,stars);
   const rec=loadRec();rec.maxDay=Math.max(rec.maxDay||0,ST.day);rec.earned=(rec.earned||0)+R.earned;rec.bestDay=Math.max(rec.bestDay||0,Math.round(e));
   let bank='';
@@ -2448,7 +2450,7 @@ function endDay(){sfx('end');$('game').classList.remove('aim');
 }
 function bankrupt(){
   const rec=loadRec();rec.bankrupt=(rec.bankrupt||0)+1;saveRec(rec);
-  const d=ST.day;slBackup(lsGet(KEY),'bankrupt');try{localStorage.removeItem(KEY)}catch(e){}dsClear();touchLocal();
+  const d=ST.day;slBackup(lsGet(KEY),'bankrupt');try{localStorage.removeItem(KEY)}catch(e){}touchLocal();
   ST=null;R=null;renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
   modal(`<h2>${T('破產了……')}</h2><div class="stars"><span>★</span><span>★</span><span>★</span></div>
   <p>${T('撐到第 {0} 天，錢包第三次見底，銀行說什麼都不肯再借錢了。店面被收回，所有東西都歸零。',d)}</p>
@@ -2524,12 +2526,12 @@ let PAUSEDOWN=-1e9;document.getElementById('hud').addEventListener('pointerdown'
 document.addEventListener('click',e=>{
   const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;if(act==='pause'&&performance.now()-PAUSEDOWN<800)return;if(HUDDOWN.act===act&&performance.now()-HUDDOWN.t<800)return;if(ARC.busy&&/^(cont|newgame|asknew|homeshop|arcade|arcslot|arcpin)$/.test(act))return;
   if(/^(buy|lvup|staffup|rmstaff)/.test(act)&&!a.disabled&&!a.classList.contains('poor'))sfx('buy');else if(!['snd','sndg','start'].includes(act))sfx('click');
-  if(act==='newgame'){slBackup(lsGet(KEY),'new');dsClear();closeHome();ST=fresh();save();showDayIntro()}
+  if(act==='newgame'){slBackup(lsGet(KEY),'new');closeHome();ST=fresh();save();showDayIntro()}
   else if(act==='cont'){goFS();closeHome();ST=load();advance()}
   else if(act==='asknew')modal(`<h2>${T('開一家新店？')}</h2><p>${T('目前的存檔會被清除，從第 1 天重新開始。')}</p><div class="btns"><button class="btn" data-act="newgame">${T('確定重來')}</button><button class="btn alt" data-act="closem">${T('取消')}</button></div>`);
   else if(act==='replay')showReplay();
-  else if(act==='replayday')replayAsk(+a.dataset.id);
-  else if(act==='replayok')replayTo(+a.dataset.id);
+  else if(act==='replayok')startReplay(+$('rpday').value);
+  else if(act==='rpagain')startReplay(+a.dataset.id);
   else if(act==='arcade')showArcade();
   else if(act==='arcslot')showArcSlot();
   else if(act==='arcpin')showArcPin();
@@ -3131,7 +3133,7 @@ const RTDB_URL='https://kanpai-izakaya-default-rtdb.firebaseio.com',FB_CONFIG={a
 const SAVED_AT='izakaya-saved-at';
 const CL={user:null,ready:false,timer:null,status:'',api:null,pick:null,synced:false};
 function localStamp(){try{return +localStorage.getItem(SAVED_AT)||0}catch(e){return 0}}
-function touchLocal(){if(TEST)return;try{localStorage.setItem(SAVED_AT,String(Date.now()))}catch(e){}if(CL.user){clearTimeout(CL.timer);CL.timer=setTimeout(()=>cloudUpload(),60000)}}
+function touchLocal(){if(TEST||RP.on)return;try{localStorage.setItem(SAVED_AT,String(Date.now()))}catch(e){}if(CL.user){clearTimeout(CL.timer);CL.timer=setTimeout(()=>cloudUpload(),60000)}}
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
 function mergeRec(a,b){const x=a?JSON.parse(a):{},y=b?JSON.parse(b):{},o=Object.assign({},x,y);
@@ -3257,7 +3259,7 @@ async function cloudSync(){
   }catch(e){console.warn('cloud sync failed',e);CL.status='err';acctRefresh();setTimeout(()=>{if(CL.user===u&&!CL.synced)cloudSync()},120000)}
 }
 async function cloudUpload(now){
-  const u=CL.user;if(!u||TEST||!CL.api||CL.pick||!CL.synced)return;clearTimeout(CL.timer);CL.timer=null;
+  const u=CL.user;if(!u||TEST||RP.on||!CL.api||CL.pick||!CL.synced)return;clearTimeout(CL.timer);CL.timer=null;
   CL.status='sync';acctRefresh();
   try{await CL.api.put(u.uid,{game:lsGet(KEY),rec:lsGet(RKEY),at:localStamp()||Date.now()});await lbPush(u);await lbxPush(u);if(CL.user===u){CL.status='ok';acctRefresh()}}
   catch(e){console.warn('cloud save failed',e);CL.status='err';acctRefresh();CL.timer=setTimeout(()=>cloudUpload(),120000)}
@@ -3275,15 +3277,35 @@ function slTime(at){try{return new Date(at).toLocaleString(LANG,{month:'numeric'
 const SLWHY={new:'開新的一局前',bankrupt:'破產前',cloud:'雲端同步前',load:'讀取存檔前',cheat:'開啟測試功能前',replay:'選日期重玩前'};
 function showReplay(){
   if(TEST){modal(`<h2>${T('選日期重玩')}</h2><p>${T('測試模式下無法使用。')}</p><div class="btns"><button class="btn" data-act="closem">${T('知道了')}</button></div>`);return}
-  const o=dsLoad(),cur=load()||{day:0},ks=Object.keys(o).map(Number).filter(k=>k<=cur.day&&o[k]&&o[k].s).sort((a,b)=>b-a);
-  const rows=ks.map(k=>`<button class="btn alt" data-act="replayday" data-id="${k}">${T('第 {0} 天',k)}<small>${dateStr(k)}・${yen(o[k].s.coins||0)}</small></button>`).join('');
-  modal(`<h2>${T('選日期重玩')}</h2><p>${T('選一天，回到那一天開始營業前的樣子。錢、店面、菜單、店員、道具和成就都會一起退回，之後的進度會被覆蓋。排行榜上的紀錄（最長營業、累計營收等）不會退回。')}</p>${rows?`<div class="pickrow">${rows}</div>`:`<p>${T('還沒有可以回去的日子，營業過一天之後就會出現在這裡。')}</p>`}<div class="btns"><button class="btn alt" data-act="closem">${T('關閉')}</button></div>`)}
-function replayAsk(k){modal(`<h2>${T('回到第 {0} 天？',k)}</h2><p>${T('第 {0} 天之後的進度都會被覆蓋。目前的存檔會先自動備份到「存檔欄位」（最多 3 份）。',k)}</p><div class="btns"><button class="btn" data-act="replayok" data-id="${k}">${T('確定重玩')}</button><button class="btn alt" data-act="replay">${T('取消')}</button></div>`)}
-function replayTo(k){const o=dsLoad(),g=o[k];if(!g||!g.s||TEST)return;
-  slBackup(lsGet(KEY),'replay');
-  Object.keys(o).forEach(d=>{if(+d>k)delete o[d]});try{localStorage.setItem(DSKEY,JSON.stringify(o))}catch(e){}
-  const rec=loadRec();if(g.inv===undefined)delete rec.inv;else rec.inv=g.inv;if(g.ach===undefined)delete rec.ach;else rec.ach=g.ach;saveRec(rec);
-  ST=g.s;ST.pendingNext=false;save();if(CL.user&&CL.synced)cloudUpload(true);closeModal();closeHome();showDayIntro()}
+  const cur=load();if(!cur)return;
+  let opts='';
+  for(let d=cur.day;d>=1;d--){const p=cur.past&&cur.past[d];let tags;
+    if(!p)tags=T('條件未記錄（隨機）');else{const x=[];if(p.hol&&holInfo(p.hol))x.push(T(holInfo(p.hol).zh));if(p.ev&&EVS[p.ev])x.push(T(EVS[p.ev][1]));if(p.rob)x.push(T('有小偷'));tags=x.length?x.join('、'):T('平常')}
+    const st=(cur.stars&&cur.stars[d])||0;
+    opts+=`<option value="${d}">${T('第 {0} 天',d)}・${dateStr(d)}・${tags}・${'★'.repeat(st)}${'☆'.repeat(3-st)}</option>`}
+  modal(`<h2>${T('選日期重玩')}</h2><p>${T('選一天，用那天的條件（雨天、祭典、節日、小偷等）重新營業一次。錢、店面、菜單、店員、道具和成就都保留現在的樣子，這次的收入會進錢包，星星只會往上更新。')}</p><p>${T('重玩不會推進天數、不扣房租、不觸發還款，也不能借款；排行榜不計入。中途按回主頁就放棄這次重玩。')}</p><select id="rpday" class="rpsel">${opts}</select><div class="btns"><button class="btn" data-act="replayok">${T('開始重玩')}</button><button class="btn alt" data-act="closem">${T('關閉')}</button></div>`)}
+function startReplay(k){
+  if(TEST||!k||RP.on)return;
+  let base=null;try{base=JSON.parse(lsGet(REAL_KEY)||'null')}catch(e){}
+  if(!base||k<1||k>base.day)return;
+  const sb=JSON.parse(JSON.stringify(base)),p=base.past&&base.past[k];
+  sb.day=k;sb.pendingNext=false;sb.today=p?Object.assign({},p,{day:k}):null;
+  RP.on=true;RP.k=k;RP.mainDay=base.day;
+  KEY=RPKEY;try{localStorage.setItem(RPKEY,JSON.stringify(sb))}catch(e){}
+  ST=sb;closeHome();showDayIntro();
+}
+function replayEnd(e,stars){
+  const k=RP.k;let base=null;try{base=JSON.parse(lsGet(REAL_KEY)||'null')}catch(x){}
+  R.settled=true;R.held=null;DAYLEN=159;
+  ST.coins=Math.max(0,(ST.coins||0)+e);ST.stars=ST.stars||{};ST.stars[k]=Math.max(ST.stars[k]||0,stars);
+  if(base){ST.day=base.day;ST.pendingNext=!!base.pendingNext;ST.today=base.today||null}
+  RP.on=false;RP.k=0;KEY=REAL_KEY;
+  try{localStorage.setItem(KEY,JSON.stringify(ST));localStorage.removeItem(RPKEY)}catch(x){}
+  touchLocal();cloudUpload(true);renderHUD();
+  modal(`<h2>${T('重玩結束')}</h2><div class="stars">${[0,1,2].map(i=>`<span class="${i<stars?'on':''}">★</span>`).join('')}</div>
+  <div class="goalrow"><span>${T('營收 {0}',yen(R.earned))}</span><span>${T('淨利 {0}',yen(e))}</span></div>
+  <p>${T('這次的錢已經放進錢包，星星只會往上更新。你的進度還是第 {0} 天。',ST.day)}</p>
+  <div class="btns"><button class="btn" data-act="rpagain" data-id="${k}">${T('再玩一次第 {0} 天',k)}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`)}
 function showSlots(){
   if(TEST){modal(`<h2>${T('存檔欄位')}</h2><p>${T('測試模式下無法使用存檔欄位。')}</p><div class="btns"><button class="btn" data-act="closem">${T('知道了')}</button></div>`);return}
   const o=slLoad(),cur=lsGet(KEY);
@@ -3293,9 +3315,9 @@ function showSlots(){
   modal(`<h2>${T('存檔欄位')}</h2><p>${T('目前的進度可以存進下面三個欄位，之後隨時讀回來。欄位只存在這台裝置上，不會同步到雲端。')}</p>${rows}
   <div class="slh">${T('自動備份')}</div><p style="font-size:13.5px;opacity:.8">${T('開新的一局、破產、雲端存檔覆蓋之前，遊戲會自動備份舊存檔（最多 3 份）。')}</p>${bk||`<p>${T('目前沒有備份。')}</p>`}
   <div class="btns"><button class="btn alt" data-act="closem">${T('關閉')}</button></div>`)}
-function slLoadGame(g){if(!g||!slOK(g))return;slBackup(lsGet(KEY),'load');dsClear();lsSet(KEY,g);touchLocal();if(CL.user&&CL.synced)cloudUpload(true);closeModal();showHome()}
+function slLoadGame(g){if(!g||!slOK(g))return;slBackup(lsGet(KEY),'load');lsSet(KEY,g);touchLocal();if(CL.user&&CL.synced)cloudUpload(true);closeModal();showHome()}
 function slAsk(act,i,title,msg){modal(`<h2>${title}</h2><p>${msg}</p><div class="btns"><button class="btn" data-act="${act}" data-i="${i}" data-ok="1">${T('確定')}</button><button class="btn alt" data-act="slots">${T('取消')}</button></div>`)}
-function applyCloud(c){if(lsGet(KEY)!==c.game){slBackup(lsGet(KEY),'cloud');dsClear()}lsSet(KEY,c.game);if(c.rec)lsSet(RKEY,c.rec);try{localStorage.setItem(SAVED_AT,String(c.at||Date.now()))}catch(e){}if(HOME&&!R)showHome()}
+function applyCloud(c){if(lsGet(KEY)!==c.game)slBackup(lsGet(KEY),'cloud');lsSet(KEY,c.game);if(c.rec)lsSet(RKEY,c.rec);try{localStorage.setItem(SAVED_AT,String(c.at||Date.now()))}catch(e){}if(HOME&&!R)showHome()}
 function saveSummary(g){try{const o=JSON.parse(g);return T('第 {0} 天',o.day+(o.pendingNext?1:0))+'・'+yen(o.coins)}catch(e){return ''}}
 function cloudAsk(){const c=CL.pick;if(!c||!HOME)return;
   modal(`<h2>${T('選擇要用哪一份存檔')}</h2><p>${T('這台裝置和雲端各有一份不同的存檔，要用哪一份？另一份會被覆蓋。')}</p>
