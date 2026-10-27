@@ -1634,12 +1634,20 @@ function spreadLand(W){const LAND=CUR==='sushi'?SU_LAND:CUR==='rm'?LAND_R:LAND_I
     let cur=edge;cols.forEach(c=>{c.ks.forEach(k=>{const o=out[k];o.x=cur+(LAND[k].x-c.x0)*KK;o.y=KY+6+(LAND[k].y-406)*KK;o.k=KK});cur+=(c.r-c.x0)*KK+gap})});
   return out}
 function setCur(w){w=w==='sushi'&&ST&&ST.sushi?'sushi':w==='rm'&&rmOwned()?'rm':'iz';if(w!==CUR){CUR=w;chooseLayout(true)}}
+/* 舞台高度 = 可用高度 × 舞台寬 / 螢幕寬（縮放後寬高同時填滿，不留黑邊），不低於設計高度 minH。 */
+function fillH(ww,stageW,minH){
+  const ovl=document.body.classList.contains('ovl');
+  const avail=(TOUCH?stableVisH():visH())-(ovl?0:($('hud').offsetHeight+(window.innerHeight<560?18:34)));
+  return Math.max(minH,Math.min(1400,Math.round(avail*stageW/Math.max(1,ww))));
+}
 function chooseLayout(force){
   const AE=document.activeElement;if(!force&&AE&&/^(INPUT|TEXTAREA)$/.test(AE.tagName))return; // soft keyboard resizes the viewport; re-laying out here would rebuild the home screen and close the open modal (chat / nickname)
   const OV=document.body.classList.contains('ovl'),ww=(OV?window.innerWidth:(TOUCH?stableWrapW():$('wrap').clientWidth))-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):24),ah=(OV||TOUCH)?stableVisH():Math.max(300,window.innerHeight-60),want=(ww<760&&ww/ah<1.05)?'port':'land';
   const lockW=!!R&&LAY==='land'&&want==='land'&&W&&!OV;const nw=want==='port'?600:lockW?W:OV?Math.round(Math.max(960,Math.min(1800,600*ww/ah))):Math.round(Math.max(960,Math.min(1500,600*ww/ah))/10)*10;
-  if(want===LAY&&nw===W&&!force)return;
-  LAY=want;W=nw;H=want==='port'?906:600;
+  /* 舞台寬度由 nw 決定，高度依照螢幕可用高度拉高，讓畫面上下填滿（平板橫向、手機直向原本底下會留一大塊空白；地板會跟著延伸）。 */
+  const nh=want==='port'?fillH(ww,600,906):fillH(ww,nw,600);
+  if(want===LAY&&nw===W&&nh===H&&!force)return;
+  LAY=want;W=nw;H=nh;
   if(want==='port'){L=CUR==='rm'?PORT_R:CUR==='sushi'?SU_PORT:PORT;KY=400;KK=1}else{L=spreadLand(W)}
   const g=$('game');g.style.width=W+'px';g.style.height=H+'px';g.classList.toggle('port',LAY==='port');g.classList.toggle('wide',KY<400);
   drawBg();if(HOME)showHome();
