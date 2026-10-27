@@ -3486,10 +3486,16 @@ function refitBurst(){[0,100,300,700,1400,2500].forEach(t=>setTimeout(fit,t))}
 /* 手機橫向時，瀏覽器的網址列／底部工具列一滑出一收起，可見高度就會跟著變，遊戲會整個跟著縮放（甚至重排）。
    這裡在同一個方向內只記「看過的最小可見高度」：工具列收起時不動，只有第一次真的變小時才調整一次，之後就釘住。
    打字（鍵盤彈出）或拖曳中不記錄，免得鍵盤把尺寸永遠縮小。方向改變（旋轉）時重新記。 */
-let STAB={o:'',h:0},STABGROW=false;
+let STAB={o:'',h:0},STABGROW=false,STABJ=false;
 function stableVisH(){
   const o=innerWidth>innerHeight?'l':'p',v=visH();
-  if(STAB.o!==o||!STAB.h||Math.abs(v-STAB.h)>120){STAB={o,h:v};return v}
+  if(STAB.o!==o||!STAB.h){STAB={o,h:v};return v}
+  /* 同一方向內突然跳超過 120px（例如導覽列或網址列瞬間滑出、或 Android 還沒量完的中間值）：先不採用，
+     等它持續 0.7 秒才接受。以前會立刻重設，結果遊戲在「放大」和「縮小」兩個尺寸之間來回跳，客人點錯菜。 */
+  if(Math.abs(v-STAB.h)>120){
+    if(!STABJ){STABJ=true;setTimeout(()=>{STABJ=false;const v2=visH();if(Math.abs(v2-v)<30&&Math.abs(v2-STAB.h)>120&&(innerWidth>innerHeight?'l':'p')===STAB.o){STAB={o:STAB.o,h:v2};fit()}},700)}
+    return STAB.h;
+  }
   const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');
   if(!PTR&&!typing&&v<STAB.h)STAB.h=v;
   /* 工具列收起後可見高度變大：等它穩定約 0.9 秒，沒有拖曳、沒有打字時才把舞台放大到填滿，避免手機橫向底部留白 */
