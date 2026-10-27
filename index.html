@@ -2500,7 +2500,7 @@ function homeArt(w,h,port){
   return s;
 }
 function homeLayer(){let l=$('homeLayer');if(!l){l=document.createElement('div');l.id='homeLayer';document.body.appendChild(l)}return l}
-function closeHome(){HOME=false;homeLayer().innerHTML='';setTimeout(fit,0)}
+function closeHome(){HOME=false;homeLayer().innerHTML='';STAB={o:'',h:0};STABW={o:'',w:0};setTimeout(fit,0);refitBurst()}
 const SIDEI={
  share:['#5a3420','#2e170c',`<circle cx="20" cy="32" r="6.5" fill="#f3dfb4"/><circle cx="44" cy="20" r="6.5" fill="#f3dfb4"/><circle cx="44" cy="44" r="6.5" fill="#f3dfb4"/><path d="M20 32L44 20M20 32L44 44" stroke="#f3dfb4" stroke-width="3.5" stroke-linecap="round"/>`],
  dc:['#4a4f9a','#252858',`<path d="M16 22q10-4 16-4q6 0 16 4l4 22q-8 6-20 6q-12 0-20-6z" fill="#f3dfb4" stroke="#7a3a12" stroke-width="2.5" stroke-linejoin="round"/><circle cx="26" cy="36" r="3.5" fill="#8a2a1a"/><circle cx="38" cy="36" r="3.5" fill="#8a2a1a"/>`],
@@ -3489,7 +3489,7 @@ function refitBurst(){[0,100,300,700,1400,2500].forEach(t=>setTimeout(fit,t))}
 let STAB={o:'',h:0},STABGROW=false;
 function stableVisH(){
   const o=innerWidth>innerHeight?'l':'p',v=visH();
-  if(STAB.o!==o||!STAB.h){STAB={o,h:v};return v}
+  if(STAB.o!==o||!STAB.h||Math.abs(v-STAB.h)>120){STAB={o,h:v};return v}
   const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');
   if(!PTR&&!typing&&v<STAB.h)STAB.h=v;
   /* 工具列收起後可見高度變大：等它穩定約 0.9 秒，沒有拖曳、沒有打字時才把舞台放大到填滿，避免手機橫向底部留白 */
