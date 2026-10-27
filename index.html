@@ -2633,7 +2633,7 @@ function arcBetType(g,v){
   const e=document.getElementById('arcBetAmt');if(e)e.value=n;
 }
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.arcbet)arcBetType(t.dataset.arcbet,t.value)});
-function showArcade(){modal(`<h2>${T('遊戲廳')}</h2><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p><p style="font-size:14px">${T('試試你的小手氣~')}</p><div class="btns"><button class="btn" data-act="arcslot">🎰 ${T('拉霸機')}</button><button class="btn" data-act="arcpin">🔮 ${T('彈珠台')}</button><button class="btn" data-act="gacha">🥚 ${T('扭蛋機')}</button><button class="btn alt" data-act="closem">${T('返回')}</button></div>`)}
+function showArcade(){modal(`<h2>${T('遊戲廳')}</h2><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p><p style="font-size:14px">${T('試試你的小手氣~')}</p><div class="btns"><button class="btn" data-act="arcslot">🎰 ${T('拉霸機')}</button><button class="btn" data-act="arcpin">🔮 ${T('彈珠台')}</button><button class="btn" data-act="omk">🎋 ${T('幸運籤')}</button><button class="btn" data-act="gacha">🥚 ${T('扭蛋機')}</button><button class="btn alt" data-act="closem">${T('返回')}</button></div>`)}
 const ARC_CSS=`<style>.arc-reels{display:flex;gap:10px;justify-content:center;margin:14px 0}.arc-reels span{width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:38px;background:#fff8e6;border:3px solid #7a4a2a;border-radius:12px;box-shadow:inset 0 -4px 0 #e9d3a6}.arc-msg{font-size:15px;min-height:1.4em;text-align:center;margin:6px 0}</style>`;
 const GACHA_PRICE=300,GACHA_PITY=10,GACHA_RATE={c:60,r:30,s:10};
 const GACHA_NAME={c:'普通',r:'稀有',s:'超稀有'},GACHA_COL={c:'#7a4a2a',r:'#2f7fb8',s:'#c8891a'};
@@ -2694,6 +2694,40 @@ function gachaPull(){
     const gg=document.getElementById('gGrid');if(gg)gg.innerHTML=gachaGrid(g);
     arcMsg(T('[{0}] {1}！',GACHA_NAME[rr],it.n)+(dup?T('（重複，退回 {0}）',yen(back)):T('（新收藏！）')));
   },900);
+}
+/* ===== 幸運籤：每天免費一次，之後每次 ¥200；獎勵是錢與道具 ===== */
+const OMK_PRICE=200;
+const OMK_TABLE=[
+  {w:3,n:'大吉',g:'🌸',t:'今日宜：多加一份毛豆，客人會感動',coin:1500,rw:{nb:1}},
+  {w:10,n:'中吉',g:'🎉',t:'今日宜：推薦招牌，別手軟',coin:600},
+  {w:25,n:'小吉',g:'🍶',t:'今日宜：出餐快一點，老闆娘會笑',coin:300},
+  {w:27,n:'末吉',g:'🍵',t:'今日宜：收銀小心找錯錢',coin:100},
+  {w:25,n:'凶',g:'🍂',t:'今日忌：把炸物放太久，油會變臭',coin:50},
+  {w:10,n:'大凶',g:'💀',t:'今日忌：開店。建議直接去睡覺',coin:0}];
+function omkFree(){const r=loadRec();return !(r.omk&&r.omk.d===dayKey()&&r.omk.n>0)}
+function omkBtnLabel(free){return free?T('免費抽一次'):'¥'+OMK_PRICE+' '+T('再抽一次')}
+function showOmikuji(){
+  const free=omkFree();
+  modal(`${ARC_CSS}<h2>${T('幸運籤')}</h2><div id="omkBox" style="font-size:56px;text-align:center">🎋</div><p id="omkRes" class="arc-msg" style="min-height:3em">${T('搖一搖籤筒，看看今天運氣如何')}</p><p id="arcW" style="font-size:14px;text-align:center">${T('錢包：{0}',yen(arcWallet(0)))}</p><p style="font-size:13px;text-align:center">${T('每天免費抽一次，之後每次 ¥{0}。',OMK_PRICE)}</p><div class="btns"><button class="btn" data-act="omkdraw">${omkBtnLabel(free)}</button><button class="btn alt" data-act="arcade">${T('返回')}</button></div>`)
+}
+function omkDraw(){
+  const free=omkFree();
+  if(!free&&!arcCanPay(OMK_PRICE)){const e=$('omkRes');if(e)e.textContent=T('錢包不夠了，先去賣點東西吧！');return}
+  if(!free)arcWallet(-OMK_PRICE);
+  const r=loadRec(),o=r.omk&&r.omk.d===dayKey()?r.omk:{d:dayKey(),n:0};
+  o.n++;r.omk=o;saveRec(r);
+  let x=Math.random()*100,pick=OMK_TABLE[OMK_TABLE.length-1];
+  for(const t of OMK_TABLE){if(x<t.w){pick=t;break}x-=t.w}
+  if(pick.coin)arcWallet(pick.coin);
+  if(pick.rw)invAdd(pick.rw);
+  arcShowW();sfx(pick.w<=3?'star':pick.coin>=300?'done':'click');
+  const box=$('omkBox'),res=$('omkRes'),btn=document.querySelector('[data-act="omkdraw"]');
+  if(box)box.textContent=pick.g;
+  if(btn)btn.textContent=omkBtnLabel(false);
+  if(res){
+    const got=[];if(pick.coin)got.push(yen(pick.coin));if(pick.rw)got.push(rwText(pick.rw));
+    res.textContent=`【${T(pick.n)}】${T(pick.t)}`+(got.length?` 獲得：${got.join('、')}`:'');
+  }
 }
 function showArcSlot(){modal(`${ARC_CSS}<h2>${T('拉霸機')}</h2><div class="arc-reels" id="arcReels"><span>🍺</span><span>🍢</span><span>🍣</span></div><p class="arc-msg" id="arcMsg">${T('三個 💴 大獎，三個一樣小獎，兩個一樣退本金。下注越多，輸贏越大。')}</p><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p>${arcBetRow('slot')}<div class="btns"><button class="btn" data-act="arcspin">${T('轉！')}</button><button class="btn alt" data-act="arcade">${T('返回')}</button></div>`)}
 function arcSpin(){
@@ -2933,6 +2967,8 @@ document.addEventListener('click',e=>{
   else if(act==='arcade')showArcade();
   else if(act==='arcslot')showArcSlot();
   else if(act==='arcpin')showArcPin();
+  else if(act==='omk')showOmikuji();
+  else if(act==='omkdraw')omkDraw();
   else if(act==='gacha')showGacha();
   else if(act==='gachapull')gachaPull();
   else if(act==='gachaitem')showGachaItem(a.dataset.id);
