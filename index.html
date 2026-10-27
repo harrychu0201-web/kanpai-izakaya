@@ -3607,6 +3607,15 @@ async function cloudInit(){
         const rows=await rt((rd,r)=>rd.get(rd.query(rd.ref(r,'lb'),rd.orderByChild(f),...(asc?[rd.startAt(1),rd.limitToFirst(n)]:[rd.limitToLast(n)]))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({uid:c.key},c.val()))});return a}));
         const all=rows.filter(x=>typeof x[f]==='number'&&(!asc||x[f]>0));
         return all.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f]).slice(0,n)},
+      // every player on one board (for rank + percentile): pages of 100 by the field, walking backwards with endBefore(value,key)
+      all:async(f,dir)=>{const asc=dir==='asc';
+        const pages=await rt(async (rd,r)=>{const out=[];let cur=null;
+          for(;;){const c=[rd.orderByChild(f)];if(cur)c.push(rd.endBefore(cur.v,cur.k));c.push(rd.limitToLast(100));
+            const s=await rd.get(rd.query(rd.ref(r,'lb'),...c));const pg=[];s.forEach(x=>{pg.push(Object.assign({uid:x.key},x.val()))});
+            if(!pg.length)break;out.push(pg);if(pg.length<100)break;cur={v:pg[0][f],k:pg[0].uid}}
+          return out});
+        const all=[].concat(...pages.reverse()).filter(x=>typeof x[f]==='number'&&(!asc||x[f]>0));
+        return all.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f])},
       putLb:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lb/'+uid),d)),
       // friends: a public shop snapshot (lbx), friend codes, friend lists, daily gifts
       putLbx:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lbx/'+uid),d)),
@@ -3784,15 +3793,25 @@ async function showLB(){if(LB.tab==='fr')return showFriends();
   let foot='';
   if(!me)foot=`<div class="lbme"><span>${T('登入後就能加入排行榜。')}</span><button class="btn" data-act="login">${T('用 Google 登入')}</button></div>`;
   else if(!mine)foot=`<div class="lbme"><span>${T('取個暱稱就能加入排行榜。')}</span><button class="btn" data-act="nick">${T('取暱稱')}</button></div>`;
-  else foot=`<div class="lbme"><span>${T('你的暱稱：{0}',esc(mine.name))}</span><button class="btn alt" data-act="nick">${T('改暱稱')}</button></div>`;
+  const f=tb[0],asc=tb[2]==='asc';
+  // rank + percentile are worked out from the whole board, so they stay right beyond the top 50
+  const rk=(all,N)=>{const mRow=me&&all.find(r=>r.uid===me.uid);const mv=mRow?mRow[f]:(mine?mine[f]:null);
+    if(mv==null||(asc&&!(mv>0)))return null;
+    const better=all.filter(r=>asc?r[f]<mv:r[f]>mv).length,worse=all.filter(r=>asc?r[f]>mv:r[f]<mv).length;
+    const total=mRow?N:N+1,others=total-1;
+    return {rank:better+1,total,pct:others>0?Math.floor(worse/others*1000)/10:null,all:worse===others}};
+  const rkTxt=x=>!x?'':x.total<2?T('目前只有你一位上榜。'):x.all?T('第 {0} 名（共 {1} 人），超過全部其他玩家！',x.rank,x.total):T('第 {0} 名（共 {1} 人），超過 {2}% 的玩家',x.rank,x.total,x.pct);
+  const mineRk=()=>{const x=LB.cache[f]&&rk(LB.cache[f].rows,LB.cache[f].rows.length);return x};
+  const foot0=foot;
   const btns=`<div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`;
-  const draw=body=>{if(HOME&&LB.tab===tb[0])modal(head+`<div class="lblist">${body}</div>`+foot+btns)};
-  const c=LB.cache[tb[0]];
+  const draw=body=>{if(HOME&&LB.tab===f){const x=mineRk();const ft=x&&mine?foot0.replace('</span>',`<br><small>${rkTxt(x)}</small></span>`):foot0;modal(head+`<div class="lblist">${body}</div>`+ft+btns)}};
+  const c=LB.cache[f];
   if(!c||Date.now()-c.t>60000){draw(`<p>${T('載入中…')}</p>`);
-    try{if(!CL.api)throw 0;LB.cache[tb[0]]={t:Date.now(),rows:await CL.api.top(tb[0],tb[2],50)}}catch(e){console.warn('lb',e);draw(`<p>${T('排行榜載入失敗，請稍後再試。')}</p>`);return}}
-  const rows=LB.cache[tb[0]].rows;
-  let body=rows.length?rows.map((r,i)=>`<div class="lbrow ${me&&r.uid===me.uid?'me':''}"><b>${i<3?['🥇','🥈','🥉'][i]:i+1}</b><span>${esc(r.name||'?')}</span><em>${lbVal(tb[0],r[tb[0]])}</em></div>`).join(''):`<p>${T('還沒有人上榜，快來搶第一！')}</p>`;
-  if(me&&mine&&!rows.some(r=>r.uid===me.uid)&&(tb[0]!=='own'||mine.own)&&(tb[0]!=='days'||mine.days))body+=`<div class="lbrow me"><b>…</b><span>${esc(mine.name)}</span><em>${lbVal(tb[0],mine[tb[0]])}</em></div>`;
+    try{if(!CL.api)throw 0;LB.cache[f]={t:Date.now(),rows:await CL.api.all(f,tb[2])}}catch(e){console.warn('lb',e);draw(`<p>${T('排行榜載入失敗，請稍後再試。')}</p>`);return}}
+  const all=LB.cache[f].rows,rows=all.slice(0,50);
+  let body=rows.length?rows.map((r,i)=>`<div class="lbrow ${me&&r.uid===me.uid?'me':''}"><b>${i<3?['🥇','🥈','🥉'][i]:i+1}</b><span>${esc(r.name||'?')}</span><em>${lbVal(f,r[f])}</em></div>`).join(''):`<p>${T('還沒有人上榜，快來搶第一！')}</p>`;
+  const x=mineRk();
+  if(me&&mine&&x&&!rows.some(r=>r.uid===me.uid))body+=`<div class="lbrow me"><b>${x.rank}</b><span>${esc(mine.name)}</span><em>${lbVal(f,mine[f])}</em></div>`;
   draw(body)}
 function showNick(){const r=loadRec();
   modal(`<h2>${T('取個暱稱')}</h2><p>${T('排行榜上會顯示這個名字，最多 12 個字。')}</p><input class="nickin" id="nickin" maxlength="12" value="${esc(r.nick||'')}" autocomplete="off">
