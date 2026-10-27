@@ -3528,9 +3528,11 @@ function fit(){
   document.body.classList.toggle('ovl',TOUCH&&innerWidth>innerHeight&&Math.min(screen.width,screen.height)<560&&!HOME);
   chooseLayout();
   const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?window.innerWidth:(TOUCH?stableWrapW():$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?0:$('hud').offsetHeight+(window.innerHeight<560?18:34)));
-  const s=Math.min(w/W,maxH/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
+  /* 保險上限：iOS 更新後偶爾量到過大的寬高（例如讀到還沒排好的版面），遊戲會被放大到超出螢幕，只剩左上角看得到。
+     不管量到什麼，遊戲的可用寬高都不會超過實際視窗的寬高。 */
+  const s=Math.min(Math.min(w,Math.max(200,window.innerWidth))/W,Math.min(maxH,Math.max(200,window.innerHeight))/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
   /* 左側錨定：用「釘住的寬度」排版，而不是目前寬度置中。手機橫向時，右側系統導覽列滑出會讓可見寬度變窄，置中的畫面就會整個左右移動。 */
-  if(TOUCH){box.style.alignSelf='flex-start';box.style.marginLeft=Math.max(0,(w-W*s)/2)+'px'}else{box.style.alignSelf='';box.style.marginLeft=''}
+  if(TOUCH){box.style.alignSelf='flex-start';box.style.marginLeft=Math.max(0,(Math.min(w,Math.max(200,window.innerWidth))-W*s)/2)+'px'}else{box.style.alignSelf='';box.style.marginLeft=''}
   $('game').style.transform=`scale(${s})`;
   $('game').style.setProperty('--fz',Math.min(1.8,Math.max(1,0.85/s)).toFixed(2));
   clampBubbles();
