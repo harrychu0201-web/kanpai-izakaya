@@ -3473,9 +3473,12 @@ function compVV(){
   const el=$('wrap');if(!el||!window.visualViewport)return;
   const vv=visualViewport,land=innerWidth>innerHeight;
   if(!TOUCH||!land){el.style.transform='';el.style.transformOrigin='';return}
-  if(!vv.offsetLeft&&!vv.offsetTop&&Math.abs(vv.scale-1)<.001){el.style.transform='';el.style.transformOrigin='';return} // 沒有平移時不套 transform（transform 會改變 fixed 定位子元素的基準）
+  /* 只有真的被放大（可視寬高比版面視窗小）時才補償縮放；全螢幕切換後常會殘留一個 scale 數字但實際沒放大，
+     以前會把遊戲縮成一半、留下一塊黑邊。 */
+  const zoomed=vv.width<innerWidth-2||vv.height<innerHeight-2,sc=zoomed?vv.scale:1;
+  if(!vv.offsetLeft&&!vv.offsetTop&&Math.abs(sc-1)<.001){el.style.transform='';el.style.transformOrigin='';return} // 沒有平移時不套 transform（transform 會改變 fixed 定位子元素的基準）
   el.style.transformOrigin='0 0';
-  el.style.transform=`translate(${vv.offsetLeft}px,${vv.offsetTop}px) scale(${1/vv.scale})`;
+  el.style.transform=`translate(${vv.offsetLeft}px,${vv.offsetTop}px) scale(${1/sc})`;
 }
 function visH(){let d=document.getElementById('dvhProbe');if(!d){d=document.createElement('div');d.id='dvhProbe';d.style.cssText='position:fixed;left:0;top:0;width:1px;height:100vh;height:100dvh;visibility:hidden;pointer-events:none';document.body.appendChild(d)}const a=window.innerHeight,b=window.visualViewport?visualViewport.height:a;return Math.max(200,Math.min(a,b))}
 /* fit() only ran on resize events; on Android the fullscreen / rotation animation reports a stale height first, so the board stayed too tall until the next HUD change (end of day). Re-run it a few times while the viewport settles. */
@@ -3517,6 +3520,7 @@ function fit(){
   $('game').style.transform=`scale(${s})`;
   $('game').style.setProperty('--fz',Math.min(1.8,Math.max(1,0.85/s)).toFixed(2));
   clampBubbles();
+  compVV();
   if(HOME)placeChat();
 }
 ['gesturestart','gesturechange','gestureend'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault(),{passive:false}));document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
