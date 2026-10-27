@@ -4047,7 +4047,7 @@ function fbDraftSet(id,v){if(!INB.drafts)INB.drafts={};if(v)INB.drafts[id]=v;els
 const INB={rows:[],old:[],open:null,busy:false,err:'',claims:{},drafts:fbDraftLoad()};
 const FBCATN=Object.fromEntries(FBCATS);FBCATN.re='↩️ 玩家回你';
 async function showInbox(reload){if(!canInbox())return;
-  if(reload||!INB.rows.length){INB.err='';modal(`<h2>📬 收件匣</h2><p style="font-size:14px">載入中…</p>`);
+  {INB.err='';modal(`<h2>📬 收件匣</h2><p style="font-size:14px">載入中…</p>`);
     try{INB.rows=await CL.api.fbList(150);INB.claims=await CL.api.claimGet()}catch(e){INB.err=String(e&&e.code||e)}}
   inboxDraw()}
 function inboxDraw(){
@@ -4059,7 +4059,7 @@ function inboxDraw(){
     ${!op&&INB.drafts[f.id]?'<p class="inbh">📝 有未送出的草稿</p>':''}${op?`<textarea class="fbtext" id="inbtext" data-id="${esc(f.id)}" maxlength="1000" oninput="fbDraftSet(this.dataset.id,this.value)" placeholder="回覆給這位玩家…">${esc(INB.drafts[f.id]||'')}</textarea>
       <div class="btns" style="justify-content:flex-start"><button class="btn" data-act="inbsend">${INB.busy?'送出中…':'送出回覆'}</button><button class="btn alt" data-act="inbre" data-id="">取消</button></div>`
     :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
-  modal(`<h2>📬 收件匣（${INB.rows.length}）</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
+  modal(`<h2>📬 收件匣（${INB.rows.filter(f=>!f.re).length}）</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
   <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button>${nDone?`<button class="btn alt" data-act="inbdone">${INB.showDone?'🙈 隱藏已回覆':'👁 顯示已回覆（'+nDone+'）'}</button>`:''}<button class="btn alt" data-act="inbold">${INB.old.length?'已載入舊意見':'載入 Firestore 舊意見'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="fbpubsync">👀 同步到公開板</button><button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
   ${shown.length?shown.map(item).join(''):'<p style="font-size:14px">'+(nDone?'未回覆的意見都處理完了 🎉':'還沒有新的意見。')+'</p>'}
   <div class="btns"><button class="btn alt" data-act="fb">返回</button></div>`);
