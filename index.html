@@ -1755,7 +1755,12 @@ const STAFFLV={
   helper:{zh:'廚房學徒・阿健',flag:'helper',lv:[
     {cost:12000,wage:600,d:'做好的菜會收進保溫台（不會焦），焦掉的會丟掉。不會幫你下鍋。'},
     {cost:28000,wage:1000,d:'幫忙顧火：燒烤台、油鍋、鐵板、炸鍋、章魚燒盤的東西快 20% 熟，章魚燒也會自己翻面（大約等 2.5 秒），而且翻面的時間比以前寬裕（現在有 7 秒可以翻）。'},
-    {cost:55000,wage:1500,d:'客人的耐心剩一半以下時，會自動幫忙下鍋一份他點的串燒、炸物、鐵板料理，連三號廚房的章魚燒也會下（大約每 4 秒一次）。砧板的菜也還是要你做。'}]}};
+    {cost:55000,wage:1500,d:'客人的耐心剩一半以下時，會自動幫忙下鍋一份他點的串燒、炸物、鐵板料理，連三號廚房的章魚燒也會下（大約每 4 秒一次）。砧板的菜也還是要你做。'}]},
+  chef:{zh:'廚房師傅・阿強',flag:'chef',lv:[
+    {cost:25000,wage:900,d:'客人點了串燒、炸物、鐵板或天婦羅，爐子、油鍋、鐵板有空位就自動下鍋（食材錢照付），大約每 1.6 秒檢查一次。先來的客人先做。'},
+    {cost:50000,wage:1300,d:'動作變快，大約每 1 秒檢查一次，燒烤台、油鍋、鐵板、天婦羅都會一起顧。'},
+    {cost:100000,wage:1800,d:'大約每 0.6 秒檢查一次，客人一入座就開始備料下鍋，串燒和炸物幾乎不會斷貨。'}]}};
+const CHEF_KINDS=['negima','tsukune','karaage','buta','gyu','ika','hotate','ebiten','kakifry'];
 const HELPER_PAT=.5,HELPER_GAP=4; // Lv3 阿健: start cooking for a customer once their patience is at or below half, at most one dish every HELPER_GAP seconds
 function staffLv(id){const f=STAFFLV[id].flag;return ST.up[id+'Lv']||(ST.up[f]?1:0)}
 function wages(){let w=0;for(const id in STAFFLV){const l=staffLv(id);if(l)w+=Math.round(STAFFLV[id].lv[l-1].wage*dilOf(id)/100)}return w}
@@ -2138,6 +2143,32 @@ function staffStep(dt){
       if(c.extra&&c.extra.ok&&!c.extra.done){const h=src.find(x=>x.key===c.extra.key);if(h&&giveTo(c,'x',h,false)!==false){popup(56,176,T('小美上菜'));break outer}}}}}
   if(hl&&dilMul('helper')){R.helpT-=dt*dilMul('helper');if(R.helpT<=0){R.helpT=.9;helperAct()}}
   if(hl>=3&&dilMul('helper')){R.crisisT=(R.crisisT??3)-dt*dilMul('helper');if(R.crisisT<=0)R.crisisT=crisisCook()?HELPER_GAP:1}
+  chefStep(dt);
+}
+function chefStep(dt){const l=staffLv('chef'),m=dilMul('chef');if(!l||!m)return;R.chefT=(R.chefT??1.6)-dt*m;if(R.chefT<=0){R.chefT=[1.6,1.0,.6][l-1];chefAct()}}
+function chefAct(){
+  // 阿強: fill empty grill / fryer / teppan / tempura spots for dishes customers have ordered (earliest customer first); ingredients are paid as usual
+  const kinds=CHEF_KINDS.filter(k=>unlocked(ST.day).includes(k)&&!isOff(k));
+  const have={},need={};kinds.forEach(k=>{have[k]=0;need[k]=0});
+  const cnt=(g,k)=>{if(g&&k in have&&cookState(g.t,k)!=='burnt')have[k]++};
+  R.grill.forEach(g=>g&&cnt(g,g.kind));R.fryer.forEach(f=>f&&cnt(f,'karaage'));R.teppan.forEach(g=>g&&cnt(g,g.kind));R.tempura.forEach(g=>g&&cnt(g,g.kind));
+  R.warm.forEach(w=>{if(w&&w.key in have)have[w.key]++});if(R.held&&R.held.key in have)have[R.held.key]++;
+  for(const c of waiting())c.order.forEach((k,j)=>{if(!c.filled[j]&&k in need)need[k]++});
+  for(const c of waiting())if(c.extra&&c.extra.ok&&!c.extra.done&&c.extra.key in need)need[c.extra.key]++;
+  for(const c of waiting()){
+    const sl=c.order.map((k,j)=>({k,open:!c.filled[j]}));if(c.extra&&c.extra.ok&&!c.extra.done)sl.push({k:c.extra.key,open:true});
+    for(const {k,open} of sl){if(!open||!(k in need)||have[k]>=need[k])continue;
+      let pn,i;
+      if(k==='negima'||k==='tsukune'){pn='grill';i=R.grill.findIndex((g,x)=>!g&&x<ST.up.grill)}
+      else if(k==='karaage'){pn='fryer';i=R.fryer.findIndex((f,x)=>!f&&x<ST.up.fryer)}
+      else{pn=STN[k];i=R[pn].findIndex(g=>!g)}
+      if(i<0)continue;
+      if(live()<costOf(k))continue;
+      R[pn][i]=pn==='fryer'?{t:0}:{kind:k,t:0};
+      const pos=srcCenter({src:pn,i});charge(costOf(k),pos.x,pos.y-50);
+      popup(pos.x,pos.y-80,T('阿強下鍋'));
+      renderStations();return true}}
+  return false;
 }
 function helperAct(){
   // 1. burnt -> trash
@@ -2482,7 +2513,7 @@ function renderHUD(){document.body.classList.toggle('playing',!!R);
   setHTML($('hud'),`<div class="pill day">${R&&R.where==='rm'?'🍜 ':R&&R.where==='sushi'?'🍣 ':''}${T('第 {0} 天',ST.day)}</div>
     ${R?`<div class="goal" aria-label="${T('今日淨利')}"><i style="width:${Math.min(100,e/max*100)}%"></i><em>${T('淨利 {0}',yen(net()))}</em>${g.map(v=>`<span class="${e>=v?'on':''}" style="left:${v/max*100}%">★</span>`).join('')}</div>
     <div class="pill clock"><b>${clockStr()}</b>${PERIOD(hourNow())}</div>${R.ev&&R.ev.ev?`<div class="pill ev" title="${esc(evDesc(R.ev))}">${evLabel(R.ev)}</div>`:''}`:'<div style="flex:1"></div>'}
-    ${CUR==='sushi'?(suStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${T('健太郎')}${'★'.repeat(suStaffLv()-1)}</b></div>`:''):CUR==='rm'?(rmStaffLv()||rmStaff2Lv()||rmFryStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[rmStaffLv()?T('小葵')+'★'.repeat(rmStaffLv()-1):'',rmStaff2Lv()?T('山田')+'★'.repeat(rmStaff2Lv()-1):'',rmFryStaffLv()?T('大輔')+'★'.repeat(rmFryStaffLv()-1):''].filter(Boolean).join('・')}</b></div>`:''):ST.up.waiter||ST.up.helper?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[ST.up.waiter?T('小美')+(staffLv('waiter')>1?'★'.repeat(staffLv('waiter')-1):''):'',ST.up.helper?T('阿健')+(staffLv('helper')>1?'★'.repeat(staffLv('helper')-1):''):''].filter(Boolean).join('・')}</b></div>`:''}
+    ${CUR==='sushi'?(suStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${T('健太郎')}${'★'.repeat(suStaffLv()-1)}</b></div>`:''):CUR==='rm'?(rmStaffLv()||rmStaff2Lv()||rmFryStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[rmStaffLv()?T('小葵')+'★'.repeat(rmStaffLv()-1):'',rmStaff2Lv()?T('山田')+'★'.repeat(rmStaff2Lv()-1):'',rmFryStaffLv()?T('大輔')+'★'.repeat(rmFryStaffLv()-1):''].filter(Boolean).join('・')}</b></div>`:''):ST.up.waiter||ST.up.helper||ST.up.chef?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[ST.up.waiter?T('小美')+(staffLv('waiter')>1?'★'.repeat(staffLv('waiter')-1):''):'',ST.up.helper?T('阿健')+(staffLv('helper')>1?'★'.repeat(staffLv('helper')-1):''):'',ST.up.chef?T('阿強')+(staffLv('chef')>1?'★'.repeat(staffLv('chef')-1):''):''].filter(Boolean).join('・')}</b></div>`:''}
     ${(()=>{const w=R?live():ST.coins;return `<div class="pill ${w<0?'neg':''}">${T('錢包')} <b>${w<0?'−':''}¥${Math.abs(Math.round(w)).toLocaleString('en-US')}</b></div>`})()}${ST.debt?`<div class="pill staff">${T('借款')} <b>${yen(ST.debt)}</b></div>`:''}
     ${R&&!R.over&&!R.settled&&!DEMO?'<button class="icon-btn bagbtn" data-act="rewards" aria-label="背包">'+T('背包')+'</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}"><span class="ico">${sndIcon()}</span></button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>`:''}`);
 }
