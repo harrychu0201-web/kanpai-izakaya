@@ -3560,11 +3560,14 @@ function stableWrapW(){
 }
 function safeBottom(){let d=document.getElementById('sabProbe');if(!d){d=document.createElement('div');d.id='sabProbe';d.style.cssText='position:fixed;left:0;bottom:0;width:1px;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';document.body.appendChild(d)}return Math.max(d.offsetHeight||0,14)}/* min gap so Android gesture bar / iPhone home line never sits on the bottom row */
 let PTR=false,PENDFIT=false;document.addEventListener('pointerdown',()=>{PTR=true},true);['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,()=>{PTR=false;if(PENDFIT){PENDFIT=false;setTimeout(fit,50)}},true));
+/* 橫向手機底部的 Home 橫條區（safe-area-inset-bottom）：舞台若貼到螢幕最底，玩家點櫃台白線附近時會落在系統手勢區，長按會叫出 Siri。
+   這裡量出這段高度，讓舞台底邊離開它。 */
+function safeBottom(){const p=document.createElement('div');p.style.cssText='position:fixed;left:0;bottom:0;visibility:hidden;pointer-events:none;padding-bottom:env(safe-area-inset-bottom,0px)';document.body.appendChild(p);const v=p.offsetHeight;p.remove();return v}
 function fit(){
   if(PTR){PENDFIT=true;return}
   document.body.classList.toggle('ovl',TOUCH&&innerWidth>innerHeight&&Math.min(screen.width,screen.height)<560&&!HOME);
   chooseLayout();
-  const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?window.innerWidth:(TOUCH?stableWrapW():$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?0:$('hud').offsetHeight+(window.innerHeight<560?18:34)));
+  const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?window.innerWidth:(TOUCH?stableWrapW():$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)));
   /* 保險上限：iOS 更新後偶爾量到過大的寬高（例如讀到還沒排好的版面），遊戲會被放大到超出螢幕，只剩左上角看得到。
      不管量到什麼，遊戲的可用寬高都不會超過實際視窗的寬高。 */
   const s=Math.min(Math.min(w,Math.max(200,window.innerWidth))/W,Math.min(maxH,Math.max(200,window.innerHeight))/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
