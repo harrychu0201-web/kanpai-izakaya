@@ -650,7 +650,7 @@ function bonusKey(k){if(k==='chazuke')return 'chazuke:'+pick(['salmon','ume']);i
 function bonusPick(order){
   if(DEMO||TUT||!ST||ST.day<2)return null;
   const used=order.map(k=>k.split(':')[0]),inShop=k=>{const s=ITEMS[k].shop||'iz';return s==='both'||s===CUR};
-  const okp=unlocked(ST.day).filter(k=>!used.includes(k));
+  const okp=unlocked(ST.day).filter(k=>!used.includes(k)&&!isOff(k));
   const lkp=Object.keys(ITEMS).filter(k=>ITEMS[k].buy&&!has(k)&&inShop(k)&&!used.includes(k));
   const locked=lkp.length&&(!okp.length||Math.random()<.3),pool=locked?lkp:okp;
   if(!pool.length)return null;
@@ -663,6 +663,9 @@ function rmOwned(){return !!(ST&&ST.rm)}
 function rmUp(k,d){return (ST&&ST.rm&&ST.rm.up&&ST.rm.up[k])||d}
 function seatsN(){return R?R.seats.length:(CUR==='sushi'?3:CUR==='rm'&&rmOwned()?rmUp('seats',3):ST.up.seats)}
 function rmK2(){return !!(ST&&ST.rm&&ST.rm.k2)}function rfryN(){return rmUp('fry',3)}function tyakiN(){return rmUp('tai',2)}function gomaOff(){return !!(ST&&ST.rm&&ST.rm.off&&ST.rm.off.goma)}
+/* 暫時下架：下架的菜不會再出現在客人點單、加碼、特價、牆上菜單，重新上架即可 */
+function isOff(k){return !!(ST&&ST.soff&&ST.soff[k])||(k==='goma'&&gomaOff())}
+function offBtn(k){if(k==='goma'||k==='beer'||!ST)return '';const off=isOff(k);return `<div class="row" style="margin-top:6px"><span>${T(off?'下架中，客人不會點':'上架中')}</span><button class="btn alt" data-act="offtog" data-id="${k}">${T(off?'重新上架':'暫時下架')}</button></div>`}
 const RFK=['koro','tori','katsu'],K2_PRICE=150000,TAI_NEED=150;
 function panCap(pn){return pn==='rmpan'?rpanN():pn==='rfry'?rfryN():pn==='tyaki'?tyakiN():R[pn].length}
 function mpotN(){return rmUp('mpot',3)}function rpanN(){return rmUp('pan',3)}function bowlsN(){return rmUp('bowls',1)}function odenCap(){return rmUp('oden',6)}
@@ -802,7 +805,7 @@ const EVS={rain:['🌧','雨天','客人少三成，但耐心 +30%。'],fest:['�
 function evNow(){return ST&&ST.today&&ST.today.day===ST.day?ST.today:{}}
 function pickToday(){if(DEMO||(ST.today&&ST.today.day===ST.day))return;const d=ST.day,t={day:d};
   if(d>=4&&Math.random()<.6){const ks=['rain','fest','group','sale','critic'];t.ev=pick(ks);
-    if(t.ev==='sale'){const c=unlocked(d).filter(k=>ITEMS[k].cost&&k!=='beer');t.sale=pick(c.length?c:['edamame'])}
+    if(t.ev==='sale'){const c=unlocked(d).filter(k=>ITEMS[k].cost&&k!=='beer'&&!isOff(k));t.sale=pick(c.length?c:['edamame'])}
     if(t.ev==='group')t.at=rnd(.3,.7)*DAYLEN;if(t.ev==='critic')t.at=rnd(.15,.5)*DAYLEN}
   const hd=holOf(d);if(hd)t.hol=hd.id;
   if(d>=5&&((hd&&hd.rob)||Math.random()<.3)){t.rob=true;t.robAt=rnd(.25,.7)*DAYLEN}
@@ -820,7 +823,7 @@ function holOf(day){const c=calOf(day);return HOLS[c.m+'/'+c.d]||null}
 function holInfo(id){return Object.values(HOLS).find(h=>h.id===id)||null}
 function dateStr(day){const c=calOf(day);return c.m+'/'+c.d}
 function evLabel(e){const v=EVS[e.ev];return v?v[0]+' '+T(v[1]):''}
-function saleCands(){return unlocked(ST.day).filter(k=>ITEMS[k].cost&&k!=='beer')}
+function saleCands(){return unlocked(ST.day).filter(k=>ITEMS[k].cost&&k!=='beer'&&!isOff(k))}
 function evDesc(e){const v=EVS[e.ev];return v?T(v[2],e.sale?dishTitle(e.sale):''):''}
 
 
@@ -1105,7 +1108,7 @@ function drawBg(){
     s+=`<g transform="translate(${x} ${y})"><rect x="0" y="16" width="20" height="${h-16}" rx="5" fill="${bc[i%7]}" stroke="${O}" stroke-width="2.5"/><rect x="6" y="2" width="8" height="18" rx="2" fill="${bc[i%7]}" stroke="${O}" stroke-width="2.5"/><rect x="3" y="${Math.round(h*.45)}" width="14" height="18" fill="${hasIn('premium')?'#e8c45a':'#f3e6c8'}" stroke="${O}" stroke-width="1.5"/></g>`}
   s+=`</g>`;
   s+=`<rect x="0" y="0" width="${W}" height="24" fill="#3f2416"/>`;
-  const keys=ST?unlocked(day,'iz'):Object.keys(ITEMS).filter(k=>!ITEMS[k].buy&&ITEMS[k].shop!=='rm');
+  const keys=ST?unlocked(day,'iz').filter(k=>!isOff(k)):Object.keys(ITEMS).filter(k=>!ITEMS[k].buy&&ITEMS[k].shop!=='rm');
   const tsx=KY<400?Math.max(14,Math.min(P.ts,(P.sake-P.tag-14)/Math.max(keys.length,1))):P.ts,kk=KY<400?Math.min(1.25,tsx/22.4):1.25;
   keys.forEach((k,i)=>{const t=itemTag(k),x=P.tag+i*tsx;const sp=t.length===2?22:14,off=(52-((t.length-1)*sp+11))/2-7;s+=`<g transform="translate(${x} ${9+TY}) scale(${kk})"><rect width="22" height="52" fill="#f3e6c8" stroke="${O}" stroke-width="2"/>${[...t].map((c,j)=>c==='ー'?`<rect x="10" y="${7+off+j*sp}" width="2.5" height="11" fill="${O}"/>`:`<text x="11" y="${17+off+j*sp}" text-anchor="middle" font-family="Zen Maru Gothic,sans-serif" font-weight="900" font-size="12" fill="${O}">${c}</text>`).join('')}</g>`});
   if(hasDec('shamisen'))s+=`<g transform="translate(${P.sham[0]} ${P.sham[1]}) rotate(8) scale(.8)"><rect x="-3" y="0" width="6" height="140" fill="#2a1a10" stroke="${O}" stroke-width="1.5"/><path d="M-8 6h16M-8 16h16" stroke="#e7c58a" stroke-width="3"/><rect x="-20" y="132" width="40" height="44" rx="12" fill="#f3e6c8" stroke="${O}" stroke-width="3"/><path d="M-1 10v160M1 10v160" stroke="#fff" stroke-width=".8"/></g><text x="${P.notes[0]}" y="${P.notes[1]}" font-size="22" fill="#ffd27a">♪</text><text x="${P.notes[0]+8}" y="${P.notes[1]+36}" font-size="16" fill="#ffd27a">♫</text>`;
@@ -1562,7 +1565,7 @@ function drawYatai(){
   const nc=rmDec('noren2')?['#26457e','#132a52']:['#2b2a2e','#141418'];
   ['ラ','ー','メ','ン'].forEach((c,i)=>{s+=`<path d="M${nx+i*pw+2} ${ny}h${pw-4}v78q-${(pw-4)/2} 8-${pw-4} 0z" fill="${nc[0]}" stroke="${nc[1]}" stroke-width="2"/>`+(nc[0]==='#26457e'?`<path d="M${nx+i*pw+6} ${ny+66}h${pw-12}" stroke="#fbf1dc" stroke-width="2" opacity=".55"/>`:'');
     s+=c==='ー'?`<rect x="${nx+i*pw+pw/2-3}" y="${ny+22}" width="6" height="30" fill="#fbf1dc"/>`:`<text x="${nx+i*pw+pw/2}" y="${ny+50}" text-anchor="middle" font-family="Noto Sans TC,Zen Maru Gothic,sans-serif" font-weight="900" font-size="34" fill="#fbf1dc">${c}</text>`});
-  const keys=ST?unlocked(ST.day,'rm'):[],rows=26+keys.length*28+26>nx-8?2:1,per=Math.ceil(keys.length/rows),tsp=per>1?Math.min(28,(nx-8-52)/(per-1)):28,tsc=1.18*Math.min(1,tsp/28),tagEnd=26+per*tsp*1.18;
+  const keys=ST?unlocked(ST.day,'rm').filter(k=>!isOff(k)):[],rows=26+keys.length*28+26>nx-8?2:1,per=Math.ceil(keys.length/rows),tsp=per>1?Math.min(28,(nx-8-52)/(per-1)):28,tsc=1.18*Math.min(1,tsp/28),tagEnd=26+per*tsp*1.18;
   if(nx-74>=tagEnd+4)s+=`<g transform="translate(${nx-74} ${ny-4})">${lanternG('拉麵')}</g>`;if(nx+nw+80<=W-20)s+=`<g transform="translate(${nx+nw+14} ${ny-4})">${lanternG('餃子')}</g>`;keys.forEach((k,i)=>{const t=itemTag(k),x=26+(i%per)*tsp,sp=t.length===2?22:t.length>=4?12:14,off=(52-((t.length-1)*sp+11))/2-7;
     s+=`<g transform="translate(${x} ${(tarp?52:40)+TY+(i%2)*10+Math.floor(i/per)*72*tsc/1.18}) scale(${tsc})"><rect width="22" height="52" fill="#f3e6c8" stroke="${O}" stroke-width="2"/>${[...t].map((c,j)=>c==='ー'?`<rect x="10" y="${7+off+j*sp}" width="2.5" height="11" fill="${O}"/>`:`<text x="11" y="${17+off+j*sp}" text-anchor="middle" font-family="Zen Maru Gothic,sans-serif" font-weight="900" font-size="12" fill="${O}">${c}</text>`).join('')}</g>`});
   $('bg').innerHTML=s;['bg','counter'].forEach(id=>{const e=$(id);e.setAttribute('viewBox',`0 0 ${W} ${H}`);e.setAttribute('width',W);e.setAttribute('height',H)});
@@ -1737,7 +1740,7 @@ const LVNZ={beer:['生啤酒','精選麥芽生啤酒','職人精釀啤酒','限�
 const lvName=(b,i)=>LANG==='zh-Hant'&&LVNZ[b]?LVNZ[b][i]:T(LVN[b][i]);
 /* one upgrade card: title = the dish, chips = the whole upgrade path with where you are, text = what you have now -> what you get */
 function lvCard(b){const lv=lvOf(b),c=upCost(b),nxP=Math.round(ITEMS[b].price*(1+.3*(lv+1))/10)*10;
-  return `<div class="up ${lv>=3?'done':''}"><b>${JP(b)}<span class="new" style="background:#c9853a">${'★'.repeat(lv)}${'☆'.repeat(3-lv)}</span></b><div class="lvchain">${[0,1,2,3].map(i=>`<span class="${i<lv?'past':i===lv?'cur':i===lv+1?'nxt':''}">${lvName(b,i)}</span>`).join('<i>→</i>')}</div><p>${lv<3?T('現在是「{0}」，升級後換成「{1}」。',lvName(b,lv),lvName(b,lv+1))+'<br>'+T('售價 {0} → {1}，點這道菜的客人更有耐心。',yen(priceOf(b)),yen(nxP)):T('已經是最高級：「{0}」。',lvName(b,3))}</p><div class="row"><span class="price">${lv<3?yen(c):''}</span>${lv>=3?`<span>${T('已滿級')}</span>`:`<button class="btn" data-act="lvup" data-id="${b}" ${ST.coins<c?'disabled':''}>${T('升級')}</button>`}</div></div>`}
+  return `<div class="up ${lv>=3?'done':''}"><b>${JP(b)}<span class="new" style="background:#c9853a">${'★'.repeat(lv)}${'☆'.repeat(3-lv)}</span></b><div class="lvchain">${[0,1,2,3].map(i=>`<span class="${i<lv?'past':i===lv?'cur':i===lv+1?'nxt':''}">${lvName(b,i)}</span>`).join('<i>→</i>')}</div><p>${lv<3?T('現在是「{0}」，升級後換成「{1}」。',lvName(b,lv),lvName(b,lv+1))+'<br>'+T('售價 {0} → {1}，點這道菜的客人更有耐心。',yen(priceOf(b)),yen(nxP)):T('已經是最高級：「{0}」。',lvName(b,3))}</p><div class="row"><span class="price">${lv<3?yen(c):''}</span>${lv>=3?`<span>${T('已滿級')}</span>`:`<button class="btn" data-act="lvup" data-id="${b}" ${ST.coins<c?'disabled':''}>${T('升級')}</button>`}</div>${offBtn(b)}</div>`}
 const GOAL=800000;
 function lvOf(b){return (ST.lv&&ST.lv[b])||0}
 function priceOf(k){const b=k.split(':')[0];return Math.round(ITEMS[b].price*(1+.3*lvOf(b))/10)*10}
@@ -1966,7 +1969,7 @@ function startDay(){pastSave();DAYLEN=159;setTimeout(()=>sfx('open'),80);$('game
 }
 function pickW(arr){const sl=evNow().sale,w=k=>ITEMS[k].w*(k===sl?2.5:1);let t=arr.reduce((s,k)=>s+w(k),0),r=Math.random()*t;for(const k of arr){r-=w(k);if(r<=0)return k}return arr[0]}
 function genOrder(){
-  const un=unlocked(ST.day);const n=1+(Math.random()<.55?1:0)+(ST.day>=3&&Math.random()<.3?1:0);
+  const un=unlocked(ST.day).filter(k=>!isOff(k));const n=1+(Math.random()<.55?1:0)+(ST.day>=3&&Math.random()<.3?1:0);
   const out=[];let drink=0;
   while(out.length<n){
     const k=pickW(un.filter(x=>!(['beer','sake','highball','lsour','ramune','umeshu','reishu'].includes(x)&&drink)));
@@ -2150,7 +2153,7 @@ function helperAct(){
   }
 }
 function crisisCook(){
-  const kinds=['negima','tsukune','karaage','buta','gyu','ika','hotate','ebiten','kakifry','takoyaki'].filter(k=>unlocked(ST.day).includes(k));
+  const kinds=['negima','tsukune','karaage','buta','gyu','ika','hotate','ebiten','kakifry','takoyaki'].filter(k=>unlocked(ST.day).includes(k)&&!isOff(k));
   const have={};kinds.forEach(k=>have[k]=0);
   const cnt=(g,k)=>{if(g&&k in have&&cookState(g.t,k)!=='burnt')have[k]++};
   R.grill.forEach(g=>g&&cnt(g,g.kind));R.fryer.forEach(f=>f&&cnt(f,'karaage'));R.teppan.forEach(g=>g&&cnt(g,g.kind));R.tempura.forEach(g=>g&&cnt(g,g.kind));R.tako.forEach(g=>g&&cnt(g,g.kind));
@@ -3116,6 +3119,7 @@ document.addEventListener('click',e=>{
   else if(act==='buysushi'){if(!sushiDev())return;const home=!ST;if(home)ST=load();if(ST&&!ST.sushi&&ST.coins>=SUSHI_PRICE){keepScroll();ST.coins-=SUSHI_PRICE;ST.sushi={up:{},seen:false};ST.menu=ST.menu||{};ST.menu.tamagonigiri=1;save();toast(T('海風壽司開張了！'))}if(home)ST=null;if(!home)renderHUD();sushiHome()}
   else if(act==='buyrm'){if(ST.owned&&!ST.rm&&ST.coins>=RM_PRICE){keepScroll();ST.coins-=RM_PRICE;ST.rm={up:{},dec:{},seen:false};ST.where='rm';save();showShop();renderHUD();toast(T('屋台開張了！下一天開店前可以選要開哪一家'))}}
   else if(act==='buyk2'){if(ST.rm&&!rmK2()&&ST.coins>=K2_PRICE){keepScroll();ST.coins-=K2_PRICE;ST.rm.k2=1;ST.menu=ST.menu||{};ST.menu.koro=true;ST.fresh=(ST.fresh||[]).concat('koro');save();drawBg();showShop();renderHUD();toast(T('二號廚房擴建好了！開店時點吧台右邊的按鈕切換廚房'))}}
+  else if(act==='offtog'){const k=a.dataset.id;if(ST&&ITEMS[k]){if(!isOff(k)&&unlocked(ST.day).filter(x=>x!=='beer'&&!isOff(x)).length<=3){toast(T('至少要留 3 道菜在賣'));return}keepScroll();ST.soff=ST.soff||{};if(ST.soff[k])delete ST.soff[k];else ST.soff[k]=1;save();drawBg();showShop()}}
   else if(act==='gomatog'){if(ST.rm&&has('goma')){keepScroll();ST.rm.off=ST.rm.off||{};ST.rm.off.goma=!ST.rm.off.goma;save();drawBg();showShop()}}
   else if(act==='buyrmenu'){const r=RNEW.find(x=>x.id===a.dataset.id);if(r&&ST.rm&&!has(r.id)&&(!r.k2||rmK2())&&(!r.need||r.need())&&ST.coins>=r.cost){keepScroll();ST.coins-=r.cost;ST.menu=ST.menu||{};ST.menu[r.id]=true;if(ITEMS[r.id])ST.fresh=(ST.fresh||[]).concat(r.id);save();drawBg();showShop();renderHUD()}}
   else if(act==='rmstaff'){const l=rmStaffLv(),nx=RSTAFF.lv[l];if(ST.rm&&nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.rm.up.staff=l+1;save();drawBg();showShop();renderHUD()}}
