@@ -2090,7 +2090,7 @@ function rmCookAct(l){
   const d=rmDemand();
   if(d.ramen>0){const i=R.mpot.findIndex((x,j)=>!x&&j<mpotN()),c=costOf('ramen');if(i>=0&&live()>=c){R.mpot[i]={kind:'noodle',t:0};const p=srcCenter({src:'mpot',i});charge(c,p.x,p.y-50);shoPop('山田下麵');renderStations();return}}
   if(l>=2)for(const k of ['gyoza','friedrice']){if(d[k]<=0||!unlocked(ST.day,'rm').includes(k))continue;const i=R.rmpan.findIndex((x,j)=>!x&&j<rpanN()),c=costOf(k);if(i>=0&&live()>=c){R.rmpan[i]={kind:k,t:0};const p=srcCenter({src:'rmpan',i});charge(c,p.x,p.y-50);shoPop(k==='gyoza'?'山田煎餃子':'山田炒飯');renderStations();return}}
-  if(l>=3&&has('oden')&&d.oden>0){const c1=costOf('oden'),room=odenCap()-R.oden.n-R.oden.cook.reduce((s,b)=>s+(b.n||2),0),k=Math.min(room,d.oden+1,Math.floor(live()/c1));if(k>0){R.oden.cook.push({t:0,n:k});const p=srcCenter({src:'oden'});charge(c1*k,p.x,p.y-50);shoPop('山田補關東煮');renderStations();return}}
+  if(l>=3&&has('oden')&&(d.oden>0||R.oden.n+R.oden.cook.reduce((s,b)=>s+(b.n||2),0)<4)){const c1=costOf('oden'),stock=R.oden.n+R.oden.cook.reduce((s,b)=>s+(b.n||2),0),room=odenCap()-stock,k=Math.min(room,Math.max(d.oden+1,4-stock),Math.floor(live()/c1));if(k>0){R.oden.cook.push({t:0,n:k});const p=srcCenter({src:'oden'});charge(c1*k,p.x,p.y-50);shoPop('山田補關東煮');renderStations();return}}
 }
 function rmHelperAct(l){
   const hd=(src,i)=>R.held&&R.held.src===src&&R.held.i===i;
