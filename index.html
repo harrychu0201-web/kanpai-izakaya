@@ -2845,6 +2845,7 @@ function endDay(){sfx('end');$('game').classList.remove('aim');
   R.held=null;renderStations();
   const e=net(),stars=R.goals.filter(v=>e+R.rent>=v).length;
   if(RP.on){replayEnd(e,stars);return}
+  R.undo={st:JSON.stringify(ST),rec:JSON.stringify(loadRec()),dayLen:DAYLEN};
   R.settled=true;DAYLEN=159;ST.coins=ST.coins+e;ST.stars[ST.day]=Math.max(ST.stars[ST.day]||0,stars);
   const rec=loadRec();rec.maxDay=Math.max(rec.maxDay||0,ST.day);rec.earned=(rec.earned||0)+R.earned;rec.bestDay=Math.max(rec.bestDay||0,Math.round(e));
   let bank='';
@@ -2858,12 +2859,25 @@ function endDay(){sfx('end');$('game').classList.remove('aim');
     bank+=`<div class="bank"><b>${T('錢包見底了！')}</b>${T('只好跟銀行借 ¥30,000 周轉（第 {0} 次借錢），<b>3 天後打烊時要還</b>，會直接從錢包扣。',ST.loans)}${ST.loans===2?'<br><b>'+T('再見底一次就會破產，一切歸零！')+'</b>':T('錢包見底第 3 次就會破產。')}</div>`}
   rec.maxCoins=Math.max(rec.maxCoins||0,ST.coins);saveRec(rec);
   const passed=stars>=1;ST.pendingNext=passed;save();cloudUpload(true);renderHUD();
+  const extN=(loadRec().inv||{}).ext||0,canExt=passed&&extN>0&&(R.extH||0)<3;
   modal(`<h2>${T(passed?'打烊囉！':'今天生意不太好…')}</h2>
   <div class="stars">${[0,1,2].map(i=>`<span class="${i<stars?'on':''}">★</span>`).join('')}</div>
   <div class="goalrow"><span>${T('營收 {0}',yen(R.earned))}</span><span>${T('食材成本 −{0}',yen(R.cost))}</span>${R.wage?`<span>${T('店員日薪 −{0}',yen(R.wage))}</span>`:''}${R.rent?`<span>${T('店租 −{0}',yen(R.rent))}</span>`:''}${ST.owned?`<span>${T('自有店面・免房租')}</span>`:''}${R.stolen?`<span>${T('被搶 −{0}',yen(R.stolen))}</span>`:''}${R.fines?`<span>${T('罰款 −{0}',yen(R.fines))}</span>`:''}<span>${T('淨利 {0}',yen(e))}</span></div><div class="goalrow"><span>${T('滿意 {0} 位',R.served)}</span><span>${T('生氣 {0} 位',R.lost)}</span></div>
   ${bank}
   <p>${passed?T(e<0?'雖然拿到星星，但今天是虧錢的，已經從錢包扣掉了。':'賺到的錢已經放進錢包，可以去商店升級店裡。'):T('淨利要 {0} 才有一顆星。',yen(R.goals[0]))+T(e<0?'今天虧的錢已經從錢包扣掉了。':'賺到的錢還是會放進錢包。')+T('買點布置讓客人更有耐心，再挑戰一次吧。')}</p>
-  <div class="btns">${passed?`<button class="btn" data-act="next">${T('前往第 {0} 天',ST.day+1)}</button>`:''}<button class="btn ${passed?'alt':''}" data-act="retry">${T('再玩一次第 {0} 天',ST.day)}</button><button class="btn alt" data-act="shop">${T('商店')}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
+  ${canExt?`<p>${T('你有 {0} 張延長營業券，可以把今天再營業 1 小時，這次的收支會收回重算。',extN)}</p>`:''}
+  <div class="btns">${passed?`<button class="btn" data-act="next">${T('前往第 {0} 天',ST.day+1)}</button>`:''}${canExt?`<button class="btn alt" data-act="extend">${T('⏰ 使用延長營業券')}</button>`:''}<button class="btn ${passed?'alt':''}" data-act="retry">${T('再玩一次第 {0} 天',ST.day)}</button><button class="btn alt" data-act="shop">${T('商店')}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
+}
+function extendDay(){
+  if(!R||!R.undo||!R.settled)return;
+  const r=loadRec();if(!((r.inv||{}).ext>0)){toast(T('沒有延長營業券'));return}
+  if((R.extH||0)>=3){toast(T('營業時間已經延到上限了'));return}
+  const u=R.undo;ST=JSON.parse(u.st);saveRec(JSON.parse(u.rec));
+  const r2=loadRec();r2.inv.ext--;saveRec(r2);
+  R.extH=(R.extH||0)+1;DAYLEN=u.dayLen+159/8.5;
+  R.settled=false;R.over=false;R.lastCall=false;R.undo=null;R.paused=false;
+  save();cloudUpload(true);renderHUD();closeModal();last=performance.now();
+  toast(T('延長營業！今天再撐 1 小時'));
 }
 function bankrupt(){
   const rec=loadRec();rec.bankrupt=(rec.bankrupt||0)+1;saveRec(rec);
@@ -3124,6 +3138,7 @@ document.addEventListener('click',e=>{
   else if(act==='checkin')claimCheckin();
   else if(act==='achclaim')claimAch(a.dataset.id);
   else if(act==='useprop')useProp(a.dataset.id);
+  else if(act==='extend')extendDay();
   else if(act==='buyprop')buyProp(a.dataset.id);
   else if(act==='loanpick'&&R){const i=$('loanAmt');if(i){i.value=a.dataset.amt;loanPreview()}}
   else if(act==='bank'&&R)bankWin();
