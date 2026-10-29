@@ -1486,7 +1486,7 @@ function suAct(l){
   if(l>=2){const src=[];R.maki.forEach((g,i)=>{if(g&&g.kind!=='asm'&&!(R.held&&R.held.src==='maki'&&R.held.i===i))src.push({src:'maki',i,key:g.kind})});
     for(const c of waiting()){for(let j=0;j<c.order.length;j++){if(c.filled[j])continue;const h=src.find(x=>x.key===c.order[j]);if(h&&giveTo(c,j,h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}
       if(c.extra&&c.extra.ok&&!c.extra.done){const h=src.find(x=>x.key===c.extra.key);if(h&&giveTo(c,'x',h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}}}
-  const d=suDemand(),ks=SUKEYS.filter(k=>(d[k]||0)>0&&has(k)).sort((a,b)=>d[b]-d[a]);
+  const d=suDemand(),ks=SUKEYS.filter(k=>(d[k]||0)>0&&has(k)).sort((a,b)=>earliestNeed(a)-earliestNeed(b)||d[b]-d[a]);
   for(const k of ks){const r=SU_REC[k];let i=-1,best=-1;
     R.maki.forEach((g,j)=>{if(g&&g.kind==='asm'&&g.parts.length<r.length&&g.parts.every((p,x)=>r[x]===p)&&g.parts.length>best&&!(R.held&&R.held.src==='maki'&&R.held.i===j)){best=g.parts.length;i=j}});
     const base=i>=0?R.maki[i].parts:[];
@@ -2060,6 +2060,8 @@ function readySources(){
   return out;
 }
 /* serving & cooking order: first customer to sit down (waitAt) goes first, both shops */
+/* arrival rank of the earliest waiting customer who still needs item k (1e9 if none) */
+function earliestNeed(k){const w=waiting();for(let n=0;n<w.length;n++){const c=w[n];if(c.order.some((x,j)=>!c.filled[j]&&x===k)||(c.extra&&c.extra.ok&&!c.extra.done&&c.extra.key===k))return n}return 1e9}
 function waiting(){return R.seats.filter(c=>c&&c.st==='wait').sort((a,b)=>(a.sitAt??0)-(b.sitAt??0)) /* sitAt = shop clock (R.t); waitAt is the customer's own timer, so it can't order customers */}
 function rmStaffStep(dt){
   const l=rmStaffLv(),m=dilMul('rmstaff');if(!l||!m)return;
@@ -2109,7 +2111,7 @@ function rmHelperAct(l){
     R.bowls.forEach(b=>{if(b&&b.top&&b.top in need)need[b.top]--});
     R.warm.forEach(w=>{if(w&&w.key.startsWith('ramen:')&&w.key.slice(6) in need)need[w.key.slice(6)]--});
     for(const j of bowlOrder()){const b=R.bowls[j];if(!b||!b.men||b.top)continue;
-      const top=RTOPS.find(t=>need[t]>0&&topOn(t));if(!top)break;
+      const top=RTOPS.filter(t=>need[t]>0&&topOn(t)).sort((a,b)=>earliestNeed('ramen:'+a)-earliestNeed('ramen:'+b)||need[b]-need[a])[0];if(!top)break;
       b.top=top;sfx('pick');rmPop('小葵放配料');renderStations();return}}
 }
 function rmServe(){
