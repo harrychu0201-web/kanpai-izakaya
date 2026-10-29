@@ -1642,12 +1642,12 @@ function setCur(w){w=w==='sushi'&&ST&&ST.sushi?'sushi':w==='rm'&&rmOwned()?'rm':
 /* 舞台高度 = 可用高度 × 舞台寬 / 螢幕寬（縮放後寬高同時填滿，不留黑邊），不低於設計高度 minH。 */
 function fillH(ww,stageW,minH){
   const ovl=document.body.classList.contains('ovl');
-  const avail=(TOUCH?stableVisH():visH())-(ovl?0:($('hud').offsetHeight+(window.innerHeight<560?18:34)));
+  const avail=(TOUCH?stableVisH():visH())-(ovl?safeBottom():($('hud').offsetHeight+(window.innerHeight<560?18:34)+(TOUCH?safeBottom():0)));
   return Math.max(minH,Math.min(1400,Math.round(avail*stageW/Math.max(1,ww))));
 }
 function chooseLayout(force){
   const AE=document.activeElement;if(!force&&AE&&/^(INPUT|TEXTAREA)$/.test(AE.tagName))return; // soft keyboard resizes the viewport; re-laying out here would rebuild the home screen and close the open modal (chat / nickname)
-  const OV=document.body.classList.contains('ovl'),ww=(OV?window.innerWidth:(TOUCH?stableWrapW():$('wrap').clientWidth))-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):24),ah=(OV||TOUCH)?stableVisH():Math.max(300,window.innerHeight-60),want=(ww<760&&ww/ah<1.05)?'port':'land';
+  const OV=document.body.classList.contains('ovl'),ww=(OV?window.innerWidth:(TOUCH?(landT()?window.innerWidth:stableWrapW()):$('wrap').clientWidth))-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):24),ah=(OV||TOUCH)?stableVisH():Math.max(300,window.innerHeight-60),want=(!landT()&&ww<760&&ww/ah<1.05)?'port':'land';
   const lockW=!!R&&LAY==='land'&&want==='land'&&W&&!OV;const nw=want==='port'?600:lockW?W:OV?Math.round(Math.max(960,Math.min(1800,600*ww/ah))):Math.round(Math.max(960,Math.min(1500,600*ww/ah))/10)*10;
   /* 舞台寬度由 nw 決定，高度依照螢幕可用高度拉高，讓畫面上下填滿（平板橫向、手機直向原本底下會留一大塊空白；地板會跟著延伸）。 */
   const nh=want==='port'?fillH(ww,600,906):fillH(ww,nw,600);
@@ -3606,6 +3606,8 @@ function stableVisH(){
 /* 只有小幅度的系統列抖動才用最小寬度釘住；寬度大變（例如 Z Flip 摺疊／展開、分割視窗）要立即重記，
    並且變寬後等它穩定也要跟著變寬，不然遊戲會一直用摺疊小螢幕的寬度排版，畫面變得很小。 */
 let STABW={o:'',w:0},STABWGROW=false;
+/* 手機／平板橫向時，寬度直接用視窗寬，不用釘住的 wrap 寬度（那個值可能是直向或摺疊時留下來的舊值，會把遊戲縮成一小塊置中）。 */
+function landT(){return TOUCH&&innerWidth>innerHeight}
 function stableWrapW(){
   const o=innerWidth>innerHeight?'l':'p',v=$('wrap').clientWidth;
   if(STABW.o!==o||!STABW.w||Math.abs(v-STABW.w)>120){STABW={o,w:v};return v}
@@ -3613,16 +3615,16 @@ function stableWrapW(){
   if(!PTR&&v>STABW.w&&!STABWGROW){STABWGROW=true;setTimeout(()=>{STABWGROW=false;const v2=$('wrap').clientWidth;if(!PTR&&v2>STABW.w&&Math.abs(v2-v)<4){STABW.w=v2;fit()}},900)}
   return STABW.w;
 }
-function safeBottom(){let d=document.getElementById('sabProbe');if(!d){d=document.createElement('div');d.id='sabProbe';d.style.cssText='position:fixed;left:0;bottom:0;width:1px;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';document.body.appendChild(d)}return Math.max(d.offsetHeight||0,14)}/* min gap so Android gesture bar / iPhone home line never sits on the bottom row */
 let PTR=false,PENDFIT=false;document.addEventListener('pointerdown',()=>{PTR=true},true);['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,()=>{PTR=false;if(PENDFIT){PENDFIT=false;setTimeout(fit,50)}},true));
 /* 橫向手機底部的 Home 橫條區（safe-area-inset-bottom）：舞台若貼到螢幕最底，玩家點櫃台白線附近時會落在系統手勢區，長按會叫出 Siri。
    這裡量出這段高度，讓舞台底邊離開它。 */
-function safeBottom(){const p=document.createElement('div');p.style.cssText='position:fixed;left:0;bottom:0;visibility:hidden;pointer-events:none;padding-bottom:env(safe-area-inset-bottom,0px)';document.body.appendChild(p);const v=p.offsetHeight;p.remove();return v}
+/* 底部保留區：iPhone 的 Home 橫條（長按會叫出 Siri）與 Android 手勢列。舞台底邊一律離開這段，點櫃台白線附近不會落進系統手勢區。 */
+function safeBottom(){const p=document.createElement('div');p.style.cssText='position:fixed;left:0;bottom:0;visibility:hidden;pointer-events:none;padding-bottom:env(safe-area-inset-bottom,0px)';document.body.appendChild(p);const v=p.offsetHeight;p.remove();const ios=/iP(hone|od|ad)/.test(navigator.userAgent);return Math.max(v,ios?26:(TOUCH?12:0))}
 function fit(){
   if(PTR){PENDFIT=true;return}
   document.body.classList.toggle('ovl',TOUCH&&innerWidth>innerHeight&&Math.min(screen.width,screen.height)<560&&!HOME);
   chooseLayout();
-  const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?window.innerWidth:(TOUCH?stableWrapW():$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)));
+  const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?window.innerWidth:(TOUCH?(landT()?window.innerWidth:stableWrapW()):$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)+(TOUCH?safeBottom():0)));
   /* 保險上限：iOS 更新後偶爾量到過大的寬高（例如讀到還沒排好的版面），遊戲會被放大到超出螢幕，只剩左上角看得到。
      不管量到什麼，遊戲的可用寬高都不會超過實際視窗的寬高。 */
   const s=Math.min(Math.min(w,Math.max(200,window.innerWidth))/W,Math.min(maxH,Math.max(200,window.innerHeight))/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
