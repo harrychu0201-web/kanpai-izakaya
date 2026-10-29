@@ -2567,7 +2567,7 @@ function placeChat(){const h=document.querySelector('.home'),c=document.querySel
   const all=[c,rw,rf,fr].filter(Boolean);
   if(!l||!c){all.forEach(e=>{e.style.left=e.style.top=e.style.bottom=''});return}
   const hr=h.getBoundingClientRect(),lr=l.getBoundingClientRect(),left=(lr.right-hr.left+10)+'px';
-  c.style.left=left;c.style.top=((lr.top+lr.bottom)/2-hr.top-c.offsetHeight/2)+'px';c.style.bottom='auto';
+  c.style.left=left;c.style.top=((lr.top+lr.bottom)/2-hr.top-c.offsetHeight/2-28)+'px';c.style.bottom='auto';
   let y=parseFloat(c.style.top);
   if(rf){rf.style.left=left;rf.style.bottom='auto';rf.style.top=(y-rf.offsetHeight-8)+'px'}
   const rec=document.querySelector('.home .side-r [data-act=records] svg');
