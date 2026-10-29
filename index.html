@@ -2019,7 +2019,7 @@ function step(dt){
   if(hr>=lastHr()&&!R.lastCall){R.lastCall=true;toast(T('最後點餐！不再接新客人'))}
   evStep(dt,hr);
   R.seats.forEach(c=>{if(!c)return;c.t+=dt;
-    if(c.st==='in'&&c.t>(c.walkT||1.15)){c.st='wait';c.waitAt=c.t;c.el.classList.remove('walk')}
+    if(c.st==='in'&&c.t>(c.walkT||1.15)){c.st='wait';c.waitAt=c.t;c.sitAt=R.t;c.el.classList.remove('walk')}
     else if(c.st==='wait'){c.pat-=dt;if(c.pat<=0)leave(c,!!c.tail);c.el.classList.toggle('hurry',!c.tail&&c.tr.pat!=null&&c.pat/c.max<.5)} // c.tail: regular order done, only waiting for the bonus dish -> leaves happy either way
   });
   if(R.t>=DAYLEN&&R.seats.every(x=>!x)&&!R.rob&&!R.over){R.over=true;setTimeout(endDay,900)}
@@ -2060,7 +2060,7 @@ function readySources(){
   return out;
 }
 /* serving & cooking order: first customer to sit down (waitAt) goes first, both shops */
-function waiting(){return R.seats.filter(c=>c&&c.st==='wait').sort((a,b)=>(a.waitAt||0)-(b.waitAt||0))}
+function waiting(){return R.seats.filter(c=>c&&c.st==='wait').sort((a,b)=>(a.sitAt??0)-(b.sitAt??0)) /* sitAt = shop clock (R.t); waitAt is the customer's own timer, so it can't order customers */}
 function rmStaffStep(dt){
   const l=rmStaffLv(),m=dilMul('rmstaff');if(!l||!m)return;
   R.rstT=(R.rstT??1)-dt*m;if(R.rstT<=0){R.rstT=.8;rmHelperAct(l)}
