@@ -1487,10 +1487,10 @@ function suDemand(){const d={};for(const c of R.seats){if(!c||(c.st!=='wait'&&c.
   R.maki.forEach(g=>{if(g&&g.kind==='asm'){const k=Object.keys(d).find(x=>d[x]>0&&SU_REC[x]&&SU_REC[x].length>g.parts.length&&g.parts.every((p,j)=>SU_REC[x][j]===p));if(k)d[k]--}});
   return d}
 function suStaffStep(dt){const l=suStaffLv();if(!l)return;const m=dilMul('sushistaff');if(!m)return;R.suT=(R.suT??1)-dt*m;if(R.suT<=0){R.suT=l>=3?.6:l>=2?.8:1;suAct(l)}}
-/* 玩家剛動過的壽司台格子，健太郎先讓開八秒，讓玩家自己接著做，不會搶著幫忙疊完 */
-function suIdle(g){return R.t-(g.at||0)>8}
+/* 玩家剛動過的壽司台格子，健太郎先讓開六秒，讓玩家自己接著做或端給客人，不會搶著幫忙 */
+function suIdle(g){return R.t-(g.at||0)>6}
 function suAct(l){
-  if(l>=2){const src=[];R.maki.forEach((g,i)=>{if(g&&g.kind!=='asm'&&!(R.held&&R.held.src==='maki'&&R.held.i===i))src.push({src:'maki',i,key:g.kind})});
+  if(l>=2){const src=[];R.maki.forEach((g,i)=>{if(g&&g.kind!=='asm'&&suIdle(g)&&!(R.held&&R.held.src==='maki'&&R.held.i===i))src.push({src:'maki',i,key:g.kind})});
     for(const c of waiting()){for(let j=0;j<c.order.length;j++){if(c.filled[j])continue;const h=src.find(x=>x.key===c.order[j]);if(h&&giveTo(c,j,h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}
       if(c.extra&&c.extra.ok&&!c.extra.done){const h=src.find(x=>x.key===c.extra.key);if(h&&giveTo(c,'x',h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}}}
   const d=suDemand(),ks=SUKEYS.filter(k=>(d[k]||0)>0&&has(k)).sort((a,b)=>earliestNeed(a)-earliestNeed(b)||d[b]-d[a]);
