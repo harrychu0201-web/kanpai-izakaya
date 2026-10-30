@@ -3920,7 +3920,7 @@ async function saveNick(){const i=$('nickin');if(!i)return;const v=i.value.repla
 /* ===== friends: add by code, ranking among friends, visit a friend's shop, one gift per friend per day (all Realtime Database) =====
    fcode/<CODE>=uid · friends/<me>/<friend>=t · freq/<friend>/<me>=t (pending add, accepted when the friend opens this tab)
    gifts/<to>/<from>={t,a,d} · gclaim/<me>/<from>=d · lbx/<uid> = public snapshot of a player's shop (shown when visited) */
-const FR_MAX=20,FR_GIFT=1000,FR={sort:'best',reg:null,data:null,t:0,view:'list',dirty:0};
+const FR_MAX=50,FR_GIFT=1000,FR={sort:'best',reg:null,data:null,t:0,view:'list',dirty:0};
 function fcodeOf(uid){const A='23456789ABCDEFGHJKMNPQRSTUVWXYZ';let a=0x811c9dc5|0,b=0x9747b28c|0;for(let i=0;i<uid.length;i++){const c=uid.charCodeAt(i);a=Math.imul(a^c,16777619);b=Math.imul(b^c,0x5bd1e995);b^=b>>>15}let s='';for(const h of [a,b]){let v=h>>>0;for(let i=0;i<4;i++){s+=A[v%31];v=Math.floor(v/31)}}return s}
 const fmtCode=c=>c.slice(0,4)+'-'+c.slice(4),frDay=()=>Math.floor((Date.now()+288e5)/864e5);
 /* shop rating: average stars over the last 7 days played (0–3 each), needs at least 3 days; rt is what friends see */
