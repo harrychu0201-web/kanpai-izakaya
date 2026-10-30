@@ -1308,7 +1308,7 @@ function rmStHTML(name){
 /* ===== 海風壽司 (phase 1): 捲壽司台 + 壽司職人・健太郎 ===== */
 const SUKEYS=['tamagonigiri','salmonnigiri','tunanigiri','ikanigiri','tainigiri','ebinigiri','negitorogunkan','ikuragunkan','unigunkan','kappamaki','tekkamaki','salmonmaki','salmontemaki','tunatemaki','ikuratemaki'];
 const SU_STAFF={zh:'壽司職人・健太郎',lv:[
-  {cost:60000,wage:900,d:'客人點了壽司，壽司台有空位就會自動捏飯、放上魚片（食材錢照付）。'},
+  {cost:60000,wage:900,d:'你在壽司台上開始做的壽司，健太郎會幫你接著疊完（食材錢照付）；他不會自己開新的一份。'},
   {cost:110000,wage:1400,d:'做好的壽司會自動送給等待中的客人，動作也更快。'},
   {cost:180000,wage:2000,d:'動作最快，壽司台的空位會更快補上。'}]};
 const SU_MAKI5_COST=40000;
@@ -1495,7 +1495,7 @@ function suAct(l){
   for(const k of ks){const r=SU_REC[k];let i=-1,best=-1;
     R.maki.forEach((g,j)=>{if(g&&g.kind==='asm'&&g.parts.length<r.length&&g.parts.every((p,x)=>r[x]===p)&&g.parts.length>best&&!(R.held&&R.held.src==='maki'&&R.held.i===j)){best=g.parts.length;i=j}});
     const base=i>=0?R.maki[i].parts:[];
-    if(i<0){i=R.maki.findIndex((g,j)=>!g&&j<makiN());if(i<0)continue}
+    if(i<0)continue; /* 健太郎只接續玩家已經開始做的壽司，不會自己開新的一份 */
     const id=r[base.length],parts=base.concat(id),res=suResult(parts),pay=res?costOf(res):0;
     if(pay&&live()<pay)continue;
     if(!R.maki[i])R.maki[i]={kind:'asm',parts:[],t:0};
