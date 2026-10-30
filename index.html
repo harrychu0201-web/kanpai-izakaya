@@ -1976,6 +1976,7 @@ function startDay(){pastSave();DAYLEN=159;setTimeout(()=>sfx('open'),80);$('game
   R={t:0,quota,closed:false,spawned:0,lost:0,served:0,earned:0,seats:new Array(seatsN()).fill(null),cool:.8,held:null,
      taps:[{st:'empty',t:0},{st:'empty',t:0}],grill:new Array(5).fill(null),fryer:new Array(3).fill(null),warm:new Array(12).fill(null),teppan:new Array(4).fill(null),tempura:new Array(3).fill(null),boards:[emptyBoard(),emptyBoard()],lastBoard:0,rmpan:new Array(rpanN()).fill(null),rfry:new Array(5).fill(null),tyaki:new Array(3).fill(null),tako:new Array(3).fill(null),tama:new Array(2).fill(null),onig:new Array(2).fill(null),maki:new Array(makiN()).fill(null),mpot:new Array(mpotN()).fill(null),bowls:new Array(bowlsN()).fill(null),lastBowl:0,oden:{n:0,cook:[]},where:CUR,wage:CUR==='rm'?rmWages():CUR==='sushi'?suWages():wages(),rent:rentOf(),staffT:1,helpT:1,
      goals:[Math.round(P*.42/100)*100,Math.round(P*.65/100)*100,Math.round(P*.85/100)*100],cost:0,stolen:0,fines:0,aim:false,rob:null,ev:evNow(),paused:false,over:false};
+  const pre=ST.pre&&ST.pre.day===ST.day?ST.pre:null;if(pre){if(pre.ext){R.extH=pre.ext;DAYLEN+=pre.ext*159/8.5}if(pre.nb)R.fxNb=1;ST.pre=null}
   KP=1;ST.fresh=(ST.fresh||[]).filter(k=>ITEMS[k]&&(ITEMS[k].shop||'iz')!==CUR&&ITEMS[k].shop!=='both');save();
   $('custLayer').innerHTML='';drawBg();buildStations();renderStations();renderHUD();
   if(!DEMO&&ST.day===1&&CUR==='iz'&&!loadRec().tut)setTimeout(()=>{if(R&&!TUT)startTut(false)},60);
@@ -2605,7 +2606,7 @@ const HOWTO=[['做菜、送菜','客人頭上的對話框是他點的菜。點�
   ['錢包與食材','每用一份食材都要從錢包付錢，錢包沒錢就買不了食材。打烊時扣掉食材、店員日薪和店租，虧錢的話直接從錢包扣。'],
   ['銀行與破產','錢包見底時，銀行會借你 ¥30,000 周轉。但錢包見底第 3 次就會破產，所有東西歸零，從第 1 天重新開始。'],
   ['緊急借款','營業中錢不夠買食材時，可以按 🏦 或從暫停選單找銀行窗口，自己決定借多少（¥1,000 到 ¥100,000）。利率每次借款都隨機（5% 到 25%），3 天後打烊時連本帶利還。一天只能借一次，理性消費、留好週轉金才是長久之計。'],
-  ['道具、成就與簽到','每天按 🎁 簽到，連續簽到 7 天有額外獎勵。撐過第 10、20、30 天，或累計營收破百萬，都會有成就可以領。營業中按「背包」使用道具：不焦符讓這一局之後的食物不會燒焦，耐心回復讓客人耐心回滿，延長營業多營業 30 秒。道具也能用金幣在首頁的道具商店買。'],
+  ['道具、成就與簽到','每天按 🎁 簽到，連續簽到 7 天有額外獎勵。撐過第 10、20、30 天，或累計營收破百萬，都會有成就可以領。營業中按「背包」使用道具：不焦符讓這一局之後的食物不會燒焦，耐心回復讓客人耐心回滿，延長營業讓今天多營業 1 小時。開店前的畫面按「🎒 道具」，可以先用延長營業或不焦符，開店時生效；打烊後的畫面也能用延長營業券，把今天再營業下去。道具也能用金幣在首頁的道具商店買。'],
   ['商店','用賺來的錢解鎖新菜、升級菜色、雇用和升級店員、買裝潢。存到 ¥800,000 就能買下整棟店面。'],
   ['這個遊戲的由來','這個遊戲的起點，是有一次路過居酒屋，被裡面的氛圍吸引。做著做著才發現，那份氛圍的背後，是有人站了一整天，把同樣的動作重複了好幾年。「一日之所需，百工斯為備。」希望你玩完之後，下次去吃飯時，也會對店員多說一聲謝謝。']];
 const SHARE_URL='https://harrychu0201-web.github.io/kanpai-izakaya/';
@@ -2883,7 +2884,8 @@ function showDayIntro(){
   ${CUR==='sushi'?`<p style="font-size:14px;line-height:1.6">${T('海風壽司的菜是在<b>壽司台</b>上一層一層疊出來的，<b>順序很重要</b>：先放的材料在下面，後放的在上面，順序不同做出來的東西也不同。下面是你會的做法。')}</p>`:''}
   ${show.length?`<div class="how">${show.map(k=>`<div class="how-row">${icon(k==='chazuke'?'chazuke:salmon':k==='sashimi'?'sashimi:maguro+tai':k)}<div><b>${dishTitle(k)}</b>${ST.day>1?`<span class="new">${T('新菜')}</span>`:''}<br>${T(HOW[k])}</div></div>`).join('')}</div>`:''}
   ${ST.day===1?`<p style="font-size:14px">${T('忙不過來的時候，<b>快速點兩下</b>烤好的串燒、炸物或做好的砧板，就會自動放進吧台上的<b>保溫台</b>，不會焦，之後再從保溫台拿去送。每用一份食材都會扣成本，烤焦丟掉的就白花了。')}</p>`:''}
-  <div class="btns"><button class="btn" data-act="start">${T('開店營業')}</button>${CUR==='sushi'?`<button class="btn alt" data-act="sushishop">${T('商店')}</button>`:`<button class="btn alt" data-act="shop">${T('商店')}</button>`}<button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
+  ${ST.pre&&ST.pre.day===ST.day&&(ST.pre.ext||ST.pre.nb)?`<p class="hint">${T('今天已備妥道具：{0}',[ST.pre.ext?T('延長營業 ×{0}',ST.pre.ext):'',ST.pre.nb?T('不焦符'):''].filter(Boolean).join('、'))}</p>`:''}
+  <div class="btns"><button class="btn" data-act="start">${T('開店營業')}</button>${CUR==='sushi'?`<button class="btn alt" data-act="sushishop">${T('商店')}</button>`:`<button class="btn alt" data-act="shop">${T('商店')}</button>`}<button class="btn alt" data-act="preprops">🎒 ${T('道具')}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
 }
 function endDay(){sfx('end');$('game').classList.remove('aim');
   R.held=null;renderStations();
@@ -2922,6 +2924,25 @@ function extendDay(){
   R.settled=false;R.over=false;R.lastCall=false;R.undo=null;R.paused=false;
   save();cloudUpload(true);renderHUD();closeModal();last=performance.now();
   toast(T('延長營業！今天再撐 1 小時'));
+}
+function preOf(){return ST.pre&&ST.pre.day===ST.day?ST.pre:{day:ST.day,ext:0,nb:0}}
+function showPreProps(){
+  const inv=loadRec().inv||{},p=preOf();
+  const row=(k,desc,ok,note)=>`<div style="display:grid;grid-template-columns:38px 1fr auto;gap:8px;align-items:center;background:#fffaf0;border:2px solid var(--soot);border-radius:10px;padding:6px 8px;margin-bottom:6px"><span style="font-size:24px;text-align:center">${PROPS[k].ic}</span><span style="font-size:14px;line-height:1.4"><b>${T(PROPS[k].n)} ×${inv[k]||0}</b><br>${T(desc)}</span><span>${ok?`<button class="btn" data-act="preuse" data-id="${k}">${T('使用')}</button>`:`<span style="font-size:13px">${T(note)}</span>`}</span></div>`;
+  const extOk=(inv.ext||0)>0&&p.ext<3, nbOk=(inv.nb||0)>0&&!p.nb;
+  modal(`<h2>${T('🎒 使用道具')}</h2>
+  <p class="hint">${T('還沒開店，現在用的道具會在開店時生效。營業中才能用的道具（耐心回復）要開店後再用。')}</p>
+  ${row('ext','開店後營業時間延長 1 小時（今天最多延長 3 次）',extOk,p.ext>=3?'已到上限':'沒有道具')}
+  ${row('nb','今天開店後的食物都不會燒焦',nbOk,p.nb?'已備妥':'沒有道具')}
+  <div class="btns"><button class="btn alt" data-act="preback">${T('返回')}</button></div>`)}
+function usePre(k){
+  if(!ST||(k!=='ext'&&k!=='nb'))return;
+  const r=loadRec(),inv=r.inv||{},p=preOf();
+  if(!(inv[k]>0)){toast(T('沒有這個道具'));return}
+  if(k==='ext'){if(p.ext>=3){toast(T('今天營業時間已經延到上限了'));return}p.ext++}
+  else{if(p.nb){toast(T('今天已經備妥不焦符了'));return}p.nb=1}
+  inv[k]--;r.inv=inv;saveRec(r);ST.pre=p;save();cloudUpload(true);
+  toast(T('使用了 {0}，開店後生效',PROPS[k].n));showPreProps();
 }
 function bankrupt(){
   const rec=loadRec();rec.bankrupt=(rec.bankrupt||0)+1;saveRec(rec);
@@ -3185,6 +3206,9 @@ document.addEventListener('click',e=>{
   else if(act==='achclaim')claimAch(a.dataset.id);
   else if(act==='useprop')useProp(a.dataset.id);
   else if(act==='extend')extendDay();
+  else if(act==='preprops')showPreProps();
+  else if(act==='preuse')usePre(a.dataset.id);
+  else if(act==='preback')showDayIntro();
   else if(act==='buyprop')buyProp(a.dataset.id);
   else if(act==='loanpick'&&R){const i=$('loanAmt');if(i){i.value=a.dataset.amt;loanPreview()}}
   else if(act==='bank'&&R)bankWin();
