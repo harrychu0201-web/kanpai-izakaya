@@ -3001,7 +3001,7 @@ function shopSushi(){
   const menu=Object.keys(ITEMS).filter(k=>ITEMS[k].shop==='sushi').map(k=>`<div class="up" style="display:grid;grid-template-columns:64px 1fr;column-gap:10px;align-items:center"><div style="grid-row:span 3;width:64px;height:64px">${sv(suG(k))}</div><b>${dishTitle(k)}</b><p>${T('售價 {0}・食材 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}</p>${has(k)?`<p>${T('已購買')}</p>${has(k)?`<div style="grid-column:1/-1;white-space:nowrap">${offBtn(k)}</div>`:''}`:`<button class="btn" data-act="susbuy" data-id="${k}" ${SV.coins<ITEMS[k].buy?'disabled':''}>${T('買下 {0}',yen(ITEMS[k].buy))}</button>`}</div>`).join('');
   const staff=`<div class="up"><b>${T(SU_STAFF.zh)}${l?' Lv'+l:''}</b><p>${l?T('目前雇用中，日薪 {0}',yen(SU_STAFF.lv[l-1].wage)):T('還沒雇用')}</p>${nx?`<p>${T(nx.d)}</p><button class="btn" data-act="suhire" ${SV.coins<nx.cost?'disabled':''}>${T(l?'升級 {0}':'雇用 {0}',yen(nx.cost))}</button>`:`<p>${T('已經是最高等級。')}</p>`}</div>`;
   const deco=`<h3 class="sh">${T('店內布置・讓客人更有耐心')}</h3><div class="shop">${SDECOR.map(d=>{const own=sdec(d.id);return `<div class="up ${own?'done':''}"><b>${T(d.zh)}<span class="new" style="background:#5c9a3a">${T('耐心 +{0}%',Math.round(d.b*100))}</span></b><p>${T(d.d)}</p><div class="row"><span class="price">${yen(d.cost)}</span>${own?`<span>${T('已布置')}</span>`:`<button class="btn" data-act="sudec" data-id="${d.id}" ${SV.coins<d.cost?'disabled':''}>${T('購買')}</button>`}</div></div>`}).join('')}</div>`;
-  return `<h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${suUp('maki',0)?`<div class="up done"><b>${T('壽司台第五格')}</b><p>${T('已擴充，壽司台現在有五個位置。')}</p></div>`:`<div class="up"><b>${T('壽司台第五格')}</b><p>${T('壽司台多一個位置，可以同時做五件壽司。')}</p><button class="btn" data-act="sumaki" ${SV.coins<SU_MAKI5_COST?'disabled':''}>${T('買下 {0}',yen(SU_MAKI5_COST))}</button></div>`}${l?`<div class="up">${dilHTML('sushistaff').replace('data-act="dil"','data-act="sudil"')}</div>`:''}</div>${deco}<div class="btns"><button class="btn alt" data-act="sugopen">📖 ${T('做法')}</button><button class="btn" data-act="susopen">${T('去海風壽司營業')}</button></div>`;
+  return `<h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${suUp('maki',0)?`<div class="up done"><b>${T('壽司台第五格')}</b><p>${T('已擴充，壽司台現在有五個位置。')}</p></div>`:`<div class="up"><b>${T('壽司台第五格')}</b><p>${T('壽司台多一個位置，可以同時做五件壽司。')}</p><button class="btn" data-act="sumaki" ${SV.coins<SU_MAKI5_COST?'disabled':''}>${T('買下 {0}',yen(SU_MAKI5_COST))}</button></div>`}${l?`<div class="up">${dilHTML('sushistaff').replace('data-act="dil"','data-act="sudil"')}</div>`:''}</div>${deco}<div class="btns"><button class="btn alt" data-act="sugopen">📖 ${T('做法教學')}</button><button class="btn" data-act="susopen">${T('去海風壽司營業')}</button></div>`;
 }
 /* 海風壽司新手教學：和居酒屋一樣一步一步高亮，用示範客人（不存檔）；買下後自動跳出，商店的「📖 做法」可以再看 */
 const SU_TUTS=[
@@ -3018,6 +3018,24 @@ function startSushiTut(fromDay){
   SU_BACK=fromDay?'day':'home';closeModal();closeHome();
   DEMO=true;ST=fresh();ST.where='sushi';ST.sushi={up:{},seen:true};ST.menu={};SUKEYS.forEach(k=>ST.menu[k]=1);
   startDay();startTut(true,SU_TUTS);
+}
+/* 📖 做法教學：一道一道教，每道點開會讓示範客人點那道菜，高亮第一個材料，不存檔 */
+const SU_LESSON_KEYS=['tamagonigiri','salmonnigiri','tunanigiri','ikanigiri','tainigiri','ebinigiri','negitorogunkan','ikuragunkan','unigunkan','kappamaki','tekkamaki','salmonmaki','salmontemaki','tunatemaki','ikuratemaki'];
+const SU_PIECE_TRAY=Object.fromEntries(Object.entries(SU_TRAY).map(([t,p])=>[p,t]));
+function suLessonSteps(){
+  const st=[{t:null,h:'海風壽司・做法教學',p:'壽司台上的每道菜都是一層一層疊出來的，而且<b>順序一換就變成另一道菜</b>。下面一道一道看，每道的示範客人都會點那道菜。'}];
+  for(const k of SU_LESSON_KEYS){
+    const seq=SU_REC[k];
+    st.push({t:'#st-'+SU_PIECE_TRAY[seq[0]],o:k,h:dishTitle(k),p:`${HOW[k]||''}<br><small>放的順序：${seq.map(p=>SU_PNAME[p]).join(' → ')}</small>`});
+  }
+  st.push({t:null,h:'學會了！',p:'材料一樣，順序不同就是不同的菜。之後想再看，可以到商店的「📖 做法」。'});
+  return st;
+}
+function tutOrder(k){const c=R.seats.find(Boolean);if(!c||(c.order.length===1&&c.order[0]===k))return;c.order=[k];c.filled=[false];renderCust()}
+function startSushiLesson(fromDay){
+  SU_BACK=fromDay?'day':'home';closeModal();closeHome();
+  DEMO=true;ST=fresh();ST.where='sushi';ST.sushi={up:{},seen:true};ST.menu={};SUKEYS.forEach(k=>ST.menu[k]=1);
+  startDay();startTut(true,suLessonSteps());
 }
 function sushiHome(){const kp=shopKeep,sy=shopScroll;modal(`<h2>🍣 ${T('海風壽司')}</h2>${shopSushi()}<div class="btns"><button class="btn" data-act="${ST&&!R&&!HOME?'back':'closem'}">${T(ST&&!R&&!HOME?'回到今天':'關閉')}</button></div>`);{const c=document.querySelector('.card');if(c&&kp)c.scrollTop=sy;shopKeep=false}} /* 從「今天」畫面打開的商店，關掉要回到今天，不然只剩空白廚房 */
 function showShop(){
@@ -3210,7 +3228,7 @@ document.addEventListener('click',e=>{
   else if(act==='buy'){const u=UPS.find(x=>x.id===a.dataset.id);if(u&&u.ok()&&ST.coins>=u.cost){keepScroll();ST.coins-=u.cost;u.go();save();drawBg();showShop();renderHUD()}}
   else if(act==='pause'&&R)pause();
   else if(act==='sushihome')sushiHome();
-  else if(act==='sugopen')startSushiTut(!!(ST&&!R&&!HOME));
+  else if(act==='sugopen')startSushiLesson(!!(ST&&!R&&!HOME));
   else if(act==='susopen'){closeHome();ST=load();if(!ST||!ST.sushi){ST=null;showHome();return}ST.where='sushi';setCur('sushi');save();advance()}
   else if(act==='susbuy'){const k=a.dataset.id;const home=!ST;if(home)ST=load();if(ST&&ITEMS[k]&&ITEMS[k].shop==='sushi'&&!has(k)&&ST.coins>=ITEMS[k].buy){keepScroll();ST.coins-=ITEMS[k].buy;ST.menu=ST.menu||{};ST.menu[k]=1;save()}if(home)ST=null;else renderHUD();sushiHome()}
   else if(act==='sudec'){const d=SDECOR.find(x=>x.id===a.dataset.id);const home=!ST;if(home)ST=load();if(ST&&ST.sushi&&d&&!sdec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.sushi.dec=ST.sushi.dec||{};ST.sushi.dec[d.id]=true;save();if(!home){drawBg();renderHUD()}}if(home)ST=null;sushiHome()}
@@ -3262,6 +3280,7 @@ function tutLayer(){let l=$('tut');if(!l){l=document.createElement('div');l.id='
 function tutShow(){
   const steps=TUT.steps||TUTS,s=steps[TUT.i],l=tutLayer(),last=TUT.i===steps.length-1,el=s.t&&document.querySelector(s.t);
   let hole='',bx='';
+  if(s.o)tutOrder(s.o);
   const vw=window.innerWidth,vh=window.innerHeight,bw=Math.min(360,vw-24);
   if(el){const r=el.getBoundingClientRect(),p=8;
     hole=`<div class="tut-hole" style="left:${r.left-p}px;top:${r.top-p}px;width:${r.width+p*2}px;height:${r.height+p*2}px"></div>`;
