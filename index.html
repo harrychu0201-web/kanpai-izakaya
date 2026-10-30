@@ -1311,7 +1311,8 @@ const SU_STAFF={zh:'壽司職人・健太郎',lv:[
   {cost:60000,wage:900,d:'客人點了壽司，壽司台有空位就會自動捏飯、放上魚片（食材錢照付）。'},
   {cost:110000,wage:1400,d:'做好的壽司會自動送給等待中的客人，動作也更快。'},
   {cost:180000,wage:2000,d:'動作最快，壽司台的空位會更快補上。'}]};
-function makiN(){return 4}
+const SU_MAKI5_COST=40000;
+function makiN(){const n=(ST&&ST.sushi&&ST.sushi.up&&ST.sushi.up.maki)?5:4;SU_LAND.maki.w=SU_PORT.maki.w=n===5?362:290;if(R&&R.maki)while(R.maki.length<n)R.maki.push(null);return n}
 function suUp(k,d){const S=ST||load();return (S&&S.sushi&&S.sushi.up&&S.sushi.up[k])||d}
 function suStaffLv(){return suUp('staff',0)}
 function suWages(){const l=suStaffLv();return l?Math.round(SU_STAFF.lv[l-1].wage*dilOf('sushistaff')/100):0}
@@ -1474,7 +1475,8 @@ function suStHTML(name){
   return sv(suTrayArt(id),'0 0 72 90')+`<span class="lbl" style="white-space:nowrap;font-size:11px">${T(SU_PNAME[id])}</span>`+(open?'':`<div class="locked">${T('商店<br>購買')}</div>`)}
 /* 壽司台：4 個位置，依序放材料；做好的壽司不會焦，也不會過期 */
 function makiHTML(){
-  let s=`<svg viewBox="0 0 290 182" style="position:absolute;inset:0"><rect x="2" y="8" width="286" height="166" rx="12" fill="#8a5a34" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="270" height="150" rx="6" fill="#e2b878"/>${[26,44,62,80,98,116,134,152].map(y=>`<path d="M10 ${y}H280" stroke="#c99a58" stroke-width="2" opacity=".55"/>`).join('')}<path d="M14 20H276" stroke="#fff3d6" stroke-width="3" opacity=".5"/><rect x="2" y="162" width="286" height="12" rx="5" fill="#6b4226" stroke="${O}" stroke-width="3"/></svg>`;
+  const bw=makiN()===5?362:290;
+  let s=`<svg viewBox="0 0 ${bw} 182" style="position:absolute;inset:0"><rect x="2" y="8" width="${bw-4}" height="166" rx="12" fill="#8a5a34" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="${bw-20}" height="150" rx="6" fill="#e2b878"/>${[26,44,62,80,98,116,134,152].map(y=>`<path d="M10 ${y}H${bw-10}" stroke="#c99a58" stroke-width="2" opacity=".55"/>`).join('')}<path d="M14 20H${bw-14}" stroke="#fff3d6" stroke-width="3" opacity=".5"/><rect x="2" y="162" width="${bw-4}" height="12" rx="5" fill="#6b4226" stroke="${O}" stroke-width="3"/></svg>`;
   for(let i=0;i<makiN();i++){const x=12+i*68,g=R.maki[i];let inner='',done=false;
     if(g){done=g.kind!=='asm';inner=sv(done?suG(g.kind):suAsmG(g.parts))}
     else inner=`<div style="opacity:.2;width:100%;height:100%">${sv(`<path d="M12 64C9 51 24 43 50 43C76 43 91 51 88 64C90 76 76 84 50 84C24 84 10 76 12 64Z" fill="none" stroke="#4a2e18" stroke-width="3" stroke-dasharray="6 5"/>`)}</div>`;
@@ -1615,13 +1617,13 @@ const LAND_R={tap:{x:10,y:406,w:100,h:122},ramune:{x:10,y:534,w:100,h:58},lsour:
   rfry:{x:10,y:410,w:300,h:182,pg:2},rawKoro:{x:316,y:406,w:72,h:90,pg:2},rawTori:{x:316,y:502,w:72,h:90,pg:2},rawKatsu:{x:394,y:406,w:72,h:90,pg:2},goma:{x:394,y:502,w:72,h:90,pg:2},
   tyaki:{x:472,y:410,w:170,h:182,pg:2},rawTai:{x:648,y:406,w:84,h:90,pg:2},trash2:{x:648,y:540,w:84,h:52,pg:2},pgbtn:{x:786,y:354,w:166,h:44,pg:0}};
 /* 海風壽司 layouts (phase 1: tap + 捲壽司台 + 4 raw trays; warmT kept only because buildStations expects it) */
-const SU_LAND={tap:{x:10,y:406,w:100,h:186},maki:{x:122,y:410,w:290,h:182},trash2:{x:840,y:406,w:100,h:52},
-  rawSRice:{x:426,y:406,w:60,h:84},rawSNori:{x:492,y:406,w:60,h:84},rawNTama:{x:558,y:406,w:60,h:84},rawNSal:{x:624,y:406,w:60,h:84},rawNTuna:{x:690,y:406,w:60,h:84},rawNIka:{x:756,y:406,w:60,h:84},
-  rawNTai:{x:426,y:494,w:60,h:84},rawNEbi:{x:492,y:494,w:60,h:84},rawNNegi:{x:558,y:494,w:60,h:84},rawNIkura:{x:624,y:494,w:60,h:84},rawNUni:{x:690,y:494,w:60,h:84},rawNKappa:{x:756,y:494,w:60,h:84},
+const SU_LAND={tap:{x:10,y:406,w:100,h:186},maki:{x:122,y:410,w:290,h:182},trash2:{x:886,y:406,w:72,h:52},
+  rawSRice:{x:486,y:406,w:64,h:90},rawSNori:{x:552,y:406,w:64,h:90},rawNTama:{x:618,y:406,w:64,h:90},rawNSal:{x:684,y:406,w:64,h:90},rawNTuna:{x:750,y:406,w:64,h:90},rawNIka:{x:816,y:406,w:64,h:90},
+  rawNTai:{x:486,y:500,w:64,h:90},rawNEbi:{x:552,y:500,w:64,h:90},rawNNegi:{x:618,y:500,w:64,h:90},rawNIkura:{x:684,y:500,w:64,h:90},rawNUni:{x:750,y:500,w:64,h:90},rawNKappa:{x:816,y:500,w:64,h:90},
   warmT:{x:262,y:346,w:440,h:54},pgbtn:{x:786,y:354,w:166,h:44,pg:0}};
-const SU_PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},maki:{x:123.5,y:418,w:290,h:182,k:1.12},trash2:{x:8,y:852,w:100,h:52,k:1.12},
-  rawSRice:{x:8,y:640,w:68,h:90,k:1.12},rawSNori:{x:100,y:640,w:68,h:90,k:1.12},rawNTama:{x:192,y:640,w:68,h:90,k:1.12},rawNSal:{x:284,y:640,w:68,h:90,k:1.12},rawNTuna:{x:376,y:640,w:68,h:90,k:1.12},rawNIka:{x:468,y:640,w:68,h:90,k:1.12},
-  rawNTai:{x:8,y:762,w:68,h:90,k:1.12},rawNEbi:{x:100,y:762,w:68,h:90,k:1.12},rawNNegi:{x:192,y:762,w:68,h:90,k:1.12},rawNIkura:{x:284,y:762,w:68,h:90,k:1.12},rawNUni:{x:376,y:762,w:68,h:90,k:1.12},rawNKappa:{x:468,y:762,w:68,h:90,k:1.12},
+const SU_PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},maki:{x:123.5,y:418,w:290,h:182,k:1.12},trash2:{x:600,y:350,w:100,h:52,k:1.12},
+  rawSRice:{x:8,y:640,w:78,h:100,k:1.12},rawSNori:{x:100,y:640,w:78,h:100,k:1.12},rawNTama:{x:192,y:640,w:78,h:100,k:1.12},rawNSal:{x:284,y:640,w:78,h:100,k:1.12},rawNTuna:{x:376,y:640,w:78,h:100,k:1.12},rawNIka:{x:468,y:640,w:78,h:100,k:1.12},
+  rawNTai:{x:8,y:762,w:78,h:100,k:1.12},rawNEbi:{x:100,y:762,w:78,h:100,k:1.12},rawNNegi:{x:192,y:762,w:78,h:100,k:1.12},rawNIkura:{x:284,y:762,w:78,h:100,k:1.12},rawNUni:{x:376,y:762,w:78,h:100,k:1.12},rawNKappa:{x:468,y:762,w:78,h:100,k:1.12},
   warmT:{x:8,y:340,w:360,h:54,k:1.12},pgbtn:{x:418,y:350,w:174,h:46,pg:0}};
 const PORT_R={tap:{x:10,y:418,w:96,h:122,k:1.12},ramune:{x:10,y:561.4,w:96,h:58,k:1.12},lsour:{x:123.5,y:418,w:84,h:90,k:1.12},odenPot:{x:123.5,y:525.5,w:84,h:90,k:1.12},rmpan:{x:223.5,y:418,w:210,h:182,k:1.12},
   rawGyoza:{x:466,y:418,w:72,h:90,k:1.12},rawRice:{x:466,y:525.5,w:72,h:90,k:1.12},rawMen:{x:11,y:636,w:72,h:90,k:1.3},odenRaw:{x:11,y:760,w:72,h:90,k:1.3},
@@ -1629,7 +1631,7 @@ const PORT_R={tap:{x:10,y:418,w:96,h:122,k:1.12},ramune:{x:10,y:561.4,w:96,h:58,
   rfry:{x:10,y:418,w:300,h:182,k:1.12,pg:2},rawKoro:{x:362,y:418,w:72,h:90,k:1.12,pg:2},rawTori:{x:362,y:525.5,w:72,h:90,k:1.12,pg:2},rawKatsu:{x:458,y:418,w:72,h:90,k:1.12,pg:2},goma:{x:458,y:525.5,w:72,h:90,k:1.12,pg:2},
   tyaki:{x:11,y:636,w:170,h:182,k:1.3,pg:2},rawTai:{x:262,y:636,w:84,h:90,k:1.3,pg:2},trash2:{x:262,y:812,w:84,h:52,k:1.3,pg:2},pgbtn:{x:418,y:350,w:174,h:46,pg:0}};
 let LAY='land',W=960,H=600,L=LAND,KY=400,KK=1;
-function spreadLand(W){const LAND=CUR==='sushi'?SU_LAND:CUR==='rm'?LAND_R:LAND_IZ;KY=W>=1240?350:400;/* 廚房跟著舞台一起放大：寬度夠就按寬放大，高度夠就按高放大（站位最底到 H 為止），取較小值，不超出舞台；最少 1、最多 1.5 */KK=Math.max(1,Math.min(1.5,(W-40)/1000,(H-KY-8)/186));const ex=W-960,out={};
+function spreadLand(W){makiN();const LAND=CUR==='sushi'?SU_LAND:CUR==='rm'?LAND_R:LAND_IZ;KY=W>=1240?350:400;/* 廚房跟著舞台一起放大：寬度夠就按寬放大，高度夠就按高放大（站位最底到 H 為止），取較小值，不超出舞台；最少 1、最多 1.5 */KK=Math.max(1,Math.min(1.5,(W-40)/1000,(H-KY-8)/186));const ex=W-960,out={};
   for(const k in LAND)out[k]=Object.assign({},LAND[k],{x:LAND[k].x+ex/2});
   out.warmT.y=KY-54;if(out.pgbtn)out.pgbtn.y=KY-46;
   [1,2,3].forEach(p=>{const ks=Object.keys(LAND).filter(k=>(LAND[k].pg||1)===p&&LAND[k].pg!==0&&k!=='warmT'&&k!=='pgbtn'&&LAND[k].y>=400);if(!ks.length)return;
@@ -1657,7 +1659,7 @@ function chooseLayout(force){
   const nh=holdH?H:nh0;
   if(want===LAY&&nw===W&&nh===H&&!force)return;
   LAY=want;W=nw;H=nh;
-  if(want==='port'){L=CUR==='rm'?PORT_R:CUR==='sushi'?SU_PORT:PORT;KY=400;KK=1}else{L=spreadLand(W)}
+  if(want==='port'){makiN();L=CUR==='rm'?PORT_R:CUR==='sushi'?SU_PORT:PORT;KY=400;KK=1}else{L=spreadLand(W)}
   const g=$('game');g.style.width=W+'px';g.style.height=H+'px';g.classList.toggle('port',LAY==='port');g.classList.toggle('wide',KY<400);
   drawBg();if(HOME)showHome();
   if(R){buildStations();renderStations();R.seats.forEach(c=>{if(c&&c.st!=='bye'){c.el.style.transition='none';c.el.style.left=(seatX(c.seat,seatsN())-80)+'px';void c.el.offsetWidth;c.el.style.transition=''}});seatClasses();renderCust()}
@@ -2975,7 +2977,7 @@ function shopSushi(){
   const menu=Object.keys(ITEMS).filter(k=>ITEMS[k].shop==='sushi').map(k=>`<div class="up" style="display:grid;grid-template-columns:64px 1fr;column-gap:10px;align-items:center"><div style="grid-row:span 3;width:64px;height:64px">${sv(suG(k))}</div><b>${dishTitle(k)}</b><p>${T('售價 {0}・食材 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}</p>${has(k)?`<p>${T('已購買')}</p>${has(k)?offBtn(k):''}`:`<button class="btn" data-act="susbuy" data-id="${k}" ${SV.coins<ITEMS[k].buy?'disabled':''}>${T('買下 {0}',yen(ITEMS[k].buy))}</button>`}</div>`).join('');
   const staff=`<div class="up"><b>${T(SU_STAFF.zh)}${l?' Lv'+l:''}</b><p>${l?T('目前雇用中，日薪 {0}',yen(SU_STAFF.lv[l-1].wage)):T('還沒雇用')}</p>${nx?`<p>${T(nx.d)}</p><button class="btn" data-act="suhire" ${SV.coins<nx.cost?'disabled':''}>${T(l?'升級 {0}':'雇用 {0}',yen(nx.cost))}</button>`:`<p>${T('已經是最高等級。')}</p>`}</div>`;
   const deco=`<h3 class="sh">${T('店內布置・讓客人更有耐心')}</h3><div class="shop">${SDECOR.map(d=>{const own=sdec(d.id);return `<div class="up ${own?'done':''}"><b>${T(d.zh)}<span class="new" style="background:#5c9a3a">${T('耐心 +{0}%',Math.round(d.b*100))}</span></b><p>${T(d.d)}</p><div class="row"><span class="price">${yen(d.cost)}</span>${own?`<span>${T('已布置')}</span>`:`<button class="btn" data-act="sudec" data-id="${d.id}" ${SV.coins<d.cost?'disabled':''}>${T('購買')}</button>`}</div></div>`}).join('')}</div>`;
-  return `<h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${l?`<div class="up">${dilHTML('sushistaff').replace('data-act="dil"','data-act="sudil"')}</div>`:''}</div>${deco}<div class="btns"><button class="btn" data-act="susopen">${T('去海風壽司營業')}</button></div>`;
+  return `<h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${suUp('maki',0)?`<div class="up done"><b>${T('壽司台第五格')}</b><p>${T('已擴充，壽司台現在有五個位置。')}</p></div>`:`<div class="up"><b>${T('壽司台第五格')}</b><p>${T('壽司台多一個位置，可以同時做五件壽司。')}</p><button class="btn" data-act="sumaki" ${SV.coins<SU_MAKI5_COST?'disabled':''}>${T('買下 {0}',yen(SU_MAKI5_COST))}</button></div>`}${l?`<div class="up">${dilHTML('sushistaff').replace('data-act="dil"','data-act="sudil"')}</div>`:''}</div>${deco}<div class="btns"><button class="btn" data-act="susopen">${T('去海風壽司營業')}</button></div>`;
 }
 function sushiHome(){const kp=shopKeep,sy=shopScroll;modal(`<h2>🍣 ${T('海風壽司')}</h2>${shopSushi()}<div class="btns"><button class="btn" data-act="${ST&&!R&&!HOME?'back':'closem'}">${T(ST&&!R&&!HOME?'回到今天':'關閉')}</button></div>`);{const c=document.querySelector('.card');if(c&&kp)c.scrollTop=sy;shopKeep=false}} /* 從「今天」畫面打開的商店，關掉要回到今天，不然只剩空白廚房 */
 function showShop(){
@@ -3173,6 +3175,7 @@ document.addEventListener('click',e=>{
   else if(act==='sudec'){const d=SDECOR.find(x=>x.id===a.dataset.id);const home=!ST;if(home)ST=load();if(ST&&ST.sushi&&d&&!sdec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.sushi.dec=ST.sushi.dec||{};ST.sushi.dec[d.id]=true;save();if(!home){drawBg();renderHUD()}}if(home)ST=null;sushiHome()}
   else if(act==='sudil'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi){ST.dil=ST.dil||{};ST.dil.sushistaff=+a.dataset.v;save()}if(home)ST=null;sushiHome()}
   else if(act==='sushishop')sushiHome();
+  else if(act==='sumaki'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi&&!suUp('maki',0)&&ST.coins>=SU_MAKI5_COST){keepScroll();ST.coins-=SU_MAKI5_COST;ST.sushi.up.maki=1;save()}if(home)ST=null;else renderHUD();sushiHome()}
   else if(act==='suhire'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi){const l=suStaffLv(),nx=SU_STAFF.lv[l];if(nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.sushi.up.staff=l+1;save()}}if(home)ST=null;else renderHUD();sushiHome()}
   else if(act==='rewards'){if(R&&!R.over&&!R.settled)R.paused=true;showRewards()}
   else if(act==='checkin')claimCheckin();
