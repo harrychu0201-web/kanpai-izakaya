@@ -1629,7 +1629,7 @@ const PORT_R={tap:{x:10,y:418,w:96,h:122,k:1.12},ramune:{x:10,y:561.4,w:96,h:58,
   rfry:{x:10,y:418,w:300,h:182,k:1.12,pg:2},rawKoro:{x:362,y:418,w:72,h:90,k:1.12,pg:2},rawTori:{x:362,y:525.5,w:72,h:90,k:1.12,pg:2},rawKatsu:{x:458,y:418,w:72,h:90,k:1.12,pg:2},goma:{x:458,y:525.5,w:72,h:90,k:1.12,pg:2},
   tyaki:{x:11,y:636,w:170,h:182,k:1.3,pg:2},rawTai:{x:262,y:636,w:84,h:90,k:1.3,pg:2},trash2:{x:262,y:812,w:84,h:52,k:1.3,pg:2},pgbtn:{x:418,y:350,w:174,h:46,pg:0}};
 let LAY='land',W=960,H=600,L=LAND,KY=400,KK=1;
-function spreadLand(W){const LAND=CUR==='sushi'?SU_LAND:CUR==='rm'?LAND_R:LAND_IZ;KY=W>=1240?350:400;KK=W>=1240?Math.min(1.32,(W-40)/1000):1;const ex=W-960,out={};
+function spreadLand(W){const LAND=CUR==='sushi'?SU_LAND:CUR==='rm'?LAND_R:LAND_IZ;KY=W>=1240?350:400;/* 廚房跟著舞台一起放大：寬度夠就按寬放大，高度夠就按高放大（站位最底到 H 為止），取較小值，不超出舞台；最少 1、最多 1.5 */KK=Math.max(1,Math.min(1.5,(W-40)/1000,(H-KY-8)/186));const ex=W-960,out={};
   for(const k in LAND)out[k]=Object.assign({},LAND[k],{x:LAND[k].x+ex/2});
   out.warmT.y=KY-54;if(out.pgbtn)out.pgbtn.y=KY-46;
   [1,2,3].forEach(p=>{const ks=Object.keys(LAND).filter(k=>(LAND[k].pg||1)===p&&LAND[k].pg!==0&&k!=='warmT'&&k!=='pgbtn'&&LAND[k].y>=400);if(!ks.length)return;
