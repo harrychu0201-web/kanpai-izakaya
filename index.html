@@ -796,7 +796,7 @@ function save(){if(DEMO)return;try{localStorage.setItem(KEY,JSON.stringify(ST))}
 let RKEY='izakaya-rec-v1';
 function loadRec(){try{return JSON.parse(localStorage.getItem(RKEY))||{}}catch(e){return {}}}
 function saveRec(r){try{localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}touchLocal()}
-function load(){try{const v=localStorage.getItem(KEY);const o=v?JSON.parse(v):null;if(o&&o.inter&&o.inter.neon){delete o.inter.neon;o.coins=(o.coins||0)+20000;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}return o}catch(e){return null}}
+function load(){try{const v=localStorage.getItem(KEY);const o=v?JSON.parse(v):null;if(o&&o.inter&&o.inter.neon){delete o.inter.neon;o.coins=(o.coins||0)+20000;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}if(o&&o.thOwn&&!o.thRefund){let r=0;Object.keys(o.thOwn).forEach(id=>{Object.values(THEMES).forEach(g=>g.list.forEach(t=>{if(t.id===id)r+=t.cost||0}))});o.coins=(o.coins||0)+r;delete o.thOwn;o.th={};o.thRefund=true;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}return o}catch(e){return null}}
 const UDAY=()=>RP.on?RP.mainDay:(ST?ST.day:1); /* unlock/shop state follows the main save even while replaying an earlier day */
 const unlocked=(d,sh)=>{sh=sh||CUR;if(RP.on)d=Math.max(d,RP.mainDay);return Object.keys(ITEMS).filter(k=>{const it=ITEMS[k],s0=it.shop||'iz';if(s0!=='both'&&s0!==sh)return false;return it.buy?has(k)&&!(k==='goma'&&gomaOff()):(s0==='rm'||it.day<=d)})};
 /* ===== daily events (from day 4) + robbery (from day 5); picked once per day in showDayIntro ===== */
@@ -2991,7 +2991,6 @@ function tabDot(k){try{const c=ST.coins;
   if(k==='menu'){const un=unlocked(ST.day,'iz');
     return (UDAY()>=7&&NEWD.concat(NEWD3).some(x=>!has(x)&&c>=ITEMS[x].buy))||un.some(b=>{const u=upCost(b);return lvOf(b)<3&&u&&c>=u})}
   if(k==='deco')return DECOR.some(d=>!hasDec(d.id)&&c>=d.cost)||INTER.some(d=>!hasIn(d.id)&&!(d.need&&!(d.need==='cat'?ST.up.cat:false))&&c>=d.cost);
-  if(k==='style')return Object.values(THEMES).some(g=>g.list.some(t=>t.cost&&!ownTh(t.id)&&c>=t.cost));
   if(k==='kit')return Object.entries(STAFFLV).some(([id,S])=>{const nx=S.lv[staffLv(id)];return nx&&c>=nx.cost})||UPS.some(u=>!u.done()&&u.ok()&&c>=u.cost);
   return false}catch(e){return false}}
 function shopSushi(){
@@ -3008,10 +3007,10 @@ function showShop(){
   if(SHOPTAB==='rm')SHOPTAB='rmenu';
   if(RMTABS.includes(SHOPTAB)&&!ST.owned)SHOPTAB='menu';
   const un=unlocked(ST.day,'iz'),TB=SHOPTAB,side=RMTABS.includes(TB)?'rm':'iz';
-  const dotI=['menu','deco','style','kit'].some(tabDot),dotR=ST.owned&&RMTABS.some(tabDot);
+  const dotI=['menu','deco','kit'].some(tabDot),dotR=ST.owned&&RMTABS.some(tabDot);
   const dot=on=>on?'<i class="dot"></i>':'';
-  const tabs=side==='rm'?(ST.rm?[['rmenu','菜單'],['rkit','設備・店員'],['rdeco','布置']]:[]):[['menu','菜單'],['deco','布置'],['style','風格'],['kit','設備・店員'],['gun','🔫 武器']];
-  const body=side==='rm'?shopRm(TB==='rkit'?'kit':TB==='rdeco'?'deco':'menu'):TB==='menu'?shopMenu(un):TB==='deco'?shopDeco():TB==='style'?shopStyle():TB==='gun'?shopGuns():shopKit();
+  const tabs=side==='rm'?(ST.rm?[['rmenu','菜單'],['rkit','設備・店員'],['rdeco','布置']]:[]):[['menu','菜單'],['deco','布置'],['kit','設備・店員'],['gun','🔫 武器']];
+  const body=side==='rm'?shopRm(TB==='rkit'?'kit':TB==='rdeco'?'deco':'menu'):TB==='menu'?shopMenu(un):TB==='deco'?shopDeco():TB==='gun'?shopGuns():shopKit();
   modal(`<div class="shopnav"><div class="shoptop"><h2>${T('商店')}</h2><button class="xbtn" data-act="back" aria-label="${T('關閉')}">×</button></div><div class="goalrow"><span>${T('錢包')} ${yen(ST.coins)}</span><span>${T('客人耐心 +{0}%',Math.round((patMult()-1)*100))}</span><span>${T('小費 +{0}%',Math.round(tipBonus()*100))}</span></div>
   <div class="pickrow shopsw"><button class="btn ${side==='iz'?'':'alt'}" data-act="stab" data-id="menu">🏮 ${T('居酒屋本店')}${side==='rm'?dot(dotI):''}</button>${ST.owned?`<button class="btn ${side==='rm'?'':'alt'}" data-act="stab" data-id="rmenu">🍜 ${T('深夜拉麵屋台')}${side==='iz'?dot(dotR):''}</button>`:`<button class="btn alt" disabled style="opacity:.55">🔒 ${T('深夜拉麵屋台')}</button>`}</div>
   ${tabs.length?`<div class="stabs">${tabs.map(([k,n])=>`<button class="stab ${TB===k?'on':''}" data-act="stab" data-id="${k}">${T(n)}${dot(tabDot(k))}</button>`).join('')}</div>`:''}
