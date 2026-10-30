@@ -3002,10 +3002,19 @@ function shopSushi(){
   const deco=`<h3 class="sh">${T('店內布置・讓客人更有耐心')}</h3><div class="shop">${SDECOR.map(d=>{const own=sdec(d.id);return `<div class="up ${own?'done':''}"><b>${T(d.zh)}<span class="new" style="background:#5c9a3a">${T('耐心 +{0}%',Math.round(d.b*100))}</span></b><p>${T(d.d)}</p><div class="row"><span class="price">${yen(d.cost)}</span>${own?`<span>${T('已布置')}</span>`:`<button class="btn" data-act="sudec" data-id="${d.id}" ${SV.coins<d.cost?'disabled':''}>${T('購買')}</button>`}</div></div>`}).join('')}</div>`;
   return `<h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${suUp('maki',0)?`<div class="up done"><b>${T('壽司台第五格')}</b><p>${T('已擴充，壽司台現在有五個位置。')}</p></div>`:`<div class="up"><b>${T('壽司台第五格')}</b><p>${T('壽司台多一個位置，可以同時做五件壽司。')}</p><button class="btn" data-act="sumaki" ${SV.coins<SU_MAKI5_COST?'disabled':''}>${T('買下 {0}',yen(SU_MAKI5_COST))}</button></div>`}${l?`<div class="up">${dilHTML('sushistaff').replace('data-act="dil"','data-act="sudil"')}</div>`:''}</div>${deco}<div class="btns"><button class="btn alt" data-act="sugopen">📖 ${T('做法')}</button><button class="btn" data-act="susopen">${T('去海風壽司營業')}</button></div>`;
 }
-/* 海風壽司做法教學：買下後自動跳出，之後在商店的「📖 做法」可以再看 */
-function suGuide(){
-  const rows=SUKEYS.filter(has).map(k=>`<div class="how-row">${icon(k)}<div><b>${dishTitle(k)}</b><br>${T(HOW[k])}</div></div>`).join('');
-  modal(`<h2>🍣 ${T('海風壽司・做法')}</h2><p style="font-size:14px;line-height:1.6">${T('壽司飯、海苔、魚片和配料都是分開準備的。到<b>壽司台</b>上照順序一樣一樣點上去，疊對了就變成壽司；順序不同，做出來的就不一樣。')}</p><p style="font-size:14px;line-height:1.6">${T('手卷的海苔要最後放，順序反了就捲不起來。之後隨時可以在商店的「📖 做法」再看一次。')}</p><div class="how">${rows}</div><div class="btns"><button class="btn" data-act="sugdone">${T('知道了')}</button></div>`);
+/* 海風壽司新手教學：和居酒屋一樣一步一步高亮，用示範客人（不存檔）；買下後自動跳出，商店的「📖 做法」可以再看 */
+const SU_TUTS=[
+ {t:null,h:'歡迎來到海風壽司！',p:'壽司是在壽司台上照順序疊出來的。我帶你做一份看看，一分鐘就好。'},
+ {t:'#st-rawSRice',h:'① 壽司飯',p:'每道壽司都從壽司飯開始。點一下，飯會放上壽司台。'},
+ {t:'#st-rawNTuna',h:'② 配料',p:'接著點鮪魚，會疊在飯的上面。'},
+ {t:'#st-maki',h:'③ 壽司台',p:'疊好的壽司會停在台上，點一下拿起來，再點客人送上。'},
+ {t:'.cust .bubble',h:'客人的點單',p:'這位客人點的是鮪魚握壽司：飯在下、鮪魚在上。順序換了，就是另一道菜。'},
+ {t:'#st-rawSNori',h:'海苔的位置',p:'海苔有時要先放，有時要最後蓋上去，手卷就是最後才放海苔。'},
+ {t:null,h:'準備好了嗎？',p:'之後隨時可以在商店的「📖 做法」再看一次。'}];
+function startSushiTut(){
+  closeModal();closeHome();
+  DEMO=true;ST=fresh();ST.where='sushi';ST.sushi={up:{},seen:true};ST.menu={};SUKEYS.forEach(k=>ST.menu[k]=1);
+  startDay();startTut(true,SU_TUTS);
 }
 function sushiHome(){const kp=shopKeep,sy=shopScroll;modal(`<h2>🍣 ${T('海風壽司')}</h2>${shopSushi()}<div class="btns"><button class="btn" data-act="${ST&&!R&&!HOME?'back':'closem'}">${T(ST&&!R&&!HOME?'回到今天':'關閉')}</button></div>`);{const c=document.querySelector('.card');if(c&&kp)c.scrollTop=sy;shopKeep=false}} /* 從「今天」畫面打開的商店，關掉要回到今天，不然只剩空白廚房 */
 function showShop(){
@@ -3182,7 +3191,7 @@ document.addEventListener('click',e=>{
   else if(act==='buydec'){const d=DECOR.find(x=>x.id===a.dataset.id);if(d&&!hasDec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.dec=ST.dec||{};ST.dec[d.id]=true;save();drawBg();showShop();renderHUD()}}
   else if(act==='buygun'){const i=+a.dataset.id,g=GUNS[i];if(g&&ST.coins<g.cost){sfx('nope');a.classList.remove('shakeb');void a.offsetWidth;a.classList.add('shakeb');const m=$('needg'+i);if(m){m.classList.remove('flash');void m.offsetWidth;m.classList.add('flash')}}else if(g&&(ST.weapon||0)<i+1&&ST.coins>=g.cost){keepScroll();ST.coins-=g.cost;ST.weapon=i+1;save();showShop();renderHUD()}}
   else if(act==='gun'&&R)toggleGun();
-  else if(act==='buysushi'){if(!sushiDev())return;const home=!ST;if(home)ST=load();if(ST&&!ST.sushi&&ST.coins>=SUSHI_PRICE){keepScroll();ST.coins-=SUSHI_PRICE;ST.sushi={up:{},seen:false};ST.menu=ST.menu||{};ST.menu.tamagonigiri=1;save();toast(T('海風壽司開張了！'))}if(ST&&ST.sushi){if(!home)renderHUD();suGuide();if(home)ST=null;return}if(home)ST=null;if(!home)renderHUD();sushiHome()}
+  else if(act==='buysushi'){if(!sushiDev())return;const home=!ST;if(home)ST=load();if(ST&&!ST.sushi&&ST.coins>=SUSHI_PRICE){keepScroll();ST.coins-=SUSHI_PRICE;ST.sushi={up:{},seen:false};ST.menu=ST.menu||{};ST.menu.tamagonigiri=1;save();toast(T('海風壽司開張了！'))}if(ST&&ST.sushi){startSushiTut();return}if(home)ST=null;if(!home)renderHUD();sushiHome()}
   else if(act==='buyrm'){if(ST.owned&&!ST.rm&&ST.coins>=RM_PRICE){keepScroll();ST.coins-=RM_PRICE;ST.rm={up:{},dec:{},seen:false};ST.where='rm';save();showShop();renderHUD();toast(T('屋台開張了！下一天開店前可以選要開哪一家'))}}
   else if(act==='buyk2'){if(ST.rm&&!rmK2()&&ST.coins>=K2_PRICE){keepScroll();ST.coins-=K2_PRICE;ST.rm.k2=1;ST.menu=ST.menu||{};ST.menu.koro=true;ST.fresh=(ST.fresh||[]).concat('koro');save();drawBg();showShop();renderHUD();toast(T('二號廚房擴建好了！開店時點吧台右邊的按鈕切換廚房'))}}
   else if(act==='offtog'){const k=a.dataset.id;if(ST&&ITEMS[k]){if(!isOff(k)&&unlocked(ST.day).filter(x=>x!=='beer'&&!isOff(x)).length<=3){toast(T('至少要留 3 道菜在賣'));return}keepScroll();ST.soff=ST.soff||{};if(ST.soff[k])delete ST.soff[k];else ST.soff[k]=1;save();drawBg();showShop()}}
@@ -3198,8 +3207,7 @@ document.addEventListener('click',e=>{
   else if(act==='buy'){const u=UPS.find(x=>x.id===a.dataset.id);if(u&&u.ok()&&ST.coins>=u.cost){keepScroll();ST.coins-=u.cost;u.go();save();drawBg();showShop();renderHUD()}}
   else if(act==='pause'&&R)pause();
   else if(act==='sushihome')sushiHome();
-  else if(act==='sugopen')suGuide();
-  else if(act==='sugdone')sushiHome();
+  else if(act==='sugopen')startSushiTut();
   else if(act==='susopen'){closeHome();ST=load();if(!ST||!ST.sushi){ST=null;showHome();return}ST.where='sushi';setCur('sushi');save();advance()}
   else if(act==='susbuy'){const k=a.dataset.id;const home=!ST;if(home)ST=load();if(ST&&ITEMS[k]&&ITEMS[k].shop==='sushi'&&!has(k)&&ST.coins>=ITEMS[k].buy){keepScroll();ST.coins-=ITEMS[k].buy;ST.menu=ST.menu||{};ST.menu[k]=1;save()}if(home)ST=null;else renderHUD();sushiHome()}
   else if(act==='sudec'){const d=SDECOR.find(x=>x.id===a.dataset.id);const home=!ST;if(home)ST=load();if(ST&&ST.sushi&&d&&!sdec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.sushi.dec=ST.sushi.dec||{};ST.sushi.dec[d.id]=true;save();if(!home){drawBg();renderHUD()}}if(home)ST=null;sushiHome()}
@@ -3236,20 +3244,20 @@ const TUTS=[
  {t:'#hud .clock',h:'營業時間',p:'從 16:00 開到凌晨 00:30。晚餐和續攤時段客人最多，00:20 最後點餐。'},
  {t:'[data-act=pause]',h:'暫停',p:'需要休息就按這裡。打烊後可以去商店解鎖新菜、買裝潢、請店員。'},
  {t:null,h:'準備好了嗎？',p:'今晚也要開店了，加油！'}];
-function startTut(demo){
-  R.paused=true;TUT={i:0,demo};document.body.classList.add('tutmode');{const hh=$('hud');if(hh){if(getComputedStyle(hh).position==='static')hh.style.position='relative';hh.style.zIndex='90'}}
-  const c=spawnTut();renderStations();renderCust();renderHUD();tutShow();
+function startTut(demo,steps){
+  R.paused=true;TUT={i:0,demo,steps:steps||null};document.body.classList.add('tutmode');{const hh=$('hud');if(hh){if(getComputedStyle(hh).position==='static')hh.style.position='relative';hh.style.zIndex='90'}}
+  const c=spawnTut(steps?['tunanigiri']:null);renderStations();renderCust();renderHUD();tutShow();
 }
-function spawnTut(){
+function spawnTut(order){
   if(R.seats.some(Boolean))return;
   const i=Math.floor(R.seats.length/2);spawn();const c=R.seats.find(Boolean);if(!c)return;
   if(c.seat!==i){R.seats[c.seat]=null;R.seats[i]=c;c.seat=i;c.el.dataset.seat=i}
-  c.order=['beer','negima'];c.filled=[false,false];c.el.style.transition='none';c.el.style.left=(seatX(i,seatsN())-80)+'px';
+  const o=order||['beer','negima'];c.order=o;c.filled=o.map(()=>false);c.el.style.transition='none';c.el.style.left=(seatX(i,seatsN())-80)+'px';
   c.st='wait';c.t=9;c.el.classList.remove('walk');
 }
 function tutLayer(){let l=$('tut');if(!l){l=document.createElement('div');l.id='tut';document.body.appendChild(l)}return l}
 function tutShow(){
-  const s=TUTS[TUT.i],l=tutLayer(),last=TUT.i===TUTS.length-1,el=s.t&&document.querySelector(s.t);
+  const steps=TUT.steps||TUTS,s=steps[TUT.i],l=tutLayer(),last=TUT.i===steps.length-1,el=s.t&&document.querySelector(s.t);
   let hole='',bx='';
   const vw=window.innerWidth,vh=window.innerHeight,bw=Math.min(360,vw-24);
   if(el){const r=el.getBoundingClientRect(),p=8;
@@ -3257,17 +3265,17 @@ function tutShow(){
     const below=r.bottom+p+12,above=r.top-p-12;let y=(vh-below>200)?below:Math.max(12,above-190);
     let x=Math.min(Math.max(12,r.left+r.width/2-bw/2),vw-bw-12);bx=`left:${x}px;top:${y}px`}
   else{hole='<div class="tut-dim"></div>';bx=`left:${(vw-bw)/2}px;top:${Math.max(12,vh/2-110)}px`}
-  l.innerHTML=`${hole}<div class="tut-box" style="${bx};width:${bw}px"><div class="tut-n">${TUT.i+1} / ${TUTS.length}</div><h3>${T(s.h)}</h3><p>${T(s.p)}</p>
+  l.innerHTML=`${hole}<div class="tut-box" style="${bx};width:${bw}px"><div class="tut-n">${TUT.i+1} / ${steps.length}</div><h3>${T(s.h)}</h3><p>${T(s.p)}</p>
    <div class="btns"><button class="btn" data-tut="next">${T(last?(TUT.demo?'回到主頁':'開始營業'):'下一步')}</button>${!last?`<button class="btn alt" data-tut="skip">${T('跳過教學')}</button>`:''}${TUT.i>0&&!last?`<button class="btn alt" data-tut="prev">${T('上一步')}</button>`:''}</div></div>`;
 }
 function tutEnd(){
-  const demo=TUT&&TUT.demo;TUT=null;tutLayer().innerHTML='';document.body.classList.remove('tutmode');{const hh=$('hud');if(hh){hh.style.zIndex='';hh.style.position=''}}
-  const rec=loadRec();rec.tut=true;saveRec(rec);
+  const demo=TUT&&TUT.demo;const sushiT=TUT&&TUT.steps;TUT=null;tutLayer().innerHTML='';document.body.classList.remove('tutmode');{const hh=$('hud');if(hh){hh.style.zIndex='';hh.style.position=''}}
+  if(!sushiT){const rec=loadRec();rec.tut=true;saveRec(rec)}
   if(demo){DEMO=false;showHome();return}
   R.seats.forEach(c=>{if(c)c.pat=c.max});R.paused=false;
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-tut]');if(!b||!TUT)return;
-  const a=b.dataset.tut;if(a==='skip')tutEnd();else if(a==='prev'){TUT.i--;tutShow()}else if(TUT.i>=TUTS.length-1)tutEnd();else{TUT.i++;tutShow()}});
+  const a=b.dataset.tut;if(a==='skip')tutEnd();else if(a==='prev'){TUT.i--;tutShow()}else if(TUT.i>=(TUT.steps||TUTS).length-1)tutEnd();else{TUT.i++;tutShow()}});
 window.addEventListener('resize',()=>{if(TUT)setTimeout(tutShow,60)});
 /* ===== sound: BGM = bgm.mp3 (synth tune only as fallback if it fails to load); SFX synthesized ===== */
 const SND={bgmV:70,sfxV:70,trackI:0,want:0,tsrc:{},pend:false,ctx:null,mus:null,sfx:null,on:true,bgmOn:true,sfxOn:true,synthTurn:false,next:0,step:0,timer:null,bgm:null,bgmG:null,bgmFail:false};
