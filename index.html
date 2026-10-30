@@ -2910,11 +2910,11 @@ function endDay(){sfx('end');$('game').classList.remove('aim');
   ${bank}
   <p>${passed?T(e<0?'雖然拿到星星，但今天是虧錢的，已經從錢包扣掉了。':'賺到的錢已經放進錢包，可以去商店升級店裡。'):T('淨利要 {0} 才有一顆星。',yen(R.goals[0]))+T(e<0?'今天虧的錢已經從錢包扣掉了。':'賺到的錢還是會放進錢包。')+T('買點布置讓客人更有耐心，再挑戰一次吧。')}</p>
   ${canExt?`<p>${T('你有 {0} 張延長營業券，可以把今天再營業 1 小時，這次的收支會收回重算。',extN)}</p>`:''}
-  <div class="btns">${passed?`<button class="btn" data-act="next">${T('前往第 {0} 天',ST.day+1)}</button>`:''}${canExt?`<button class="btn alt" data-act="extend">${T('⏰ 使用延長營業券')}</button>`:''}<button class="btn ${passed?'alt':''}" data-act="retry">${T('再玩一次第 {0} 天',ST.day)}</button><button class="btn alt" data-act="shop">${T('商店')}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
+  <div class="btns">${passed?`<button class="btn" data-act="next">${T('前往第 {0} 天',ST.day+1)}</button>`:''}<button class="btn alt" data-act="extend">${T('🎒 延長營業券 ×{0}',extN)}</button><button class="btn ${passed?'alt':''}" data-act="retry">${T('再玩一次第 {0} 天',ST.day)}</button><button class="btn alt" data-act="shop">${T('商店')}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
 }
 function extendDay(){
   if(!R||!R.undo||!R.settled)return;
-  const r=loadRec();if(!((r.inv||{}).ext>0)){toast(T('沒有延長營業券'));return}
+  const r=loadRec();if(!((r.inv||{}).ext>0)){toast(T('沒有延長營業券，可以到首頁的道具商店用金幣買'));return}
   if((R.extH||0)>=3){toast(T('營業時間已經延到上限了'));return}
   const u=R.undo;ST=JSON.parse(u.st);saveRec(JSON.parse(u.rec));
   const r2=loadRec();r2.inv.ext--;saveRec(r2);
