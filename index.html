@@ -683,9 +683,9 @@ const HOW={
   kappamaki:'先放<b>海苔</b>，再放<b>壽司飯</b>，最後放上<b>餡料</b>，捲成壽司卷。',
   tekkamaki:'先放<b>海苔</b>，再放<b>壽司飯</b>，最後放上<b>餡料</b>，捲成壽司卷。',
   salmonmaki:'先放<b>海苔</b>，再放<b>壽司飯</b>，最後放上<b>餡料</b>，捲成壽司卷。',
-  salmontemaki:'先放<b>海苔</b>，再放<b>壽司飯</b>，最後放上<b>餡料</b>，捲成壽司卷。',
-  tunatemaki:'先放<b>海苔</b>，再放<b>壽司飯</b>，最後放上<b>餡料</b>，捲成壽司卷。',
-  ikuratemaki:'先放<b>海苔</b>，再放<b>壽司飯</b>，最後放上<b>餡料</b>，捲成壽司卷。',
+  salmontemaki:'先放<b>壽司飯</b>，再放<b>鮭魚</b>，最後蓋上<b>海苔</b>，捲成手卷。海苔要最後放，順序反了就捲不起來。',
+  tunatemaki:'先放<b>壽司飯</b>，再放<b>鮪魚</b>，最後蓋上<b>海苔</b>，捲成手卷。海苔要最後放，順序反了就捲不起來。',
+  ikuratemaki:'先放<b>壽司飯</b>，再放<b>鮭魚卵</b>，最後蓋上<b>海苔</b>，捲成手卷。海苔要最後放，順序反了就捲不起來。',
   beer:'<b>生啤機</b>會自動裝杯，滿了點一下拿起來，再點客人送上。',
   edamame:'點<b>毛豆</b>拿一盤，再點客人。',
   negima:'點<b>蔥雞肉生串</b>放上燒烤台。烤成金黃色就點起來送給客人，放太久會烤焦。',
@@ -2862,7 +2862,7 @@ function showTitle(){
 }
 function showDayIntro(){
   R=null;setCur(ST.where);renderHUD();drawBg();$('custLayer').innerHTML='';$('stations').innerHTML='';
-  const news=Object.keys(ITEMS).filter(k=>ITEMS[k].day===ST.day),show=CUR==='sushi'?[]:CUR==='rm'?(ST.rm&&!ST.rm.seen?['ramen','gyoza','lsour']:(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop==='rm')):(ST.day===1?['beer','edamame','negima']:news.concat(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop!=='rm'&&ITEMS[k].shop!=='sushi'));
+  const news=Object.keys(ITEMS).filter(k=>ITEMS[k].day===ST.day),show=CUR==='sushi'?SUKEYS.filter(has):CUR==='rm'?(ST.rm&&!ST.rm.seen?['ramen','gyoza','lsour']:(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop==='rm')):(ST.day===1?['beer','edamame','negima']:news.concat(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop!=='rm'&&ITEMS[k].shop!=='sushi'));
   const due=(ST.dues||[]).filter(d=>d.left===1).reduce((s,d)=>s+d.amt,0);pickToday();const TD=evNow();
   const HI=TD.hol?holInfo(TD.hol):null;
   modal(`<h2>${T('第 {0} 天',ST.day)} <span style="font-size:16px;color:#7a4a2a">${dateStr(ST.day)}</span></h2>
@@ -2875,6 +2875,7 @@ function showDayIntro(){
   ${TD.ev?`<div class="evbox"><span class="ei">${EVS[TD.ev][0]}</span><div><b>${T('今日事件：{0}',T(EVS[TD.ev][1]))}</b><br>${evDesc(TD)}${TD.ev==='sale'?`<div class="salepick"><small>${T('想讓哪道菜特價？點一下就能換：')}</small><div>${saleCands().map(k=>`<button class="btn ${TD.sale===k?'':'alt'}" data-act="salepick" data-id="${k}">${dishTitle(k)} ¥${Math.round(ITEMS[k].cost*(1+.25*lvOf(k))*.5/10)*10}</button>`).join('')}</div></div>`:''}</div></div>`:''}
   ${TD.rob?`<p class="hint">${T('聽說附近最近不太平靜……')}${ST.weapon?'':T('（商店「武器」分頁有賣防身用品）')}</p>`:''}
   <p>${rentOf()?T('今天店租 {0}（每週調漲），打烊時會從淨利扣掉。',yen(rentOf()))+T('存到 {0} 後，到商店按「買下店面」就不用再付房租。',yen(GOAL)):''}${T('營業時間 16:00 到凌晨 00:30，晚餐（18–20 點）和續攤（21–22 點）客人最多，00:20 最後點餐，之後不再接新客人。淨利（營收扣掉食材成本）越高星星越多，拿到一顆星就能進到下一天。')}</p>
+  ${CUR==='sushi'?`<p style="font-size:14px;line-height:1.6">${T('海風壽司的菜是在<b>壽司台</b>上一層一層疊出來的，<b>順序很重要</b>：先放的材料在下面，後放的在上面，順序不同做出來的東西也不同。下面是你會的做法。')}</p>`:''}
   ${show.length?`<div class="how">${show.map(k=>`<div class="how-row">${icon(k==='chazuke'?'chazuke:salmon':k==='sashimi'?'sashimi:maguro+tai':k)}<div><b>${dishTitle(k)}</b>${ST.day>1?`<span class="new">${T('新菜')}</span>`:''}<br>${T(HOW[k])}</div></div>`).join('')}</div>`:''}
   ${ST.day===1?`<p style="font-size:14px">${T('忙不過來的時候，<b>快速點兩下</b>烤好的串燒、炸物或做好的砧板，就會自動放進吧台上的<b>保溫台</b>，不會焦，之後再從保溫台拿去送。每用一份食材都會扣成本，烤焦丟掉的就白花了。')}</p>`:''}
   <div class="btns"><button class="btn" data-act="start">${T('開店營業')}</button>${CUR==='sushi'?`<button class="btn alt" data-act="sushishop">${T('商店')}</button>`:`<button class="btn alt" data-act="shop">${T('商店')}</button>`}<button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
