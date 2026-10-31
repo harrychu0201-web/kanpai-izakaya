@@ -2065,7 +2065,7 @@ function renderCust(){
 }
 function leave(c,happy){sfx(happy?'coin':'angry');
   c.st='bye';c.happy=happy;
-  if(happy){const bx=c.extra&&c.extra.done,total=c.order.reduce((s,k)=>s+priceOf(k),0)+(bx?priceOf(c.extra.key):0),p=c.tipP!=null?c.tipP:Math.max(0,c.pat/c.max),tip=Math.round(total*(.35+(bx?BONUSTIP:0))*p*(ST.up.cat?1.3:1)*(CUR==='rm'&&rmUp('tanuki',0)?1.3:1)*(1+tipBonus())*(evNow().ev==='fest'?1.2:1)*(c.hg?1.15:1)/10)*10;
+  if(happy){const bx=c.extra&&c.extra.done,total=c.order.reduce((s,k)=>s+priceOf(k),0)+(bx?priceOf(c.extra.key):0),p=c.tipP!=null?c.tipP:Math.max(0,c.pat/c.max),tip=Math.round(total*(.35+(bx?BONUSTIP:0))*p*(ST.up.cat?1.3:1)*(CUR==='rm'&&rmUp('tanuki',0)?1.3:1)*(1+tipBonus())*(evNow().ev==='fest'?1.2:1)*(c.hg?1.15:1)*(R.fxTip?2:1)/10)*10;
     R.earned+=total+tip;R.served++;popup(seatX(c.seat,seatsN()),180,'+'+yen(total+tip));{const h=document.createElement('div');h.className='heart';h.textContent='♥';h.style.left=(seatX(c.seat,seatsN())+38)+'px';h.style.top='150px';$('fx').appendChild(h);setTimeout(()=>h.remove(),1200)}c.el.classList.add('hop')}
   else{R.lost++;popup(seatX(c.seat,seatsN()),180,T('生氣走了'),true)}
   renderCust();renderHUD();
@@ -2254,7 +2254,13 @@ function takeLoan(){if(RP.on){toast(T('重玩時不能借款'));return}if(!R||R.
 /* ===== 道具・成就・簽到（獎勵中心） ===== */
 const PROPS={nb:{ic:'🛡️',n:'不焦符',d:'從使用的那一刻起，這一局的食物都不會燒焦（翻面失手也不糊）。',p:3000},
   pt:{ic:'💗',n:'耐心回復',d:'所有入座客人的耐心立刻回滿。',p:2000},
-  ext:{ic:'⏰',n:'延長營業',d:'今天營業時間延長 1 小時，最後點餐也延後 1 小時（同一局最多延長 3 次）。',p:4000}};
+  ext:{ic:'⏰',n:'延長營業',d:'今天營業時間延長 1 小時，最後點餐也延後 1 小時（同一局最多延長 3 次）。',p:4000},
+  fast:{ic:'🔥',n:'速熟符',d:'營業中使用：爐上所有還是生的食材立刻熟透（串燒、翻面類料理除外）。每局限用一次。',p:2500},
+  tip:{ic:'💴',n:'加倍小費',d:'營業中使用：這一局剩下的客人小費全部加倍。每局限用一次。',p:4000}};
+const FXFLAG={nb:'fxNb',fast:'fxFast',tip:'fxTip'};
+/* 速熟符：把爐上生的食材直接烤到熟（不動有翻面/步驟的料理） */
+function fastCook(){let n=0;const go=(arr,kf)=>arr.forEach(g=>{if(!g)return;const k=kf(g);if(!(k in COOK)||STEPS[k]||cookState(g.t,k)!=='raw')return;g.t=COOK[k];n++});
+  go(R.grill,g=>g.kind);go(R.fryer,()=>'karaage');go(R.teppan,g=>g.kind);go(R.tempura,g=>g.kind);go(R.rmpan,g=>g.kind);go(R.rfry,g=>g.kind);return n}
 const ACHS=[{id:'d10',n:'撐過第 10 天',c:r=>r.maxDay>=10,rw:{nb:1}},
   {id:'d20',n:'撐過第 20 天',c:r=>r.maxDay>=20,rw:{pt:2}},
   {id:'d30',n:'撐過第 30 天',c:r=>r.maxDay>=30,rw:{ext:2}},
@@ -2272,6 +2278,8 @@ function useProp(k){if(!R||R.over||R.settled||!PROPS[k])return;const r=loadRec()
   if(k==='nb'){if(R.fxNb){toast(T('這一局已經用過不焦符了'));return}R.fxNb=1}
   else if(k==='pt'){if(!R.seats.some(c=>c)){toast(T('現在沒有客人'));return}R.seats.forEach(c=>{if(c)c.pat=c.max})}
   else if(k==='ext'){if((R.extH||0)>=3){toast(T('營業時間已經延到上限了'));return}R.extH=(R.extH||0)+1;DAYLEN+=159/8.5}
+  else if(k==='fast'){if(R.fxFast){toast(T('這一局已經用過速熟符了'));return}if(!fastCook()){toast(T('爐上沒有生的食材'));return}R.fxFast=1;renderStations()}
+  else if(k==='tip'){if(R.fxTip){toast(T('這一局已經用過加倍小費了'));return}R.fxTip=1}
   r.inv[k]--;saveRec(r);toast(T('使用了 {0}',PROPS[k].n));showRewards()}
 function buyProp(k){const p=PROPS[k];if(!p||R)return;const s=load();if(!s)return;if((s.coins||0)<p.p){toast(T('金幣不夠'));return}arcWallet(-p.p);invAdd({[k]:1});toast(T('買到 {0}',p.n));showRewards()}
 function curCard(){return document.querySelector('#homeModal .card')||document.querySelector('#modalLayer .card')}
@@ -2294,7 +2302,7 @@ function renderRewards(){const inR=!!R&&!R.over&&!R.settled,r=loadRec(),inv=r.in
   const ciWeek=checkinWeekHTML(r);
   const achHTML=ACHS.map(a=>{const got=!!(r.ach&&r.ach[a.id]),ok=a.c(r);return row(got?'✅':ok?'🎉':'🔒',T(a.n),T('獎勵：{0}',rwText(a.rw)),got?`<span style="font-size:13px">${T('已領取')}</span>`:`<button class="btn" data-act="achclaim" data-id="${a.id}" ${ok?'':'disabled'}>${T('領取')}</button>`)}).join('');
   /* 每行：名稱 ×持有數（延長營業另標 已用/3）＋描述；營業中=使用（用完顯示價格），非營業且有存檔=購買 */
-  const propHTML=Object.keys(PROPS).map(k=>{const p=PROPS[k],n=inv[k]||0,used=k==='nb'&&inR&&R.fxNb,ext=k==='ext'&&inR?` <small style="font-size:12px;color:#7a5">(${R.extH||0}/3)</small>`:'';
+  const propHTML=Object.keys(PROPS).map(k=>{const p=PROPS[k],n=inv[k]||0,used=!!(inR&&FXFLAG[k]&&R[FXFLAG[k]]),ext=k==='ext'&&inR?` <small style="font-size:12px;color:#7a5">(${R.extH||0}/3)</small>`:'';
     let btn='';
     if(inR)btn=`<button class="btn" data-act="useprop" data-id="${k}" ${n>0&&!used?'':'disabled'}>${T('使用')}</button>`+(n>0?'':`<div style="font-size:12px;margin-top:2px">${yen(p.p)}</div>`);
     else if(!R&&s)btn=`<button class="btn ${coins<p.p?'poor':''}" data-act="buyprop" data-id="${k}" ${coins<p.p?'disabled':''}>${yen(p.p)}</button>`;
