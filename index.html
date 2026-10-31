@@ -1314,8 +1314,8 @@ function rmStHTML(name){
 const SUKEYS=['tamagonigiri','salmonnigiri','tunanigiri','ikanigiri','tainigiri','ebinigiri','negitorogunkan','ikuragunkan','unigunkan','kappamaki','tekkamaki','salmonmaki','salmontemaki','tunatemaki','ikuratemaki'];
 const SU_STAFF={zh:'壽司職人・健太郎',lv:[
   {cost:60000,wage:900,d:'能做：只接續你已經在壽司台上開始的壽司，幫你疊完（食材錢照付）。不會自己開新的一份，也不會送餐。你剛碰過的格子，他會讓開六秒。普通速度下大約每 1 秒動一次；店員認真度調高會更快，但不會多做新的。'},
-  {cost:110000,wage:1400,d:'能做：上一級的全部，加上把做好的壽司送給等待中的客人（先來的先送）。普通速度下大約每 0.8 秒動一次。'},
-  {cost:180000,wage:2000,d:'能做：上一級的全部，動作最快，普通速度下大約每 0.6 秒動一次。'}]};
+  {cost:110000,wage:1400,d:'能做：上一級的全部，加上把做好的壽司送給等待中的客人（先來的先送）。普通速度下大約每 0.5 秒動一次，送餐時剛碰過的壽司只讓開 2 秒。'},
+  {cost:180000,wage:2000,d:'能做：上一級的全部，動作最快，普通速度下大約每 0.35 秒動一次。'}]};
 const SU_MAKI5_COST=40000;
 function makiN(){const n=(ST&&ST.sushi&&ST.sushi.up&&ST.sushi.up.maki)?5:4;SU_LAND.maki.w=SU_PORT.maki.w=n===5?362:290;if(R&&R.maki)while(R.maki.length<n)R.maki.push(null);return n}
 function suUp(k,d){const S=ST||load();return (S&&S.sushi&&S.sushi.up&&S.sushi.up[k])||d}
@@ -1447,9 +1447,9 @@ const SU_REC={tamagonigiri:['rice','tamago'],salmonnigiri:['rice','salmon'],tuna
   salmontemaki:['rice','salmon','nori'],tunatemaki:['rice','tuna','nori'],ikuratemaki:['rice','ikura','nori']};
 /* 順序表：從 SU_REC 直接產生，和實際判定用的是同一份，不會跟遊戲對不上 */
 function suOrderModal(){
-  const grp=[['握壽司','tamagonigiri'],['軍艦','negitorogunkan'],['手卷','salmontemaki']];
+  const grp=[['握壽司',['tamagonigiri','salmonnigiri','tunanigiri','ikanigiri','tainigiri','ebinigiri']],['軍艦',['negitorogunkan','ikuragunkan','unigunkan']],['壽司捲',['kappamaki','tekkamaki','salmonmaki']],['海苔手卷',['salmontemaki','tunatemaki','ikuratemaki']]];
   const lab={rice:'飯',nori:'海苔'},chip=t=>`<span style="display:inline-block;padding:3px 10px;border:2px solid #5a3420;border-radius:8px;background:#fcf8ee;color:#2a1608;font-weight:700">${t}</span>`;
-  const rows=grp.map(([t,k])=>`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0"><b style="min-width:3.2em">${T(t)}</b>${SU_REC[k].map((p,i)=>(i?'<span>＞</span>':'')+chip(T(lab[p]||'食材'))).join('')}</div>`).join('');
+  const rows=grp.map(([t,ks])=>`<div style="margin:12px 0"><b style="display:block;margin-bottom:2px">${T(t)}</b>${ks.map(k=>`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 6px 4px"><span style="min-width:5.5em;font-size:14px">${T(ITEMS[k].zh)}</span>${SU_REC[k].map((p,i)=>(i?'<span>＞</span>':'')+chip(T(lab[p]||SU_PNAME[p]||'食材'))).join('')}</div>`).join('')}</div>`).join('');
   modal(`<h2>📋 ${T('壽司順序表')}</h2><p class="hint">${T('從左到右依序疊上壽司台，先放的在下面。')}</p>${rows}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`);
 }
 const SU_TRAY={rawSRice:'rice',rawSNori:'nori',rawNTama:'tamago',rawNSal:'salmon',rawNTuna:'tuna',rawNIka:'ika',rawNTai:'tai',rawNEbi:'ebi',rawNIkura:'ikura',rawNUni:'uni',rawNNegi:'negitoro',rawNKappa:'cucumber'};
@@ -1498,11 +1498,11 @@ function suDemand(){const d={};for(const c of R.seats){if(!c||(c.st!=='wait'&&c.
   R.maki.forEach(g=>{if(g&&g.kind!=='asm')d[g.kind]=(d[g.kind]||0)-1});
   R.maki.forEach(g=>{if(g&&g.kind==='asm'){const k=Object.keys(d).find(x=>d[x]>0&&SU_REC[x]&&SU_REC[x].length>g.parts.length&&g.parts.every((p,j)=>SU_REC[x][j]===p));if(k)d[k]--}});
   return d}
-function suStaffStep(dt){const l=suStaffLv();if(!l)return;const m=dilMul('sushistaff');if(!m)return;R.suT=(R.suT??1)-dt*m;if(R.suT<=0){R.suT=l>=3?.6:l>=2?.8:1;suAct(l)}}
+function suStaffStep(dt){const l=suStaffLv();if(!l)return;const m=dilMul('sushistaff');if(!m)return;R.suT=(R.suT??1)-dt*m;if(R.suT<=0){R.suT=l>=3?.35:l>=2?.5:1;suAct(l)}}
 /* 玩家剛動過的壽司台格子，健太郎先讓開六秒，讓玩家自己接著做或端給客人，不會搶著幫忙 */
-function suIdle(g){return R.t-(g.at||0)>6}
+function suIdle(g,s=6){return R.t-(g.at||0)>s}
 function suAct(l){
-  if(l>=2){const src=[];R.maki.forEach((g,i)=>{if(g&&g.kind!=='asm'&&suIdle(g)&&!(R.held&&R.held.src==='maki'&&R.held.i===i))src.push({src:'maki',i,key:g.kind})});
+  if(l>=2){const src=[];R.maki.forEach((g,i)=>{if(g&&g.kind!=='asm'&&suIdle(g,2)&&!(R.held&&R.held.src==='maki'&&R.held.i===i))src.push({src:'maki',i,key:g.kind})});
     for(const c of waiting()){for(let j=0;j<c.order.length;j++){if(c.filled[j])continue;const h=src.find(x=>x.key===c.order[j]);if(h&&giveTo(c,j,h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}
       if(c.extra&&c.extra.ok&&!c.extra.done){const h=src.find(x=>x.key===c.extra.key);if(h&&giveTo(c,'x',h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}}}
   const d=suDemand(),ks=SUKEYS.filter(k=>(d[k]||0)>0&&has(k)).sort((a,b)=>earliestNeed(a)-earliestNeed(b)||d[b]-d[a]);
