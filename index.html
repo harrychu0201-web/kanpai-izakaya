@@ -1119,12 +1119,6 @@ function drawSushiBg(){
   const nw=Math.min(300,W*.3),nx=(W-nw)/2,ny=(TY?30:26)+TY;
   s+=`<rect x="${nx}" y="${ny}" width="${nw}" height="56" rx="8" fill="#a3261c" stroke="${O}" stroke-width="3"/><text x="${W/2}" y="${ny+40}" text-anchor="middle" font-family="Noto Sans TC,Zen Maru Gothic,sans-serif" font-weight="900" font-size="28" fill="#fbf3e0">海風壽司</text>`;
   for(const bx of [W*.05,W*.95]){s+=`<rect x="${bx-30}" y="${shelfY-70}" width="60" height="10" rx="2" fill="#9e6a38" stroke="${O}" stroke-width="3"/>`;for(let i=0;i<3;i++){const x=bx-24+i*22;s+=`<rect x="${x}" y="${shelfY-112}" width="14" height="42" rx="5" fill="${i%2?'#3f6b3a':'#6a3a1f'}" stroke="${O}" stroke-width="2.5"/>`}}
-  /* 空白牆面的順序告示板：四行，每行一個形狀圖示＋做法名稱，不用點開就能對照 */
-  {const bw=Math.min(230,W*.62),bh=178,top=ny+72,avail=shelfY-12-top,sc=Math.max(.5,Math.min(1,avail/bh));
-   const rows=[['tamagonigiri','握壽司順序做法'],['negitorogunkan','軍艦順序做法'],['salmontemaki','手卷順序做法'],['kappamaki','壽司卷順序做法']];
-   s+=`<g transform="translate(${W/2} ${top}) scale(${sc}) translate(${-bw/2} 0)"><rect width="${bw}" height="${bh}" rx="10" fill="#9e6a38" stroke="${O}" stroke-width="3"/><rect x="8" y="8" width="${bw-16}" height="${bh-16}" rx="6" fill="#fbf3e0" stroke="#6a3a1f" stroke-width="2"/>`;
-   rows.forEach(([k,t],i)=>{const y=14+i*40;s+=`<g transform="translate(14 ${y}) scale(.34)">${suG(k)}</g><text x="60" y="${y+23}" font-family="Noto Sans TC,Zen Maru Gothic,sans-serif" font-weight="900" font-size="16" fill="#2a1608">${T(t)}</text>`});
-   s+='</g>'}
   s+=`<rect x="${W*.1}" y="${shelfY}" width="${W*.8}" height="12" rx="3" fill="url(#ssshelf)" stroke="${O}" stroke-width="3"/>`;
   if(sdec('sflags'))for(const fx of [W*.035,W*.965-22]){const fy=24+TY;s+=`<rect x="${fx+9}" y="${fy}" width="4" height="${Math.min(KY*.5,200)}" fill="#5a3a24"/><path d="M${fx} ${fy}h22v120l-11-12l-11 12z" fill="#a3261c" stroke="${O}" stroke-width="2.5"/><path d="M${fx+4} ${fy+40}h14" stroke="#fbf3e0" stroke-width="4"/>`}
   if(sdec('slantern'))for(const lx of [W*.16,W*.84])s+=sushiLantern(lx,27+TY,27+TY+18);
