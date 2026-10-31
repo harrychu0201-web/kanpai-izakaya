@@ -4123,7 +4123,7 @@ async function showLB(){if(LB.tab==='fr')return showFriends();
   const draw=body=>{if(HOME&&LB.tab===f){const x=mineRk();const ft=x&&mine?foot0.replace('</span>',`<br><small>${rkTxt(x)}</small></span>`):foot0;modal(head+`<div class="lblist">${body}</div>`+ft+btns)}};
   const c=LB.cache[f];
   if(!c||Date.now()-c.t>60000){draw(`<p>${T('載入中…')}</p>`);
-    try{if(!CL.api)throw 0;LB.cache[f]={t:Date.now(),rows:await CL.api.all(f,tb[2])}}catch(e){console.warn('lb',e);draw(`<p>${T('排行榜載入失敗，請稍後再試。')}</p>`);return}}
+    try{if(!CL.api)throw 0;LB.cache[f]={t:Date.now(),rows:await CL.api.all(f,tb[2])}}catch(e){console.warn('lb',e);draw(`<p>${T('排行榜載入失敗，請稍後再試。')}</p><p style="font-size:12px;color:#8a5a34;word-break:break-all">${esc(String((e&&(e.code||e.message))||e))}</p>`);return}}
   const all=LB.cache[f].rows,rows=all.slice(0,50);
   let body=rows.length?rows.map((r,i)=>`<div class="lbrow ${me&&r.uid===me.uid?'me':''}"><b>${i<3?['🥇','🥈','🥉'][i]:i+1}</b><span>${esc(r.name||'?')}</span><em>${lbVal(f,r[f])}</em></div>`).join(''):`<p>${T('還沒有人上榜，快來搶第一！')}</p>`;
   const x=mineRk();
