@@ -4551,16 +4551,22 @@ function grantPanel(){if(!isAdmin())return;
   <div class="tstr"><b>暱稱</b><input id="gnick" placeholder="玩家暱稱" maxlength="24"></div>
   <div class="tstr"><b>道具</b><select id="gitem">${Object.keys(PROPS).map(k=>`<option value="${k}">${PROPS[k].ic}${PROPS[k].n}</option>`).join('')}</select><input id="gnum" type="number" min="1" max="20" value="1" style="width:70px"></div>
   <div class="tstr"><b>原因</b><input id="gwhy" placeholder="例：屋台 bug 補償" maxlength="60"></div>
-  <div class="btns"><button class="btn" data-act="tstgrantgo">送出補發</button><button class="btn alt" data-act="closem">關閉</button></div>`)}
+  <p id="gmsg" style="min-height:1.6em;font-weight:700;color:#7a2b1b;margin:8px 0"></p><div class="btns"><button class="btn" data-act="tstgrantgo">送出補發</button><button class="btn alt" data-act="closem">關閉</button></div>`)}
+function gmsg(t){const e=$('gmsg');if(e)e.textContent=t;if(t)toast(t)}
 async function grantSend(){if(!isAdmin())return;
   const nick=($('gnick').value||'').trim(),k=$('gitem').value,n=Math.max(1,Math.min(20,parseInt($('gnum').value)||1)),why=($('gwhy').value||'').trim().slice(0,60);
-  if(!nick){toast('請輸入暱稱');return}
-  if(!CL.api||!CL.api.lbFindName){toast('雲端還沒連上');return}
-  let hits=[];try{hits=await CL.api.lbFindName(nick)}catch(e){toast('查詢失敗：'+(e.message||e));return}
-  if(!hits.length){toast('找不到這個暱稱');return}
-  if(hits.length>1){toast('同名的玩家有 '+hits.length+' 位，無法確定是哪一位');return}
-  const h=hits[0];if(!confirm(`補發 ${PROPS[k].n} ×${n} 給「${h.name}」？`))return;
-  try{await CL.api.grantAdd(h.uid,{[k]:n},why);toast(`已送出補發：${h.name} ${PROPS[k].n} ×${n}`);closeModal()}catch(e){toast('送出失敗：'+(e.message||e))}}
+  gmsg('');
+  if(!nick){gmsg('請先輸入暱稱');return}
+  if(!CL.api||!CL.api.lbFindName){gmsg('雲端還沒連上，請重新整理後再試（需要用作者帳號登入）');return}
+  gmsg('查詢中…');
+  let hits=[];try{hits=await CL.api.lbFindName(nick)}catch(e){gmsg('查詢失敗：'+(e&&e.message||e));return}
+  if(!hits.length){gmsg('找不到暱稱「'+nick+'」：請確認暱稱完全一樣（含大小寫與空白）');return}
+  if(hits.length>1){gmsg('同名的玩家有 '+hits.length+' 位，無法確定是哪一位');return}
+  const h=hits[0];
+  if(!confirm('補發 '+PROPS[k].n+' ×'+n+' 給「'+h.name+'」？')){gmsg('已取消');return}
+  gmsg('送出中…');
+  try{await CL.api.grantAdd(h.uid,{[k]:n},why);gmsg('已送出補發：'+h.name+' '+PROPS[k].n+' ×'+n+'（玩家下次登入時領取）')}
+  catch(e){gmsg('送出失敗：'+(e&&e.message||e))}}
 function showAcct(){const u=CL.user;if(!u)return;
   const st=CL.status==='err'?T('同步失敗，稍後會再試'):CL.status==='sync'?T('同步中…'):T('已同步');
   modal(`<h2>${T('帳號')}</h2><div class="acctcard">${u.photo?`<img src="${esc(u.photo)}" alt="" referrerpolicy="no-referrer">`:''}<div><b>${esc(u.name)}</b><p style="font-size:14px;margin:2px 0 0">${st}</p></div></div>
