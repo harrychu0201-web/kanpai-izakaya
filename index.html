@@ -1459,7 +1459,10 @@ function suFits(parts,id){const q=parts.concat(id);return suRecs().some(k=>{cons
 function suResult(parts){const q=parts.join();return suRecs().find(k=>SU_REC[k].join()===q)||null}
 function suTrayOpen(id){return SUKEYS.some(k=>has(k)&&SU_REC[k].includes(id))}
 function suAdd(id,el){
-  let i=-1;R.maki.forEach((g,j)=>{if(!g||j>=makiN()||!suFits(g.parts,id))return;const a=R.maki[i];if(i<0||(g.kind==='asm'&&a.kind!=='asm')||((g.kind==='asm')===(a.kind==='asm')&&(g.at||0)>(a.at||0)))i=j}); /* 先接在還沒做完的格子，其中選最近動過的；做好的握壽司最後才輪到（再蓋海苔變手卷） */
+  const eFree=R.maki.findIndex((g,j)=>!g&&j<makiN());
+  /* 海苔可以開新格（壽司捲／手卷的起手），板子有空格時不去蓋已做好的握壽司，避免同時做鮪魚捲和握壽司時被誤蓋成手卷 */
+  const skipDone=id==='nori'&&eFree>=0&&suTrayOpen(id)&&suFits([],id);
+  let i=-1;R.maki.forEach((g,j)=>{if(!g||j>=makiN()||!suFits(g.parts,id))return;if(skipDone&&g.kind!=='asm')return;const a=R.maki[i];if(i<0||(g.kind==='asm'&&a.kind!=='asm')||((g.kind==='asm')===(a.kind==='asm')&&(g.at||0)>(a.at||0)))i=j}); /* 先接在還沒做完的格子，其中選最近動過的；做好的握壽司最後才輪到（再蓋海苔變手卷） */
   if(i<0){const e=R.maki.findIndex((g,j)=>!g&&j<makiN());
     if(!suTrayOpen(id)){nope(el);toast('先到商店買下用得到它的菜');return}
     if(!suFits([],id)){nope(el);toast(id==='rice'||id==='nori'?'這樣組不起來，換個順序試試':'先放壽司飯或海苔');return}
