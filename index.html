@@ -1440,6 +1440,13 @@ const SU_REC={tamagonigiri:['rice','tamago'],salmonnigiri:['rice','salmon'],tuna
   negitorogunkan:['rice','nori','negitoro'],ikuragunkan:['rice','nori','ikura'],unigunkan:['rice','nori','uni'],
   kappamaki:['nori','rice','cucumber'],tekkamaki:['nori','rice','tuna'],salmonmaki:['nori','rice','salmon'],
   salmontemaki:['rice','salmon','nori'],tunatemaki:['rice','tuna','nori'],ikuratemaki:['rice','ikura','nori']};
+/* 順序表：從 SU_REC 直接產生，和實際判定用的是同一份，不會跟遊戲對不上 */
+function suOrderModal(){
+  const grp=[['握壽司','tamagonigiri'],['軍艦','negitorogunkan'],['手卷','salmontemaki']];
+  const lab={rice:'飯',nori:'海苔'},chip=t=>`<span style="display:inline-block;padding:3px 10px;border:2px solid #5a3420;border-radius:8px;background:#fcf8ee;color:#2a1608;font-weight:700">${t}</span>`;
+  const rows=grp.map(([t,k])=>`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0"><b style="min-width:3.2em">${T(t)}</b>${SU_REC[k].map((p,i)=>(i?'<span>＞</span>':'')+chip(T(lab[p]||'食材'))).join('')}</div>`).join('');
+  modal(`<h2>📋 ${T('壽司順序表')}</h2><p class="hint">${T('從左到右依序疊上壽司台，先放的在下面。')}</p>${rows}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`);
+}
 const SU_TRAY={rawSRice:'rice',rawSNori:'nori',rawNTama:'tamago',rawNSal:'salmon',rawNTuna:'tuna',rawNIka:'ika',rawNTai:'tai',rawNEbi:'ebi',rawNIkura:'ikura',rawNUni:'uni',rawNNegi:'negitoro',rawNKappa:'cucumber'};
 const SU_PNAME={rice:'壽司飯',nori:'海苔',tamago:'玉子',salmon:'鮭魚',tuna:'鮪魚',ika:'烏賊',tai:'鯛魚',ebi:'甜蝦',ikura:'鮭魚卵',uni:'海膽',negitoro:'蔥鮪泥',cucumber:'小黃瓜'};
 function suRecs(){return SUKEYS.filter(has)}
@@ -2525,7 +2532,7 @@ function renderHUD(){document.body.classList.toggle('playing',!!R);
     <div class="pill clock"><b>${clockStr()}</b>${PERIOD(hourNow())}</div>${R.ev&&R.ev.ev?`<div class="pill ev" title="${esc(evDesc(R.ev))}">${evLabel(R.ev)}</div>`:''}`:'<div style="flex:1"></div>'}
     ${CUR==='sushi'?(suStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${T('健太郎')}${'★'.repeat(suStaffLv()-1)}</b></div>`:''):CUR==='rm'?(rmStaffLv()||rmStaff2Lv()||rmFryStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[rmStaffLv()?T('小葵')+'★'.repeat(rmStaffLv()-1):'',rmStaff2Lv()?T('山田')+'★'.repeat(rmStaff2Lv()-1):'',rmFryStaffLv()?T('大輔')+'★'.repeat(rmFryStaffLv()-1):''].filter(Boolean).join('・')}</b></div>`:''):ST.up.waiter||ST.up.helper||ST.up.chef?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[ST.up.waiter?T('小美')+(staffLv('waiter')>1?'★'.repeat(staffLv('waiter')-1):''):'',ST.up.helper?T('阿健')+(staffLv('helper')>1?'★'.repeat(staffLv('helper')-1):''):'',ST.up.chef?T('阿強')+(staffLv('chef')>1?'★'.repeat(staffLv('chef')-1):''):''].filter(Boolean).join('・')}</b></div>`:''}
     ${(()=>{const w=R?live():ST.coins;return `<div class="pill ${w<0?'neg':''}">${T('錢包')} <b>${w<0?'−':''}¥${Math.abs(Math.round(w)).toLocaleString('en-US')}</b></div>`})()}${ST.debt?`<div class="pill staff">${T('借款')} <b>${yen(ST.debt)}</b></div>`:''}
-    ${R&&!R.over&&!R.settled&&!DEMO?'<button class="icon-btn bagbtn" data-act="rewards" aria-label="背包">'+T('背包')+'</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}"><span class="ico">${sndIcon()}</span></button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>`:''}`);
+    ${R&&!R.over&&!R.settled&&!DEMO?'<button class="icon-btn bagbtn" data-act="rewards" aria-label="背包">'+T('背包')+'</button>':''}${R&&!R.over&&CUR==='sushi'?'<button class="icon-btn bagbtn" data-act="suorder" aria-label="壽司順序表">'+T('順序')+'</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}"><span class="ico">${sndIcon()}</span></button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>`:''}`);
 }
 
 /* ---- modals ---- */
@@ -3228,6 +3235,7 @@ document.addEventListener('click',e=>{
   else if(act==='buy'){const u=UPS.find(x=>x.id===a.dataset.id);if(u&&u.ok()&&ST.coins>=u.cost){keepScroll();ST.coins-=u.cost;u.go();save();drawBg();showShop();renderHUD()}}
   else if(act==='pause'&&R)pause();
   else if(act==='sushihome')sushiHome();
+  else if(act==='suorder')suOrderModal();
   else if(act==='sugopen')startSushiLesson(!!(ST&&!R&&!HOME));
   else if(act==='susopen'){closeHome();ST=load();if(!ST||!ST.sushi){ST=null;showHome();return}ST.where='sushi';setCur('sushi');save();advance()}
   else if(act==='susbuy'){const k=a.dataset.id;const home=!ST;if(home)ST=load();if(ST&&ITEMS[k]&&ITEMS[k].shop==='sushi'&&!has(k)&&ST.coins>=ITEMS[k].buy){keepScroll();ST.coins-=ITEMS[k].buy;ST.menu=ST.menu||{};ST.menu[k]=1;save()}if(home)ST=null;else renderHUD();sushiHome()}
