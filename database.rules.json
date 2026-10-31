@@ -93,7 +93,9 @@
         "earned",
         "own",
         "days"
-      ],
+      ,
+  "dex"
+ ],
       "$uid": {
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "newData.hasChildren(['name', 'best', 'earned', 'at'])",
@@ -112,6 +114,9 @@
         "days": {
           ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1000000"
         },
+  "dex": {
+   ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1000"
+  },
         "at": {
           ".validate": "newData.isNumber()"
         },

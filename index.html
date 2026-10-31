@@ -2716,7 +2716,7 @@ document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.datas
 function showArcade(){modal(`<h2>${T('遊戲廳')}</h2><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p><p style="font-size:14px">${T('試試你的小手氣~')}</p><div class="btns"><button class="btn" data-act="arcslot">🎰 ${T('拉霸機')}</button><button class="btn" data-act="arcpin">🔮 ${T('彈珠台')}</button><button class="btn" data-act="omk">🎋 ${T('幸運籤')}</button><button class="btn" data-act="gacha">🥚 ${T('扭蛋機')}</button><button class="btn alt" data-act="closem">${T('返回')}</button></div>`)}
 const ARC_CSS=`<style>.arc-reels{display:flex;gap:10px;justify-content:center;margin:14px 0}.arc-reels span{width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:38px;background:#fff8e6;border:3px solid #7a4a2a;border-radius:12px;box-shadow:inset 0 -4px 0 #e9d3a6}.arc-msg{font-size:15px;min-height:1.4em;text-align:center;margin:6px 0}</style>`;
 const GACHA_PRICE=300,GACHA_PITY=10,GACHA_RATE={c:60,r:30,s:10};
-const GACHA_NAME={c:'普通',r:'稀有',s:'超稀有'},GACHA_COL={c:'#7a4a2a',r:'#2f7fb8',s:'#c8891a'};
+const GACHA_NAME={c:'普通',r:'稀有',s:'超稀有',x:'秘密'},GACHA_COL={c:'#7a4a2a',r:'#2f7fb8',s:'#c8891a',x:'#7a3ad0'};
 const GACHA_ITEMS=[
 {id:'lantern',n:'小燈籠',e:'🏮',r:'c',v:100},{id:'flag',n:'小旗子',e:'🎌',r:'c',v:100},{id:'sake',n:'迷你清酒',e:'🍶',r:'c',v:100},{id:'chopst',n:'筷架',e:'🥢',r:'c',v:100},{id:'taiyaki',n:'鯛魚燒',e:'🐟',r:'c',v:100},
 {id:'takoyaki',n:'章魚燒',e:'🐙',r:'c',v:100},{id:'kushi',n:'烤串',e:'🍢',r:'c',v:100},{id:'peanut',n:'花生',e:'🥜',r:'c',v:100},{id:'sushi',n:'壽司',e:'🍣',r:'c',v:100},{id:'tempura',n:'天婦羅',e:'🍤',r:'c',v:100},
@@ -2727,7 +2727,8 @@ const GACHA_ITEMS=[
 {id:'cat',n:'招財貓',e:'🐱',r:'r',v:300},{id:'hanafuda',n:'花札',e:'🎴',r:'r',v:300},{id:'ramenbowl',n:'拉麵小碗',e:'🍜',r:'r',v:300},{id:'red',n:'紅包袋',e:'🧧',r:'r',v:300},
 {id:'tanzaku',n:'七夕短冊',e:'🎋',r:'r',v:300},{id:'hina',n:'雛人形',e:'🎎',r:'r',v:300},{id:'dumpling',n:'月見團子',e:'🎑',r:'r',v:300},{id:'torii',n:'鳥居',e:'⛩',r:'r',v:300},{id:'koinobori',n:'鯉魚旗',e:'🎏',r:'r',v:300},
 {id:'bento',n:'便當',e:'🍱',r:'r',v:300},{id:'crab',n:'螃蟹',e:'🦀',r:'r',v:300},{id:'dice',n:'骰子',e:'🎲',r:'r',v:300},{id:'bell',n:'神社鈴',e:'🔔',r:'r',v:300},{id:'moon',n:'月餅',e:'🥮',r:'r',v:300},
-{id:'dragon',n:'金龍',e:'🐉',r:'s',v:1000},{id:'fuji',n:'富士山',e:'🗻',r:'s',v:1000},{id:'crown',n:'老闆王冠',e:'👑',r:'s',v:1000},{id:'kitsune',n:'九尾狐',e:'🦊',r:'s',v:1000}
+{id:'dragon',n:'金龍',e:'🐉',r:'s',v:1000},{id:'fuji',n:'富士山',e:'🗻',r:'s',v:1000},{id:'crown',n:'老闆王冠',e:'👑',r:'s',v:1000},{id:'kitsune',n:'九尾狐',e:'🦊',r:'s',v:1000},
+{id:'s_oni',n:'鬼面',e:'👹',r:'x',v:3000},{id:'s_tanuki',n:'狸貓',e:'🦝',r:'x',v:3000},{id:'s_ghost',n:'提燈幽靈',e:'👻',r:'x',v:3000},{id:'s_sakura',n:'櫻花雨',e:'🌸',r:'x',v:3000}
 ];
 function gachaPct(it){return GACHA_RATE[it.r]/GACHA_ITEMS.filter(x=>x.r===it.r).length}
 function gachaGrid(g){
@@ -2735,15 +2736,34 @@ function gachaGrid(g){
     return `<button class="gacha-cell${k?'':' off'}" data-act="gachaitem" data-id="${it.id}" style="border-color:${GACHA_COL[it.r]}" aria-label="${k?it.n:'？？？'}">${k?it.e:'❔'}${k>1?`<span class="gk">${k}</span>`:''}</button>`}).join('')+'</div>'
 }
 const GACHA_CSS=`<style>.gacha-cap{font-size:72px;text-align:center;margin:12px 0 4px;min-height:1.2em}.gacha-cap.shake{animation:gshake .12s linear 6}@keyframes gshake{25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}.gacha-scroll{max-height:44vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;margin:10px 0;padding:4px 4px 8px;border:2px solid #d9c3a0;border-radius:10px;background:#fffdf5}.gacha-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.gacha-cell{position:relative;border:1.5px solid;border-radius:8px;background:#fff8e6;padding:8px 0;font-size:28px;line-height:1.2;cursor:pointer;font-family:inherit;color:inherit;min-width:0}.gacha-cell.off{background:#eee;opacity:.75;font-size:20px}.gacha-cell .gk{position:absolute;right:3px;bottom:1px;font-size:11px;color:#7a4a2a;font-weight:bold}.gacha-det{background:#fff8e6;border:2px solid #7a4a2a;border-radius:10px;padding:8px;margin-top:6px;text-align:center;font-size:14px;line-height:1.5}.gacha-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}.gacha-tbl td,.gacha-tbl th{border-bottom:1px solid #d9c3a0;padding:3px 2px;text-align:left}</style>`;
-function showGacha(){
+let GMODE='c';
+const GACHA_SECRET_PRICE=1000;
+const GACHA_COMBOS=[{n:'海之味',items:['squid','shrimp','fish']},{n:'居酒屋三寶',items:['beer','kushi','takoyaki']},{n:'神社參拜',items:['torii','bell','furin']}];
+function gachaCombos(g){const c=(g&&g.c)||{};return GACHA_COMBOS.map(cb=>{const have=cb.items.filter(id=>c[id]>0).length;return {n:cb.n,items:cb.items,have,done:have===cb.items.length}})}
+function gachaSecretOpen(g){return gachaCombos(g).every(x=>x.done)}
+function gachaDex(g){const c=(g&&g.c)||{};return GACHA_ITEMS.filter(it=>c[it.id]>0).length}
+function gachaComboHTML(g){const c=(g&&g.c)||{};
+  return `<div class="gacha-det" style="text-align:left;margin:8px 0"><b>${T('收集組合')}</b>`+GACHA_COMBOS.map(cb=>{
+    const have=cb.items.filter(id=>c[id]>0).length;
+    const names=cb.items.map(id=>{const it=GACHA_ITEMS.find(x=>x.id===id);return c[id]?it.e+' '+it.n:'❔ ？？？'}).join('　');
+    return `<div style="font-size:13px;margin-top:4px">${have===cb.items.length?'✅':'⬜'} <b>${T(cb.n)}</b>：${names}（${have}/${cb.items.length}）</div>`}).join('')
+    +`<div style="font-size:12px;margin-top:6px">${T('集齊全部組合，解鎖秘密扭蛋機。')}</div></div>`}
+function gachaSecretHTML(g){return gachaSecretOpen(g)?`<button class="btn" data-act="gachasecret">🎁 ${T('秘密扭蛋機')}</button>`:`<span style="font-size:12px">${T('🔒 集齊三組組合後解鎖秘密扭蛋機')}</span>`}
+function showGacha(secret){
+  GMODE=secret?'x':'c';
   const g=loadRec().gacha||{c:{},p:0};
-  modal(`${GACHA_CSS}<h2>${T('扭蛋機')}</h2><p style="font-size:13px;text-align:center">${T('每顆 ¥{0}。重複的會換成錢包的錢；連續 {1} 顆沒有超稀有，下一顆保證超稀有。',GACHA_PRICE,GACHA_PITY)}</p><div class="gacha-cap" id="gcap">🥚</div><p class="arc-msg" id="arcMsg">${T('點下面的格子可以看稀有度和機率')}</p><p id="arcW" style="font-size:14px;text-align:center">${T('錢包：{0}',yen(arcWallet(0)))}</p><p id="gPity" style="font-size:13px;text-align:center">${T('距離保底還差 {0} 顆',Math.max(0,GACHA_PITY-1-(g.p||0)))}</p><div class="btns"><button class="btn" data-act="gachapull">${T('扭一顆')} ¥${GACHA_PRICE}</button><button class="btn alt" data-act="gachatable">📖 ${T('機率表')}</button><button class="btn alt" data-act="arcade">${T('返回')}</button></div><div id="gTable"></div><div class="gacha-scroll" id="gGrid">${gachaGrid(g)}</div><div id="gDetail"></div>`)
+  const price=secret?GACHA_SECRET_PRICE:GACHA_PRICE;
+  const desc=secret?T('只會抽到秘密款，四種機率相同，沒有保底。'):T('每顆 ¥{0}。重複的會換成錢包的錢；連續 {1} 顆沒有超稀有，下一顆保證超稀有。',GACHA_PRICE,GACHA_PITY);
+  const sub=secret?'':`<p id="gPity" style="font-size:13px;text-align:center">${T('距離保底還差 {0} 顆',Math.max(0,GACHA_PITY-1-(g.p||0)))}</p>`;
+  const extra=secret?'':`<div id="gCombo">${gachaComboHTML(g)}</div><div id="gSecret" style="text-align:center;margin:6px 0">${gachaSecretHTML(g)}</div>`;
+  const back=secret?`<button class="btn alt" data-act="gacha">${T('返回')}</button>`:`<button class="btn alt" data-act="arcade">${T('返回')}</button>`;
+  modal(`${GACHA_CSS}<h2>${T(secret?'秘密扭蛋機':'扭蛋機')}</h2><p style="font-size:13px;text-align:center">${desc}</p><div class="gacha-cap" id="gcap">${secret?'🎁':'🥚'}</div><p class="arc-msg" id="arcMsg">${T('點下面的格子可以看稀有度和機率')}</p><p id="arcW" style="font-size:14px;text-align:center">${T('錢包：{0}',yen(arcWallet(0)))}</p>${sub}<div class="btns"><button class="btn" data-act="gachapull">${T('扭一顆')} ¥${price}</button><button class="btn alt" data-act="gachatable">📖 ${T('機率表')}</button>${back}</div>${extra}<div id="gTable"></div><div class="gacha-scroll" id="gGrid">${gachaGrid(g)}</div><div id="gDetail"></div>`);
 }
 function showGachaItem(id){
   const it=GACHA_ITEMS.find(x=>x.id===id);if(!it)return;
   const k=((loadRec().gacha||{}).c||{})[id]||0;
   const el=document.getElementById('gDetail');if(!el)return;
-  el.innerHTML=`<div class="gacha-det"><div style="font-size:40px">${k?it.e:'❔'}</div><b>${k?it.n:'？？？'}</b><div style="color:${GACHA_COL[it.r]};font-weight:bold">${T('稀有度：{0}',GACHA_NAME[it.r])}</div><div>${T('每顆出現機率：{0}%',gachaPct(it).toFixed(2))}</div><div>${T('重複退幣：¥{0}',it.v)}</div><div>${k?T('已收藏 {0} 個',k):T('還沒收藏')}</div></div>`;
+  el.innerHTML=`<div class="gacha-det"><div style="font-size:40px">${k?it.e:'❔'}</div><b>${k?it.n:'？？？'}</b><div style="color:${GACHA_COL[it.r]};font-weight:bold">${T('稀有度：{0}',GACHA_NAME[it.r])}</div><div>${it.r==='x'?T('只會從秘密扭蛋機抽到，每種機率相同'):T('每顆出現機率：{0}%',gachaPct(it).toFixed(2))}</div><div>${T('重複退幣：¥{0}',it.v)}</div><div>${k?T('已收藏 {0} 個',k):T('還沒收藏')}</div></div>`;
 }
 function showGachaTable(){
   const el=document.getElementById('gTable');if(!el)return;
@@ -2754,25 +2774,37 @@ function showGachaTable(){
 }
 function gachaPull(){
   if(ARC.busy)return;
-  if(!arcCanPay(GACHA_PRICE)){arcMsg(T('錢包不夠了，先去賣點東西吧！'));return}
-  ARC.busy=true;arcWallet(-GACHA_PRICE);arcShowW();sfx('click');
-  const cap=document.getElementById('gcap');if(cap){cap.textContent='🥚';cap.classList.add('shake')}
+  const secret=GMODE==='x',price=secret?GACHA_SECRET_PRICE:GACHA_PRICE;
+  if(!arcCanPay(price)){arcMsg(T('錢包不夠了，先去賣點東西吧！'));return}
+  ARC.busy=true;arcWallet(-price);arcShowW();sfx('click');
+  const cap=document.getElementById('gcap');if(cap){cap.textContent=secret?'🎁':'🥚';cap.classList.add('shake')}
   const rec=loadRec(),g=rec.gacha||{c:{},p:0};
   g.c=g.c||{};g.p=g.p||0;
-  const roll=Math.random()*100;
-  let rr=g.p>=GACHA_PITY-1?'s':roll<GACHA_RATE.c?'c':roll<GACHA_RATE.c+GACHA_RATE.r?'r':'s';
+  const before=gachaCombos(g),wasOpen=before.every(x=>x.done);
+  let rr;
+  if(secret)rr='x';
+  else{const roll=Math.random()*100;rr=g.p>=GACHA_PITY-1?'s':roll<GACHA_RATE.c?'c':roll<GACHA_RATE.c+GACHA_RATE.r?'r':'s'}
   const pool=GACHA_ITEMS.filter(x=>x.r===rr),it=pool[Math.floor(Math.random()*pool.length)];
-  g.p=rr==='s'?0:g.p+1;
+  if(!secret)g.p=rr==='s'?0:g.p+1;
   const dup=(g.c[it.id]||0)>0;g.c[it.id]=(g.c[it.id]||0)+1;
+  const after=gachaCombos(g);
+  const newly=after.filter((x,i)=>x.done&&!before[i].done);
+  const unlockedNow=!secret&&!wasOpen&&after.every(x=>x.done);
   rec.gacha=g;saveRec(rec);
+  if(CL.user)lbPush(CL.user).catch(()=>{}); /* dex count goes to the 扭蛋圖鑑 board when it changes */
   setTimeout(()=>{
     if(cap){cap.classList.remove('shake');cap.textContent=it.e}
     let back=0;if(dup){back=it.v;arcWallet(back)}
-    sfx(rr==='s'?'star':rr==='r'?'done':'pick');
+    sfx(rr==='s'||rr==='x'?'star':rr==='r'?'done':'pick');
     ARC.busy=false;arcShowW();
     const pityEl=document.getElementById('gPity');if(pityEl)pityEl.textContent=T('距離保底還差 {0} 顆',Math.max(0,GACHA_PITY-1-g.p));
     const gg=document.getElementById('gGrid');if(gg)gg.innerHTML=gachaGrid(g);
-    arcMsg(T('[{0}] {1}！',GACHA_NAME[rr],it.n)+(dup?T('（重複，退回 {0}）',yen(back)):T('（新收藏！）')));
+    const cb=document.getElementById('gCombo');if(cb)cb.innerHTML=gachaComboHTML(g);
+    const sb=document.getElementById('gSecret');if(sb)sb.innerHTML=gachaSecretHTML(g);
+    let msg=T('[{0}] {1}！',GACHA_NAME[rr],it.n)+(dup?T('（重複，退回 {0}）',yen(back)):T('（新收藏！）'));
+    newly.forEach(x=>{msg+=T(' 🎉集齊「{0}」！',x.n)});
+    if(unlockedNow)msg+=T(' 🔓秘密扭蛋機解鎖了！');
+    arcMsg(msg);
   },900);
 }
 /* ===== 幸運籤：每天免費一次，之後每次 ¥200；獎勵是錢與道具 ===== */
@@ -3101,7 +3133,7 @@ let HUDDOWN={act:null,t:-1e9};/* 背包 and 🏦 sit in the HUD too, which re-re
 document.getElementById('hud').addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('[data-act="rewards"],[data-act="bank"]');if(!b||e.button>0||!R||R.over||R.settled)return;HUDDOWN={act:b.dataset.act,t:performance.now()};if(b.dataset.act==='rewards'){R.paused=true;RWBAG=true;showRewards()}else bankWin()});
 let PAUSEDOWN=-1e9;document.getElementById('hud').addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('[data-act="pause"]');if(!b||e.button>0||!R||R.paused||R.over)return;PAUSEDOWN=performance.now();pause()});
 document.addEventListener('click',e=>{
-  const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;if(act==='pause'&&performance.now()-PAUSEDOWN<800)return;if(HUDDOWN.act===act&&performance.now()-HUDDOWN.t<800)return;if(ARC.busy&&/^(cont|newgame|asknew|homeshop|arcade|arcslot|arcpin|gacha)$/.test(act))return;
+  const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;if(act==='pause'&&performance.now()-PAUSEDOWN<800)return;if(HUDDOWN.act===act&&performance.now()-HUDDOWN.t<800)return;if(ARC.busy&&/^(cont|newgame|asknew|homeshop|arcade|arcslot|arcpin|gacha|gachasecret)$/.test(act))return;
   if(/^(buy|lvup|staffup|rmstaff)/.test(act)&&!a.disabled&&!a.classList.contains('poor'))sfx('buy');else if(!['snd','sndg','start'].includes(act))sfx('click');
   if(act==='newgame'){slBackup(lsGet(KEY),'new');closeHome();ST=fresh();save();showDayIntro()}
   else if(act==='cont'){goFS();closeHome();ST=load();advance()}
@@ -3120,6 +3152,7 @@ document.addEventListener('click',e=>{
   else if(act==='omkdraw')omkDraw();
   else if(act==='gacha')showGacha();
   else if(act==='gachapull')gachaPull();
+  else if(act==='gachasecret')showGacha(true);
   else if(act==='gachaitem')showGachaItem(a.dataset.id);
   else if(act==='gachatable')showGachaTable();
   else if(act==='arcspin')arcSpin();
@@ -3977,18 +4010,18 @@ function cloudAsk(){const c=CL.pick;if(!c||!HOME)return;
   modal(`<h2>${T('選擇要用哪一份存檔')}</h2><p>${T('這台裝置和雲端各有一份不同的存檔，要用哪一份？另一份會被覆蓋。')}</p>
   <div class="pickrow"><button class="btn" data-act="pickcloud">${T('雲端存檔')}<small>${saveSummary(c.game)}</small></button><button class="btn alt" data-act="picklocal">${T('這台裝置')}<small>${saveSummary(lsGet(KEY))}</small></button></div>`)}
 /* ===== leaderboard: one public doc per player in lb/{uid}; written only by its owner, readable by all ===== */
-const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['own','最快買店','asc','只有買下整棟店面的人才會上榜，天數越少越前面。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
+const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['own','最快買店','asc','只有買下整棟店面的人才會上榜，天數越少越前面。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['dex','扭蛋圖鑑','desc','收集到的扭蛋種類越多越前面，秘密扭蛋機的款式也算。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
 const LB={tab:'best',cache:{},last:null};
 function lbEntry(){const r=loadRec();
   // stores bought before the leaderboard existed never recorded a buy day; fill it in once from the save's current day (an upper bound, so it can't overstate speed)
   if(!r.ownDay){let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.owned&&g.day>0){r.owned=true;r.ownDay=g.day;saveRec(r)}}
-  if(!r.nick)return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.ownDay)d.own=r.ownDay;if(r.maxDay>0)d.days=Math.round(r.maxDay);return d}
+  if(!r.nick)return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.ownDay)d.own=r.ownDay;if(r.maxDay>0)d.days=Math.round(r.maxDay);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;return d}
 async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return} /* a save touched by the author test tools never goes on the leaderboard */
   const k=JSON.stringify(d);if(LB.last===u.uid+k)return;
   try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d))}
-  catch(e){if(!d.days)throw e;const d2=Object.assign({},d);delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))} /* rules not updated yet: still keep the rest of the entry */
+  catch(e){const d2=Object.assign({},d);delete d2.dex;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}} /* rules not updated yet: still keep the rest of the entry */
   LB.last=u.uid+k;LB.cache={}}
-const lbVal=(t,v)=>t==='own'||t==='days'?T('{0} 天',v):yen(v);
+const lbVal=(t,v)=>t==='dex'?T('{0} 種',v):t==='own'||t==='days'?T('{0} 天',v):yen(v);
 const lbHead=tb=>`<h2>${T('排行榜')}</h2><div class="lbtabs">${LBT.map(([k,n])=>`<button class="stab ${LB.tab===k?'on':''}" data-act="lbtab" data-id="${k}">${T(n)}</button>`).join('')}</div><p class="lbdesc">${T(tb[3])}</p>`;
 async function showLB(){if(LB.tab==='fr')return showFriends();
   const tb=LBT.find(x=>x[0]===LB.tab),me=CL.user,mine=lbEntry();
