@@ -1461,7 +1461,10 @@ function suTrayOpen(id){return SUKEYS.some(k=>has(k)&&SU_REC[k].includes(id))}
 function suAdd(id,el){
   const eFree=R.maki.findIndex((g,j)=>!g&&j<makiN());
   /* 海苔可以開新格（壽司捲／手卷的起手），板子有空格時不去蓋已做好的握壽司，避免同時做鮪魚捲和握壽司時被誤蓋成手卷 */
-  const skipDone=id==='nori'&&eFree>=0&&suTrayOpen(id)&&suFits([],id);
+  /* 剛做好的握壽司（例如鮭魚握）接上海苔就是手卷：最近動過的那格如果是這種握壽司，海苔要蓋上去，不開新格 */
+  const last=R.maki.reduce((b,g,j)=>g&&j<makiN()&&(!b||(g.at||0)>(b.at||0))?g:b,null);
+  const handOK=id==='nori'&&!!last&&last.kind!=='asm'&&!!suResult(last.parts.concat(id));
+  const skipDone=id==='nori'&&eFree>=0&&suTrayOpen(id)&&suFits([],id)&&!handOK;
   let i=-1;R.maki.forEach((g,j)=>{if(!g||j>=makiN()||!suFits(g.parts,id))return;if(skipDone&&g.kind!=='asm')return;const a=R.maki[i];if(i<0||(g.kind==='asm'&&a.kind!=='asm')||((g.kind==='asm')===(a.kind==='asm')&&(g.at||0)>(a.at||0)))i=j}); /* 先接在還沒做完的格子，其中選最近動過的；做好的握壽司最後才輪到（再蓋海苔變手卷） */
   if(i<0){const e=R.maki.findIndex((g,j)=>!g&&j<makiN());
     if(!suTrayOpen(id)){nope(el);toast('先到商店買下用得到它的菜');return}
@@ -2916,7 +2919,7 @@ function showDayIntro(){
   ${ST.day===1?`<p style="font-size:14px">${T('忙不過來的時候，<b>快速點兩下</b>烤好的串燒、炸物或做好的砧板，就會自動放進吧台上的<b>保溫台</b>，不會焦，之後再從保溫台拿去送。每用一份食材都會扣成本，烤焦丟掉的就白花了。')}</p>`:''}
   ${ST.pre&&ST.pre.day===ST.day&&(ST.pre.ext||ST.pre.nb)?`<p class="hint">${T('今天已備妥道具：{0}',[ST.pre.ext?T('延長營業 ×{0}',ST.pre.ext):'',ST.pre.nb?T('不焦符'):''].filter(Boolean).join('、'))}</p>`:''}
   <div class="btns"><button class="btn" data-act="start">${T('開店營業')}</button>${CUR==='sushi'?`<button class="btn alt" data-act="sushishop">${T('商店')}</button>`:`<button class="btn alt" data-act="shop">${T('商店')}</button>`}<button class="btn alt" data-act="preprops">🎒 ${T('道具')}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
-  if(CUR==='sushi'&&ST&&ST.sushi&&!ST.sushi.tut&&!DEMO)setTimeout(()=>{if(!TUT)startSushiTut(true)},150);
+  if(CUR==='sushi'&&ST&&ST.sushi&&!ST.sushi.tut&&!ST.sushi.tutAsk&&!DEMO){ST.sushi.tutAsk=true;save();setTimeout(()=>{if(!TUT)startSushiTut(true)},150)}
 }
 function endDay(){sfx('end');$('game').classList.remove('aim');
   R.held=null;renderStations();
@@ -3031,7 +3034,7 @@ function shopSushi(){
   const menu=Object.keys(ITEMS).filter(k=>ITEMS[k].shop==='sushi').map(k=>`<div class="up" style="display:grid;grid-template-columns:64px 1fr;column-gap:10px;align-items:center"><div style="grid-row:span 3;width:64px;height:64px">${sv(suG(k))}</div><b>${dishTitle(k)}</b><p>${T('售價 {0}・食材 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}</p>${has(k)?`<p>${T('已購買')}</p>${has(k)?`<div style="grid-column:1/-1;white-space:nowrap">${offBtn(k)}</div>`:''}`:`<button class="btn" data-act="susbuy" data-id="${k}" ${SV.coins<ITEMS[k].buy?'disabled':''}>${T('買下 {0}',yen(ITEMS[k].buy))}</button>`}</div>`).join('');
   const staff=`<div class="up"><b>${T(SU_STAFF.zh)}${l?' Lv'+l:''}</b><p>${l?T('目前雇用中，日薪 {0}',yen(SU_STAFF.lv[l-1].wage)):T('還沒雇用')}</p>${nx?`<p>${T(nx.d)}</p><button class="btn" data-act="suhire" ${SV.coins<nx.cost?'disabled':''}>${T(l?'升級 {0}':'雇用 {0}',yen(nx.cost))}</button>`:`<p>${T('已經是最高等級。')}</p>`}</div>`;
   const deco=`<h3 class="sh">${T('店內布置・讓客人更有耐心')}</h3><div class="shop">${SDECOR.map(d=>{const own=sdec(d.id);return `<div class="up ${own?'done':''}"><b>${T(d.zh)}<span class="new" style="background:#5c9a3a">${T('耐心 +{0}%',Math.round(d.b*100))}</span></b><p>${T(d.d)}</p><div class="row"><span class="price">${yen(d.cost)}</span>${own?`<span>${T('已布置')}</span>`:`<button class="btn" data-act="sudec" data-id="${d.id}" ${SV.coins<d.cost?'disabled':''}>${T('購買')}</button>`}</div></div>`}).join('')}</div>`;
-  return `<h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${suUp('maki',0)?`<div class="up done"><b>${T('壽司台第五格')}</b><p>${T('已擴充，壽司台現在有五個位置。')}</p></div>`:`<div class="up"><b>${T('壽司台第五格')}</b><p>${T('壽司台多一個位置，可以同時做五件壽司。')}</p><button class="btn" data-act="sumaki" ${SV.coins<SU_MAKI5_COST?'disabled':''}>${T('買下 {0}',yen(SU_MAKI5_COST))}</button></div>`}${l?`<div class="up">${dilHTML('sushistaff').replace('data-act="dil"','data-act="sudil"')}</div>`:''}</div>${deco}<div class="btns"><button class="btn alt" data-act="sugopen">📖 ${T('製作教學')}</button><button class="btn" data-act="susopen">${T('去海風壽司營業')}</button></div>`;
+  return `<h3 class="sh">${T('壽司菜單')}</h3><div class="shop">${menu}</div><h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${suUp('maki',0)?`<div class="up done"><b>${T('壽司台第五格')}</b><p>${T('已擴充，壽司台現在有五個位置。')}</p></div>`:`<div class="up"><b>${T('壽司台第五格')}</b><p>${T('壽司台多一個位置，可以同時做五件壽司。')}</p><button class="btn" data-act="sumaki" ${SV.coins<SU_MAKI5_COST?'disabled':''}>${T('買下 {0}',yen(SU_MAKI5_COST))}</button></div>`}${l?`<div class="up">${dilHTML('sushistaff').split('data-act="dil"').join('data-act="sudil"')}</div>`:''}</div>${deco}<div class="btns"><button class="btn alt" data-act="sugopen">📖 ${T('製作教學')}</button><button class="btn" data-act="susopen">${T('去海風壽司營業')}</button></div>`;
 }
 /* 海風壽司新手教學：和居酒屋一樣一步一步高亮，用示範客人（不存檔）；買下後自動跳出，商店的「📖 做法」可以再看 */
 const SU_TUTS=[
@@ -4447,7 +4450,8 @@ function tstForce(t){const f=ST.tforce||{};
 function tstSet(on,copy){
   if(on===TEST)return;
   if(on){clearTimeout(CL.timer);CL.timer=null;
-    if(copy){lsSet(TKEY,lsGet(REAL_KEY));lsSet(TRKEY,lsGet(REAL_RKEY))}
+    /* 測試存檔已經存在就沿用，不再每次用正式存檔覆蓋（否則測試裡買的壽司店、教學進度每次都會不見） */
+    if(copy&&lsGet(TKEY)==null){lsSet(TKEY,lsGet(REAL_KEY));lsSet(TRKEY,lsGet(REAL_RKEY))}
     TEST=true;KEY=TKEY;RKEY=TRKEY;const r=loadRec();if(!r.tut){r.tut=true;saveRec(r)}}
   else{TEST=false;TSPD=1;KEY=REAL_KEY;RKEY=REAL_RKEY;if(CL.user){if(CL.synced)cloudUpload(true);else cloudSync()}}
   LB.cache={};tstBadge();showHome()}
