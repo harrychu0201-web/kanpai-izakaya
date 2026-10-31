@@ -3323,7 +3323,7 @@ document.addEventListener('click',e=>{
   else if(act==='susopen'){closeHome();ST=load();if(!ST||!ST.sushi){ST=null;showHome();return}ST.where='sushi';setCur('sushi');save();advance()}
   else if(act==='susbuy'){const k=a.dataset.id;const home=!ST;if(home)ST=load();if(ST&&ITEMS[k]&&ITEMS[k].shop==='sushi'&&!has(k)&&ST.coins>=ITEMS[k].buy){keepScroll();ST.coins-=ITEMS[k].buy;ST.menu=ST.menu||{};ST.menu[k]=1;save()}if(home)ST=null;else renderHUD();sushiHome()}
   else if(act==='sudec'){const d=SDECOR.find(x=>x.id===a.dataset.id);const home=!ST;if(home)ST=load();if(ST&&ST.sushi&&d&&!sdec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.sushi.dec=ST.sushi.dec||{};ST.sushi.dec[d.id]=true;save();if(!home){drawBg();renderHUD()}}if(home)ST=null;sushiHome()}
-  else if(act==='sudil'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi){ST.dil=ST.dil||{};ST.dil.sushistaff=+a.dataset.v;save()}if(home)ST=null;sushiHome()}
+  else if(act==='sudil'){keepScroll();const home=!ST;if(home)ST=load();if(ST&&ST.sushi){ST.dil=ST.dil||{};ST.dil.sushistaff=+a.dataset.v;save()}if(home)ST=null;sushiHome()}
   else if(act==='sushishop')sushiHome();
   else if(act==='sumaki'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi&&!suUp('maki',0)&&ST.coins>=SU_MAKI5_COST){keepScroll();ST.coins-=SU_MAKI5_COST;ST.sushi.up.maki=1;save()}if(home)ST=null;else renderHUD();sushiHome()}
   else if(act==='suhire'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi){const l=suStaffLv(),nx=SU_STAFF.lv[l];if(nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.sushi.up.staff=l+1;save()}}if(home)ST=null;else renderHUD();sushiHome()}
