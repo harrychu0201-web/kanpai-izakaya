@@ -800,7 +800,7 @@ function abandonReplay(){RP.on=false;RP.k=0;KEY=REAL_KEY;try{localStorage.remove
 function save(){if(DEMO)return;try{localStorage.setItem(KEY,JSON.stringify(ST))}catch(e){}touchLocal()}
 let RKEY='izakaya-rec-v1';
 function loadRec(){try{return JSON.parse(localStorage.getItem(RKEY))||{}}catch(e){return {}}}
-function saveRec(r){try{localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}touchLocal()}
+function saveRec(r){try{const old=localStorage.getItem(RKEY);if(old){try{JSON.parse(old)}catch(e){localStorage.setItem(RKEY+'-bad',old)}}localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}touchLocal()}
 function load(){try{const v=localStorage.getItem(KEY);const o=v?JSON.parse(v):null;if(o&&o.inter&&o.inter.neon){delete o.inter.neon;o.coins=(o.coins||0)+20000;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}if(o&&o.thOwn&&!o.thRefund){let r=0;Object.keys(o.thOwn).forEach(id=>{Object.values(THEMES).forEach(g=>g.list.forEach(t=>{if(t.id===id)r+=t.cost||0}))});o.coins=(o.coins||0)+r;delete o.thOwn;o.th={};o.thRefund=true;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}return o}catch(e){return null}}
 const UDAY=()=>RP.on?RP.mainDay:(ST?ST.day:1); /* unlock/shop state follows the main save even while replaying an earlier day */
 const unlocked=(d,sh)=>{sh=sh||CUR;if(RP.on)d=Math.max(d,RP.mainDay);return Object.keys(ITEMS).filter(k=>{const it=ITEMS[k],s0=it.shop||'iz';if(s0!=='both'&&s0!==sh)return false;return it.buy?has(k)&&!(k==='goma'&&gomaOff()):(s0==='rm'||it.day<=d)})};
@@ -2280,7 +2280,7 @@ const ACHS=[{id:'d10',n:'撐過第 10 天',c:r=>r.maxDay>=10,rw:{nb:1}},
   {id:'rv3',n:'累計營收 ¥10,000,000',c:r=>(r.earned||0)>=10000000,rw:{nb:3,pt:3,ext:3}}];
 function dayKey(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function rwText(rw){return Object.keys(rw).map(k=>PROPS[k].ic+PROPS[k].n+' ×'+rw[k]).join('、')}
-function invAdd(rw){const r=loadRec();r.inv=r.inv||{};for(const k in rw)r.inv[k]=(r.inv[k]||0)+rw[k];saveRec(r)}
+function invAdd(rw){const r=loadRec();r.inv=r.inv||{};for(const k in rw)r.inv[k]=(r.inv[k]||0)+rw[k];saveRec(r);cloudUpload(true)}
 function rewardDue(){const r=loadRec();return !(r.ci&&r.ci.last===dayKey())||ACHS.some(a=>a.c(r)&&!(r.ach&&r.ach[a.id]))}
 function claimCheckin(){const r=loadRec();if(r.ci&&r.ci.last===dayKey())return;const y=dayKey(new Date(Date.now()-864e5));const n=r.ci&&r.ci.last===y?(r.ci.streak||0)+1:1;r.ci={last:dayKey(),streak:n};saveRec(r);
   const rw=n%7===0?{nb:1,pt:1,ext:1}:{[['nb','pt','ext'][Math.floor(Math.random()*3)]]:1};invAdd(rw);toast(T('簽到成功！連續 {0} 天，獲得 {1}',n,rwText(rw)));showRewards()}
@@ -2291,7 +2291,7 @@ function useProp(k){if(!R||R.over||R.settled||!PROPS[k])return;const r=loadRec()
   else if(k==='ext'){if((R.extH||0)>=3){toast(T('營業時間已經延到上限了'));return}R.extH=(R.extH||0)+1;DAYLEN+=159/8.5}
   else if(k==='fast'){if(R.fxFast){toast(T('這一局已經用過速熟符了'));return}if(!fastCook()){toast(T('爐上沒有生的食材'));return}R.fxFast=1;renderStations()}
   else if(k==='tip'){if(R.fxTip){toast(T('這一局已經用過加倍小費了'));return}R.fxTip=1}
-  r.inv[k]--;saveRec(r);toast(T('使用了 {0}',PROPS[k].n));showRewards()}
+  r.inv[k]--;saveRec(r);cloudUpload(true);toast(T('使用了 {0}',PROPS[k].n));showRewards()}
 function buyProp(k){const p=PROPS[k];if(!p||R)return;const s=load();if(!s)return;if((s.coins||0)<p.p){toast(T('金幣不夠'));return}arcWallet(-p.p);invAdd({[k]:1});toast(T('買到 {0}',p.n));showRewards()}
 function curCard(){return document.querySelector('#homeModal .card')||document.querySelector('#modalLayer .card')}
 let RWBAG=false; /* 營業中從背包按鈕開的，只顯示道具 */
@@ -3247,7 +3247,7 @@ document.addEventListener('click',e=>{
     slLoadGame(x.game)}
   else if(act==='bakload'){const i=+a.dataset.i,x=slLoad().b[i];if(!x)return;
     if(!a.dataset.ok){slAsk('bakload',i,T('還原這份備份？'),T('目前的進度會被取代，不過會先自動備份一份。'));return}
-    slLoadGame(x.game)}
+    slLoadGame(x.game,x.rec)}
   else if(act==='snd'){sndWake();showSndModal(false)}
   else if(act==='sndg'){sndWake();showSndModal(true)}
   else if(act==='togbgm'){sndWake();bgmSet(!SND.bgmOn);showSndModal();renderHUD()}
@@ -3814,10 +3814,14 @@ function localStamp(){try{return +localStorage.getItem(SAVED_AT)||0}catch(e){ret
 function touchLocal(){if(TEST||RP.on)return;try{localStorage.setItem(SAVED_AT,String(Date.now()))}catch(e){}if(CL.user){clearTimeout(CL.timer);CL.timer=setTimeout(()=>cloudUpload(),60000)}}
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
-function mergeRec(a,b){const x=a?JSON.parse(a):{},y=b?JSON.parse(b):{},o=Object.assign({},x,y);
+function mergeRec(a,b){const pj=s=>{try{return s?JSON.parse(s)||{}:{}}catch(e){return {}}};const x=pj(a),y=pj(b),o=Object.assign({},x,y);
   ['maxDay','maxCoins','earned','bankrupt','bestDay'].forEach(k=>{const v=Math.max(x[k]||0,y[k]||0);if(v)o[k]=v});
   {const a=x.ownDay||0,b=y.ownDay||0;if(a||b)o.ownDay=a&&b?Math.min(a,b):a||b}
-  ['owned','tut'].forEach(k=>{if(x[k]||y[k])o[k]=true});o.met=Object.assign({},x.met||{},y.met||{});return JSON.stringify(o)}
+  ['owned','tut'].forEach(k=>{if(x[k]||y[k])o[k]=true});o.met=Object.assign({},x.met||{},y.met||{});
+  {const inv={};[x.inv||{},y.inv||{}].forEach(h=>{for(const k in h)inv[k]=Math.max(inv[k]||0,h[k]||0)});if(Object.keys(inv).length)o.inv=inv}
+  {const ach=Object.assign({},x.ach||{},y.ach||{});if(Object.keys(ach).length)o.ach=ach}
+  {const ci=[x.ci,y.ci].filter(Boolean).sort((p,q)=>String(q.last||'').localeCompare(String(p.last||'')));if(ci[0])o.ci=ci[0]}
+  return JSON.stringify(o)}
 async function cloudInit(){
   if(!FB_CONFIG||CL.api)return;
   try{const B='https://www.gstatic.com/firebasejs/10.12.2/';
@@ -3959,7 +3963,7 @@ const SLKEY='izakaya-slots-v1';
 function slLoad(){try{const o=JSON.parse(localStorage.getItem(SLKEY));return {s:Array.isArray(o&&o.s)?o.s.slice(0,3):[],b:Array.isArray(o&&o.b)?o.b.slice(0,3):[]}}catch(e){return {s:[],b:[]}}}
 function slSave(o){try{localStorage.setItem(SLKEY,JSON.stringify(o));return true}catch(e){return false}}
 function slOK(g){try{const o=JSON.parse(g);return !!o&&typeof o.day==='number'}catch(e){return false}}
-function slBackup(g,why){if(TEST||!g||!slOK(g)||g===JSON.stringify(fresh()))return;const o=slLoad();if(o.b.some(x=>x&&x.game===g))return;o.b.unshift({at:Date.now(),game:g,why});o.b=o.b.slice(0,3);slSave(o)}
+function slBackup(g,why){if(TEST||!g||!slOK(g)||g===JSON.stringify(fresh()))return;const o=slLoad();if(o.b.some(x=>x&&x.game===g))return;o.b.unshift({at:Date.now(),game:g,rec:lsGet(RKEY),why});o.b=o.b.slice(0,3);slSave(o)}
 function slTime(at){try{return new Date(at).toLocaleString(LANG,{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}}
 const SLWHY={new:'開新的一局前',bankrupt:'破產前',cloud:'雲端同步前',load:'讀取存檔前',cheat:'開啟測試功能前',replay:'選日期重玩前'};
 function showReplay(){
@@ -4002,9 +4006,9 @@ function showSlots(){
   modal(`<h2>${T('存檔欄位')}</h2><p>${T('目前的進度可以存進下面三個欄位，之後隨時讀回來。欄位只存在這台裝置上，不會同步到雲端。')}</p>${rows}
   <div class="slh">${T('自動備份')}</div><p style="font-size:13.5px;opacity:.8">${T('開新的一局、破產、雲端存檔覆蓋之前，遊戲會自動備份舊存檔（最多 3 份）。')}</p>${bk||`<p>${T('目前沒有備份。')}</p>`}
   <div class="btns"><button class="btn alt" data-act="closem">${T('關閉')}</button></div>`)}
-function slLoadGame(g){if(!g||!slOK(g))return;slBackup(lsGet(KEY),'load');lsSet(KEY,g);touchLocal();if(CL.user&&CL.synced)cloudUpload(true);closeModal();showHome()}
+function slLoadGame(g,rec){if(!g||!slOK(g))return;slBackup(lsGet(KEY),'load');lsSet(KEY,g);if(rec)lsSet(RKEY,mergeRec(rec,lsGet(RKEY)));touchLocal();if(CL.user&&CL.synced)cloudUpload(true);closeModal();showHome()}
 function slAsk(act,i,title,msg){modal(`<h2>${title}</h2><p>${msg}</p><div class="btns"><button class="btn" data-act="${act}" data-i="${i}" data-ok="1">${T('確定')}</button><button class="btn alt" data-act="slots">${T('取消')}</button></div>`)}
-function applyCloud(c){if(lsGet(KEY)!==c.game)slBackup(lsGet(KEY),'cloud');lsSet(KEY,c.game);if(c.rec)lsSet(RKEY,c.rec);try{localStorage.setItem(SAVED_AT,String(c.at||Date.now()))}catch(e){}if(HOME&&!R)showHome()}
+function applyCloud(c){if(lsGet(KEY)!==c.game)slBackup(lsGet(KEY),'cloud');lsSet(KEY,c.game);if(c.rec)lsSet(RKEY,mergeRec(c.rec,lsGet(RKEY)));try{localStorage.setItem(SAVED_AT,String(c.at||Date.now()))}catch(e){}if(HOME&&!R)showHome()}
 function saveSummary(g){try{const o=JSON.parse(g);return T('第 {0} 天',o.day+(o.pendingNext?1:0))+'・'+yen(o.coins)}catch(e){return ''}}
 function cloudAsk(){const c=CL.pick;if(!c||!HOME)return;
   modal(`<h2>${T('選擇要用哪一份存檔')}</h2><p>${T('這台裝置和雲端各有一份不同的存檔，要用哪一份？另一份會被覆蓋。')}</p>
