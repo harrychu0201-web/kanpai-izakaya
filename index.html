@@ -838,8 +838,8 @@ let RKEY='izakaya-rec-v1';
 function loadRec(){try{return JSON.parse(localStorage.getItem(RKEY))||{}}catch(e){return {}}}
 function saveRec(r){try{const old=localStorage.getItem(RKEY);if(old){try{JSON.parse(old)}catch(e){localStorage.setItem(RKEY+'-bad',old)}}localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}touchLocal()}
 function load(){try{const v=localStorage.getItem(KEY);const o=v?JSON.parse(v):null;if(o&&o.inter&&o.inter.neon){delete o.inter.neon;o.coins=(o.coins||0)+20000;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}if(o&&o.thOwn&&!o.thRefund){let r=0;Object.keys(o.thOwn).forEach(id=>{Object.values(THEMES).forEach(g=>g.list.forEach(t=>{if(t.id===id)r+=t.cost||0}))});o.coins=(o.coins||0)+r;delete o.thOwn;o.th={};o.thRefund=true;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}return o}catch(e){return null}}
-const UDAY=()=>RP.on?RP.mainDay:(ST?ST.day:1); /* unlock/shop state follows the main save even while replaying an earlier day */
-const unlocked=(d,sh)=>{sh=sh||CUR;if(RP.on)d=Math.max(d,RP.mainDay);return Object.keys(ITEMS).filter(k=>{const it=ITEMS[k],s0=it.shop||'iz';if(s0!=='both'&&s0!==sh)return false;return it.buy?has(k)&&!(k==='goma'&&gomaOff()):(s0==='rm'||it.day<=d)})};
+const UDAY=()=>RP.on?RP.mainDay:(CHG&&CHG.on)?999:(ST?ST.day:1); /* endless challenge: every day-locked station is open from the start */ /* unlock/shop state follows the main save even while replaying an earlier day */
+const unlocked=(d,sh)=>{sh=sh||CUR;if(RP.on)d=Math.max(d,RP.mainDay);if(CHG&&CHG.on)d=999;return Object.keys(ITEMS).filter(k=>{const it=ITEMS[k],s0=it.shop||'iz';if(s0!=='both'&&s0!==sh)return false;return it.buy?has(k)&&!(k==='goma'&&gomaOff()):(s0==='rm'||it.day<=d)})};
 /* ===== daily events (from day 4) + robbery (from day 5); picked once per day in showDayIntro ===== */
 const EVS={rain:['🌧','雨天','客人少三成，但耐心 +30%。'],fest:['🏮','附近有祭典','客人多六成，小費 +20%！'],group:['👥','團體客','營業中會有一群客人一次坐滿。'],
   sale:['🏷','食材特價','{0}的食材今天半價，點的人也變多。'],critic:['📝','美食評論家來訪','黑田今天一定會來。他坐下後 10 秒內送齊整張單，有獎金！']};
