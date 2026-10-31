@@ -1192,19 +1192,19 @@ const SDECOR=[
 function sdec(id){return !!(ST&&ST.sushi&&ST.sushi.dec&&ST.sushi.dec[id])}
 function rmDec(id){return !!(ST&&ST.rm&&ST.rm.dec&&ST.rm.dec[id])}
 const RSTAFF={zh:'屋台幫手・小葵',lv:[
-  {cost:20000,wage:700,d:'煮好的麵會撈進拉麵碗（沒碗就先放一個），煮好的煎餃、炒飯會收進保溫台，糊掉焦掉的會丟掉。'},
-  {cost:45000,wage:1100,d:'也會照客人點的，幫碗裡的麵放上配料。'},
-  {cost:80000,wage:1600,d:'也會把做好的拉麵、保溫台的菜、關東煮和飲料送給客人，大約每 2.2 秒一份。'}]};
+  {cost:20000,wage:700,d:'能做：煮好的麵撈進拉麵碗（沒碗就先放一個）；煮好的煎餃、炒飯收進保溫台；糊掉焦掉的丟掉。不會放配料，也不會送餐。'},
+  {cost:45000,wage:1100,d:'能做：上一級的全部，加上照客人點的，幫碗裡的麵放上配料。不會送餐。'},
+  {cost:80000,wage:1600,d:'能做：上一級的全部，加上把做好的拉麵、保溫台的菜、關東煮和飲料送給客人，大約每 2.2 秒一份。'}]};
 const RSTAFF2={zh:'屋台廚手・山田',lv:[
-  {cost:30000,wage:800,d:'客人點了拉麵、麵鍋又有空位，就會自動下麵（食材錢照付）。'},
-  {cost:65000,wage:1200,d:'也會照客人點的，把生餃子、炒飯料放上煎台。'},
-  {cost:110000,wage:1700,d:'也會在關東煮不夠的時候補料下鍋，動作也更快。'}]};
+  {cost:30000,wage:800,d:'能做：客人點了拉麵、麵鍋有空位，就自動下麵（食材錢照付）。煎台和關東煮不管。'},
+  {cost:65000,wage:1200,d:'能做：上一級的全部，加上客人點了煎餃或炒飯、煎台有空位，就把生的餃子、炒飯料放上煎台（食材錢照付）。'},
+  {cost:110000,wage:1700,d:'能做：上一級的全部，加上關東煮不夠的時候補料下鍋（食材錢照付），動作也更快。'}]};
 function rmStaffLv(){return rmUp('staff',0)}
 function rmStaff2Lv(){return rmUp('staff2',0)}
 const RSTAFF3={zh:'屋台炸師・大輔',lv:[
-  {cost:40000,wage:900,d:'客人點了可樂餅，油鍋有空位就會自動下鍋（食材錢照付）。'},
-  {cost:75000,wage:1300,d:'也會接手唐揚雞，有空位就自動下鍋。'},
-  {cost:120000,wage:1800,d:'也會炸豬排，動作也更快，大約每 0.6 秒檢查一次油鍋。'}]};
+  {cost:40000,wage:900,d:'能做：客人點了可樂餅，油鍋有空位就自動下鍋（食材錢照付）。唐揚雞和炸豬排不管。大約每 1 秒檢查一次油鍋。'},
+  {cost:75000,wage:1300,d:'能做：上一級的全部，加上客人點了唐揚雞，油鍋有空位就自動下鍋（食材錢照付）。大約每 1 秒檢查一次油鍋。'},
+  {cost:120000,wage:1800,d:'能做：上一級的全部，加上客人點了炸豬排，動作也更快，大約每 0.6 秒檢查一次油鍋。'}]};
 function rmFryStaffLv(){return rmUp('staff3',0)}
 function rmWages(){const l=rmStaffLv(),l2=rmStaff2Lv(),l3=rmFryStaffLv();const f=(D,l,k)=>l?Math.round(D.lv[l-1].wage*dilOf(k)/100):0;return f(RSTAFF,l,'rmstaff')+f(RSTAFF2,l2,'rmstaff2')+f(RSTAFF3,l3,'rmstaff3')}
 const plateG=()=>`<ellipse cx="50" cy="66" rx="44" ry="22" fill="#f3efe6" stroke="${O}" stroke-width="4"/><ellipse cx="50" cy="64" rx="32" ry="13" fill="none" stroke="#2b3b6e" stroke-width="2" opacity=".4"/>`;
@@ -1308,9 +1308,9 @@ function rmStHTML(name){
 /* ===== 海風壽司 (phase 1): 捲壽司台 + 壽司職人・健太郎 ===== */
 const SUKEYS=['tamagonigiri','salmonnigiri','tunanigiri','ikanigiri','tainigiri','ebinigiri','negitorogunkan','ikuragunkan','unigunkan','kappamaki','tekkamaki','salmonmaki','salmontemaki','tunatemaki','ikuratemaki'];
 const SU_STAFF={zh:'壽司職人・健太郎',lv:[
-  {cost:60000,wage:900,d:'你在壽司台上開始做的壽司，健太郎會幫你接著疊完（食材錢照付）；他不會自己開新的一份。'},
-  {cost:110000,wage:1400,d:'做好的壽司會自動送給等待中的客人，動作也更快。'},
-  {cost:180000,wage:2000,d:'動作最快，壽司台的空位會更快補上。'}]};
+  {cost:60000,wage:900,d:'能做：只接續你已經在壽司台上開始的壽司，幫你疊完（食材錢照付）。不會自己開新的一份，也不會送餐。你剛碰過的格子，他會讓開六秒。普通速度下大約每 1 秒動一次；店員認真度調高會更快，但不會多做新的。'},
+  {cost:110000,wage:1400,d:'能做：上一級的全部，加上把做好的壽司送給等待中的客人（先來的先送）。普通速度下大約每 0.8 秒動一次。'},
+  {cost:180000,wage:2000,d:'能做：上一級的全部，動作最快，普通速度下大約每 0.6 秒動一次。'}]};
 const SU_MAKI5_COST=40000;
 function makiN(){const n=(ST&&ST.sushi&&ST.sushi.up&&ST.sushi.up.maki)?5:4;SU_LAND.maki.w=SU_PORT.maki.w=n===5?362:290;if(R&&R.maki)while(R.maki.length<n)R.maki.push(null);return n}
 function suUp(k,d){const S=ST||load();return (S&&S.sushi&&S.sushi.up&&S.sushi.up[k])||d}
