@@ -4089,18 +4089,16 @@ function cloudAsk(){const c=CL.pick;if(!c||!HOME)return;
   modal(`<h2>${T('選擇要用哪一份存檔')}</h2><p>${T('這台裝置和雲端各有一份不同的存檔，要用哪一份？另一份會被覆蓋。')}</p>
   <div class="pickrow"><button class="btn" data-act="pickcloud">${T('雲端存檔')}<small>${saveSummary(c.game)}</small></button><button class="btn alt" data-act="picklocal">${T('這台裝置')}<small>${saveSummary(lsGet(KEY))}</small></button></div>`)}
 /* ===== leaderboard: one public doc per player in lb/{uid}; written only by its owner, readable by all ===== */
-const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['own','最快買店','asc','只有買下整棟店面的人才會上榜，天數越少越前面。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['dex','扭蛋圖鑑','desc','收集到的扭蛋種類越多越前面，秘密扭蛋機的款式也算。'],['chal','無限挑戰','desc','店不打烊一直營業，三次失誤就結束，比誰的營業時間長（暫停不算）。'],['chalh','極限挑戰','desc','禁用店員和道具的無限挑戰，比誰的營業時間長。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
+const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['dex','扭蛋圖鑑','desc','收集到的扭蛋種類越多越前面，秘密扭蛋機的款式也算。'],['chal','無限挑戰','desc','店不打烊一直營業，三次失誤就結束，比誰的營業時間長（暫停不算）。'],['chalh','極限挑戰','desc','禁用店員和道具的無限挑戰，比誰的營業時間長。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
 const LB={tab:'best',cache:{},last:null};
 function lbEntry(){const r=loadRec();
-  // stores bought before the leaderboard existed never recorded a buy day; fill it in once from the save's current day (an upper bound, so it can't overstate speed)
-  if(!r.ownDay){let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.owned&&g.day>0){r.owned=true;r.ownDay=g.day;saveRec(r)}}
-  if(!r.nick)return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.ownDay)d.own=r.ownDay;if(r.maxDay>0)d.days=Math.round(r.maxDay);if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;return d}
+  if(!r.nick)return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.maxDay>0)d.days=Math.round(r.maxDay);if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;return d}
 async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return} /* a save touched by the author test tools never goes on the leaderboard */
   const k=JSON.stringify(d);if(LB.last===u.uid+k)return;
   try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d))}
   catch(e){const d2=Object.assign({},d);delete d2.dex;delete d2.chal;delete d2.chalh;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}} /* rules not updated yet: still keep the rest of the entry */
   LB.last=u.uid+k;LB.cache={}}
-const lbVal=(t,v)=>t==='chal'||t==='chalh'?chTime(v):t==='dex'?T('{0} 種',v):t==='own'||t==='days'?T('{0} 天',v):yen(v);
+const lbVal=(t,v)=>t==='chal'||t==='chalh'?chTime(v):t==='dex'?T('{0} 種',v):t==='days'?T('{0} 天',v):yen(v);
 const lbHead=tb=>`<h2>${T('排行榜')}</h2><div class="lbtabs">${LBT.map(([k,n])=>`<button class="stab ${LB.tab===k?'on':''}" data-act="lbtab" data-id="${k}">${T(n)}</button>`).join('')}</div><p class="lbdesc">${T(tb[3])}</p>`;
 async function showLB(){if(LB.tab==='fr')return showFriends();
   const tb=LBT.find(x=>x[0]===LB.tab),me=CL.user,mine=lbEntry();
@@ -4215,7 +4213,7 @@ function showVisit(uid){const D=FR.data;if(!D)return;FR.view=uid;const x=D.lbs[u
   const row=(a,b)=>`<div class="lbrow frv"><span>${a}</span><em>${b}</em></div>`;
   modal(`<h2>🏮 ${esc(T('{0} 的店',x.name||T('玩家')))}</h2><div class="lblist">
    ${row(T('營業天數'),T('第 {0} 天',x.day||'?'))}${row(T('單日淨利'),yen(x.best||0))}${row(T('累計營收'),yen(x.earned||0))}
-   ${row(T('店面'),x.own?T('第 {0} 天買下',x.own):T('還在努力存錢'))}${row(T('拉麵屋台'),x.ya?T('已開張'):T('還沒開張'))}${row(T('二號廚房'),x.k2?T('已擴建'):T('還沒擴建'))}${row(T('裝飾'),T('{0} 件',x.dc||0))}${row(T('店評價'),rtFull(x.rt))}</div>
+   ${row(T('拉麵屋台'),x.ya?T('已開張'):T('還沒開張'))}${row(T('二號廚房'),x.k2?T('已擴建'):T('還沒擴建'))}${row(T('裝飾'),T('{0} 件',x.dc||0))}${row(T('店評價'),rtFull(x.rt))}</div>
    <div class="btns"><button class="btn" data-act="frgift" data-id="${esc(uid)}" ${sent?'disabled':''}>🎁 ${T('送禮物')}</button><button class="btn alt" data-act="frdel" data-id="${esc(uid)}">${T('移除好友')}</button><button class="btn alt" data-act="frback">${T('返回')}</button></div>`)}
 function frDelAsk(uid){const x=(FR.data&&FR.data.lbs[uid])||{};modal(`<h2>${T('移除好友')}</h2><p>${esc(T('要移除這位好友嗎？'))} ${esc(x.name||'')}</p><div class="btns"><button class="btn" data-act="frdelok" data-id="${esc(uid)}">${T('移除')}</button><button class="btn alt" data-act="frback">${T('取消')}</button></div>`)}
 async function frDel(uid){const me=CL.user;if(!me)return;try{await CL.api.frDel(me.uid,uid)}catch(e){console.warn('frdel',e);toast('好友功能暫時打不開，請稍後再試。');return}
