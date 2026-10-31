@@ -1503,9 +1503,10 @@ function suOrdHTML(){return `<button class="ordst" data-act="suorder" aria-label
 function suOrderClose(){closeModal();if(SUORDPAUSE&&R&&!R.over){R.paused=!!TUT;last=performance.now()}SUORDPAUSE=false}
 function suOrderModal(){
   if(R&&!R.over&&!R.paused){R.paused=true;SUORDPAUSE=true}
-  /* 四行：每行一個代表形狀的圖示 + 做法名稱，玩家不用點開就能對照形狀 */
+  /* 四行：圖示 + 做法名稱 + 先放什麼的順序（從 SU_REC 產生，和判定用的是同一份） */
+  const lab={rice:'壽司飯',nori:'海苔'},chip=t=>`<span style="display:inline-block;padding:3px 10px;border:2px solid #5a3420;border-radius:8px;background:#fcf8ee;color:#2a1608;font-weight:700">${t}</span>`;
   const rows=[['tamagonigiri','握壽司順序做法'],['negitorogunkan','軍艦順序做法'],['salmontemaki','手卷順序做法'],['kappamaki','壽司卷順序做法']]
-    .map(([k,t])=>`<div class="how-row" style="align-items:center;margin:10px 0">${icon(k)}<div><b>${T(t)}</b></div></div>`).join('');
+    .map(([k,t])=>`<div style="display:flex;align-items:center;gap:10px;margin:12px 0">${icon(k)}<div><b style="display:block;margin-bottom:4px">${T(t)}</b><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">${SU_REC[k].map((p,i)=>(i?'<span>＞</span>':'')+chip(T(lab[p]||SU_PNAME[p]||'食材'))).join('')}</div></div></div>`).join('');
   modal(`<button data-act="suordx" aria-label="關閉" style="position:sticky;top:0;align-self:flex-end;margin:-12px -12px -26px 0;z-index:2;width:38px;height:38px;border-radius:50%;border:3px solid #5a3420;background:#fcf8ee;color:#2a1608;font:900 18px/1 system-ui,sans-serif;cursor:pointer;padding:0">✕</button><h2>📋 ${T('壽司順序表')}</h2>${rows}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`);
 }
 const SU_TRAY={rawSRice:'rice',rawSNori:'nori',rawNTama:'tamago',rawNSal:'salmon',rawNTuna:'tuna',rawNIka:'ika',rawNTai:'tai',rawNEbi:'ebi',rawNIkura:'ikura',rawNUni:'uni',rawNNegi:'negitoro',rawNKappa:'cucumber'};
