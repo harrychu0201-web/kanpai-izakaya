@@ -1313,8 +1313,8 @@ function rmStHTML(name){
 /* ===== 海風壽司 (phase 1): 捲壽司台 + 壽司職人・健太郎 ===== */
 const SUKEYS=['tamagonigiri','salmonnigiri','tunanigiri','ikanigiri','tainigiri','ebinigiri','negitorogunkan','ikuragunkan','unigunkan','kappamaki','tekkamaki','salmonmaki','salmontemaki','tunatemaki','ikuratemaki'];
 const SU_STAFF={zh:'壽司職人・健太郎',lv:[
-  {cost:60000,wage:900,d:'能做：只接續你已經在壽司台上開始的壽司，幫你疊完（食材錢照付）。不會自己開新的一份，也不會送餐。你剛碰過的格子，他會讓開六秒。普通速度下大約每 1 秒動一次；店員認真度調高會更快，但不會多做新的。'},
-  {cost:110000,wage:1400,d:'能做：上一級的全部，加上把做好的壽司送給等待中的客人（先來的先送）。普通速度下大約每 0.5 秒動一次，送餐時剛碰過的壽司只讓開 2 秒。'},
+  {cost:60000,wage:900,d:'能做：只接續你已經在壽司台上開始的壽司，幫你疊完（食材錢照付）。不會自己開新的一份，也不會送餐。你剛碰過的格子，他會讓開六秒。普通速度下大約每 1 秒動一次；店員認真度調高會更快，讓開的時間也會縮短，但不會多做新的。'},
+  {cost:110000,wage:1400,d:'能做：上一級的全部，加上把做好的壽司送給等待中的客人（先來的先送）。普通速度下大約每 0.5 秒動一次，送餐時剛碰過的壽司只讓開 0.8 秒。'},
   {cost:180000,wage:2000,d:'能做：上一級的全部，動作最快，普通速度下大約每 0.35 秒動一次。'}]};
 const SU_MAKI5_COST=40000;
 function makiN(){const n=(ST&&ST.sushi&&ST.sushi.up&&ST.sushi.up.maki)?5:4;SU_LAND.maki.w=SU_PORT.maki.w=n===5?362:290;if(R&&R.maki)while(R.maki.length<n)R.maki.push(null);return n}
@@ -1503,9 +1503,9 @@ function suDemand(){const d={};for(const c of R.seats){if(!c||(c.st!=='wait'&&c.
   return d}
 function suStaffStep(dt){const l=suStaffLv();if(!l)return;const m=dilMul('sushistaff');if(!m)return;R.suT=(R.suT??1)-dt*m;if(R.suT<=0){R.suT=l>=3?.35:l>=2?.5:1;suAct(l)}}
 /* 玩家剛動過的壽司台格子，健太郎先讓開六秒，讓玩家自己接著做或端給客人，不會搶著幫忙 */
-function suIdle(g,s=6){return R.t-(g.at||0)>s}
+function suIdle(g,s=6){const m=dilMul('sushistaff')||1;return R.t-(g.at||0)>s/m}
 function suAct(l){
-  if(l>=2){const src=[];R.maki.forEach((g,i)=>{if(g&&g.kind!=='asm'&&suIdle(g,2)&&!(R.held&&R.held.src==='maki'&&R.held.i===i))src.push({src:'maki',i,key:g.kind})});
+  if(l>=2){const src=[];R.maki.forEach((g,i)=>{if(g&&g.kind!=='asm'&&suIdle(g,.8)&&!(R.held&&R.held.src==='maki'&&R.held.i===i))src.push({src:'maki',i,key:g.kind})});
     for(const c of waiting()){for(let j=0;j<c.order.length;j++){if(c.filled[j])continue;const h=src.find(x=>x.key===c.order[j]);if(h&&giveTo(c,j,h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}
       if(c.extra&&c.extra.ok&&!c.extra.done){const h=src.find(x=>x.key===c.extra.key);if(h&&giveTo(c,'x',h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}}}
   const d=suDemand(),ks=SUKEYS.filter(k=>(d[k]||0)>0&&has(k)).sort((a,b)=>earliestNeed(a)-earliestNeed(b)||d[b]-d[a]);
