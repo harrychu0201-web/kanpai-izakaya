@@ -2275,6 +2275,7 @@ function useProp(k){if(!R||R.over||R.settled||!PROPS[k])return;const r=loadRec()
   r.inv[k]--;saveRec(r);toast(T('使用了 {0}',PROPS[k].n));showRewards()}
 function buyProp(k){const p=PROPS[k];if(!p||R)return;const s=load();if(!s)return;if((s.coins||0)<p.p){toast(T('金幣不夠'));return}arcWallet(-p.p);invAdd({[k]:1});toast(T('買到 {0}',p.n));showRewards()}
 function curCard(){return document.querySelector('#homeModal .card')||document.querySelector('#modalLayer .card')}
+let RWBAG=false; /* 營業中從背包按鈕開的，只顯示道具 */
 function showRewards(){const c0=curCard(),top=c0?c0.scrollTop:0;renderRewards();const c=curCard();if(c&&top)c.scrollTop=top;syncRewardDot();syncHomeCoins()}
 function syncRewardDot(){const b=document.querySelector('.plq[data-act="rwfr"]');if(!b)return;const on=rewardDue(),d=b.querySelector('.rdot');if(on&&!d)b.insertAdjacentHTML('afterbegin','<i class="rdot" style="top:-6px;right:-6px"></i>');else if(!on&&d)d.remove()}
 function syncHomeCoins(){const sm=document.querySelector('.plq[data-act="cont"] small'),s=load();if(!sm||!s)return;sm.textContent=sm.textContent.replace(/¥[\d,]+\s*$/,yen(s.coins||0))}
@@ -2292,13 +2293,17 @@ function renderRewards(){const inR=!!R&&!R.over&&!R.settled,r=loadRec(),inv=r.in
   const row=(ic,title,desc,btn)=>`<div style="display:grid;grid-template-columns:38px 1fr auto;gap:8px;align-items:center;background:#fffaf0;border:2px solid var(--soot);border-radius:10px;padding:6px 8px;margin-bottom:6px"><span style="font-size:24px;text-align:center">${ic}</span><span style="font-size:14px;line-height:1.4"><b>${title}</b><br>${desc}</span><span>${btn||''}</span></div>`;
   const ciWeek=checkinWeekHTML(r);
   const achHTML=ACHS.map(a=>{const got=!!(r.ach&&r.ach[a.id]),ok=a.c(r);return row(got?'✅':ok?'🎉':'🔒',T(a.n),T('獎勵：{0}',rwText(a.rw)),got?`<span style="font-size:13px">${T('已領取')}</span>`:`<button class="btn" data-act="achclaim" data-id="${a.id}" ${ok?'':'disabled'}>${T('領取')}</button>`)}).join('');
-  const propHTML=Object.keys(PROPS).map(k=>{const p=PROPS[k],n=inv[k]||0,used=k==='nb'&&inR&&R.fxNb;const btn=inR?`<button class="btn" data-act="useprop" data-id="${k}" ${n>0&&!used?'':'disabled'}>${T('使用')}</button>`:'';return row(p.ic,T(p.n)+' ×'+n,T(p.d),btn)}).join('');
-  const shopHTML=(!R&&s)?Object.keys(PROPS).map(k=>{const p=PROPS[k];return row(PROPS[k].ic,T(p.n),T(p.d),`<button class="btn ${coins<p.p?'poor':''}" data-act="buyprop" data-id="${k}" ${coins<p.p?'disabled':''}>${yen(p.p)}</button>`)}).join(''):'';
+  /* 每行：名稱 ×持有數（延長營業另標 已用/3）＋描述；營業中=使用（用完顯示價格），非營業且有存檔=購買 */
+  const propHTML=Object.keys(PROPS).map(k=>{const p=PROPS[k],n=inv[k]||0,used=k==='nb'&&inR&&R.fxNb,ext=k==='ext'&&inR?` <small style="font-size:12px;color:#7a5">(${R.extH||0}/3)</small>`:'';
+    let btn='';
+    if(inR)btn=`<button class="btn" data-act="useprop" data-id="${k}" ${n>0&&!used?'':'disabled'}>${T('使用')}</button>`+(n>0?'':`<div style="font-size:12px;margin-top:2px">${yen(p.p)}</div>`);
+    else if(!R&&s)btn=`<button class="btn ${coins<p.p?'poor':''}" data-act="buyprop" data-id="${k}" ${coins<p.p?'disabled':''}>${yen(p.p)}</button>`;
+    return row(p.ic,`${T(p.n)} ×${n}${ext}`,T(p.d),btn)}).join('');
+  if(RWBAG&&inR){modal(`<h2>${T('🎒 背包')}</h2><p class="hint">${T('營業中可使用')}</p>${propHTML}<div class="btns"><button class="btn" data-act="resume">${T('繼續營業')}</button></div>`);return}
   modal(`<h2>${T('🎁 獎勵中心')}</h2>
   <h3 style="margin:8px 0 4px">${T('📅 每日簽到')}</h3><p style="font-size:13px;margin:0 0 6px">${T('連續簽到 {0} 天。連續 7 天會有額外獎勵。只能簽當天，已簽到會顯示 ✅。',streak)}</p>${ciWeek}
   <h3 style="margin:8px 0 4px">${T('🏆 成就')}</h3>${achHTML}
-  <h3 style="margin:8px 0 4px">${T('🎒 持有道具')}${inR?'':' · '+T('營業中可使用')}</h3>${propHTML}
-  ${shopHTML?`<h3 style="margin:8px 0 4px">${T('🛒 道具商店（用金幣購買）')} · ${T('餘額 {0}',yen(coins))}</h3>${shopHTML}`:''}
+  <h3 style="margin:8px 0 4px">${T('🎒 道具')}${inR?' · '+T('營業中可使用'):(!R&&s?' · '+T('用金幣購買')+'（'+T('餘額 {0}',yen(coins))+'）':'')}</h3>${propHTML}
   <div class="btns">${inR?`<button class="btn" data-act="resume">${T('繼續營業')}</button>`:`<button class="btn" data-act="closem">${T('返回')}</button>`}</div>`)}
 
 function charge(n,x,y){if(!n)return;R.cost+=n;const d=document.createElement('div');d.className='pop cost';d.style.left=x+'px';d.style.top=y+'px';d.textContent='-'+yen(n);$('fx').appendChild(d);setTimeout(()=>d.remove(),1000)}
@@ -3074,7 +3079,7 @@ function advance(){if(ST.pendingNext){ST.day++;ST.pendingNext=false;save();cloud
 
 /* pause button: the HUD re-renders several times a second (clock, wallet), which can swap the button out between pointerdown and click and lose the tap; so pause on pointerdown and ignore the matching click */
 let HUDDOWN={act:null,t:-1e9};/* 背包 and 🏦 sit in the HUD too, which re-renders constantly, so act on pointerdown and ignore the matching click (same trick as pause) */
-document.getElementById('hud').addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('[data-act="rewards"],[data-act="bank"]');if(!b||e.button>0||!R||R.over||R.settled)return;HUDDOWN={act:b.dataset.act,t:performance.now()};if(b.dataset.act==='rewards'){R.paused=true;showRewards()}else bankWin()});
+document.getElementById('hud').addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('[data-act="rewards"],[data-act="bank"]');if(!b||e.button>0||!R||R.over||R.settled)return;HUDDOWN={act:b.dataset.act,t:performance.now()};if(b.dataset.act==='rewards'){R.paused=true;RWBAG=true;showRewards()}else bankWin()});
 let PAUSEDOWN=-1e9;document.getElementById('hud').addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('[data-act="pause"]');if(!b||e.button>0||!R||R.paused||R.over)return;PAUSEDOWN=performance.now();pause()});
 document.addEventListener('click',e=>{
   const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;if(act==='pause'&&performance.now()-PAUSEDOWN<800)return;if(HUDDOWN.act===act&&performance.now()-HUDDOWN.t<800)return;if(ARC.busy&&/^(cont|newgame|asknew|homeshop|arcade|arcslot|arcpin|gacha)$/.test(act))return;
@@ -3246,7 +3251,7 @@ document.addEventListener('click',e=>{
   else if(act==='sushishop')sushiHome();
   else if(act==='sumaki'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi&&!suUp('maki',0)&&ST.coins>=SU_MAKI5_COST){keepScroll();ST.coins-=SU_MAKI5_COST;ST.sushi.up.maki=1;save()}if(home)ST=null;else renderHUD();sushiHome()}
   else if(act==='suhire'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi){const l=suStaffLv(),nx=SU_STAFF.lv[l];if(nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.sushi.up.staff=l+1;save()}}if(home)ST=null;else renderHUD();sushiHome()}
-  else if(act==='rewards'){if(R&&!R.over&&!R.settled)R.paused=true;showRewards()}
+  else if(act==='rewards'){const inG=!!R&&!R.over&&!R.settled;if(inG)R.paused=true;RWBAG=inG;showRewards()}
   else if(act==='checkin')claimCheckin();
   else if(act==='achclaim')claimAch(a.dataset.id);
   else if(act==='useprop')useProp(a.dataset.id);
