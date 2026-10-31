@@ -91,6 +91,7 @@
       ".indexOn": [
         "best",
         "earned",
+        "name",
         "own",
         "days"
       ,
@@ -122,6 +123,47 @@
         },
         "$other": {
           ".validate": false
+        }
+      }
+    },
+    "grants": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$id": {
+          ".write": "auth != null && ((auth.uid === $uid && !newData.exists()) || (auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))",
+          ".validate": "newData.hasChildren(['t', 'items'])",
+          "t": {
+            ".validate": "newData.isNumber()"
+          },
+          "by": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "why": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "items": {
+            "nb": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 20"
+            },
+            "pt": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 20"
+            },
+            "ext": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 20"
+            },
+            "fast": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 20"
+            },
+            "tip": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 20"
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
         }
       }
     },

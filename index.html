@@ -3860,6 +3860,10 @@ async function cloudInit(){
       // friends: a public shop snapshot (lbx), friend codes, friend lists, daily gifts
       putLbx:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lbx/'+uid),d)),
       lbxMany:ids=>rt((rd,r)=>Promise.all(ids.map(k=>rd.get(rd.ref(r,'lbx/'+k)).then(s=>[k,s.val()]))).then(a=>{const o={};a.forEach(([k,v])=>{o[k]=v});return o})),
+      lbFindName:nick=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'lb'),rd.orderByChild('name'),rd.equalTo(nick),rd.limitToFirst(5))).then(s=>{const a=[];s.forEach(c=>{a.push({uid:c.key,name:(c.val()||{}).name})});return a})),
+      grantAdd:(uid,items,why)=>rt((rd,r)=>rd.push(rd.ref(r,'grants/'+uid),{t:rd.serverTimestamp(),by:'author',why:why||'',items})),
+      grantsGet:uid=>rt((rd,r)=>rd.get(rd.ref(r,'grants/'+uid)).then(s=>s.val()||{})),
+      grantDel:(uid,id)=>rt((rd,r)=>rd.remove(rd.ref(r,'grants/'+uid+'/'+id))),
       regCode:(uid,code)=>rt((rd,r)=>rd.set(rd.ref(r,'fcode/'+code),uid)),
       findCode:code=>rt((rd,r)=>rd.get(rd.ref(r,'fcode/'+code)).then(s=>s.val())),
       frList:uid=>rt((rd,r)=>rd.get(rd.ref(r,'friends/'+uid)).then(s=>s.val()||{})),
@@ -3936,9 +3940,14 @@ async function cloudLogin(){if(!CL.api)return;try{if(await CL.api.signIn()==='cl
 // Workaround: add that account to the browser first, then it shows up in the account list and can be picked directly.
 function loginHelp(){if(!HOME)return;modal(`<h2>${T('登入視窗關掉了')}</h2><p>${T('如果你剛剛是按「使用其他帳戶」，Chrome 會把登入視窗切斷。')}</p><p>${T('先按「新增 Google 帳號」，在新分頁登入你要用的帳號，登好後回到遊戲再按一次登入，那個帳號就會直接出現在清單裡，點它就好。')}</p><div class="btns"><button class="btn" data-act="addacct">${T('新增 Google 帳號')}</button><button class="btn" data-act="login">${T('再試一次')}</button><button class="btn" data-act="closem">${T('知道了')}</button></div>`)}
 function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){CL.isPoster=false;if(CL.api)CL.api.isPoster(u.uid).then(v=>{CL.isPoster=v===true}).catch(()=>{});CL.isStaff=false;if(CL.api)CL.api.isStaff(u.uid).then(v=>{CL.isStaff=v===true}).catch(()=>{});cloudSync();setTimeout(()=>replyCheck(0),2500)}if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
+async function claimGrants(){const u=CL.user;if(!u||TEST||RP.on||!CL.api||!CL.api.grantsGet)return;
+  let g={};try{g=await CL.api.grantsGet(u.uid)||{}}catch(e){console.warn('grants',e);return}
+  for(const id of Object.keys(g)){const x=g[id]||{},items={};Object.keys(x.items||{}).forEach(k=>{const n=Math.floor(+x.items[k]);if(PROPS[k]&&n>0)items[k]=Math.min(20,n)});
+    if(Object.keys(items).length){const r=loadRec();r.inv=r.inv||{};for(const k in items)r.inv[k]=(r.inv[k]||0)+items[k];saveRec(r);toast(T('收到補發：{0}',rwText(items)))}
+    try{await CL.api.grantDel(u.uid,id)}catch(e){console.warn('grant del',e)}}}
 async function cloudSync(){
   const u=CL.user;if(!u||TEST)return;
-  try{const c=await CL.api.get(u.uid);if(CL.user!==u)return;CL.synced=true;
+  try{const c=await CL.api.get(u.uid);if(CL.user!==u)return;CL.synced=true;await claimGrants();
     const lg=lsGet(KEY),lr=lsGet(RKEY),cg=c?c.game||null:null,cr=c?c.rec||null:null;
     const rec=(lr||cr)?mergeRec(cr,lr):null;if(rec!==lr)lsSet(RKEY,rec);
     // a newer timestamp alone must never overwrite the cloud: a fresh device (day 1, saved a moment ago) is always "newer" than the phone's last upload
@@ -4507,6 +4516,7 @@ function tstPanel(){
   <div class="tstr"><b>拉麵店</b>${o&&o.rm?`<button class="btn alt" disabled>屋台已開張</button>`:`<button class="btn" data-act="tstrm">買店面＋開屋台</button>`}${o&&o.rm&&!o.rm.k2?`<button class="btn" data-act="tstk2">擴建二號廚房</button>`:''}<span style="font-size:13px">${!o?'':o.rm?(o.rm.k2?'屋台＋二號廚房都有了':'已有屋台，還沒擴建'):o.owned?'已買店面，還沒開屋台':'還沒買店面'}・不扣錢</span></div>
   <div class="tstr"><b>屋台炸物</b><button class="btn alt" data-act="tstfried">賣出 +50</button><span style="font-size:13px">${o&&o.rm?`目前 ${o.rm.fried||0} 份`:'還沒開屋台'}</span></div>
     <div class="tstr"><b>海風壽司開發</b>${isAdmin()?`<button class="btn ${sushiDev()?'':'alt'}" data-act="tstsushi">${sushiDev()?'顯示中（點了隱藏）':'已隱藏（點了顯示）'}</button>`:''}</div>
+    ${isAdmin()?`<div class="tstr"><b>補發道具</b><button class="btn" data-act="tstgrant">補發給玩家</button></div>`:''}
     <div class="tstr"><b>營業速度</b>${[1,2,4].map(n=>`<button class="btn ${TSPD===n?'':'alt'}" data-act="tstspd" data-id="${n}">${n}x</button>`).join('')}</div>
   </div><div class="btns">${TEST?`<button class="btn alt" data-act="tstreset">清空測試存檔</button><button class="btn alt" data-act="tstoff">離開測試模式</button>`:`<button class="btn alt" data-act="tstcopy">另開獨立測試存檔</button>`}<button class="btn" data-act="closem">關閉</button></div>`)}
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act^="tst"]');if(!a)return;const act=a.dataset.act;
@@ -4524,9 +4534,26 @@ document.addEventListener('click',e=>{const a=e.target.closest('[data-act^="tst"
   else if(act==='tstrm')tstEdit(o=>{o.owned=true;if(!o.rm)o.rm={up:{},dec:{},seen:false};o.where='rm'});
   else if(act==='tstk2')tstEdit(o=>{if(!o.rm||o.rm.k2)return;o.rm.k2=1;o.menu=o.menu||{};o.menu.koro=true;o.fresh=(o.fresh||[]).concat('koro')});
   else if(act==='tstfried')tstEdit(o=>{if(o.rm)o.rm.fried=(o.rm.fried||0)+50});
+  else if(act==='tstgrant')grantPanel();
+  else if(act==='tstgrantgo')grantSend();
   else if(act==='tstreset'){if(!TEST)return;lsSet(TKEY,null);lsSet(TRKEY,null);const r=loadRec();r.tut=true;saveRec(r);showHome();tstPanel()}
 });
 
+function grantPanel(){if(!isAdmin())return;
+  modal(`<h2>補發道具</h2><p>用玩家的暱稱找人（對方要至少開過一次排行榜才有暱稱）。補發會在對方下次登入時自動入帳。</p>
+  <div class="tstr"><b>暱稱</b><input id="gnick" placeholder="玩家暱稱" maxlength="24"></div>
+  <div class="tstr"><b>道具</b><select id="gitem">${Object.keys(PROPS).map(k=>`<option value="${k}">${PROPS[k].ic}${PROPS[k].n}</option>`).join('')}</select><input id="gnum" type="number" min="1" max="20" value="1" style="width:70px"></div>
+  <div class="tstr"><b>原因</b><input id="gwhy" placeholder="例：屋台 bug 補償" maxlength="60"></div>
+  <div class="btns"><button class="btn" data-act="tstgrantgo">送出補發</button><button class="btn alt" data-act="closem">關閉</button></div>`)}
+async function grantSend(){if(!isAdmin())return;
+  const nick=($('gnick').value||'').trim(),k=$('gitem').value,n=Math.max(1,Math.min(20,parseInt($('gnum').value)||1)),why=($('gwhy').value||'').trim().slice(0,60);
+  if(!nick){toast('請輸入暱稱');return}
+  if(!CL.api||!CL.api.lbFindName){toast('雲端還沒連上');return}
+  let hits=[];try{hits=await CL.api.lbFindName(nick)}catch(e){toast('查詢失敗：'+(e.message||e));return}
+  if(!hits.length){toast('找不到這個暱稱');return}
+  if(hits.length>1){toast('同名的玩家有 '+hits.length+' 位，無法確定是哪一位');return}
+  const h=hits[0];if(!confirm(`補發 ${PROPS[k].n} ×${n} 給「${h.name}」？`))return;
+  try{await CL.api.grantAdd(h.uid,{[k]:n},why);toast(`已送出補發：${h.name} ${PROPS[k].n} ×${n}`);closeModal()}catch(e){toast('送出失敗：'+(e.message||e))}}
 function showAcct(){const u=CL.user;if(!u)return;
   const st=CL.status==='err'?T('同步失敗，稍後會再試'):CL.status==='sync'?T('同步中…'):T('已同步');
   modal(`<h2>${T('帳號')}</h2><div class="acctcard">${u.photo?`<img src="${esc(u.photo)}" alt="" referrerpolicy="no-referrer">`:''}<div><b>${esc(u.name)}</b><p style="font-size:14px;margin:2px 0 0">${st}</p></div></div>
