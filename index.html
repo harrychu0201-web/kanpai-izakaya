@@ -1463,11 +1463,16 @@ const SU_REC={tamagonigiri:['rice','tamago'],salmonnigiri:['rice','salmon'],tuna
   kappamaki:['nori','rice','cucumber'],tekkamaki:['nori','rice','tuna'],salmonmaki:['nori','rice','salmon'],
   salmontemaki:['rice','salmon','nori'],tunatemaki:['rice','tuna','nori'],ikuratemaki:['rice','ikura','nori']};
 /* 順序表：從 SU_REC 直接產生，和實際判定用的是同一份，不會跟遊戲對不上 */
+let SUORDPAUSE=false;
+function suOrdHTML(){return `<button class="ordst" data-act="suorder" aria-label="壽司順序提示" style="position:absolute;inset:0;width:100%;height:100%;padding:2px 4px;border:3px solid #5a3420;border-radius:10px;background:#1a0e08;color:#f3dfb4;font:900 13px/1.15 system-ui,-apple-system,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 3px 0 #0006"><span style="font-size:18px;line-height:1">📋</span><span>${T('順序提示')}</span></button>`}
+/* 開順序表會暫停營業，關掉（✕ 或關閉）才繼續；如果原本就是暫停中的，就不動它 */
+function suOrderClose(){closeModal();if(SUORDPAUSE&&R&&!R.over){R.paused=!!TUT;last=performance.now()}SUORDPAUSE=false}
 function suOrderModal(){
+  if(R&&!R.over&&!R.paused){R.paused=true;SUORDPAUSE=true}
   const grp=[['握壽司',['tamagonigiri','salmonnigiri','tunanigiri','ikanigiri','tainigiri','ebinigiri']],['軍艦',['negitorogunkan','ikuragunkan','unigunkan']],['壽司捲',['kappamaki','tekkamaki','salmonmaki']],['海苔手卷',['salmontemaki','tunatemaki','ikuratemaki']]];
   const lab={rice:'飯',nori:'海苔'},chip=t=>`<span style="display:inline-block;padding:3px 10px;border:2px solid #5a3420;border-radius:8px;background:#fcf8ee;color:#2a1608;font-weight:700">${t}</span>`;
   const rows=grp.map(([t,ks])=>`<div style="margin:12px 0"><b style="display:block;margin-bottom:2px">${T(t)}</b>${ks.map(k=>`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 6px 4px"><span style="min-width:5.5em;font-size:14px">${T(ITEMS[k].zh)}</span>${SU_REC[k].map((p,i)=>(i?'<span>＞</span>':'')+chip(T(lab[p]||SU_PNAME[p]||'食材'))).join('')}</div>`).join('')}</div>`).join('');
-  modal(`<h2>📋 ${T('壽司順序表')}</h2><p class="hint">${T('從左到右依序疊上壽司台，先放的在下面。')}</p>${rows}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`);
+  modal(`<button data-act="suordx" aria-label="關閉" style="position:sticky;top:0;align-self:flex-end;margin:-12px -12px -26px 0;z-index:2;width:38px;height:38px;border-radius:50%;border:3px solid #5a3420;background:#fcf8ee;color:#2a1608;font:900 18px/1 system-ui,sans-serif;cursor:pointer;padding:0">✕</button><h2>📋 ${T('壽司順序表')}</h2><p class="hint">${T('從左到右依序疊上壽司台，先放的在下面。')}</p>${rows}<div class="btns"><button class="btn" data-act="suordx">${T('關閉')}</button></div>`);
 }
 const SU_TRAY={rawSRice:'rice',rawSNori:'nori',rawNTama:'tamago',rawNSal:'salmon',rawNTuna:'tuna',rawNIka:'ika',rawNTai:'tai',rawNEbi:'ebi',rawNIkura:'ikura',rawNUni:'uni',rawNNegi:'negitoro',rawNKappa:'cucumber'};
 const SU_PNAME={rice:'壽司飯',nori:'海苔',tamago:'玉子',salmon:'鮭魚',tuna:'鮪魚',ika:'烏賊',tai:'鯛魚',ebi:'甜蝦',ikura:'鮭魚卵',uni:'海膽',negitoro:'蔥鮪泥',cucumber:'小黃瓜'};
@@ -1905,6 +1910,8 @@ function buildStations(){
       if(x-gw-gap<left){x=left+gw+gap;const lim=(L.pgbtn&&page2On()?L.pgbtn.x:W)-8;if(x+ww*k>lim){sw=Math.max(24,Math.floor(((lim-x)/k-8)/wn));ww=wn*sw+8}}
       L.gunT={x:x-gw-gap,y:L.warmT.y,w:GUNW,h:54,k}}
     L.warmT=Object.assign({},L.warmT,{w:ww,x})}
+  /* 海風壽司：順序提示做成檯面上的按鈕，放在槍的左邊（沒有槍時，也留出槍的位置再往左放），手指比較好按 */
+  delete L.suord;if(CUR==='sushi'){const sk=L.warmT.k||1,ow=84,bx=(L.gunT?L.gunT.x:L.warmT.x-GUNW*sk-64)-ow-8;if(bx>=8)L.suord={x:bx,y:L.warmT.y,w:ow,h:54,k:sk}}
   const host=$('stations');host.innerHTML='';cache.clear();
   for(const k in L){const r=L[k],el=document.createElement('div');el.className=k==='pgbtn'?'pgbtn':'st'+(['grill','fryer','ing','warmT','tap','board','teppan','tempura','deco2','rmpan','maki','mpot','bowls','rmtop','rfry','tyaki','tako','tama','onig'].includes(k)?' host':'');el.id='st-'+k;if(k!=='pgbtn')el.dataset.st=k;
     Object.assign(el.style,{left:r.x+'px',top:r.y+'px',width:r.w+'px',height:r.h+'px'});el.style.setProperty('--k',r.k||1);
@@ -1917,7 +1924,7 @@ function setHTML(el,h){if(cache.get(el)!==h){el.innerHTML=h;cache.set(el,h)}}
 function renderStations(){
   for(const k in L){const el=$('st-'+k);if(!el)continue;
     if(el.hidden&&k!=='pgbtn')continue;
-    setHTML(el,k==='gunT'?gunStandHTML():k==='grill'?grillHTML():k==='fryer'?fryerHTML():k==='warmT'?warmHTML():k==='teppan'?teppanHTML():k==='tempura'?tempuraHTML():k==='maki'?makiHTML():k==='rmpan'?rmpanHTML():k==='rfry'?rfryHTML():k==='tyaki'?tyakiHTML():k==='tako'?takoHTML():k==='tama'?stepHTML('tama'):k==='onig'?stepHTML('onig'):k==='mpot'?mpotHTML():k==='pgbtn'?pgHTML():stHTML(k));
+    setHTML(el,k==='gunT'?gunStandHTML():k==='grill'?grillHTML():k==='fryer'?fryerHTML():k==='warmT'?warmHTML():k==='teppan'?teppanHTML():k==='tempura'?tempuraHTML():k==='maki'?makiHTML():k==='rmpan'?rmpanHTML():k==='rfry'?rfryHTML():k==='tyaki'?tyakiHTML():k==='tako'?takoHTML():k==='tama'?stepHTML('tama'):k==='onig'?stepHTML('onig'):k==='mpot'?mpotHTML():k==='pgbtn'?pgHTML():k==='suord'?suOrdHTML():stHTML(k));
     el.classList.toggle('held',!!R.held&&R.held.src===k&&R.held.i==null);
     if(k==='gunT')el.classList.toggle('alert',gunAlert());}
   document.querySelectorAll('[data-grill]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='grill'&&R.held.i==+e.dataset.grill));
@@ -2579,7 +2586,7 @@ function renderHUD(){document.body.classList.toggle('playing',!!R);
     <div class="pill clock"><b>${clockStr()}</b>${PERIOD(hourNow())}</div>${R.ev&&R.ev.ev?`<div class="pill ev" title="${esc(evDesc(R.ev))}">${evLabel(R.ev)}</div>`:''}`:'<div style="flex:1"></div>'}
     ${CUR==='sushi'?(suStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${T('健太郎')}${'★'.repeat(suStaffLv()-1)}</b></div>`:''):CUR==='rm'?(rmStaffLv()||rmStaff2Lv()||rmFryStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[rmStaffLv()?T('小葵')+'★'.repeat(rmStaffLv()-1):'',rmStaff2Lv()?T('山田')+'★'.repeat(rmStaff2Lv()-1):'',rmFryStaffLv()?T('大輔')+'★'.repeat(rmFryStaffLv()-1):''].filter(Boolean).join('・')}</b></div>`:''):ST.up.waiter||ST.up.helper||ST.up.chef?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[ST.up.waiter?T('小美')+(staffLv('waiter')>1?'★'.repeat(staffLv('waiter')-1):''):'',ST.up.helper?T('阿健')+(staffLv('helper')>1?'★'.repeat(staffLv('helper')-1):''):'',ST.up.chef?T('阿強')+(staffLv('chef')>1?'★'.repeat(staffLv('chef')-1):''):''].filter(Boolean).join('・')}</b></div>`:''}
     ${(()=>{const w=R?live():ST.coins;return `<div class="pill ${w<0?'neg':''}">${T('錢包')} <b>${w<0?'−':''}¥${Math.abs(Math.round(w)).toLocaleString('en-US')}</b></div>`})()}${ST.debt?`<div class="pill staff">${T('借款')} <b>${yen(ST.debt)}</b></div>`:''}
-    ${R&&!R.over&&!R.settled&&!DEMO?'<button class="icon-btn bagbtn" data-act="rewards" aria-label="背包">'+T('背包')+'</button>':''}${R&&!R.over&&CUR==='sushi'?'<button class="icon-btn bagbtn" data-act="suorder" aria-label="壽司順序提示">'+T('順序提示')+'</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}"><span class="ico">${sndIcon()}</span></button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>`:''}`);
+    ${R&&!R.over&&!R.settled&&!DEMO?'<button class="icon-btn bagbtn" data-act="rewards" aria-label="背包">'+T('背包')+'</button>':''}${R&&!R.over&&CUR==='sushi'&&!(L&&L.suord)?'<button class="icon-btn bagbtn" data-act="suorder" aria-label="壽司順序提示">📋 '+T('順序提示')+'</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}"><span class="ico">${sndIcon()}</span></button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>`:''}`);
 }
 
 /* ---- modals ---- */
@@ -3321,6 +3328,7 @@ document.addEventListener('click',e=>{
   else if(act==='pause'&&R)pause();
   else if(act==='sushihome')sushiHome();
   else if(act==='suorder')suOrderModal();
+  else if(act==='suordx')suOrderClose();
   else if(act==='sugopen')startSushiLesson(!!(ST&&!R&&!HOME));
   else if(act==='susopen'){closeHome();ST=load();if(!ST||!ST.sushi){ST=null;showHome();return}ST.where='sushi';setCur('sushi');save();advance()}
   else if(act==='susbuy'){const k=a.dataset.id;const home=!ST;if(home)ST=load();if(ST&&ITEMS[k]&&ITEMS[k].shop==='sushi'&&!has(k)&&ST.coins>=ITEMS[k].buy){keepScroll();ST.coins-=ITEMS[k].buy;ST.menu=ST.menu||{};ST.menu[k]=1;save()}if(home)ST=null;else renderHUD();sushiHome()}
@@ -3624,7 +3632,7 @@ function autoWarm(h){
   if(j<0){toast('保溫台滿了');return}
   R.warm[j]={key:R.held.key};consume(R.held);sfx('warm');R.held=null;toast('放進保溫台了');renderStations();
 }
-$('game').addEventListener('pointerdown',e=>{if(e.button>0)return;if(e.target.closest('.modal'))return;if(R&&!R.paused&&!R.over&&ST.weapon&&e.target.closest('#st-gunT')){toggleGun();return}if(R&&R.aim&&!R.paused&&!R.over){shoot(e);return}
+$('game').addEventListener('pointerdown',e=>{if(e.button>0)return;if(e.target.closest('.modal')||e.target.closest('#st-suord'))return;if(R&&!R.paused&&!R.over&&ST.weapon&&e.target.closest('#st-gunT')){toggleGun();return}if(R&&R.aim&&!R.paused&&!R.over){shoot(e);return}
   const h=srcOfEl(e.target),key=h?h.src+h.i:'',now=performance.now(),dbl=key&&lastTap.k===key&&now-lastTap.t<380;
   if(dbl&&R&&R.held&&R.held.src===h.src&&R.held.i===h.i&&heldValid()){lastTap={k:'',t:0};autoWarm(h);return} // only a real 'send to warmer' double-tap eats the tap; otherwise fast tappers lost every second tap on the same grill/board/bowl spot
   onTap(e);lastTap={k:key,t:now};});
