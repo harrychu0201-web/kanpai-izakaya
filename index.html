@@ -1062,15 +1062,17 @@ function custSVG(look,mood){
 /* ================= background ================= */
 function sushiLantern(cx,y0,ty){
   const ink='#2a1a10';
+  const k=.6;
   let g=`<path d="M${cx} ${y0}V${ty}" stroke="#5a3a24" stroke-width="3" stroke-linecap="round"/><path d="M${cx-1} ${y0}V${ty}" stroke="#8a5a34" stroke-width="1" opacity=".6"/>`;
+  g+=`<g transform="translate(${cx} ${ty}) scale(${k}) translate(${-cx} ${-ty})">`;
   g+=`<ellipse cx="${cx}" cy="${ty+40}" rx="48" ry="54" fill="#ffb070" opacity=".16"/>`;
   g+=`<rect x="${cx-20}" y="${ty-4}" width="40" height="8" rx="3" fill="${ink}"/>`;
   g+=`<path d="M${cx-20} ${ty+4}Q${cx-37} ${ty+40} ${cx-20} ${ty+76}H${cx+20}Q${cx+37} ${ty+40} ${cx+20} ${ty+4}Z" fill="url(#sllan)" stroke="${O}" stroke-width="2.5"/>`;
   for(const d of [-12,0,12]) g+=`<path d="M${cx+d} ${ty+6}Q${cx+d*1.9} ${ty+40} ${cx+d} ${ty+74}" fill="none" stroke="#6e150f" stroke-width="1.6" opacity=".5"/>`;
   g+=`<path d="M${cx-26} ${ty+18}Q${cx-31} ${ty+40} ${cx-25} ${ty+62}" fill="none" stroke="#ffd2b8" stroke-width="3.5" stroke-linecap="round" opacity=".55"/>`;
-  g+=`<text x="${cx}" y="${ty+50}" text-anchor="middle" font-family="Noto Sans TC,Zen Maru Gothic,sans-serif" font-weight="900" font-size="24" fill="#fbf3e0" stroke="#6e150f" stroke-width="2" paint-order="stroke">海</text>`;
   g+=`<rect x="${cx-20}" y="${ty+74}" width="40" height="8" rx="3" fill="${ink}"/>`;
   [-14,-7,0,7,14].forEach((d,i)=>{const L=i%2?16:22;g+=`<path d="M${cx+d} ${ty+82}v${L}" stroke="${i%2?'#e8b04a':'#fbf3e0'}" stroke-width="3" stroke-linecap="round"/><circle cx="${cx+d}" cy="${ty+83+L}" r="2.5" fill="#e8b04a" stroke="${O}" stroke-width="1"/>`});
+  g+=`</g>`;
   return g;
 }
 function drawSushiBg(){
@@ -1085,7 +1087,7 @@ function drawSushiBg(){
   for(const bx of [W*.05,W*.95]){s+=`<rect x="${bx-30}" y="${shelfY-70}" width="60" height="10" rx="2" fill="#9e6a38" stroke="${O}" stroke-width="3"/>`;for(let i=0;i<3;i++){const x=bx-24+i*22;s+=`<rect x="${x}" y="${shelfY-112}" width="14" height="42" rx="5" fill="${i%2?'#3f6b3a':'#6a3a1f'}" stroke="${O}" stroke-width="2.5"/>`}}
   s+=`<rect x="${W*.1}" y="${shelfY}" width="${W*.8}" height="12" rx="3" fill="url(#ssshelf)" stroke="${O}" stroke-width="3"/>`;
   if(sdec('sflags'))for(const fx of [W*.035,W*.965-22]){const fy=24+TY;s+=`<rect x="${fx+9}" y="${fy}" width="4" height="${Math.min(KY*.5,200)}" fill="#5a3a24"/><path d="M${fx} ${fy}h22v120l-11-12l-11 12z" fill="#a3261c" stroke="${O}" stroke-width="2.5"/><path d="M${fx+4} ${fy+40}h14" stroke="#fbf3e0" stroke-width="4"/>`}
-  if(sdec('slantern'))for(const lx of [W*.16,W*.84])s+=sushiLantern(lx,27+TY,27+TY+56);
+  if(sdec('slantern'))for(const lx of [W*.16,W*.84])s+=sushiLantern(lx,27+TY,27+TY+18);
   if(sdec('stable'))s+=`<rect x="${W*.5-50}" y="${KY-112}" width="100" height="12" rx="3" fill="#b67d47" stroke="${O}" stroke-width="3"/><path d="M${W*.5-38} ${KY-100}v48M${W*.5+38} ${KY-100}v48" stroke="${O}" stroke-width="5" stroke-linecap="round"/><circle cx="${W*.5+20}" cy="${KY-118}" r="5" fill="#fdfbf4" stroke="${O}" stroke-width="2"/>`;
   if(sdec('schairs'))for(const cx of [W*.24,W*.76])s+=`<rect x="${cx-24}" y="${KY-122}" width="48" height="10" rx="3" fill="#9e6a38" stroke="${O}" stroke-width="2.5"/><path d="M${cx-17} ${KY-112}l-5 60M${cx+17} ${KY-112}l5 60" stroke="${O}" stroke-width="4" stroke-linecap="round"/>`;
   s+=`<rect x="0" y="${KY-70}" width="${W}" height="6" fill="#8a5a34"/>`;
