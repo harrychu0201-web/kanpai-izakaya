@@ -2171,6 +2171,8 @@ function rmServe(){
   const src=[];
   R.bowls.forEach((b,i)=>{if(i<bowlsN()&&bowlDone(i)&&!(R.held&&R.held.src==='bowl'&&R.held.i===i))src.push({src:'bowl',i,key:bowlKey(i)})});
   R.warm.forEach((w,i)=>{if(w&&!(R.held&&R.held.src==='warm'&&R.held.i===i))src.push({src:'warm',i,key:w.key})});
+  /* 煎台／炸籃上已經煮好的菜也能直接上菜（不用等山田移到保溫台，避免先煮好的菜卡住） */
+  for(const pn of ['rmpan','rfry'])R[pn].forEach((g,i)=>{if(g&&cookState(g.t,g.kind)==='done'&&!(R.held&&R.held.src===pn&&R.held.i===i))src.push({src:pn,i,key:g.kind})});
   R.taps.slice(0,tapsN()).forEach((t,i)=>{if(t.st==='full'&&!(R.held&&R.held.src==='tap'&&R.held.i===i))src.push({src:'tap',i,key:'beer'})});
   if(R.oden.n>0)src.push({src:'oden',key:'oden'});
   if(unlocked(ST.day,'rm').includes('lsour'))src.push({src:'lsour',key:'lsour',inf:1});
