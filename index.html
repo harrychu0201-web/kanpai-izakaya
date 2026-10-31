@@ -3921,7 +3921,7 @@ async function cloudInit(){
         const pages=await rt(async (rd,r)=>{const out=[];let cur=null;
           for(;;){const c=[rd.orderByChild(f)];if(cur)c.push(rd.endBefore(cur.v,cur.k));c.push(rd.limitToLast(100));
             const s=await rd.get(rd.query(rd.ref(r,'lb'),...c));const pg=[];s.forEach(x=>{pg.push(Object.assign({uid:x.key},x.val()))});
-            if(!pg.length)break;out.push(pg);if(pg.length<100)break;cur={v:pg[0][f],k:pg[0].uid}}
+            if(!pg.length)break;out.push(pg);if(pg.length<100)break;const v0=pg[0][f];if(typeof v0!=='number')break;cur={v:v0,k:pg[0].uid}}
           return out});
         const all=[].concat(...pages.reverse()).filter(x=>typeof x[f]==='number'&&(!asc||x[f]>0));
         return all.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f])},
