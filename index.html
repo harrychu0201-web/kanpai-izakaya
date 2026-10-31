@@ -799,7 +799,33 @@ const RP={on:false,k:0,mainDay:0};
 try{localStorage.removeItem(RPKEY)}catch(e){} /* an unfinished replay after a reload is dropped; the real save is untouched */
 function pastSave(){if(RP.on||TEST||DEMO||!ST||!ST.today||ST.today.day!==ST.day)return;const t=Object.assign({},ST.today);delete t.day;ST.past=ST.past||{};ST.past[ST.day]=t;save()}
 function abandonReplay(){RP.on=false;RP.k=0;KEY=REAL_KEY;try{localStorage.removeItem(RPKEY)}catch(e){}}
-function save(){if(DEMO)return;try{localStorage.setItem(KEY,JSON.stringify(ST))}catch(e){}touchLocal()}
+/* ---- 無限挑戰 (endless challenge): the shop never closes; three mistakes end the run; the timer counts open time only (pauses don't count). It runs on a copy of your upgrades and never writes to your real save ---- */
+let CHG=null;
+const chOn=()=>!!(CHG&&CHG.on),noStaff=()=>!!(CHG&&CHG.on&&CHG.hard),noItems=noStaff;
+function chTime(s){s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h} 時 ${m} 分 ${x} 秒`:m?`${m} 分 ${x} 秒`:`${x} 秒`}
+function chClock(s){s=Math.max(0,Math.floor(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60,p=n=>String(n).padStart(2,'0');return h?`${h}:${p(m)}:${p(x)}`:`${m}:${p(x)}`}
+function chPill(){return `<div class="pill ch">♾️ <b>${chClock(CHG.sec)}</b> · ${T('失誤')} <b>${CHG.strikes}/3</b></div>`}
+function chRecord(){if(!CHG||!(CHG.sec>=1))return;const r=loadRec(),k=CHG.hard?'chalh':'chal';if(Math.round(CHG.sec)>(r[k]||0))r[k]=Math.round(CHG.sec);saveRec(r);if(CL.user)lbPush(CL.user).catch(()=>{})}
+function chQuit(){if(!CHG)return;if(CHG.on){CHG.on=false;chRecord()}CHG=null}
+function chStrike(why){if(!chOn())return;CHG.strikes++;CHG.log.push(why);sfx('angry');popup(W/2,190,T('失誤！{0}/3',CHG.strikes),true);toast(T('失誤：{0}',why));renderHUD();if(CHG.strikes>=3)chFail(why)}
+function chWrong(c){c.chMis=1;c.pat=Math.max(0,c.pat-c.max*.35);chStrike('上錯客人');renderCust()}
+function chCycle(){R.t-=DAYLEN;ST.coins+=net();R.earned=0;R.cost=0;R.stolen=0;R.fines=0;R.rent=0;R.wage=wages();ST.day++;CHG.day=ST.day;pickToday();R.ev=evNow();renderHUD();toast(T('第 {0} 天！客人越來越多了',ST.day))}
+function chFail(why){if(!chOn())return;CHG.on=false;chRecord();if(R)R.over=true;renderHUD();
+  const r=loadRec(),best=CHG.hard?r.chalh:r.chal,act=CHG.hard?'chstarth':'chstart';
+  modal(`<h2>${T('無限挑戰結束')}</h2><p>${T('最後一次失誤：{0}',T(why))}</p><div class="goalrow"><span>${T('營業時間 {0}',chTime(CHG.sec))}</span><span>${T('撐到第 {0} 天',ST.day)}</span><span>${T('滿意 {0} 位',R?R.served:0)}</span></div><p>${T('這次的營業時間會登上排行榜。目前最佳：{0}',chTime(best||0))}</p>${!CL.user?`<p>${T('登入並取暱稱後才會上榜。')}</p>`:!r.nick?`<p>${T('取個暱稱就能加入排行榜。')}</p>`:''}<div class="btns"><button class="btn" data-act="${act}">${T('再挑戰一次')}</button><button class="btn alt" data-act="lb">${T('排行榜')}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`)}
+function chStart(hard){if(CHG)chQuit();
+  CHG={on:true,hard:!!hard,sec:0,strikes:0,log:[],day:1};
+  ST=Object.assign(load()||fresh(),{day:1,coins:3000,debt:0,loans:0,dues:[],stars:{},where:'iz',pendingNext:false,pre:null});
+  delete ST.today;delete ST.past;
+  closeModal();closeHome();R=null;setCur('iz');
+  pickToday();startDay();goFS();refitBurst();
+  toast(T(hard?'極限挑戰開始！禁用店員和道具':'無限挑戰開始！三次失誤就結束'))}
+function showChallenge(){const r=loadRec();
+  modal(`<h2>♾️ ${T('無限挑戰')}</h2><p>${T('店不打烊，一直營業下去。三次失誤就結束，排行榜比的是營業時間（暫停和選單的時間不算）。')}</p>
+  <div class="how"><div class="how-row"><div><b>${T('失誤')}</b><br>${T('上錯客人、食物燒焦、客人等太久生氣走了。上錯客人導致耐心耗盡只算一次。')}</div></div><div class="how-row"><div><b>${T('天數')}</b><br>${T('一天結束自動進下一天，沒有打烊、結算和房租，但難度會一天一天往上加。')}</div></div><div class="how-row"><div><b>${T('起始')}</b><br>${T('沿用你目前店裡的設備、店員和菜單，錢包從 ¥3,000 重新開始，不會動到你的存檔。')}</div></div></div>
+  <p class="hint">${T('標準挑戰最佳：{0}',chTime(r.chal||0))}<br>${T('極限挑戰最佳：{0}',chTime(r.chalh||0))}</p>
+  <div class="btns"><button class="btn" data-act="chstart">${T('標準挑戰')}</button><button class="btn" data-act="chstarth">${T('極限挑戰（禁用店員和道具）')}</button><button class="btn alt" data-act="closem">${T('返回')}</button></div>`)}
+function save(){if(DEMO||chOn())return;try{localStorage.setItem(KEY,JSON.stringify(ST))}catch(e){}touchLocal()}
 let RKEY='izakaya-rec-v1';
 function loadRec(){try{return JSON.parse(localStorage.getItem(RKEY))||{}}catch(e){return {}}}
 function saveRec(r){try{const old=localStorage.getItem(RKEY);if(old){try{JSON.parse(old)}catch(e){localStorage.setItem(RKEY+'-bad',old)}}localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}touchLocal()}
@@ -1221,13 +1247,13 @@ const RSTAFF2={zh:'屋台廚手・山田',lv:[
   {cost:30000,wage:800,d:'能做：客人點了拉麵、麵鍋有空位，就自動下麵（食材錢照付）；煮好、炸好、烤好的煎餃、炒飯、炸物、鯛魚燒收進保溫台（不會焦）。煎台和關東煮不管，配料要自己放。'},
   {cost:65000,wage:1200,d:'能做：上一級的全部，加上照客人點的，幫碗裡的麵放上配料；客人點了煎餃或炒飯、煎台有空位，就把生的餃子、炒飯料放上煎台（食材錢照付）。不會送餐。'},
   {cost:110000,wage:1700,d:'能做：上一級的全部，加上關東煮不夠的時候補料下鍋（食材錢照付），動作也更快。'}]};
-function rmStaffLv(){return rmUp('staff',0)}
-function rmStaff2Lv(){return rmUp('staff2',0)}
+function rmStaffLv(){return noStaff()?0:rmUp('staff',0)}
+function rmStaff2Lv(){return noStaff()?0:rmUp('staff2',0)}
 const RSTAFF3={zh:'屋台炸師・大輔',lv:[
   {cost:40000,wage:900,d:'能做：客人點了可樂餅，油鍋有空位就自動下鍋（食材錢照付）。唐揚雞和炸豬排不管。大約每 1 秒檢查一次油鍋。'},
   {cost:75000,wage:1300,d:'能做：上一級的全部，加上客人點了唐揚雞，油鍋有空位就自動下鍋（食材錢照付）。大約每 1 秒檢查一次油鍋。'},
   {cost:120000,wage:1800,d:'能做：上一級的全部，加上客人點了炸豬排，動作也更快，大約每 0.6 秒檢查一次油鍋。'}]};
-function rmFryStaffLv(){return rmUp('staff3',0)}
+function rmFryStaffLv(){return noStaff()?0:rmUp('staff3',0)}
 function rmWages(){const l=rmStaffLv(),l2=rmStaff2Lv(),l3=rmFryStaffLv();const f=(D,l,k)=>l?Math.round(D.lv[l-1].wage*dilOf(k)/100):0;return f(RSTAFF,l,'rmstaff')+f(RSTAFF2,l2,'rmstaff2')+f(RSTAFF3,l3,'rmstaff3')}
 const plateG=()=>`<ellipse cx="50" cy="66" rx="44" ry="22" fill="#f3efe6" stroke="${O}" stroke-width="4"/><ellipse cx="50" cy="64" rx="32" ry="13" fill="none" stroke="#2b3b6e" stroke-width="2" opacity=".4"/>`;
 function gyoza1(x,y,r,st){const b=st==='burnt'?'#3a2a1c':'#f5ecd8',c=st==='raw'?'#efe4cc':st==='done'?'#c9852e':'#1a120c';
@@ -1336,7 +1362,7 @@ const SU_STAFF={zh:'壽司職人・健太郎',lv:[
 const SU_MAKI5_COST=40000;
 function makiN(){const n=(ST&&ST.sushi&&ST.sushi.up&&ST.sushi.up.maki)?5:4;SU_LAND.maki.w=SU_PORT.maki.w=n===5?362:290;if(R&&R.maki)while(R.maki.length<n)R.maki.push(null);return n}
 function suUp(k,d){const S=ST||load();return (S&&S.sushi&&S.sushi.up&&S.sushi.up[k])||d}
-function suStaffLv(){return suUp('staff',0)}
+function suStaffLv(){return noStaff()?0:suUp('staff',0)}
 function suWages(){const l=suStaffLv();return l?Math.round(SU_STAFF.lv[l-1].wage*dilOf('sushistaff')/100):0}
 function makiG(k,st){const f={kappamaki:'#6fae4a',tekkamaki:'#c8323c',salmonmaki:'#f7904f',ebimaki:'#f4a0a0'}[k]||'#c8323c';
   const raw=st==='raw',burnt=st==='burnt',rice=raw?'#eee6d0':burnt?'#9a8660':'#fbf7ec',fill=raw?'#f4ecd8':burnt?'#3a2a1c':f;
@@ -1794,7 +1820,7 @@ function lvOf(b){return (ST.lv&&ST.lv[b])||0}
 function priceOf(k){const b=k.split(':')[0];return Math.round(ITEMS[b].price*(1+.3*lvOf(b))/10)*10}
 function costOf(b){return Math.round(ITEMS[b].cost*(1+.25*lvOf(b))*(evNow().sale===b?.5:1)/10)*10}
 function upCost(b){const lv=lvOf(b);return lv>=3?0:Math.round(ITEMS[b].price*16*[1,3,7.5][lv]/500)*500}
-function rentOf(){if(RP.on||ST.day<4||ST.owned)return 0;const wk=Math.floor((ST.day-1)/7);return Math.round((1000+800*wk)*(1+(ST.up.seats-3)*.25)/100)*100}
+function rentOf(){if(RP.on||(CHG&&CHG.on)||ST.day<4||ST.owned)return 0;const wk=Math.floor((ST.day-1)/7);return Math.round((1000+800*wk)*(1+(ST.up.seats-3)*.25)/100)*100}
 const STAFFLV={
   waiter:{zh:'外場・小美',flag:'waiter',lv:[
     {cost:15000,wage:800,d:'把保溫台上的菜送給客人，大約每 2.6 秒一份。'},
@@ -1810,7 +1836,7 @@ const STAFFLV={
     {cost:100000,wage:1800,d:'大約每 0.6 秒檢查一次，客人一入座就開始備料下鍋，串燒和炸物幾乎不會斷貨。'}]}};
 const CHEF_KINDS=['negima','tsukune','karaage','buta','gyu','ika','hotate','ebiten','kakifry'];
 const HELPER_PAT=.5,HELPER_GAP=4; // Lv3 阿健: start cooking for a customer once their patience is at or below half, at most one dish every HELPER_GAP seconds
-function staffLv(id){const f=STAFFLV[id].flag;return ST.up[id+'Lv']||(ST.up[f]?1:0)}
+function staffLv(id){if(noStaff())return 0;const f=STAFFLV[id].flag;return ST.up[id+'Lv']||(ST.up[f]?1:0)}
 function wages(){let w=0;for(const id in STAFFLV){const l=staffLv(id);if(l)w+=Math.round(STAFFLV[id].lv[l-1].wage*dilOf(id)/100)}return w}
 function cookMul(){return staffLv('helper')>=2?1.2:1}
 /* 認真度：滿級後可調。0 = 休假（不上班、不領薪水），數字 = 速度倍率，薪水依比例增減 */
@@ -2021,7 +2047,7 @@ function startDay(){pastSave();DAYLEN=159;setTimeout(()=>sfx('open'),80);$('game
   const pre=ST.pre&&ST.pre.day===ST.day?ST.pre:null;if(pre){if(pre.ext){R.extH=pre.ext;DAYLEN+=pre.ext*159/8.5}if(pre.nb)R.fxNb=1;if(pre.fast)R.fxFast=1;if(pre.tip)R.fxTip=1;if(pre.pt)R.ptHeld=pre.pt;ST.pre=null}
   KP=1;ST.fresh=(ST.fresh||[]).filter(k=>ITEMS[k]&&(ITEMS[k].shop||'iz')!==CUR&&ITEMS[k].shop!=='both');save();
   $('custLayer').innerHTML='';drawBg();buildStations();renderStations();renderHUD();
-  if(!DEMO&&ST.day===1&&CUR==='iz'&&!loadRec().tut)setTimeout(()=>{if(R&&!TUT)startTut(false)},60);
+  if(!DEMO&&!chOn()&&ST.day===1&&CUR==='iz'&&!loadRec().tut)setTimeout(()=>{if(R&&!TUT)startTut(false)},60);
 }
 function pickW(arr){const sl=evNow().sale,w=k=>ITEMS[k].w*(k===sl?2.5:1);let t=arr.reduce((s,k)=>s+w(k),0),r=Math.random()*t;for(const k of arr){r-=w(k);if(r<=0)return k}return arr[0]}
 function genOrder(){
@@ -2059,7 +2085,7 @@ function spawn(){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.transform='translateX(0)'}));
 }
 function step(dt){
-  R.t+=dt;
+  R.t+=dt;if(chOn()){CHG.sec+=dt;if(R.t>=DAYLEN)chCycle()}
   R.taps.slice(0,tapsN()).forEach((tp,i)=>{
     if(tp.st==='empty'&&live()>=costOf('beer')){R.taps[i]={st:'filling',t:0};sfx('pour');charge(costOf('beer'),L.tap.x+(tapsN()===1?50:25+i*50),L.tap.y+60)}
     else if(tp.st==='filling'){tp.t+=dt;if(tp.t>=tapTime())tp.st='full'}});
@@ -2071,13 +2097,13 @@ function step(dt){
   R.grill.forEach(g=>{if(g)g.t+=cdt});R.fryer.forEach(f=>{if(f)f.t+=cdt});R.teppan.forEach(g=>{if(g)g.t+=cdt});R.tempura.forEach(g=>{if(g)g.t+=cdt});
   R.tako.forEach((g,i)=>{if(!g)return;if(!g.fl&&g.t>=TKFLIP){g.t=TKFLIP;g.w=(g.w||0)+cdt;if(staffLv('helper')>=2&&g.w>=TKAUTO){g.fl=1;g.w=0;sfx('pick');if(KP===3){const c=srcCenter({src:'tako',i});popup(c.x,c.y-60,T('阿健翻面'))}renderStations();return}if(g.w>TKGRACE){if(R.fxNb){g.fl=1;g.w=0}else g.t=burnAt('takoyaki')+.1}}else g.t+=cdt}); // waits for the flip (you, or 阿健 at Lv2+), burns if missed
   ['tama','onig'].forEach(pn=>R[pn].forEach(g=>{if(!g)return;const d=STEPS[g.kind],s=g.s||0;if(s<d.t.length&&g.t>=d.t[s]){g.t=d.t[s];g.w=(g.w||0)+cdt;if(g.w>d.grace){if(R.fxNb){g.s=(g.s||0)+1;g.w=0}else{g.t=burnAt(g.kind)+.1;g.bad=1}}}else g.t+=cdt})); // same idea: pause at each step until tapped, ruined if you miss the window
-  {let sz=0,dn=0,br=0;[[R.grill,0],[R.fryer,1],[R.teppan,0],[R.tempura,0],[R.rmpan,0],[CUR==='sushi'?[]:R.maki,0],[R.mpot,0],[R.rfry,0],[R.tyaki,0],[R.tako,0],[R.tama,0],[R.onig,0]].forEach(([arr,fr])=>arr.forEach(g=>{if(!g)return;const k=fr?'karaage':g.kind,st=cookState(g.t,k);if(!g.s0){g.s0=1;sz=1}if(st==='done'&&!g.s1){g.s1=1;dn=1}if(st==='burnt'&&!g.s2){g.s2=1;br=1;if(!g.bad&&mishapRoll('charcoal')){g.cm=1;mishapLog('charcoal');toast('烤成炭人了！')}}}));if(br)sfx('burn');else if(dn)sfx('done');else if(sz)sfx('sizzle')}
+  {let sz=0,dn=0,br=0;[[R.grill,0],[R.fryer,1],[R.teppan,0],[R.tempura,0],[R.rmpan,0],[CUR==='sushi'?[]:R.maki,0],[R.mpot,0],[R.rfry,0],[R.tyaki,0],[R.tako,0],[R.tama,0],[R.onig,0]].forEach(([arr,fr])=>arr.forEach(g=>{if(!g)return;const k=fr?'karaage':g.kind,st=cookState(g.t,k);if(!g.s0){g.s0=1;sz=1}if(st==='done'&&!g.s1){g.s1=1;dn=1}if(st==='burnt'&&!g.s2){g.s2=1;br=1;if(chOn())chStrike('食物燒焦');if(!g.bad&&mishapRoll('charcoal')){g.cm=1;mishapLog('charcoal');toast('烤成炭人了！')}}}));if(br)sfx('burn');else if(dn)sfx('done');else if(sz)sfx('sizzle')}
   /* tension: when a kitchen newly has something about to burn (or takoyaki waiting for its flip) beep once, and if it is not the kitchen you are looking at, say which one */
   {const al=R.pgAl||(R.pgAl={});pages().forEach(p=>{const lv=pgLevel(p),was=al[p]||0;if(lv>was){sfx('alarm');if(p!==KP)toast(T(lv===2?'{0}要翻面了！':'{0}快焦了！',pgName(p)))}al[p]=lv})}
   R.cool-=dt;
   const hr=hourNow();
-  if(hr<lastHr()&&R.cool<=0&&R.seats.some(x=>!x)&&!(CHEAT()&&evNow().nocust)){spawn();R.cool=rnd(.75,1.25)*baseGap()*RUSH[Math.min(7,Math.floor(hr-16))]}
-  if(hr>=lastHr()&&!R.lastCall){R.lastCall=true;toast(T('最後點餐！不再接新客人'))}
+  if((chOn()||hr<lastHr())&&R.cool<=0&&R.seats.some(x=>!x)&&!(CHEAT()&&evNow().nocust)){spawn();R.cool=rnd(.75,1.25)*baseGap()*RUSH[Math.min(7,Math.floor(hr-16))]}
+  if(!chOn()&&hr>=lastHr()&&!R.lastCall){R.lastCall=true;toast(T('最後點餐！不再接新客人'))}
   evStep(dt,hr);
   R.seats.forEach(c=>{if(!c)return;c.t+=dt;
     if(c.st==='in'&&c.t>(c.walkT||1.15)){c.st='wait';c.waitAt=c.t;c.sitAt=R.t;c.el.classList.remove('walk')}
@@ -2104,7 +2130,7 @@ function leave(c,happy){sfx(happy?'coin':'angry');
   c.st='bye';c.happy=happy;
   if(happy){const bx=c.extra&&c.extra.done,total=c.order.reduce((s,k)=>s+priceOf(k),0)+(bx?priceOf(c.extra.key):0),p=c.tipP!=null?c.tipP:Math.max(0,c.pat/c.max),tip=Math.round(total*(.35+(bx?BONUSTIP:0))*p*(ST.up.cat?1.3:1)*(CUR==='rm'&&rmUp('tanuki',0)?1.3:1)*(1+tipBonus())*(evNow().ev==='fest'?1.2:1)*(c.hg?1.15:1)*(R.fxTip?2:1)/10)*10;
     R.earned+=total+tip;R.served++;popup(seatX(c.seat,seatsN()),180,'+'+yen(total+tip));{const h=document.createElement('div');h.className='heart';h.textContent='♥';h.style.left=(seatX(c.seat,seatsN())+38)+'px';h.style.top='150px';$('fx').appendChild(h);setTimeout(()=>h.remove(),1200)}c.el.classList.add('hop')}
-  else{R.lost++;popup(seatX(c.seat,seatsN()),180,T('生氣走了'),true)}
+  else{R.lost++;popup(seatX(c.seat,seatsN()),180,T('生氣走了'),true);if(chOn()&&!c.chMis)chStrike('客人等太久生氣走了')}
   renderCust();renderHUD();
   setTimeout(()=>{const out=(parseFloat(c.el.style.left)+190)/WALKV*(happy?1:.7);c.el.style.transitionDuration=out.toFixed(2)+'s';c.el.classList.add('walk','out');if(!happy)c.el.classList.add('mad');c.el.style.transform=`translateX(${-((parseFloat(c.el.style.left)||0)+190)}px)`;setTimeout(()=>{c.el.remove();if(R&&R.seats[c.seat]===c)R.seats[c.seat]=null},out*1000)},happy?700:400);
 }
@@ -2556,7 +2582,7 @@ function deliver(seat){
   if(!heldValid()){R.held=null;renderStations();toast('那份已經不能送了');return}
   let j=c.order.findIndex((k,idx)=>!c.filled[idx]&&k===R.held.key);
   if(j<0&&c.extra&&c.extra.ok&&!c.extra.done&&c.extra.key===R.held.key)j='x'; // bonus add-on dish
-  if(j<0){shake(c);toast(T('這位客人沒點{0}',itemName(R.held.key)));return}
+  if(j<0){shake(c);toast(T('這位客人沒點{0}',itemName(R.held.key)));if(chOn())chWrong(c);return}
   if(j!=='x'&&!c.critic&&DRINKS.includes(R.held.key)&&mishapRoll('splash')){mishapSplash(c);return}
   sfx('serve');giveTo(c,j,R.held,true);
 }
@@ -2586,7 +2612,7 @@ function renderHUD(){document.body.classList.toggle('playing',!!R);
     <div class="pill clock"><b>${clockStr()}</b>${PERIOD(hourNow())}</div>${R.ev&&R.ev.ev?`<div class="pill ev" title="${esc(evDesc(R.ev))}">${evLabel(R.ev)}</div>`:''}`:'<div style="flex:1"></div>'}
     ${CUR==='sushi'?(suStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${T('健太郎')}${'★'.repeat(suStaffLv()-1)}</b></div>`:''):CUR==='rm'?(rmStaffLv()||rmStaff2Lv()||rmFryStaffLv()?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[rmStaffLv()?T('小葵')+'★'.repeat(rmStaffLv()-1):'',rmStaff2Lv()?T('山田')+'★'.repeat(rmStaff2Lv()-1):'',rmFryStaffLv()?T('大輔')+'★'.repeat(rmFryStaffLv()-1):''].filter(Boolean).join('・')}</b></div>`:''):ST.up.waiter||ST.up.helper||ST.up.chef?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${[ST.up.waiter?T('小美')+(staffLv('waiter')>1?'★'.repeat(staffLv('waiter')-1):''):'',ST.up.helper?T('阿健')+(staffLv('helper')>1?'★'.repeat(staffLv('helper')-1):''):'',ST.up.chef?T('阿強')+(staffLv('chef')>1?'★'.repeat(staffLv('chef')-1):''):''].filter(Boolean).join('・')}</b></div>`:''}
     ${(()=>{const w=R?live():ST.coins;return `<div class="pill ${w<0?'neg':''}">${T('錢包')} <b>${w<0?'−':''}¥${Math.abs(Math.round(w)).toLocaleString('en-US')}</b></div>`})()}${ST.debt?`<div class="pill staff">${T('借款')} <b>${yen(ST.debt)}</b></div>`:''}
-    ${R&&!R.over&&!R.settled&&!DEMO?'<button class="icon-btn bagbtn" data-act="rewards" aria-label="背包">'+T('背包')+'</button>':''}${R&&!R.over&&CUR==='sushi'&&!(L&&L.suord)?'<button class="icon-btn bagbtn" data-act="suorder" aria-label="壽司順序提示">📋 '+T('順序提示')+'</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}"><span class="ico">${sndIcon()}</span></button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>`:''}`);
+    ${chOn()?chPill():''}${CHG&&!CHG.on&&R?'<button class="icon-btn" data-act="home">'+T('主頁')+'</button>':''}${R&&!R.over&&!R.settled&&!DEMO&&!noItems()?'<button class="icon-btn bagbtn" data-act="rewards" aria-label="背包">'+T('背包')+'</button>':''}${R&&!R.over&&CUR==='sushi'&&!(L&&L.suord)?'<button class="icon-btn bagbtn" data-act="suorder" aria-label="壽司順序提示">📋 '+T('順序提示')+'</button>':''}${R&&!R.over&&!R.settled&&!R.eloan&&!DEMO&&!chOn()&&live()<2000?`<button class="icon-btn bankbtn" data-act="bank" aria-label="${T('銀行窗口')}">🏦</button>`:''}${R&&!R.over?`<button class="icon-btn" data-act="sndg" aria-label="${T('音效設定')}" title="${T('音效設定')}"><span class="ico">${sndIcon()}</span></button><button class="icon-btn" data-act="pause" aria-label="${T('暫停')}"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>`:''}`);
 }
 
 /* ---- modals ---- */
@@ -2653,7 +2679,7 @@ document.addEventListener('click',e=>{if(!HOME)return;const m=e.target.closest('
 function branchPick(){const o=load()||{},cur=o.where==='sushi'&&o.sushi?'sushi':o.where==='rm'&&o.rm?'rm':'iz';
   const btn=(id,name,sub,ok)=>`<button class="btn ${cur===id?'':'alt'}" data-act="pickbranch" data-id="${id}" ${ok?'':'disabled'}>${T(name)}${cur===id?` · ${T('目前')}`:''}<small>${T(sub)}</small></button>`;
   modal(`<h2>${T('分店')}</h2><p class="hint">${T('選一家店，下次營業就在那裡開門。')}</p><div class="pickrow">${btn('iz','🏮 居酒屋本店','',true)}${btn('rm','🍜 深夜拉麵屋台',o.rm?'':'買下整棟店面後開放',!!o.rm)}${sushiDev()?(o.sushi?btn('sushi','🍣 海風壽司','開發中・僅作者可見',true):`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖（開發中）')}</small></button>`):''}</div><div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
-function showHome(){if(RP.on)abandonReplay();
+function showHome(){if(CHG)chQuit();if(RP.on)abandonReplay();
   if(CUR!=='iz'){CUR='iz';chooseLayout(true)}SHOPHOME=false;DEMO=false;if(TUT){TUT=null;tutLayer().innerHTML=''}HOME=true;R=null;ST=null;closeModal();setTimeout(fit,0);renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
   const saved=load();
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
@@ -2741,7 +2767,7 @@ function arcBetType(g,v){
   const e=document.getElementById('arcBetAmt');if(e)e.value=n;
 }
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.arcbet)arcBetType(t.dataset.arcbet,t.value)});
-function showArcade(){modal(`<h2>${T('遊戲廳')}</h2><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p><p style="font-size:14px">${T('試試你的小手氣~')}</p><div class="btns"><button class="btn" data-act="arcslot">🎰 ${T('拉霸機')}</button><button class="btn" data-act="arcpin">🔮 ${T('彈珠台')}</button><button class="btn" data-act="omk">🎋 ${T('幸運籤')}</button><button class="btn" data-act="gacha">🥚 ${T('扭蛋機')}</button><button class="btn alt" data-act="closem">${T('返回')}</button></div>`)}
+function showArcade(){modal(`<h2>${T('遊戲廳')}</h2><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p><p style="font-size:14px">${T('試試你的小手氣~')}</p><div class="btns"><button class="btn" data-act="arcslot">🎰 ${T('拉霸機')}</button><button class="btn" data-act="arcpin">🔮 ${T('彈珠台')}</button><button class="btn" data-act="chopen">♾️ ${T('無限挑戰')}</button><button class="btn" data-act="omk">🎋 ${T('幸運籤')}</button><button class="btn" data-act="gacha">🥚 ${T('扭蛋機')}</button><button class="btn alt" data-act="closem">${T('返回')}</button></div>`)}
 const ARC_CSS=`<style>.arc-reels{display:flex;gap:10px;justify-content:center;margin:14px 0}.arc-reels span{width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:38px;background:#fff8e6;border:3px solid #7a4a2a;border-radius:12px;box-shadow:inset 0 -4px 0 #e9d3a6}.arc-msg{font-size:15px;min-height:1.4em;text-align:center;margin:6px 0}</style>`;
 const GACHA_PRICE=300,GACHA_PITY=10,GACHA_RATE={c:60,r:30,s:10};
 const GACHA_NAME={c:'普通',r:'稀有',s:'超稀有',x:'秘密'},GACHA_COL={c:'#7a4a2a',r:'#2f7fb8',s:'#c8891a',x:'#7a3ad0'};
@@ -2981,7 +3007,7 @@ function showDayIntro(){
   <div class="btns"><button class="btn" data-act="start">${T('開店營業')}</button>${CUR==='sushi'?`<button class="btn alt" data-act="sushishop">${T('商店')}</button>`:`<button class="btn alt" data-act="shop">${T('商店')}</button>`}<button class="btn alt" data-act="preprops">🎒 ${T('道具')}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
   if(CUR==='sushi'&&ST&&ST.sushi&&!ST.sushi.tut&&!ST.sushi.tutAsk&&!DEMO){ST.sushi.tutAsk=true;save();setTimeout(()=>{if(!TUT)startSushiTut(true)},150)}
 }
-function endDay(){sfx('end');$('game').classList.remove('aim');
+function endDay(){if(CHG)return;sfx('end');$('game').classList.remove('aim');
   R.held=null;renderStations();
   const e=net(),stars=R.goals.filter(v=>e+R.rent>=v).length;
   if(RP.on){replayEnd(e,stars);return}
@@ -3293,7 +3319,7 @@ document.addEventListener('click',e=>{
   else if(act==='holdex')showHolDex();
   else if(act==='calendar')showCalendar();
   else if(act==='closem'){closeModal();if(FR.dirty){FR.dirty=0;showHome()}}
-  else if(act==='home')showHome();
+  else if(act==='chopen')showChallenge();else if(act==='chstart')chStart(false);else if(act==='chstarth')chStart(true);else if(act==='home')showHome();
   else if(act==='start'){goFS();startDay();refitBurst();let seen=false;try{seen=localStorage.getItem('izakaya-iostip')==='1'}catch(e){}if(IOS&&!STANDALONE&&!seen)setTimeout(()=>{if(R&&!TUT)iosTip()},400)}
   else if(act==='iostipok'){closeModal();if(R&&IOSTIPR)R.paused=false;IOSTIPR=false;try{localStorage.setItem('izakaya-iostip','1')}catch(e){}}
   else if(act==='next'||act==='back'){if(SHOPHOME){SHOPHOME=false;showHome()}else advance()}
@@ -3849,7 +3875,7 @@ function touchLocal(){if(TEST||RP.on)return;try{localStorage.setItem(SAVED_AT,St
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
 function mergeRec(a,b){const pj=s=>{try{return s?JSON.parse(s)||{}:{}}catch(e){return {}}};const x=pj(a),y=pj(b),o=Object.assign({},x,y);
-  ['maxDay','maxCoins','earned','bankrupt','bestDay'].forEach(k=>{const v=Math.max(x[k]||0,y[k]||0);if(v)o[k]=v});
+  ['maxDay','maxCoins','earned','bankrupt','bestDay','chal','chalh'].forEach(k=>{const v=Math.max(x[k]||0,y[k]||0);if(v)o[k]=v});
   {const a=x.ownDay||0,b=y.ownDay||0;if(a||b)o.ownDay=a&&b?Math.min(a,b):a||b}
   ['owned','tut'].forEach(k=>{if(x[k]||y[k])o[k]=true});o.met=Object.assign({},x.met||{},y.met||{});
   {const inv={};[x.inv||{},y.inv||{}].forEach(h=>{for(const k in h)inv[k]=Math.max(inv[k]||0,h[k]||0)});if(Object.keys(inv).length)o.inv=inv}
@@ -4057,18 +4083,18 @@ function cloudAsk(){const c=CL.pick;if(!c||!HOME)return;
   modal(`<h2>${T('選擇要用哪一份存檔')}</h2><p>${T('這台裝置和雲端各有一份不同的存檔，要用哪一份？另一份會被覆蓋。')}</p>
   <div class="pickrow"><button class="btn" data-act="pickcloud">${T('雲端存檔')}<small>${saveSummary(c.game)}</small></button><button class="btn alt" data-act="picklocal">${T('這台裝置')}<small>${saveSummary(lsGet(KEY))}</small></button></div>`)}
 /* ===== leaderboard: one public doc per player in lb/{uid}; written only by its owner, readable by all ===== */
-const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['own','最快買店','asc','只有買下整棟店面的人才會上榜，天數越少越前面。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['dex','扭蛋圖鑑','desc','收集到的扭蛋種類越多越前面，秘密扭蛋機的款式也算。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
+const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['own','最快買店','asc','只有買下整棟店面的人才會上榜，天數越少越前面。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['dex','扭蛋圖鑑','desc','收集到的扭蛋種類越多越前面，秘密扭蛋機的款式也算。'],['chal','無限挑戰','desc','店不打烊一直營業，三次失誤就結束，比誰的營業時間長（暫停不算）。'],['chalh','極限挑戰','desc','禁用店員和道具的無限挑戰，比誰的營業時間長。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
 const LB={tab:'best',cache:{},last:null};
 function lbEntry(){const r=loadRec();
   // stores bought before the leaderboard existed never recorded a buy day; fill it in once from the save's current day (an upper bound, so it can't overstate speed)
   if(!r.ownDay){let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.owned&&g.day>0){r.owned=true;r.ownDay=g.day;saveRec(r)}}
-  if(!r.nick)return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.ownDay)d.own=r.ownDay;if(r.maxDay>0)d.days=Math.round(r.maxDay);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;return d}
+  if(!r.nick)return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.ownDay)d.own=r.ownDay;if(r.maxDay>0)d.days=Math.round(r.maxDay);if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;return d}
 async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return} /* a save touched by the author test tools never goes on the leaderboard */
   const k=JSON.stringify(d);if(LB.last===u.uid+k)return;
   try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d))}
-  catch(e){const d2=Object.assign({},d);delete d2.dex;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}} /* rules not updated yet: still keep the rest of the entry */
+  catch(e){const d2=Object.assign({},d);delete d2.dex;delete d2.chal;delete d2.chalh;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}} /* rules not updated yet: still keep the rest of the entry */
   LB.last=u.uid+k;LB.cache={}}
-const lbVal=(t,v)=>t==='dex'?T('{0} 種',v):t==='own'||t==='days'?T('{0} 天',v):yen(v);
+const lbVal=(t,v)=>t==='chal'||t==='chalh'?chTime(v):t==='dex'?T('{0} 種',v):t==='own'||t==='days'?T('{0} 天',v):yen(v);
 const lbHead=tb=>`<h2>${T('排行榜')}</h2><div class="lbtabs">${LBT.map(([k,n])=>`<button class="stab ${LB.tab===k?'on':''}" data-act="lbtab" data-id="${k}">${T(n)}</button>`).join('')}</div><p class="lbdesc">${T(tb[3])}</p>`;
 async function showLB(){if(LB.tab==='fr')return showFriends();
   const tb=LBT.find(x=>x[0]===LB.tab),me=CL.user,mine=lbEntry();

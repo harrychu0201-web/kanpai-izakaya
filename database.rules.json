@@ -95,8 +95,10 @@
         "own",
         "days"
       ,
-  "dex"
- ],
+  "dex",
+        "chal",
+        "chalh"
+      ],
       "$uid": {
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "newData.hasChildren(['name', 'best', 'earned', 'at'])",
@@ -118,6 +120,12 @@
   "dex": {
    ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1000"
   },
+        "chal": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+        },
+        "chalh": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+        },
         "at": {
           ".validate": "newData.isNumber()"
         },
