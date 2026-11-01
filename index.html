@@ -3286,6 +3286,7 @@ document.addEventListener('click',e=>{
   else if(act==='noticenew')inboxNotice();
   else if(act==='uidcopy'){if(CL.user)copyTxt(CL.user.uid,'已複製 ID')}
   else if(act==='fbpubsync')fbPubSync();
+  else if(act.indexOf('coop')===0)coopAct(act.slice(4),a.dataset.id);
   else if(act==='noticeedit')noticeEdit(a.dataset.id);
   else if(act==='noticeeditsave')noticeEditSave(a.dataset.id);
   else if(act==='noticedel')noticeDelete(a.dataset.id);
@@ -3901,6 +3902,68 @@ function mergeRec(a,b){const pj=s=>{try{return s?JSON.parse(s)||{}:{}}catch(e){r
   {const ach=Object.assign({},x.ach||{},y.ach||{});if(Object.keys(ach).length)o.ach=ach}
   {const ci=[x.ci,y.ci].filter(Boolean).sort((p,q)=>String(q.last||'').localeCompare(String(p.last||'')));if(ci[0])o.ci=ci[0]}
   return JSON.stringify(o)}
+/* ===== co-op (milestone 1, author-only): room + invite + presence + event channel + 30s reconnect grace ===== */
+const COOP={on:false,w:0,code:null,role:null,room:null,p:{},ev:[],unsub:null,presOff:null,inv:{},graceWho:null,graceEnd:0,tick:null,lastOn:{},open:false};
+const COOP_GRACE=30000;
+function coopDev(){return isAdmin()}
+function coopCode(){const A='23456789ABCDEFGHJKMNPQRSTUVWXYZ';let s='';for(let i=0;i<6;i++)s+=A[Math.floor(Math.random()*A.length)];return s}
+function coopOther(){const r=COOP.room,me=CL.user&&CL.user.uid;if(!r||!me)return null;return r.host===me?r.guest:r.host}
+function coopRender(){if(document.getElementById('coopmark'))coopPanel()}
+function coopPanel(){if(!coopDev()||!CL.user){modal(`<h2>${T('連線測試')}</h2><p>${T('需要作者帳號登入。')}</p><div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`);return}
+  const me=CL.user.uid,r=COOP.room;
+  const inv=Object.keys(COOP.inv).map(c=>{const v=COOP.inv[c]||{};return `<div class="lbme"><span>📨 ${esc(v.name||T('玩家'))} ${T('邀請你一起開店')} <small>${esc(c)}</small></span><button class="btn" data-act="coopaccept" data-id="${esc(c)}">${T('接受')}</button><button class="btn alt" data-act="coopdecline" data-id="${esc(c)}">${T('拒絕')}</button></div>`}).join('');
+  let body;
+  if(!COOP.code)body=`<p class="lbdesc">${T('還沒有連線。從好友列表按「一起開店」邀請朋友，或接受下面的邀請。')}</p>`;
+  else{const o=coopOther(),pr=u=>{const p=COOP.p[u];return p&&p.on?'🟢 '+T('在線'):'⚪ '+T('離線')};
+    const left=COOP.graceWho?Math.max(0,Math.ceil((COOP.graceEnd-Date.now())/1000)):0;
+    const st=r?r.state:T('已結束');
+    body=`<div class="lbme"><span>${T('房號')}：<b style="letter-spacing:2px">${esc(COOP.code)}</b></span><small>${T('狀態')}：${esc(st)}</small></div>`
+     +`<div class="lbme"><span>${T('你')}：${pr(me)}</span><span>${T('對方')}：${o?pr(o):T('等待加入')}</span></div>`
+     +(left?`<p style="color:#e0412c">${T('對方離線，{0} 秒內沒回來就結束',left)}</p>`:'')
+     +`<p class="lbdesc">${T('寫入次數')}：${COOP.w}</p>`
+     +`<div class="btns" style="justify-content:flex-start">${COOP.role==='host'&&r&&r.state==='lobby'?`<button class="btn" data-act="coopstart" ${o&&COOP.p[o]&&COOP.p[o].on?'':'disabled'}>${T('開始營業')}</button>`:''}<button class="btn alt" data-act="coopping" ${r&&r.state!=='ended'?'':'disabled'}>${T('送測試訊息')}</button><button class="btn alt" data-act="coopleave">${T('離開')}</button></div>`
+     +`<div style="font-size:13px;max-height:160px;overflow:auto;margin-top:8px">${COOP.ev.slice(-20).map(x=>`<div>${x.from===me?T('我'):T('對方')} · ${esc(x.type)}${x.lat!=null?` · ${x.lat}ms`:''}</div>`).join('')||'<small>—</small>'}</div>`}
+  modal(`<i id="coopmark"></i><h2>${T('連線測試')}</h2>${inv}${body}<div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`)}
+async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid;
+  try{if(!CL.api)throw new Error('no api');
+    if(k==='open'){COOP.inv=await CL.api.coopInvList(me);coopPanel();return}
+    if(k==='make'){if(COOP.code){toast('已經在連線中');coopPanel();return}
+      const code=coopCode(),nm=(lbEntry()||{}).name||'';
+      await CL.api.coopMake(code,me,id,nm);COOP.code=code;COOP.role='host';coopAttach(code);toast('已邀請，等朋友加入');coopPanel();return}
+    if(k==='accept'){await CL.api.coopAccept(me,id);delete COOP.inv[id];COOP.code=id;COOP.role='guest';coopAttach(id);coopPanel();return}
+    if(k==='decline'){await CL.api.coopInvDel(me,id);delete COOP.inv[id];coopPanel();return}
+    if(k==='start'){await CL.api.coopState(COOP.code,'playing');return}
+    if(k==='ping'){await CL.api.coopSend(COOP.code,me,'ping',Date.now());return}
+    if(k==='leave'){await coopLeave();return}
+  }catch(e){console.warn('coop',k,e);toast('連線功能暫時打不開，請稍後再試。')}}
+function coopAttach(code){if(COOP.unsub)COOP.unsub();if(COOP.presOff)COOP.presOff();
+  COOP.on=true;COOP.room=null;COOP.p={};COOP.ev=[];COOP.lastOn={};COOP.graceWho=null;
+  COOP.unsub=CL.api.coopWatch(code,(k,v)=>{if(k==='room')coopOnRoom(v);else coopOnEv(v)},e=>{console.warn('coop watch',e);toast('連線中斷');COOP.on=false});
+  CL.api.coopPresence(code,CL.user.uid).then(f=>{COOP.presOff=f}).catch(e=>console.warn('presence',e))}
+function coopOnRoom(v){
+  if(!v){COOP.room=null;COOP.on=false;coopRender();return}
+  COOP.room=v;COOP.p=v.p||{};
+  const o=coopOther();
+  if(o){const on=!!(COOP.p[o]&&COOP.p[o].on);
+    if(COOP.lastOn[o]===true&&!on){COOP.graceWho=o;COOP.graceEnd=Date.now()+COOP_GRACE;if(!COOP.tick)COOP.tick=setInterval(coopTick,1000)}
+    if(on){COOP.graceWho=null;COOP.graceEnd=0}
+    COOP.lastOn[o]=on}
+  coopRender()}
+function coopTick(){
+  if(COOP.graceWho&&Date.now()>=COOP.graceEnd){const who=COOP.graceWho;COOP.graceWho=null;
+    const me=CL.user&&CL.user.uid;
+    if(!(COOP.p[who]&&COOP.p[who].on)&&COOP.p[me]&&COOP.p[me].on&&COOP.room&&COOP.room.state!=='ended')CL.api.coopState(COOP.code,'ended').catch(()=>{})}
+  if(!COOP.graceWho){clearInterval(COOP.tick);COOP.tick=null}
+  coopRender()}
+function coopOnEv(e){const me=CL.user&&CL.user.uid;const x={id:e.id,from:e.from,type:e.type,d:e.d};
+  if(e.type==='ping'&&e.from!==me&&typeof e.d==='number')x.lat=Date.now()-e.d;
+  COOP.ev.push(x);if(COOP.ev.length>50)COOP.ev.splice(0,COOP.ev.length-50);coopRender()}
+async function coopLeave(){const me=CL.user.uid,code=COOP.code;if(!code)return;const wasHost=COOP.role==='host';
+  COOP.on=false;if(COOP.unsub)COOP.unsub();COOP.unsub=null;if(COOP.presOff)COOP.presOff();COOP.presOff=null;
+  if(COOP.tick){clearInterval(COOP.tick);COOP.tick=null}
+  try{await CL.api.coopPresenceOff(code,me);if(wasHost)await CL.api.coopEnd(code)}catch(e){console.warn('coop leave',e)}
+  COOP.code=null;COOP.role=null;COOP.room=null;COOP.p={};COOP.ev=[];COOP.graceWho=null;COOP.lastOn={};coopRender()}
+
 async function cloudInit(){
   if(!FB_CONFIG||CL.api)return;
   try{const B='https://www.gstatic.com/firebasejs/10.12.2/';
@@ -3910,7 +3973,7 @@ async function cloudInit(){
     if(APPCHECK_KEY){try{const ac=await import(B+'firebase-app-check.js');ac.initializeAppCheck(app,{provider:new ac.ReCaptchaV3Provider(APPCHECK_KEY),isTokenAutoRefreshEnabled:true})}catch(e){console.warn('app check',e)}}
     const auth=au.getAuth(app),db=fs.getFirestore(app);
     let RD=null,rtT=null;const rtdb=async()=>{if(!RD){const rd=await import(B+'firebase-database.js');RD={rd,db:rd.getDatabase(app,RTDB_URL)}}return RD};
-    const rtIdle=()=>{clearTimeout(rtT);rtT=setTimeout(()=>{if(RD&&!CHT.unsub)RD.rd.goOffline(RD.db)},8000)};
+    const rtIdle=()=>{clearTimeout(rtT);rtT=setTimeout(()=>{if(RD&&!CHT.unsub&&!COOP.on)RD.rd.goOffline(RD.db)},8000)};
     const rt=async f=>{const x=await rtdb();clearTimeout(rtT);x.rd.goOnline(x.db);try{return await f(x.rd,x.db)}finally{rtIdle()}};
     CL.api={
       signIn:async()=>{const pv=new au.GoogleAuthProvider();pv.setCustomParameters({prompt:'select_account'});
@@ -3950,6 +4013,23 @@ async function cloudInit(){
       frAdd:(me,fu)=>rt((rd,r)=>rd.update(rd.ref(r),{['friends/'+me+'/'+fu]:rd.serverTimestamp(),['freq/'+fu+'/'+me]:rd.serverTimestamp()})),
       frAcc:(me,ids)=>rt((rd,r)=>{const u={};ids.forEach(k=>{u['friends/'+me+'/'+k]=rd.serverTimestamp()});return rd.update(rd.ref(r),u)}),
       frDel:(me,fu)=>rt((rd,r)=>rd.update(rd.ref(r),{['friends/'+me+'/'+fu]:null,['freq/'+fu+'/'+me]:null})),
+      // co-op skeleton (author-only UI): room node, invites, presence, event channel. COOP.w counts writes for quota checks.
+      coopMake:(code,host,guest,name)=>rt((rd,r)=>{COOP.w+=2;return rd.update(rd.ref(r),{['rooms/'+code]:{host,guest,state:'lobby',t:rd.serverTimestamp()},['coopInv/'+guest+'/'+code]:{from:host,name:String(name||'').slice(0,24),t:rd.serverTimestamp()}})}),
+      coopInvList:uid=>rt((rd,r)=>rd.get(rd.ref(r,'coopInv/'+uid)).then(s=>s.val()||{})),
+      coopAccept:(uid,code)=>rt((rd,r)=>{COOP.w++;return rd.remove(rd.ref(r,'coopInv/'+uid+'/'+code))}),
+      coopInvDel:(uid,code)=>rt((rd,r)=>{COOP.w++;return rd.remove(rd.ref(r,'coopInv/'+uid+'/'+code))}),
+      coopState:(code,st)=>rt((rd,r)=>{COOP.w++;return rd.update(rd.ref(r,'rooms/'+code),{state:st})}),
+      coopSend:(code,uid,type,d)=>rt((rd,r)=>{COOP.w++;return rd.push(rd.ref(r,'rooms/'+code+'/ev'),{from:uid,type:String(type).slice(0,20),d:typeof d==='number'?d:0,t:rd.serverTimestamp()})}),
+      coopEnd:code=>rt((rd,r)=>{COOP.w++;return rd.remove(rd.ref(r,'rooms/'+code))}),
+      coopWatch:(code,cb,err)=>{let offs=[],dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
+        offs.push(rd.onValue(rd.ref(r,'rooms/'+code),s=>cb('room',s.val()),err));
+        offs.push(rd.onChildAdded(rd.ref(r,'rooms/'+code+'/ev'),s=>cb('ev',Object.assign({id:s.key},s.val()||{}))))}).catch(err);
+        return ()=>{dead=true;offs.forEach(f=>{if(typeof f==='function')f()})}},
+      coopPresence:(code,uid)=>rtdb().then(({rd,db:r})=>{rd.goOnline(r);const p=rd.ref(r,'rooms/'+code+'/p/'+uid);
+        const reg=()=>{COOP.w+=2;rd.onDisconnect(p).set({on:false,t:rd.serverTimestamp()});return rd.set(p,{on:true,t:rd.serverTimestamp()})};
+        const off=rd.onValue(rd.ref(r,'.info/connected'),s=>{if(s.val()===true)reg().catch(e=>console.warn('presence',e))});
+        return ()=>off()}),
+      coopPresenceOff:(code,uid)=>rtdb().then(({rd,db:r})=>{rd.goOnline(r);const p=rd.ref(r,'rooms/'+code+'/p/'+uid);COOP.w++;rd.onDisconnect(p).cancel();return rd.set(p,{on:false,t:rd.serverTimestamp()})}),
       giftSend:(me,to,amt,d)=>rt((rd,r)=>rd.set(rd.ref(r,'gifts/'+to+'/'+me),{t:rd.serverTimestamp(),a:amt,d})),
       giftList:uid=>rt((rd,r)=>rd.get(rd.ref(r,'gifts/'+uid)).then(s=>s.val()||{})),
       gclaimGet:uid=>rt((rd,r)=>rd.get(rd.ref(r,'gclaim/'+uid)).then(s=>s.val()||{})),
@@ -4182,7 +4262,7 @@ function frDraw(){FR.view='list';if(!HOME||LB.tab!=='fr')return;
   const rows=ids.map(k=>Object.assign({uid:k},D.lbs[k]||{}));rows.push({uid:me.uid,me:1,name:mine.name,best:mine.best,earned:mine.earned,rt:(shopRate(load()||{})||{}).rt});
   rows.sort((x,y)=>(y[FR.sort]||0)-(x[FR.sort]||0));
   const sum=D.pend.reduce((s,f)=>s+D.gifts[f].a,0);
-  const list=rows.map((x,i)=>{const act=x.me?'':`<button class="btn alt frb" data-act="frvisit" data-id="${esc(x.uid)}">${T('參觀')}</button><button class="btn alt frb" data-act="frgift" data-id="${esc(x.uid)}" ${(r.frG||{})[x.uid]===today?'disabled':''}>🎁</button>`;
+  const list=rows.map((x,i)=>{const act=x.me?'':(coopDev()?`<button class="btn alt frb" data-act="coopmake" data-id="${esc(x.uid)}">${T('一起開店')}</button>`:'')+`<button class="btn alt frb" data-act="frvisit" data-id="${esc(x.uid)}">${T('參觀')}</button><button class="btn alt frb" data-act="frgift" data-id="${esc(x.uid)}" ${(r.frG||{})[x.uid]===today?'disabled':''}>🎁</button>`;
     return `<div class="lbrow frrow ${x.me?'me':''}"><b>${i<3?['🥇','🥈','🥉'][i]:i+1}</b><span>${esc(x.name||T('玩家'))}${rtTag(x.rt)}</span><em>${yen(x[FR.sort]||0)}</em>${act}</div>`}).join('');
   const unsent=ids.filter(k=>(r.frG||{})[k]!==today).length;
   modal(lbHead(tb)+(D.pend.length?`<div class="lbme"><span>🎁 ${T('收到 {0} 份禮物，共 {1}',D.pend.length,yen(sum))}</span><button class="btn" data-act="frclaim">${T('一鍵領取')}</button></div>`:'')
@@ -4192,6 +4272,7 @@ function frDraw(){FR.view='list';if(!HOME||LB.tab!=='fr')return;
    <p id="frerr" style="color:#e0412c;font-size:14px;margin:2px 0" hidden></p>
    ${ids.length?'':`<p class="lbdesc">${T('還沒有好友，把你的好友碼傳給朋友，或輸入朋友的好友碼吧！')}</p>`}
    <div class="lbtabs" style="border-bottom:0;margin:4px 0">${[['best','單日淨利'],['earned','累計營收']].map(([k,n])=>`<button class="stab ${FR.sort===k?'on':''}" data-act="frsort" data-id="${k}">${T(n)}</button>`).join('')}<span style="margin-left:auto;font-size:13px;opacity:.7;align-self:center">${T('好友 {0}/{1}',ids.length,FR_MAX)}</span></div>
+   ${coopDev()?`<div class="lbme"><span>🧪 ${T('連線測試（作者）')}</span><button class="btn alt" data-act="coopopen">${T('開啟')}</button></div>`:''}
    <div class="lblist">${list}</div><div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`)}
 function frErr(m){const e=$('frerr');if(e){e.textContent=T(m);e.hidden=false}}
 async function frAdd(){const me=CL.user,i=$('frin');if(!me||!i||!FR.data)return;
