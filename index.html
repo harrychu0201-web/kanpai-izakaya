@@ -3793,7 +3793,10 @@ function loop(now){
   stmT+=dt;if(stmT>(TOUCH?.3:.1)){stmT=0;steamTick()}
 }
 const TOUCH=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;
-function goFS(){if(!TOUCH||IOS||document.fullscreenElement||document.webkitFullscreenElement)return;const e=document.documentElement,f=e.requestFullscreen||e.webkitRequestFullscreen;if(!f)return;try{const p=f.call(e,{navigationUI:'hide'});if(p&&p.then)p.then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(x){}}).catch(()=>{})}catch(x){}}
+function goFS(){if(!TOUCH||IOS||document.fullscreenElement||document.webkitFullscreenElement)return;
+  /* installed app whose manifest is already display:fullscreen: the window is immersive from launch, so asking the page to go fullscreen again only flashes the "now full screen" toast and re-lays-out the screen (the blink right after opening) */
+  try{if(matchMedia('(display-mode: fullscreen)').matches)return}catch(x){}
+  const e=document.documentElement,f=e.requestFullscreen||e.webkitRequestFullscreen;if(!f)return;try{const p=f.call(e,{navigationUI:'hide'});if(p&&p.then)p.then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(x){}}).catch(()=>{})}catch(x){}}
 const IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),STANDALONE=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 function iosTip(){const w=$('modalLayer');const was=R&&R.paused;if(R)R.paused=true;modal(`<h2>${T('iPhone 要這樣全螢幕')}</h2><p>${T('iPhone 的 Safari 不支援網頁全螢幕，但可以把遊戲加到主畫面，之後從桌面圖示打開就會是全螢幕，跟 App 一樣。')}</p><div class="how"><div class="how-row"><div><b>1.</b> ${T('點 Safari 下方（或上方）的<b>分享</b>按鈕（方框加向上箭頭）')}</div></div><div class="how-row"><div><b>2.</b> ${T('往下滑，選<b>「加入主畫面」</b>')}</div></div><div class="how-row"><div><b>3.</b> ${T('回到手機桌面，點「乾杯！居酒屋」圖示開始玩')}</div></div></div><div class="btns"><button class="btn" data-act="iostipok">${T('知道了')}</button></div>`);IOSTIPR=!was}
 let IOSTIPR=false;
