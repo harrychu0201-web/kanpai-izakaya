@@ -4451,14 +4451,18 @@ async function inboxNoticeSend(){const ti=$('ntitle'),tx=$('ntext'),sg=$('nsign'
   try{await CL.api.setNotice(d);logAct('發布公告',d.id,{title:String(d.title||'').slice(0,40)});NOTICE_HIST[d.id]=d;NOTICE=noticeAll()[0];NOTICE_REMOTE=!!NOTICE.rem;noticeSeen();try{localStorage.removeItem(NDRAFT_KEY)}catch(e){}toast('公告已發布 📢');if(canInbox())inboxDraw();else showNotice(true)}catch(e){toast('發布失敗：'+String(e&&e.code||e))}}
 /* ===== public chat room (Realtime Database 'chat' — no daily write cap; 5 s per-user rate limit and bans enforced by RTDB rules) ===== */
 const ADMIN_EMAIL='harrychu0201@gmail.com';
-function isAdmin(){return !!(CL.user&&CL.user.email===ADMIN_EMAIL)}
-function isTester(){return isAdmin()||CL.isStaff===true} /* 測試面板：作者與 admins/ 管理員 */
+/* 玩家視角：作者／管理員可以切成一般玩家看到的畫面（隱藏所有管理功能），存在本機、重新整理後仍保留 */
+const PVKEY='izakaya-pview';
+function pview(){try{return localStorage.getItem(PVKEY)==='1'}catch(e){return false}}
+const canView=()=>!!(CL.user&&(CL.user.email===ADMIN_EMAIL||CL.isStaff===true));
+function isAdmin(){return !!(CL.user&&CL.user.email===ADMIN_EMAIL)&&!pview()}
+function isTester(){return !pview()&&(isAdmin()||CL.isStaff===true)} /* 測試面板：作者與 admins/ 管理員（玩家視角下關閉） */
 /* announcement posters: the owner adds their uid under posters/<uid> in Realtime Database; they can post, edit and delete announcements (not feedback, bans or vote stats) */
 /* staff, posters and the owner can add, edit and delete announcements */
-const canPost=()=>isAdmin()||CL.isPoster===true||CL.isStaff===true;
-const canDelNotice=()=>isAdmin()||CL.isPoster===true||CL.isStaff===true;
+const canPost=()=>!pview()&&(isAdmin()||CL.isPoster===true||CL.isStaff===true);
+const canDelNotice=()=>!pview()&&(isAdmin()||CL.isPoster===true||CL.isStaff===true);
 /* inbox staff: owner plus anyone under admins/<uid> in Realtime Database; they can read and reply to feedback and delete it (not bans, vote stats or chat tools) */
-const canInbox=()=>isAdmin()||CL.isStaff===true;
+const canInbox=()=>!pview()&&(isAdmin()||CL.isStaff===true);
 const CHT={msgs:[],unsub:null,open:null,last:0,hide:{},block:{},me:null,banned:false,back:false,seenAt:0,live:false,err:false};
 try{const o=JSON.parse(localStorage.getItem('izakaya-chat')||'{}');CHT.hide=o.hide||{};CHT.block=o.block||{}}catch(e){}
 function chatSave(){try{localStorage.setItem('izakaya-chat',JSON.stringify({hide:CHT.hide,block:CHT.block}))}catch(e){}}
@@ -4551,7 +4555,17 @@ function acctRefresh(){const e=$('acct');if(e)e.outerHTML=acctBtn();const t=$('t
    Not persisted: reloading the page always comes back in normal mode with the real save. ===== */
 const TKEY='izakaya-cook-test',TRKEY='izakaya-rec-test',REAL_KEY=KEY,REAL_RKEY=RKEY;
 const TEVS=[['','隨機（照原本機率）'],['none','不要事件'],['rain','🌧 雨天'],['fest','🏮 祭典'],['group','👥 團體客'],['sale','🏷 食材特價'],['critic','📝 評論家']];
-function tstBtn(){if(!TEST&&!isTester())return '';return `<button class="langbtn tstbtn ${TEST?'on':''}" data-act="tstpanel">🧪 ${TEST?'測試中':'測試'}</button>`}
+function tstBtn(){
+  const can=canView(),pv=can&&pview();
+  if(!can&&!TEST)return '';
+  const vb=can?`<button class="langbtn tstbtn ${pv?'on':''}" data-act="pvtoggle">${pv?'👤 玩家視角':'🎭 作者視角'}${pv&&TEST?'・測試存檔':''}</button>`:'';
+  if(pv)return vb;
+  return vb+(isTester()?`<button class="langbtn tstbtn ${TEST?'on':''}" data-act="tstpanel">🧪 ${TEST?'測試中':'測試'}</button>`:'');
+}
+/* 玩家視角切換：不走 tst 開頭的按鈕（玩家視角下 tst 按鈕會被擋） */
+document.addEventListener('click',e=>{const a=e.target.closest('[data-act="pvtoggle"]');if(!a||!canView())return;
+  try{if(pview())localStorage.removeItem(PVKEY);else localStorage.setItem(PVKEY,'1')}catch(err){}
+  acctRefresh();if(HOME)showHome();toast(pview()?'已切換成玩家視角':'已切換回作者視角')});
 function tstBadge(){let b=$('tstbadge');if(TEST&&!b){b=document.createElement('div');b.id='tstbadge';b.textContent='🧪 測試模式・不存雲端、不上排行榜';document.body.appendChild(b)}else if(!TEST&&b)b.remove()}
 function tstForce(t){const f=ST.tforce||{};
   if(f.ev==='none'){delete t.ev;delete t.sale;delete t.at}
