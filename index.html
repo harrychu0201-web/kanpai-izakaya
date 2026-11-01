@@ -2687,7 +2687,7 @@ document.addEventListener('click',e=>{if(!HOME)return;const m=e.target.closest('
 
 function branchPick(){const o=load()||{},cur=o.where==='sushi'&&o.sushi?'sushi':o.where==='rm'&&o.rm?'rm':'iz';
   const btn=(id,name,sub,ok)=>`<button class="btn ${cur===id?'':'alt'}" data-act="pickbranch" data-id="${id}" ${ok?'':'disabled'}>${T(name)}${cur===id?` · ${T('目前')}`:''}<small>${T(sub)}</small></button>`;
-  modal(`<h2>${T('分店')}</h2><p class="hint">${T('選一家店，下次營業就在那裡開門。')}</p><div class="pickrow">${btn('iz','🏮 居酒屋本店','',true)}${btn('rm','🍜 深夜拉麵屋台',o.rm?'':'買下整棟店面後開放',!!o.rm)}${sushiDev()?(o.sushi?btn('sushi','🍣 海風壽司','開發中・僅作者可見',true):`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖（開發中）')}</small></button>`):''}</div><div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
+  modal(`<h2>${T('分店')}</h2><p class="hint">${T('選一家店，下次營業就在那裡開門。')}</p><div class="pickrow">${btn('iz','🏮 居酒屋本店','',true)}${btn('rm','🍜 深夜拉麵屋台',o.rm?'':'買下整棟店面後開放',!!o.rm)}${sushiDev()?(o.sushi?btn('sushi','🍣 海風壽司','',true):`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖')}</small></button>`):''}</div><div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
 function showHome(){if(CHG)chQuit();if(RP.on)abandonReplay();
   if(CUR!=='iz'){CUR='iz';chooseLayout(true)}SHOPHOME=false;DEMO=false;if(TUT){TUT=null;tutLayer().innerHTML=''}HOME=true;R=null;ST=null;closeModal();setTimeout(fit,0);renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
   const saved=load();
@@ -3002,7 +3002,7 @@ function showDayIntro(){
   modal(`<h2>${T('第 {0} 天',ST.day)} <span style="font-size:16px;color:#7a4a2a">${dateStr(ST.day)}</span></h2>
   ${HI?`<div class="evbox"><span class="ei">${HI.ic}</span><div><b>${T('今天是{0}！',T(HI.zh))}</b><br>${T('會有特別的客人上門，每位都能登記進節日客圖鑑。')}</div></div>`:''}
   ${ST.day===365?`<p class="hint">${T('你撐過了一整年！日曆上的每個節日都解鎖了，可以到「📅 日曆」看看。')}</p>`:''}
-  ${ST.rm||ST.sushi||sushiDev()?`<div class="pickrow"><button class="btn ${CUR==='iz'?'':'alt'}" data-act="where" data-id="iz">🏮 ${T('居酒屋本店')}</button>${ST.rm?`<button class="btn ${CUR==='rm'?'':'alt'}" data-act="where" data-id="rm">🍜 ${T('深夜拉麵屋台')}</button>`:''}${ST.sushi?`<button class="btn ${CUR==='sushi'?'':'alt'}" data-act="where" data-id="sushi">🍣 ${T('海風壽司')}</button>`:sushiDev()?`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖（開發中）')}</small></button>`:''}</div>`:''}
+  ${ST.rm||ST.sushi||sushiDev()?`<div class="pickrow"><button class="btn ${CUR==='iz'?'':'alt'}" data-act="where" data-id="iz">🏮 ${T('居酒屋本店')}</button>${ST.rm?`<button class="btn ${CUR==='rm'?'':'alt'}" data-act="where" data-id="rm">🍜 ${T('深夜拉麵屋台')}</button>`:''}${ST.sushi?`<button class="btn ${CUR==='sushi'?'':'alt'}" data-act="where" data-id="sushi">🍣 ${T('海風壽司')}</button>`:sushiDev()?`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖')}</small></button>`:''}</div>`:''}
   ${ST.owned&&!ST.rm?`<p class="hint">${T('商店上方多了「🍜 深夜拉麵屋台」，可以開第二家店！')}</p>`:''}
   ${due?`<div class="bank"><b>${T('今天是還款日！')}</b>${T('打烊時會從錢包還銀行 {0}，記得多賺一點，不然還完錢包見底又要再借。',yen(due))}</div>`:''}
   ${!ST.owned&&ST.coins>=GOAL?`<div class="goalcard"><div><b>🏠 ${T('你已經存夠 {0} 了！',yen(GOAL))}</b><p>${T('現在就能買下整棟店面，之後再也不用付房租。')}</p></div><button class="btn" data-act="buyshop">${T('買下店面 {0}',yen(GOAL))}</button></div>`:''}
@@ -3111,7 +3111,7 @@ function shopKit(){return shopStaff()+`<p class="hint">${T('武器（防身用�
   <div class="shop">${UPS.map(u=>{const done=u.done(),can=u.ok();return `<div class="up ${done?'done':''}"><b>${T(u.zh)}</b><p>${T(u.d)}</p><div class="row"><span class="price">${yen(u.cost)}</span>${done?`<span>${T('已購買')}</span>`:can?`<button class="btn" data-act="buy" data-id="${u.id}" ${ST.coins<u.cost?'disabled':''}>${T('購買')}</button>`:`<span style="font-size:12px">${u.need?T(u.need):''}</span>`}</div></div>`}).join('')}</div>`}
 const RMTABS=['rmenu','rkit','rdeco'];
 const SUSHI_PRICE=3000000;
-function sushiDev(){if(CL.isStaff===true)return true;try{return isAdmin()&&localStorage.getItem('izakaya-sushi')==='1'}catch(e){return false}} /* 海風壽司：作者測試開關，先不開放給所有玩家 */
+function sushiDev(){return true} /* 海風壽司：2026-11-01 開放給所有玩家 */
 /* red dot on a shop tab = something in it is affordable right now (guns are left out on purpose) */
 function tabDot(k){try{const c=ST.coins;
   if(RMTABS.includes(k)){
@@ -3129,7 +3129,7 @@ function tabDot(k){try{const c=ST.coins;
   return false}catch(e){return false}}
 function shopSushi(){
   const SV=ST||load()||{coins:0};
-  if(!SV.sushi)return `<h3 class="sh">${T('海風壽司・花錢解鎖')}</h3><div class="shop"><div class="up"><b>🍣 ${T('開一家海風壽司')}</b><p>${T('（測試中，僅作者可見）一家壽司店：飯、海苔、魚片、配料分開準備，照順序疊起來，做成握壽司、軍艦、壽司卷和手卷，端給客人。解鎖送玉子握壽司。')}</p><button class="btn" data-act="buysushi" ${SV.coins<SUSHI_PRICE?'disabled':''}>${T('花 {0} 解鎖',yen(SUSHI_PRICE))}</button></div></div>`;
+  if(!SV.sushi)return `<h3 class="sh">${T('海風壽司・花錢解鎖')}</h3><div class="shop"><div class="up"><b>🍣 ${T('開一家海風壽司')}</b><p>${T('一家壽司店：飯、海苔、魚片、配料分開準備，照順序疊起來，做成握壽司、軍艦、壽司卷和手卷，端給客人。解鎖送玉子握壽司。')}</p><button class="btn" data-act="buysushi" ${SV.coins<SUSHI_PRICE?'disabled':''}>${T('花 {0} 解鎖',yen(SUSHI_PRICE))}</button></div></div>`;
   const l=suStaffLv(),nx=SU_STAFF.lv[l];
   const menu=Object.keys(ITEMS).filter(k=>ITEMS[k].shop==='sushi').map(k=>`<div class="up" style="display:grid;grid-template-columns:64px 1fr;column-gap:10px;align-items:center"><div style="grid-row:span 3;width:64px;height:64px">${sv(suG(k))}</div><b>${dishTitle(k)}</b><p>${T('售價 {0}・食材 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}</p>${has(k)?`<p>${T('已購買')}</p>${has(k)?`<div style="grid-column:1/-1;white-space:nowrap">${offBtn(k)}</div>`:''}`:`<button class="btn" data-act="susbuy" data-id="${k}" ${SV.coins<ITEMS[k].buy?'disabled':''}>${T('買下 {0}',yen(ITEMS[k].buy))}</button>`}</div>`).join('');
   const staff=`<div class="up"><b>${T(SU_STAFF.zh)}${l?' Lv'+l:''}</b><p>${l?T('目前雇用中，日薪 {0}',yen(SU_STAFF.lv[l-1].wage)):T('還沒雇用')}</p>${nx?`<p>${T(nx.d)}</p><button class="btn" data-act="suhire" ${SV.coins<nx.cost?'disabled':''}>${T(l?'升級 {0}':'雇用 {0}',yen(nx.cost))}</button>`:`<p>${T('已經是最高等級。')}</p>`}</div>`;
@@ -4582,7 +4582,6 @@ function tstPanel(){
   <p class="tsth">事件設定會套用到之後每一天，直到你改回「隨機」。</p>
   <div class="tstr"><b>拉麵店</b>${o&&o.rm?`<button class="btn alt" disabled>屋台已開張</button>`:`<button class="btn" data-act="tstrm">買店面＋開屋台</button>`}${o&&o.rm&&!o.rm.k2?`<button class="btn" data-act="tstk2">擴建二號廚房</button>`:''}<span style="font-size:13px">${!o?'':o.rm?(o.rm.k2?'屋台＋二號廚房都有了':'已有屋台，還沒擴建'):o.owned?'已買店面，還沒開屋台':'還沒買店面'}・不扣錢</span></div>
   <div class="tstr"><b>屋台炸物</b><button class="btn alt" data-act="tstfried">賣出 +50</button><span style="font-size:13px">${o&&o.rm?`目前 ${o.rm.fried||0} 份`:'還沒開屋台'}</span></div>
-    <div class="tstr"><b>海風壽司開發</b>${isAdmin()?`<button class="btn ${sushiDev()?'':'alt'}" data-act="tstsushi">${sushiDev()?'顯示中（點了隱藏）':'已隱藏（點了顯示）'}</button>`:''}</div>
     ${isAdmin()?`<div class="tstr"><b>補發道具</b><button class="btn" data-act="tstgrant">補發給玩家</button></div>`:''}
     <div class="tstr"><b>營業速度</b>${[1,2,4].map(n=>`<button class="btn ${TSPD===n?'':'alt'}" data-act="tstspd" data-id="${n}">${n}x</button>`).join('')}</div>
   </div><div class="btns">${TEST?`<button class="btn alt" data-act="tstreset">清空測試存檔</button><button class="btn alt" data-act="tstoff">離開測試模式</button>`:`<button class="btn alt" data-act="tstcopy">另開獨立測試存檔</button>`}<button class="btn" data-act="closem">關閉</button></div>`)}
