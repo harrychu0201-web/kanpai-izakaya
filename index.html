@@ -3958,7 +3958,7 @@ function coopInvStart(){if(COOP.invOn||!CL.api||!CL.api.coopInvWatch||!coopDev()
     if(show&&!COOP.code){coopBannerShow(show[0],show[1]);try{toast('有人邀請你一起開店')}catch(e){}}
     if(!Object.keys(list).length)coopBannerHide();coopRender()},e=>{console.warn('coop inv watch',e);COOP.invOn=false})}
 function coopInvStop(){if(COOP.invOff)COOP.invOff();COOP.invOff=null;COOP.invOn=false;COOP.invSeen={};coopBannerHide()}
-async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid;
+async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid;COOP.err='';
   try{if(!CL.api)throw new Error('no api');
     if(k==='open'){coopPanel();try{COOP.inv=await CL.api.coopInvList(me)}catch(e){console.warn('coop inv',e);COOP.inv={};COOP.err='讀不到邀請（規則還沒更新？）'}coopPanel();return}
     if(k==='make'){if(COOP.code){toast('已經在連線中');coopPanel();return}
@@ -3971,7 +3971,7 @@ async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid
     if(k==='start'){await CL.api.coopState(COOP.code,'playing');return}
     if(k==='ping'){await CL.api.coopSend(COOP.code,me,'ping',Date.now());return}
     if(k==='leave'){await coopLeave();return}
-  }catch(e){console.warn('coop',k,e);COOP.err='失敗：'+String(e&&e.code||e&&e.message||e).slice(0,80);toast('連線功能暫時打不開，請稍後再試。');if(document.getElementById('coopmark'))coopPanel()}}
+  }catch(e){console.warn('coop',k,e);COOP.err='失敗（'+k+'）：'+String(e&&e.code||e&&e.message||e).slice(0,80);toast('連線功能暫時打不開，請稍後再試。');if(document.getElementById('coopmark'))coopPanel()}}
 function coopAttach(code){if(COOP.unsub)COOP.unsub();if(COOP.presOff)COOP.presOff();
   COOP.on=true;COOP.room=null;COOP.p={};COOP.ev=[];COOP.lastOn={};COOP.graceWho=null;
   COOP.unsub=CL.api.coopWatch(code,(k,v)=>{if(k==='room')coopOnRoom(v);else coopOnEv(v)},e=>{console.warn('coop watch',e);toast('連線中斷');COOP.on=false});
@@ -4059,7 +4059,8 @@ async function cloudInit(){
       coopAccept:(uid,code)=>rt((rd,r)=>{COOP.w++;return rd.remove(rd.ref(r,'coopInv/'+uid+'/'+code))}),
       coopInvDel:(uid,code)=>rt((rd,r)=>{COOP.w++;return rd.remove(rd.ref(r,'coopInv/'+uid+'/'+code))}),
       coopState:(code,st)=>rt((rd,r)=>{COOP.w++;return rd.update(rd.ref(r,'rooms/'+code),{state:st})}),
-      coopSend:(code,uid,type,d)=>rt((rd,r)=>{COOP.w++;return rd.push(rd.ref(r,'rooms/'+code+'/ev'),{from:uid,type:String(type).slice(0,20),d:typeof d==='number'?d:0,t:rd.serverTimestamp()})}),
+      coopSend:(code,uid,type,d)=>rt((rd,r)=>{COOP.w++;const ref=rd.push(rd.ref(r,'rooms/'+code+'/ev'),{from:uid,type:String(type).slice(0,20),d:typeof d==='number'?d:0,t:rd.serverTimestamp()});
+        return ref.then(()=>ref,e=>{COOP.ev=COOP.ev.filter(x=>x.id!==ref.key);throw e})}),
       coopEnd:code=>rt((rd,r)=>{COOP.w++;return rd.remove(rd.ref(r,'rooms/'+code))}),
       coopWatch:(code,cb,err)=>{let offs=[],dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
         offs.push(rd.onValue(rd.ref(r,'rooms/'+code),s=>cb('room',s.val()),err));

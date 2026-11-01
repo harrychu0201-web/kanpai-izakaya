@@ -498,6 +498,18 @@
           "$id": {
             ".write": "auth != null && !data.exists() && newData.child('from').val() === auth.uid && (root.child('rooms').child($code).child('host').val() === auth.uid || root.child('rooms').child($code).child('guest').val() === auth.uid)",
             ".validate": "newData.hasChildren(['from','type','t','d']) && newData.child('from').isString() && newData.child('type').isString() && newData.child('type').val().length <= 20 && newData.child('d').isNumber() && newData.child('t').isNumber()",
+            "from": {
+              ".validate": "newData.isString() && newData.val().length <= 128"
+            },
+            "type": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            "d": {
+              ".validate": "newData.isNumber()"
+            },
+            "t": {
+              ".validate": "newData.isNumber()"
+            },
             "$other": {
               ".validate": false
             }
