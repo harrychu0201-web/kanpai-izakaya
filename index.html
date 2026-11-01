@@ -1522,11 +1522,9 @@ function suResult(parts){const q=parts.join();return suRecs().find(k=>SU_REC[k].
 function suTrayOpen(id){return SUKEYS.some(k=>has(k)&&SU_REC[k].includes(id))}
 function suAdd(id,el){
   const eFree=R.maki.findIndex((g,j)=>!g&&j<makiN());
-  /* 海苔可以開新格（壽司捲／手卷的起手），板子有空格時不去蓋已做好的握壽司，避免同時做鮪魚捲和握壽司時被誤蓋成手卷 */
-  /* 已經做好的握壽司不會因為點了海苔就被改成手卷：海苔一律開新格或接在做到一半的壽司上（要做手捲就先放飯和配料，最後再放海苔） */
-  const handOK=false;
-  const skipDone=id==='nori'&&suTrayOpen(id)&&suFits([],id);
-  let i=-1;R.maki.forEach((g,j)=>{if(!g||j>=makiN()||!suFits(g.parts,id))return;if(skipDone&&g.kind!=='asm')return;const a=R.maki[i];if(i<0||(g.kind==='asm'&&a.kind!=='asm')||((g.kind==='asm')===(a.kind==='asm')&&(g.at||0)>(a.at||0)))i=j}); /* 先接在還沒做完的格子，其中選最近動過的；做好的握壽司最後才輪到（再蓋海苔變手卷） */
+  /* 手捲的作法是「飯→配料→海苔」，飯和配料疊完時會先被判成握壽司，所以海苔要能接在做好的握壽司上面變手捲（SU_REC 裡的順序才對得上）。
+     優先順序：先接在做到一半的壽司上 → 再接在剛做好、且海苔能接上的握壽司上 → 最後才開新格 */
+  let i=-1;R.maki.forEach((g,j)=>{if(!g||j>=makiN()||!suFits(g.parts,id))return;const a=R.maki[i];if(i<0||(g.kind==='asm'&&a.kind!=='asm')||((g.kind==='asm')===(a.kind==='asm')&&(g.at||0)>(a.at||0)))i=j}); /* 先接在還沒做完的格子，其中選最近動過的；做好的握壽司最後才輪到（再蓋海苔變手卷） */
   if(i<0){const e=R.maki.findIndex((g,j)=>!g&&j<makiN());
     if(!suTrayOpen(id)){nope(el);toast('先到商店買下用得到它的菜');return}
     if(!suFits([],id)){nope(el);toast(id==='rice'||id==='nori'?'這樣組不起來，換個順序試試':'先放壽司飯或海苔');return}
