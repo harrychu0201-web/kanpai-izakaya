@@ -1560,7 +1560,7 @@ function makiHTML(){
     else inner=`<div style="opacity:.2;width:100%;height:100%">${sv(`<path d="M12 64C9 51 24 43 50 43C76 43 91 51 88 64C90 76 76 84 50 84C24 84 10 76 12 64Z" fill="none" stroke="#4a2e18" stroke-width="3" stroke-dasharray="6 5"/>`)}</div>`;
     s+=`<div class="st slot" data-mk="${i}" style="left:${x}px;top:18px;width:64px;height:146px;${done?'box-shadow:0 0 0 3px #ffc65a inset;background:#ffc65a22':''}"><div style="position:absolute;left:-6px;right:-6px;top:38px;height:76px">${inner}</div></div>`}
   return s+`<span class="lbl">${T('壽司台')}</span>`}
-function suDemand(){const d={};for(const c of R.seats){if(!c||(c.st!=='wait'&&c.st!=='in'))continue;c.order.forEach((k,j)=>{if(!c.filled[j])d[k]=(d[k]||0)+1});if(c.extra&&c.extra.ok&&!c.extra.done)d[c.extra.key]=(d[c.extra.key]||0)+1}
+function suDemand(){const d={};for(const c of R.seats){if(!c||c.st!=='wait')continue; /* 只算已經入座、在等餐的客人，客人還在走進來時不先做 */c.order.forEach((k,j)=>{if(!c.filled[j])d[k]=(d[k]||0)+1});if(c.extra&&c.extra.ok&&!c.extra.done)d[c.extra.key]=(d[c.extra.key]||0)+1}
   R.maki.forEach(g=>{if(g&&g.kind!=='asm')d[g.kind]=(d[g.kind]||0)-1});
   R.maki.forEach(g=>{if(g&&g.kind==='asm'){const k=Object.keys(d).find(x=>d[x]>0&&SU_REC[x]&&SU_REC[x].length>g.parts.length&&g.parts.every((p,j)=>SU_REC[x][j]===p));if(k)d[k]--}});
   return d}
