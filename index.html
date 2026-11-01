@@ -3273,7 +3273,6 @@ document.addEventListener('click',e=>{
   else if(act==='noticeold')showNotice(true,a.dataset.id);
   else if(act==='noticelist')noticeList();
   else if(act==='noticenew')inboxNotice();
-  else if(act==='fbboard')showFbBoard();
   else if(act==='uidcopy'){if(CL.user)copyTxt(CL.user.uid,'已複製 ID')}
   else if(act==='fbpubsync')fbPubSync();
   else if(act==='noticeedit')noticeEdit(a.dataset.id);
@@ -4322,20 +4321,8 @@ function showFb(){
   <input class="nickin" id="fbcontact" maxlength="60" style="font-size:16px;padding:7px 10px" placeholder="${T('聯絡方式（選填，例如 Threads 帳號）')}" value="${esc(FB.contact)}" autocomplete="off" oninput="FB.contact=this.value">
   <p class="fbsmall" style="margin:0">${CL.user?T('作者回覆後，你打開遊戲就會看到 💌'):T('登入後再送出，作者就能直接在遊戲裡回覆你喔')}</p>
   <p class="fbsmall" id="fbmsg"></p></div>
-  <div class="btns"><button class="btn alt" data-act="fbboard">👀 ${T('大家的意見')}</button><button class="btn" data-act="fbsend">${T('送出')}</button><button class="btn alt" data-act="closem">${T('返回')}</button><button class="btn alt" data-act="notice">📢 ${T('公告')}</button>${CL.user?`<button class="btn alt" data-act="myre">💌 ${T('作者的回覆')}</button>`:''}${canInbox()?`<button class="btn" data-act="inbox">📬 收件匣</button>`:''}</div>`);
+  <div class="btns"><button class="btn" data-act="fbsend">${T('送出')}</button><button class="btn alt" data-act="closem">${T('返回')}</button><button class="btn alt" data-act="notice">📢 ${T('公告')}</button>${CL.user?`<button class="btn alt" data-act="myre">💌 ${T('作者的回覆')}</button>`:''}${canInbox()?`<button class="btn" data-act="inbox">📬 收件匣</button>`:''}</div>`);
   setTimeout(()=>{const t=$('fbtext');if(t&&!('ontouchstart' in window))t.focus()},50)}
-const FBB={rows:[],q:'',err:''};
-async function showFbBoard(){
-  modal(`<h2>👀 大家的意見</h2><p style="font-size:14px">送出前先搜尋看看有沒有人已經提過，可以少一點重複的問題 🙏</p>
-  <input class="nickin" id="fbq" placeholder="搜尋關鍵字…" style="font-size:16px;padding:7px 10px" value="${esc(FBB.q)}" oninput="FBB.q=this.value;fbBoardDraw()" autocomplete="off">
-  <div id="fbboard" style="max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin:8px 0"><p class="fbsmall">載入中…</p></div>
-  <div class="btns"><button class="btn" data-act="fb">我也要寫意見</button><button class="btn alt" data-act="closem">返回</button></div>`);
-  try{if(!CL.api)throw 0;FBB.rows=await CL.api.fbPubList(200);FBB.err=''}catch(e){FBB.err=String(e&&e.code||'')}
-  fbBoardDraw()}
-function fbBoardDraw(){const b=$('fbboard');if(!b)return;
-  if(FBB.err!==''&&!FBB.rows.length){b.innerHTML=`<p class="fbsmall">意見板暫時讀不到，晚點再試</p>`;return}
-  const q=FBB.q.trim().toLowerCase(),rows=FBB.rows.filter(f=>f.text&&(!q||(String(f.text)+' '+(f.re||'')).toLowerCase().includes(q)));
-  b.innerHTML=rows.length?rows.map(f=>`<div class="inbit${f.re?' done':''}"><p class="inbh">${esc(FBCATN[f.cat]||f.cat||'')} · ${chatTime(f.t||0)}</p><p class="inbtx">${esc(f.text)}</p>${f.re?`<p class="inbre">✅ 作者回覆：${esc(f.re)}</p>`:''}</div>`).join(''):`<p class="fbsmall">${q?'沒有找到相關的意見，可以直接送出囉':'還沒有意見'}</p>`}
 async function fbPubSync(){const rows=INB.rows.filter(f=>!f.old&&!f.thr&&f.cat!=='re'&&f.text&&typeof f.t==='number');
   try{const n=await CL.api.fbPubBackfill(rows);logAct('同步公開板',n+' 則');toast('已同步 '+n+' 則到公開板 👀')}catch(e){toast('同步失敗：'+String(e&&e.code||e))}}
 async function sendFb(){const t=$('fbtext'),c=$('fbcontact'),m=$('fbmsg');if(!t)return;
