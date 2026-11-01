@@ -3906,7 +3906,7 @@ function mergeRec(a,b){const pj=s=>{try{return s?JSON.parse(s)||{}:{}}catch(e){r
 const COOP={on:false,w:0,code:null,role:null,room:null,p:{},ev:[],unsub:null,presOff:null,inv:{},graceWho:null,graceEnd:0,tick:null,lastOn:{},open:false};
 const COOP_GRACE=30000;
 /* co-op test list: the author plus the listed test accounts (emails are public in this repo) */
-const COOP_TESTERS=[ADMIN_EMAIL,'liyuanhaofat@gmail.com'];
+const COOP_TESTERS=['harrychu0201@gmail.com','liyuanhaofat@gmail.com'];
 function coopDev(){const e=CL.user&&CL.user.email;return !!e&&COOP_TESTERS.indexOf(e.toLowerCase())>=0}
 function coopCode(){const A='23456789ABCDEFGHJKMNPQRSTUVWXYZ';let s='';for(let i=0;i<6;i++)s+=A[Math.floor(Math.random()*A.length)];return s}
 function coopOther(){const r=COOP.room,me=CL.user&&CL.user.uid;if(!r||!me)return null;return r.host===me?r.guest:r.host}
