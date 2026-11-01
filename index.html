@@ -3921,7 +3921,7 @@ function mergeRec(a,b){const pj=s=>{try{return s?JSON.parse(s)||{}:{}}catch(e){r
   {const ci=[x.ci,y.ci].filter(Boolean).sort((p,q)=>String(q.last||'').localeCompare(String(p.last||'')));if(ci[0])o.ci=ci[0]}
   return JSON.stringify(o)}
 /* ===== co-op (milestone 1, author-only): room + invite + presence + event channel + 30s reconnect grace ===== */
-const COOP={err:'',on:false,w:0,code:null,role:null,room:null,p:{},ev:[],unsub:null,presOff:null,inv:{},graceWho:null,graceEnd:0,tick:null,lastOn:{},open:false};
+const COOP={err:'',invOn:false,invOff:null,invSeen:{},on:false,w:0,code:null,role:null,room:null,p:{},ev:[],unsub:null,presOff:null,inv:{},graceWho:null,graceEnd:0,tick:null,lastOn:{},open:false};
 const COOP_GRACE=30000;
 /* co-op test list: the author plus the listed test accounts (emails are public in this repo) */
 const COOP_TESTERS=['harrychu0201@gmail.com','liyuanhaofat@gmail.com'];
@@ -3944,14 +3944,30 @@ function coopPanel(){if(!coopDev()||!CL.user){modal(`<h2>${T('連線測試')}</h
      +`<div class="btns" style="justify-content:flex-start">${COOP.role==='host'&&r&&r.state==='lobby'?`<button class="btn" data-act="coopstart" ${o&&COOP.p[o]&&COOP.p[o].on?'':'disabled'}>${T('開始營業')}</button>`:''}<button class="btn alt" data-act="coopping" ${r&&r.state!=='ended'?'':'disabled'}>${T('送測試訊息')}</button><button class="btn alt" data-act="coopleave">${T('離開')}</button></div>`
      +`<div style="font-size:13px;max-height:160px;overflow:auto;margin-top:8px">${COOP.ev.slice(-20).map(x=>`<div>${x.from===me?T('我'):T('對方')} · ${esc(x.type)}${x.lat!=null?` · ${x.lat}ms`:''}</div>`).join('')||'<small>—</small>'}</div>`}
   modal(`<i id="coopmark"></i><h2>${T('連線測試')}</h2>${COOP.err?`<p style="color:#e0412c">${T(COOP.err)}</p>`:''}${inv}${body}<div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`)}
+/* live invite notice: a banner with 接受 / 拒絕 whenever a friend invites you (test accounts only) */
+const COOP_INV_TTL=10*60*1000;
+function coopBannerHide(){const b=document.getElementById('coopbanner');if(b)b.remove()}
+function coopBannerShow(code,v){coopBannerHide();const b=document.createElement('div');b.id='coopbanner';
+  b.style.cssText='position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:9000;max-width:92vw;background:#3b2314;color:#f3dfb4;border:2px solid #ffb36b;border-radius:12px;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;box-shadow:0 6px 20px #0008;font-size:15px';
+  b.innerHTML=`<span>📨 <b>${esc(v.name||T('玩家'))}</b> ${T('邀請你一起開店')}</span><button class="btn" data-act="coopaccept" data-id="${esc(code)}">${T('接受')}</button><button class="btn alt" data-act="coopdecline" data-id="${esc(code)}">${T('拒絕')}</button>`;
+  document.body.appendChild(b)}
+function coopInvStart(){if(COOP.invOn||!CL.api||!CL.api.coopInvWatch||!coopDev()||!CL.user)return;const me=CL.user.uid;COOP.invOn=true;
+  COOP.invOff=CL.api.coopInvWatch(me,list=>{COOP.inv=list;const now=Date.now();let show=null;
+    Object.keys(list).forEach(c=>{const v=list[c]||{};if(typeof v.t==='number'&&now-v.t>COOP_INV_TTL){CL.api.coopInvDel(me,c).catch(()=>{});delete list[c];return}
+      if(!COOP.invSeen[c]&&!(COOP.code===c)){COOP.invSeen[c]=1;show=[c,v]}});
+    if(show&&!COOP.code){coopBannerShow(show[0],show[1]);try{toast('有人邀請你一起開店')}catch(e){}}
+    if(!Object.keys(list).length)coopBannerHide();coopRender()},e=>{console.warn('coop inv watch',e);COOP.invOn=false})}
+function coopInvStop(){if(COOP.invOff)COOP.invOff();COOP.invOff=null;COOP.invOn=false;COOP.invSeen={};coopBannerHide()}
 async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid;
   try{if(!CL.api)throw new Error('no api');
     if(k==='open'){coopPanel();try{COOP.inv=await CL.api.coopInvList(me)}catch(e){console.warn('coop inv',e);COOP.inv={};COOP.err='讀不到邀請（規則還沒更新？）'}coopPanel();return}
     if(k==='make'){if(COOP.code){toast('已經在連線中');coopPanel();return}
       const code=coopCode(),nm=(lbEntry()||{}).name||'';
       await CL.api.coopMake(code,me,id,nm);COOP.code=code;COOP.role='host';coopAttach(code);toast('已邀請，等朋友加入');coopPanel();return}
-    if(k==='accept'){await CL.api.coopAccept(me,id);delete COOP.inv[id];COOP.code=id;COOP.role='guest';coopAttach(id);coopPanel();return}
-    if(k==='decline'){await CL.api.coopInvDel(me,id);delete COOP.inv[id];coopPanel();return}
+    if(k==='accept'){coopBannerHide();const rm=await CL.api.coopRoomGet(id).catch(()=>null);
+      if(!rm||rm.state==='ended'||rm.guest!==me){await CL.api.coopInvDel(me,id).catch(()=>{});delete COOP.inv[id];toast('這個邀請已經失效了');coopPanel();return}
+      await CL.api.coopAccept(me,id);delete COOP.inv[id];COOP.code=id;COOP.role='guest';coopAttach(id);coopPanel();return}
+    if(k==='decline'){coopBannerHide();await CL.api.coopInvDel(me,id);delete COOP.inv[id];coopPanel();return}
     if(k==='start'){await CL.api.coopState(COOP.code,'playing');return}
     if(k==='ping'){await CL.api.coopSend(COOP.code,me,'ping',Date.now());return}
     if(k==='leave'){await coopLeave();return}
@@ -3993,7 +4009,7 @@ async function cloudInit(){
     if(APPCHECK_KEY){try{const ac=await import(B+'firebase-app-check.js');ac.initializeAppCheck(app,{provider:new ac.ReCaptchaV3Provider(APPCHECK_KEY),isTokenAutoRefreshEnabled:true})}catch(e){console.warn('app check',e)}}
     const auth=au.getAuth(app),db=fs.getFirestore(app);
     let RD=null,rtT=null;const rtdb=async()=>{if(!RD){const rd=await import(B+'firebase-database.js');RD={rd,db:rd.getDatabase(app,RTDB_URL)}}return RD};
-    const rtIdle=()=>{clearTimeout(rtT);rtT=setTimeout(()=>{if(RD&&!CHT.unsub&&!COOP.on)RD.rd.goOffline(RD.db)},8000)};
+    const rtIdle=()=>{clearTimeout(rtT);rtT=setTimeout(()=>{if(RD&&!CHT.unsub&&!COOP.on&&!COOP.invOn)RD.rd.goOffline(RD.db)},8000)};
     const rt=async f=>{const x=await rtdb();clearTimeout(rtT);x.rd.goOnline(x.db);try{return await f(x.rd,x.db)}finally{rtIdle()}};
     CL.api={
       signIn:async()=>{const pv=new au.GoogleAuthProvider();pv.setCustomParameters({prompt:'select_account'});
@@ -4036,6 +4052,10 @@ async function cloudInit(){
       // co-op skeleton (author-only UI): room node, invites, presence, event channel. COOP.w counts writes for quota checks.
       coopMake:(code,host,guest,name)=>rt((rd,r)=>{COOP.w+=2;return rd.update(rd.ref(r),{['rooms/'+code]:{host,guest,state:'lobby',t:rd.serverTimestamp()},['coopInv/'+guest+'/'+code]:{from:host,name:String(name||'').slice(0,24),t:rd.serverTimestamp()}})}),
       coopInvList:uid=>rt((rd,r)=>rd.get(rd.ref(r,'coopInv/'+uid)).then(s=>s.val()||{})),
+      coopInvWatch:(uid,cb,err)=>{let off=null,dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
+        off=rd.onValue(rd.ref(r,'coopInv/'+uid),s=>cb(s.val()||{}),err)}).catch(err);
+        return ()=>{dead=true;if(off)off()}},
+      coopRoomGet:code=>rt((rd,r)=>rd.get(rd.ref(r,'rooms/'+code)).then(s=>s.val())),
       coopAccept:(uid,code)=>rt((rd,r)=>{COOP.w++;return rd.remove(rd.ref(r,'coopInv/'+uid+'/'+code))}),
       coopInvDel:(uid,code)=>rt((rd,r)=>{COOP.w++;return rd.remove(rd.ref(r,'coopInv/'+uid+'/'+code))}),
       coopState:(code,st)=>rt((rd,r)=>{COOP.w++;return rd.update(rd.ref(r,'rooms/'+code),{state:st})}),
@@ -4118,7 +4138,7 @@ async function cloudLogin(){if(!CL.api)return;try{if(await CL.api.signIn()==='cl
 // Chrome severs the sign-in popup when the player picks "Use another account", so the popup seems to close by itself.
 // Workaround: add that account to the browser first, then it shows up in the account list and can be picked directly.
 function loginHelp(){if(!HOME)return;modal(`<h2>${T('登入視窗關掉了')}</h2><p>${T('如果你剛剛是按「使用其他帳戶」，Chrome 會把登入視窗切斷。')}</p><p>${T('先按「新增 Google 帳號」，在新分頁登入你要用的帳號，登好後回到遊戲再按一次登入，那個帳號就會直接出現在清單裡，點它就好。')}</p><div class="btns"><button class="btn" data-act="addacct">${T('新增 Google 帳號')}</button><button class="btn" data-act="login">${T('再試一次')}</button><button class="btn" data-act="closem">${T('知道了')}</button></div>`)}
-function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){CL.isPoster=false;if(CL.api)CL.api.isPoster(u.uid).then(v=>{CL.isPoster=v===true}).catch(()=>{});CL.isStaff=false;if(CL.api)CL.api.isStaff(u.uid).then(v=>{CL.isStaff=v===true}).catch(()=>{});cloudSync();setTimeout(()=>replyCheck(0),2500)}if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
+function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){CL.isPoster=false;if(CL.api)CL.api.isPoster(u.uid).then(v=>{CL.isPoster=v===true}).catch(()=>{});CL.isStaff=false;if(CL.api)CL.api.isStaff(u.uid).then(v=>{CL.isStaff=v===true}).catch(()=>{});cloudSync();setTimeout(()=>replyCheck(0),2500);setTimeout(coopInvStart,3000)}else coopInvStop();if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
 async function claimGrants(){const u=CL.user;if(!u||TEST||RP.on||!CL.api||!CL.api.grantsGet)return;
   let g={};try{g=await CL.api.grantsGet(u.uid)||{}}catch(e){console.warn('grants',e);return}
   for(const id of Object.keys(g)){const x=g[id]||{},items={};Object.keys(x.items||{}).forEach(k=>{const n=Math.floor(+x.items[k]);if(PROPS[k]&&n>0)items[k]=Math.min(20,n)});
