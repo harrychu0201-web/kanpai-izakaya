@@ -510,6 +510,9 @@
             "t": {
               ".validate": "newData.isNumber()"
             },
+            "txt": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+            },
             "$other": {
               ".validate": false
             }

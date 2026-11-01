@@ -468,7 +468,7 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 .rplbox p,.inbit p{margin:0;white-space:pre-line;word-break:break-word;font-size:15px}
 .rplq{color:#7a5a3a}.rplt,.inbh{font-size:12px!important;color:#9a7a5a}
 .inbit.done{opacity:.75}.inbre{color:#3a6a2a}
-.inbit .btns .btn{font-size:14px;padding:5px 12px}.tstbtn{gap:4px;padding:5px 12px}.tstbtn.on{background:#b4561ccc;border-color:#ffb36b}#tstbadge{position:fixed;top:4px;left:50%;transform:translateX(-50%);z-index:9999;pointer-events:none;background:#b4561c;color:#fff;font-size:12px;font-weight:900;padding:2px 10px;border-radius:999px;box-shadow:0 2px 6px #0006}.tstp .tstr{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0}.tstp .tstr b{min-width:4.5em}.tstp input,.tstp select{font:inherit;padding:4px 6px;border-radius:6px;border:1px solid #c9963e;background:#fff8ea;color:#2a1a10}.tstp input{width:5em}.tstp .tstr .btn{padding:4px 10px;min-width:0;font-size:14px}.tsts{font-weight:900}.tsth{font-size:12px;opacity:.75;margin:-4px 0 4px}
+.inbit .btns .btn{font-size:14px;padding:5px 12px}.cpm{padding:2px 0;word-break:break-word}.cpm.me{color:#a3521a}.cpm.sys{opacity:.55;font-size:12px}.tstbtn{gap:4px;padding:5px 12px}.tstbtn.on{background:#b4561ccc;border-color:#ffb36b}#tstbadge{position:fixed;top:4px;left:50%;transform:translateX(-50%);z-index:9999;pointer-events:none;background:#b4561c;color:#fff;font-size:12px;font-weight:900;padding:2px 10px;border-radius:999px;box-shadow:0 2px 6px #0006}.tstp .tstr{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0}.tstp .tstr b{min-width:4.5em}.tstp input,.tstp select{font:inherit;padding:4px 6px;border-radius:6px;border:1px solid #c9963e;background:#fff8ea;color:#2a1a10}.tstp input{width:5em}.tstp .tstr .btn{padding:4px 10px;min-width:0;font-size:14px}.tsts{font-weight:900}.tsth{font-size:12px;opacity:.75;margin:-4px 0 4px}
 .ntbtn{gap:4px;padding:5px 12px}@media (max-width:800px){.ntbtn .ntl{display:none}.ntbtn{padding:4px 9px}}.notice .sign{text-align:right;font-weight:900}
 .chatfab{position:absolute;left:max(14px,env(safe-area-inset-left,0px));bottom:calc(max(14px,env(safe-area-inset-bottom,0px)) + 40px);z-index:3;display:flex;align-items:center;gap:6px;padding:8px 16px 8px 12px;border-radius:999px;background:#fffaf0;border:3px solid #3a1a10;box-shadow:0 4px 0 #3a1a10,0 6px 14px #0007;font-size:16px;font-weight:900;color:#3a1a10;cursor:pointer}
 .chatfab b{font-size:22px;line-height:1}
@@ -3746,7 +3746,7 @@ drawBg=function(){_drawBg();if(!artOn()||CUR==='sushi'||(CUR==='rm'&&ST&&ST.rm))
   const im2=mk();im2.setAttribute('clip-path','url(#artclip)');ct.insertBefore(im2,ct.firstChild);ct.insertBefore(cp,ct.firstChild)};
 let artKeys='';document.addEventListener('keydown',e=>{const t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;const ch=(e.code&&/^Key[A-Z]$/.test(e.code))?e.code[3].toLowerCase():(e.key&&e.key.length===1?e.key.toLowerCase():'');if(!ch)return;artKeys=(artKeys+ch).slice(-3);if(artKeys==='art'){artKeys='';artToggle()}});
 let artTaps=[];document.addEventListener('pointerdown',e=>{const p=e.target&&e.target.closest&&e.target.closest('.pill.day');if(!p)return;const now=Date.now();artTaps=artTaps.filter(t=>now-t<2500);artTaps.push(now);if(artTaps.length>=5){artTaps=[];artToggle()}},true);
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='nickin'){saveNick();return}if(e.key==='Enter'&&!e.isComposing&&e.target&&e.target.id==='cin'){e.preventDefault();chatSend();return}if(R&&!R.paused&&!R.over&&pages().length>1&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&(e.key===' '||e.key==='Tab'||e.key==='ArrowRight'||e.key==='ArrowLeft'||e.key==='a'||e.key==='A'||e.key==='d'||e.key==='D')){const t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;e.preventDefault();setPage(['ArrowLeft','a','A'].includes(e.key)?prevPage():nextPage())}});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='nickin'){saveNick();return}if(e.key==='Enter'&&!e.isComposing&&e.target&&e.target.id==='coopin'){e.preventDefault();coopAct('sendmsg');return}if(e.key==='Enter'&&!e.isComposing&&e.target&&e.target.id==='cin'){e.preventDefault();chatSend();return}if(R&&!R.paused&&!R.over&&pages().length>1&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&(e.key===' '||e.key==='Tab'||e.key==='ArrowRight'||e.key==='ArrowLeft'||e.key==='a'||e.key==='A'||e.key==='d'||e.key==='D')){const t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;e.preventDefault();setPage(['ArrowLeft','a','A'].includes(e.key)?prevPage():nextPage())}});
 let SWX=null;document.addEventListener('touchstart',e=>{SWX=e.touches.length===1?{x:e.touches[0].clientX,y:e.touches[0].clientY,t:Date.now()}:null},{passive:true});
 document.addEventListener('touchend',e=>{const s=SWX;SWX=null;if(!s||!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-s.x,dy=e.changedTouches[0].clientY-s.y;if(Date.now()-s.t>700||Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;if(!R||R.paused||R.over||pages().length<2||$('modalLayer').innerHTML)return;const t=e.target;if(t&&t.closest&&t.closest('input,textarea,.modal'))return;setPage(dx<0?nextPage():prevPage())},{passive:true});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&R&&!R.paused&&!R.over)pause()});
@@ -3925,12 +3925,21 @@ const COOP={err:'',invOn:false,invOff:null,invSeen:{},on:false,w:0,code:null,rol
 const COOP_GRACE=30000;
 /* co-op test list: the author plus the listed test accounts (emails are public in this repo) */
 const COOP_TESTERS=['harrychu0201@gmail.com','liyuanhaofat@gmail.com'];
+function coopNote(m){let d=document.getElementById('coopnote');if(!d){d=document.createElement('div');d.id='coopnote';d.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9000;max-width:90vw;background:#3b2314;color:#f3dfb4;border:2px solid #ffb36b;border-radius:10px;padding:8px 14px;font-size:15px;pointer-events:none;transition:opacity .25s;opacity:0';document.body.appendChild(d)}
+  d.textContent=T(m);d.style.opacity=1;clearTimeout(coopNote.t);coopNote.t=setTimeout(()=>{d.style.opacity=0},2600)}
 function coopDev(){const e=CL.user&&CL.user.email;return !!e&&COOP_TESTERS.indexOf(e.toLowerCase())>=0}
 function coopCode(){const A='23456789ABCDEFGHJKMNPQRSTUVWXYZ';let s='';for(let i=0;i<6;i++)s+=A[Math.floor(Math.random()*A.length)];return s}
 function coopOther(){const r=COOP.room,me=CL.user&&CL.user.uid;if(!r||!me)return null;return r.host===me?r.guest:r.host}
-function coopRender(){if(document.getElementById('coopmark'))coopPanel()}
-function coopPanel(){if(!coopDev()||!CL.user){modal(`<h2>${T('連線測試')}</h2><p>${T('需要作者帳號登入。')}</p><div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`);return}
-  const me=CL.user.uid,r=COOP.room;
+function coopRender(){const m=document.getElementById('coopmark');if(!m)return;
+  if((m.dataset.code||'')!==(COOP.code||'')){coopPanel();return}
+  const d=document.getElementById('coopdyn');if(d)d.innerHTML=coopDyn();coopMsgsFill()}
+function coopMsgsFill(){const b=document.getElementById('coopmsgs');if(!b)return;const me=CL.user&&CL.user.uid;
+  const near=b.scrollHeight-b.scrollTop-b.clientHeight<40;
+  b.innerHTML=COOP.ev.filter(x=>x.type==='msg'||x.type==='ping').slice(-40).map(x=>{const mine=x.from===me;
+    if(x.type==='ping')return `<div class="cpm sys">${mine?T('我'):T('對方')} · ping${x.lat!=null?` · ${x.lat}ms`:''}</div>`;
+    return `<div class="cpm ${mine?'me':''}"><b>${mine?T('我'):T('對方')}</b>：${esc(x.txt||'')}</div>`}).join('')||`<div class="cpm sys">${T('還沒有訊息，打個招呼吧')}</div>`;
+  if(near)b.scrollTop=b.scrollHeight}
+function coopDyn(){const me=CL.user.uid,r=COOP.room;
   const inv=Object.keys(COOP.inv).map(c=>{const v=COOP.inv[c]||{};return `<div class="lbme"><span>📨 ${esc(v.name||T('玩家'))} ${T('邀請你一起開店')} <small>${esc(c)}</small></span><button class="btn" data-act="coopaccept" data-id="${esc(c)}">${T('接受')}</button><button class="btn alt" data-act="coopdecline" data-id="${esc(c)}">${T('拒絕')}</button></div>`}).join('');
   let body;
   if(!COOP.code)body=`<p class="lbdesc">${T('還沒有連線。從好友列表按「一起開店」邀請朋友，或接受下面的邀請。')}</p>`;
@@ -3941,9 +3950,11 @@ function coopPanel(){if(!coopDev()||!CL.user){modal(`<h2>${T('連線測試')}</h
      +`<div class="lbme"><span>${T('你')}：${pr(me)}</span><span>${T('對方')}：${o?pr(o):T('等待加入')}</span></div>`
      +(left?`<p style="color:#e0412c">${T('對方離線，{0} 秒內沒回來就結束',left)}</p>`:'')
      +`<p class="lbdesc">${T('寫入次數')}：${COOP.w}</p>`
-     +`<div class="btns" style="justify-content:flex-start">${COOP.role==='host'&&r&&r.state==='lobby'?`<button class="btn" data-act="coopstart" ${o&&COOP.p[o]&&COOP.p[o].on?'':'disabled'}>${T('開始營業')}</button>`:''}<button class="btn alt" data-act="coopping" ${r&&r.state!=='ended'?'':'disabled'}>${T('送測試訊息')}</button><button class="btn alt" data-act="coopleave">${T('離開')}</button></div>`
-     +`<div style="font-size:13px;max-height:160px;overflow:auto;margin-top:8px">${COOP.ev.slice(-20).map(x=>`<div>${x.from===me?T('我'):T('對方')} · ${esc(x.type)}${x.lat!=null?` · ${x.lat}ms`:''}</div>`).join('')||'<small>—</small>'}</div>`}
-  modal(`<i id="coopmark"></i><h2>${T('連線測試')}</h2>${COOP.err?`<p style="color:#e0412c">${T(COOP.err)}</p>`:''}${inv}${body}<div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`)}
+     +`<div class="btns" style="justify-content:flex-start">${COOP.role==='host'&&r&&r.state==='lobby'?`<button class="btn" data-act="coopstart" ${o&&COOP.p[o]&&COOP.p[o].on?'':'disabled'}>${T('開始營業')}</button>`:''}<button class="btn alt" data-act="coopping" ${r&&r.state!=='ended'?'':'disabled'}>${T('測延遲')}</button><button class="btn alt" data-act="coopleave">${T('離開')}</button></div>`}
+  return (COOP.err?`<p style="color:#e0412c">${T(COOP.err)}</p>`:'')+inv+body}
+function coopPanel(){if(!coopDev()||!CL.user){modal(`<h2>${T('連線測試')}</h2><p>${T('需要登入且在測試名單內。')}</p><div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`);return}
+  const chat=COOP.code?`<div id="coopmsgs" style="font-size:14px;height:150px;overflow:auto;margin:8px 0;padding:6px 8px;background:#0000000d;border-radius:8px"></div><div class="lbme" style="gap:6px"><input class="nickin" id="coopin" maxlength="100" placeholder="${T('輸入訊息')}" autocomplete="off" style="flex:1;min-width:0;font-size:16px;padding:6px 10px"><button class="btn" data-act="coopsendmsg">${T('送出')}</button></div>`:'';
+  modal(`<i id="coopmark" data-code="${esc(COOP.code||'')}"></i><h2>${T('連線測試')}</h2><div id="coopdyn">${coopDyn()}</div>${chat}<div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`);coopMsgsFill();const m=document.getElementById('coopmsgs');if(m)m.scrollTop=m.scrollHeight}
 /* live invite notice: a banner with 接受 / 拒絕 whenever a friend invites you (test accounts only) */
 const COOP_INV_TTL=10*60*1000;
 function coopBannerHide(){const b=document.getElementById('coopbanner');if(b)b.remove()}
@@ -3955,26 +3966,30 @@ function coopInvStart(){if(COOP.invOn||!CL.api||!CL.api.coopInvWatch||!coopDev()
   COOP.invOff=CL.api.coopInvWatch(me,list=>{COOP.inv=list;const now=Date.now();let show=null;
     Object.keys(list).forEach(c=>{const v=list[c]||{};if(typeof v.t==='number'&&now-v.t>COOP_INV_TTL){CL.api.coopInvDel(me,c).catch(()=>{});delete list[c];return}
       if(!COOP.invSeen[c]&&!(COOP.code===c)){COOP.invSeen[c]=1;show=[c,v]}});
-    if(show&&!COOP.code){coopBannerShow(show[0],show[1]);try{toast('有人邀請你一起開店')}catch(e){}}
+    if(show&&!COOP.code){coopBannerShow(show[0],show[1]);try{coopNote('有人邀請你一起開店')}catch(e){}}
     if(!Object.keys(list).length)coopBannerHide();coopRender()},e=>{console.warn('coop inv watch',e);COOP.invOn=false})}
 function coopInvStop(){if(COOP.invOff)COOP.invOff();COOP.invOff=null;COOP.invOn=false;COOP.invSeen={};coopBannerHide()}
 async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid;COOP.err='';
   try{if(!CL.api)throw new Error('no api');
     if(k==='open'){coopPanel();try{COOP.inv=await CL.api.coopInvList(me)}catch(e){console.warn('coop inv',e);COOP.inv={};COOP.err='讀不到邀請（規則還沒更新？）'}coopPanel();return}
-    if(k==='make'){if(COOP.code){toast('已經在連線中');coopPanel();return}
+    if(k==='make'){if(COOP.code){coopNote('已經在連線中');coopPanel();return}
       const code=coopCode(),nm=(lbEntry()||{}).name||'';
-      await CL.api.coopMake(code,me,id,nm);COOP.code=code;COOP.role='host';coopAttach(code);toast('已邀請，等朋友加入');coopPanel();return}
+      await CL.api.coopMake(code,me,id,nm);COOP.code=code;COOP.role='host';coopAttach(code);coopNote('已邀請，等朋友加入');coopPanel();return}
     if(k==='accept'){coopBannerHide();const rm=await CL.api.coopRoomGet(id).catch(()=>null);
-      if(!rm||rm.state==='ended'||rm.guest!==me){await CL.api.coopInvDel(me,id).catch(()=>{});delete COOP.inv[id];toast('這個邀請已經失效了');coopPanel();return}
+      if(!rm||rm.state==='ended'||rm.guest!==me){await CL.api.coopInvDel(me,id).catch(()=>{});delete COOP.inv[id];coopNote('這個邀請已經失效了');coopPanel();return}
       await CL.api.coopAccept(me,id);delete COOP.inv[id];COOP.code=id;COOP.role='guest';coopAttach(id);coopPanel();return}
     if(k==='decline'){coopBannerHide();await CL.api.coopInvDel(me,id);delete COOP.inv[id];coopPanel();return}
     if(k==='start'){await CL.api.coopState(COOP.code,'playing');return}
+    if(k==='sendmsg'){const i=document.getElementById('coopin');if(!i||!COOP.code)return;const txt=i.value.trim().slice(0,100);if(!txt)return;
+      if(!COOP.room||COOP.room.state==='ended'){coopNote('房間已結束');return}
+      if(Date.now()-(COOP.lastMsg||0)<700)return;COOP.lastMsg=Date.now();i.value='';
+      try{await CL.api.coopSend(COOP.code,me,'msg',0,txt)}catch(e){i.value=txt;throw e}return}
     if(k==='ping'){await CL.api.coopSend(COOP.code,me,'ping',Date.now());return}
     if(k==='leave'){await coopLeave();return}
-  }catch(e){console.warn('coop',k,e);COOP.err='失敗（'+k+'）：'+String(e&&e.code||e&&e.message||e).slice(0,80);toast('連線功能暫時打不開，請稍後再試。');if(document.getElementById('coopmark'))coopPanel()}}
+  }catch(e){console.warn('coop',k,e);COOP.err='失敗（'+k+'）：'+String(e&&e.code||e&&e.message||e).slice(0,80);coopNote('連線功能暫時打不開，請稍後再試。');if(document.getElementById('coopmark'))coopPanel()}}
 function coopAttach(code){if(COOP.unsub)COOP.unsub();if(COOP.presOff)COOP.presOff();
   COOP.on=true;COOP.room=null;COOP.p={};COOP.ev=[];COOP.lastOn={};COOP.graceWho=null;
-  COOP.unsub=CL.api.coopWatch(code,(k,v)=>{if(k==='room')coopOnRoom(v);else coopOnEv(v)},e=>{console.warn('coop watch',e);toast('連線中斷');COOP.on=false});
+  COOP.unsub=CL.api.coopWatch(code,(k,v)=>{if(k==='room')coopOnRoom(v);else coopOnEv(v)},e=>{console.warn('coop watch',e);coopNote('連線中斷');COOP.on=false});
   CL.api.coopPresence(code,CL.user.uid).then(f=>{COOP.presOff=f}).catch(e=>console.warn('presence',e))}
 function coopOnRoom(v){
   if(!v){COOP.room=null;COOP.on=false;coopRender();return}
@@ -3991,9 +4006,11 @@ function coopTick(){
     if(!(COOP.p[who]&&COOP.p[who].on)&&COOP.p[me]&&COOP.p[me].on&&COOP.room&&COOP.room.state!=='ended')CL.api.coopState(COOP.code,'ended').catch(()=>{})}
   if(!COOP.graceWho){clearInterval(COOP.tick);COOP.tick=null}
   coopRender()}
-function coopOnEv(e){const me=CL.user&&CL.user.uid;const x={id:e.id,from:e.from,type:e.type,d:e.d};
+function coopOnEv(e){const me=CL.user&&CL.user.uid;const x={id:e.id,from:e.from,type:e.type,d:e.d,txt:typeof e.txt==='string'?e.txt:''};
   if(e.type==='ping'&&e.from!==me&&typeof e.d==='number')x.lat=Date.now()-e.d;
-  COOP.ev.push(x);if(COOP.ev.length>50)COOP.ev.splice(0,COOP.ev.length-50);coopRender()}
+  COOP.ev.push(x);if(COOP.ev.length>80)COOP.ev.splice(0,COOP.ev.length-80);
+  if(x.type==='msg'&&x.from!==me&&!document.getElementById('coopmark')){try{coopNote('💬 '+x.txt.slice(0,30))}catch(_){}}
+  coopRender()}
 async function coopLeave(){const me=CL.user.uid,code=COOP.code;if(!code)return;const wasHost=COOP.role==='host';
   COOP.on=false;if(COOP.unsub)COOP.unsub();COOP.unsub=null;if(COOP.presOff)COOP.presOff();COOP.presOff=null;
   if(COOP.tick){clearInterval(COOP.tick);COOP.tick=null}
@@ -4059,7 +4076,7 @@ async function cloudInit(){
       coopAccept:(uid,code)=>rt((rd,r)=>{COOP.w++;return rd.remove(rd.ref(r,'coopInv/'+uid+'/'+code))}),
       coopInvDel:(uid,code)=>rt((rd,r)=>{COOP.w++;return rd.remove(rd.ref(r,'coopInv/'+uid+'/'+code))}),
       coopState:(code,st)=>rt((rd,r)=>{COOP.w++;return rd.update(rd.ref(r,'rooms/'+code),{state:st})}),
-      coopSend:(code,uid,type,d)=>rt((rd,r)=>{COOP.w++;const ref=rd.push(rd.ref(r,'rooms/'+code+'/ev'),{from:uid,type:String(type).slice(0,20),d:typeof d==='number'?d:0,t:rd.serverTimestamp()});
+      coopSend:(code,uid,type,d,txt)=>rt((rd,r)=>{COOP.w++;const m={from:uid,type:String(type).slice(0,20),d:typeof d==='number'?d:0,t:rd.serverTimestamp()};if(txt)m.txt=String(txt).slice(0,100);const ref=rd.push(rd.ref(r,'rooms/'+code+'/ev'),m);
         return ref.then(()=>ref,e=>{COOP.ev=COOP.ev.filter(x=>x.id!==ref.key);throw e})}),
       coopEnd:code=>rt((rd,r)=>{COOP.w++;return rd.remove(rd.ref(r,'rooms/'+code))}),
       coopWatch:(code,cb,err)=>{let offs=[],dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
