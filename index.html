@@ -3905,7 +3905,9 @@ function mergeRec(a,b){const pj=s=>{try{return s?JSON.parse(s)||{}:{}}catch(e){r
 /* ===== co-op (milestone 1, author-only): room + invite + presence + event channel + 30s reconnect grace ===== */
 const COOP={on:false,w:0,code:null,role:null,room:null,p:{},ev:[],unsub:null,presOff:null,inv:{},graceWho:null,graceEnd:0,tick:null,lastOn:{},open:false};
 const COOP_GRACE=30000;
-function coopDev(){return isAdmin()}
+/* open to every signed-in account, but the entry stays hidden unless this browser was switched on with ?coop=1 (?coop=0 turns it off) */
+function coopDev(){return !!CL.user&&!!lsGet('izakaya-coop')}
+(function(){try{const q=location.search;if(/[?&]coop=1(&|$)/.test(q))localStorage.setItem('izakaya-coop','1');else if(/[?&]coop=0(&|$)/.test(q))localStorage.removeItem('izakaya-coop')}catch(e){}})();
 function coopCode(){const A='23456789ABCDEFGHJKMNPQRSTUVWXYZ';let s='';for(let i=0;i<6;i++)s+=A[Math.floor(Math.random()*A.length)];return s}
 function coopOther(){const r=COOP.room,me=CL.user&&CL.user.uid;if(!r||!me)return null;return r.host===me?r.guest:r.host}
 function coopRender(){if(document.getElementById('coopmark'))coopPanel()}
