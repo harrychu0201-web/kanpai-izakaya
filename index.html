@@ -4606,10 +4606,16 @@ function showChat(){
   if(CL.user&&CL.api)CL.api.banned(CL.user.uid).then(b=>{if(b!==CHT.banned){CHT.banned=b;if($('chatlist'))showChat()}}).catch(()=>{});
   CHT.drawn=false;chatListen();chatDraw()}
 function chatListen(){if(!CHT.msgs.length)CHT.msgs=chatCacheLoad();if(CHT.unsub||!CL.api)return;CHT.live=false;
-  CHT.unsub=CL.api.chatSub(m=>{if(!$('chatlist')){chatStop();return}CHT.msgs=m.reverse();CHT.live=true;CHT.err=false;chatPersist();chatDraw(true)},e=>{console.warn('chat',e);CHT.err=true;const l=$('chatlist');if(l){if(CHT.msgs.length)chatDraw();else l.innerHTML=`<p style="font-size:14px">${T('聊天室載入失敗，請稍後再試。')}</p>`}chatStop()})}
+  CHT.unsub=CL.api.chatSub(m=>{if(!$('chatlist')){chatStop();return}CHT.msgs=m.reverse();CHT.live=true;CHT.err=false;chatPersist();if(chatPressed()){CHT.dirty=1;return}chatDraw(true)},e=>{console.warn('chat',e);CHT.err=true;const l=$('chatlist');if(l){if(CHT.msgs.length)chatDraw();else l.innerHTML=`<p style="font-size:14px">${T('聊天室載入失敗，請稍後再試。')}</p>`}chatStop()})}
 function chatStop(){if(CHT.unsub){try{CHT.unsub()}catch(e){}CHT.unsub=null}if(CL.api&&CL.api.chatOff)CL.api.chatOff().catch(()=>{})}
 setInterval(()=>{if(CHT.unsub&&!$('chatlist'))chatStop()},2000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)chatStop();else if($('chatlist'))chatListen()});
+/* the live list is rebuilt via innerHTML on every snapshot; a rebuild between pointerdown and click swallows the tap (回覆/加好友 'dead' until re-entering). So hold snapshot redraws while a finger/mouse is down on the list, then flush. */
+let CPD=0;
+function chatPressed(){return CPD>0&&performance.now()-CPD<2500}
+function chatFlush(){CPD=0;if(CHT.dirty){CHT.dirty=0;if($('chatlist'))chatDraw(true)}}
+document.addEventListener('pointerdown',e=>{if(e.target.closest&&e.target.closest('#chatlist'))CPD=performance.now()},true);
+['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,()=>{if(CPD)setTimeout(chatFlush,400)},true));
 function chatDraw(scroll){const l=$('chatlist');if(!l)return;const near=l.scrollHeight-l.scrollTop-l.clientHeight<60;
   const me=CL.user&&CL.user.uid,adm=isAdmin();
   const rows=CHT.msgs.filter(m=>!CHT.hide[m.id]&&!CHT.block[m.uid]);
