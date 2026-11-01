@@ -1534,7 +1534,7 @@ function suAdd(id,el){
   const g=R.maki[i],parts=g.parts.concat(id),res=suResult(parts),old=g.kind!=='asm'?costOf(g.kind):0,pay=res?Math.max(0,costOf(res)-old):0;
   if(pay&&!canPay(pay)){if(!g.parts.length)R.maki[i]=null;return}
   if(R.held&&R.held.src==='maki'&&R.held.i===i)R.held=null;
-  g.parts=parts;g.kind=res||'asm';g.t=0;g.at=R.t;
+  g.parts=parts;g.kind=res||'asm';g.t=0;g.at=R.t;g.staff=false;
   if(pay){const c=srcCenter({src:'maki',i});charge(pay,c.x,c.y-50)}
 }
 function suTrayArt(id){
@@ -1566,21 +1566,24 @@ function suDemand(){const d={};for(const c of R.seats){if(!c||c.st!=='wait')cont
   return d}
 function suStaffStep(dt){const l=suStaffLv();if(!l)return;const m=dilMul('sushistaff');if(!m)return;R.suT=(R.suT??1)-dt*m;if(R.suT<=0){R.suT=l>=3?.35:l>=2?.5:1;suAct(l)}}
 /* 玩家剛動過的壽司台格子，健太郎先讓開六秒，讓玩家自己接著做或端給客人，不會搶著幫忙 */
-function suIdle(g,s=6){const m=dilMul('sushistaff')||1;return R.t-(g.at||0)>s/m}
+function suIdle(g,s=6){if(g.staff)return true; /* 健太郎自己開的格子不用讓開；玩家碰過之後才會標記為非 staff，才需要等六秒 */const m=dilMul('sushistaff')||1;return R.t-(g.at||0)>s/m}
 function suAct(l){
   if(l>=2){const src=[];R.maki.forEach((g,i)=>{if(g&&g.kind!=='asm'&&suIdle(g,.8)&&!(R.held&&R.held.src==='maki'&&R.held.i===i))src.push({src:'maki',i,key:g.kind})});
     for(const c of waiting()){for(let j=0;j<c.order.length;j++){if(c.filled[j])continue;const h=src.find(x=>x.key===c.order[j]);if(h&&giveTo(c,j,h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}
       if(c.extra&&c.extra.ok&&!c.extra.done){const h=src.find(x=>x.key===c.extra.key);if(h&&giveTo(c,'x',h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}}}
-  const d=suDemand(),ks=SUKEYS.filter(k=>(d[k]||0)>0&&has(k)).sort((a,b)=>earliestNeed(a)-earliestNeed(b)||d[b]-d[a]);
+  const d=suDemand(),inProg=k=>R.maki.some(g=>g&&g.kind==='asm'&&SU_REC[k].length>g.parts.length&&g.parts.every((p,j)=>SU_REC[k][j]===p));
+  /* 有半成品在進行中的菜也要列入，否則需求被半成品扣成 0 後就沒人去接著做（手捲卡住） */
+  const ks=SUKEYS.filter(k=>has(k)&&((d[k]||0)>0||inProg(k))).sort((a,b)=>earliestNeed(a)-earliestNeed(b)||(d[b]||0)-(d[a]||0));
   for(const k of ks){const r=SU_REC[k];let i=-1,best=-1;
     R.maki.forEach((g,j)=>{if(g&&g.kind==='asm'&&g.parts.length<r.length&&g.parts.every((p,x)=>r[x]===p)&&g.parts.length>best&&!(R.held&&R.held.src==='maki'&&R.held.i===j)&&suIdle(g)){best=g.parts.length;i=j}});
     /* 有訂單才動手：先接續玩家已經開始做的壽司；沒有可接的，就從空格開新的一份（只針對還在等的訂單） */
     if(i<0){const e=R.maki.findIndex((g,j)=>!g&&j<makiN());if(e<0)continue;i=e}
     const base=R.maki[i]?R.maki[i].parts:[];
     /* 只有做到這個訂單要的那一種才算完成：鮪魚手捲的前兩步（飯＋鮪魚）會被判成鮪魚握，若直接完成就會不停重做握壽司 */
-    const id=r[base.length],parts=base.concat(id),res=suResult(parts),done=res===k?res:null,pay=done?costOf(done):0;
+    /* 只有組成的順序完全等於這道菜的配方才算完成；中途剛好等於別道菜（如飯＋鮭魚＝鮭魚握）不算，繼續等海苔 */
+    const id=r[base.length],parts=base.concat(id),done=parts.length===r.length?k:null,pay=done?costOf(done):0;
     if(pay&&live()<pay)continue;
-    if(!R.maki[i])R.maki[i]={kind:'asm',parts:[],t:0};
+    if(!R.maki[i])R.maki[i]={kind:'asm',parts:[],t:0,staff:true};
     const g=R.maki[i];g.parts=parts;g.kind=done||'asm';
     if(pay){const p=srcCenter({src:'maki',i});charge(pay,p.x,p.y-50);shoPop('健太郎做好'+ITEMS[k].zh)}
     renderStations();return}
