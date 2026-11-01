@@ -2337,12 +2337,14 @@ function takeLoan(){if(RP.on){toast(T('重玩時不能借款'));return}if(!R||R.
 const PROPS={nb:{ic:'🛡️',n:'不焦符',d:'從使用的那一刻起，這一局的食物都不會燒焦（翻面失手也不糊）。',p:3000},
   pt:{ic:'💗',n:'耐心回復',d:'所有入座客人的耐心立刻回滿。',p:2000},
   ext:{ic:'⏰',n:'延長營業',d:'今天營業時間延長 1 小時，最後點餐也延後 1 小時（同一局最多延長 3 次）。',p:4000},
-  fast:{ic:'🔥',n:'速熟符',d:'營業中使用：從使用的那一刻起，這一局爐上還是生的食材會立刻熟透，之後放上去的也一樣（串燒、翻面類料理除外）。',p:2500},
+  fast:{ic:'🔥',n:'速熟符',d:'營業中使用：從使用的那一刻起，這一局爐上還是生的食材會立刻熟透，之後放上去的也一樣。翻面、捲、刷醬的料理（章魚燒、鯛魚燒、玉子燒、飯糰）也不用再點，直接熟。',p:2500},
   tip:{ic:'💴',n:'加倍小費',d:'營業中使用：從使用的那一刻起，這一局剩下的客人小費全部加倍。',p:4000}};
 const FXFLAG={nb:'fxNb',fast:'fxFast',tip:'fxTip'};
-/* 速熟符：把爐上生的食材直接烤到熟（不動有翻面/步驟的料理） */
-function fastCook(){let n=0;const go=(arr,kf)=>arr.forEach(g=>{if(!g)return;const k=kf(g);if(!(k in COOK)||STEPS[k]||cookState(g.t,k)!=='raw')return;g.t=COOK[k];n++});
-  go(R.grill,g=>g.kind);go(R.fryer,()=>'karaage');go(R.teppan,g=>g.kind);go(R.tempura,g=>g.kind);go(R.rmpan,g=>g.kind);go(R.rfry,g=>g.kind);return n}
+/* 速熟符：把爐上生的食材直接烤到熟；翻面（章魚燒）、捲/刷醬（玉子燒、飯糰）的步驟也一併跳過，不會再跳出提示 */
+function fastCook(){let n=0;const go=(arr,kf)=>arr.forEach(g=>{if(!g)return;const k=kf(g);if(!(k in COOK)||cookState(g.t,k)!=='raw')return;
+  if(STEPS[k])g.s=STEPS[k].t.length;if(k==='takoyaki')g.fl=1;g.t=Math.max(g.t,COOK[k]);n++});
+  go(R.grill,g=>g.kind);go(R.fryer,()=>'karaage');go(R.teppan,g=>g.kind);go(R.tempura,g=>g.kind);go(R.rmpan,g=>g.kind);go(R.rfry,g=>g.kind);
+  go(R.mpot,g=>g.kind);go(R.tyaki,g=>g.kind);go(R.tako,g=>g.kind);go(R.tama,g=>g.kind);go(R.onig,g=>g.kind);return n}
 const ACHS=[{id:'d10',n:'撐過第 10 天',c:r=>r.maxDay>=10,rw:{nb:1}},
   {id:'d20',n:'撐過第 20 天',c:r=>r.maxDay>=20,rw:{pt:2}},
   {id:'d30',n:'撐過第 30 天',c:r=>r.maxDay>=30,rw:{ext:2}},
@@ -2362,7 +2364,9 @@ function useProp(k){if(!R||R.over||R.settled||!PROPS[k])return;const r=loadRec()
   else if(k==='ext'){if(chOn()){toast(T('無限挑戰不打烊，不用延長營業'));return}if((R.extH||0)>=3){toast(T('營業時間已經延到上限了'));return}R.extH=(R.extH||0)+1;DAYLEN+=159/8.5}
   else if(k==='fast'){if(R.fxFast){toast(T('這一局速熟符已經在生效了'));return}R.fxFast=1;fastCook();renderStations()}
   else if(k==='tip'){if(R.fxTip){toast(T('這一局加倍小費已經在生效了'));return}R.fxTip=1}
-  r.inv[k]--;saveRec(r);cloudUpload(true);toast(T('使用了 {0}',PROPS[k].n));showRewards()}
+  r.inv[k]--;saveRec(r);cloudUpload(true);toast(T('使用了 {0}',PROPS[k].n));
+  if(k==='pt'&&RWBAG&&R&&!R.over&&!R.settled){RWBAG=false;R.paused=!!TUT;closeModal();last=performance.now();renderHUD();return}
+  showRewards()}
 function buyProp(k){const p=PROPS[k];if(!p||R)return;const s=load();if(!s)return;if((s.coins||0)<p.p){toast(T('金幣不夠'));return}arcWallet(-p.p);invAdd({[k]:1});toast(T('買到 {0}',p.n));showRewards()}
 function curCard(){return document.querySelector('#homeModal .card')||document.querySelector('#modalLayer .card')}
 let RWBAG=false; /* 營業中從背包按鈕開的，只顯示道具 */
@@ -3072,7 +3076,7 @@ function showPreProps(){
   ${row('ext','開店後營業時間延長 1 小時（今天最多延長 3 次）',extOk,p.ext>=3?'已到上限':'沒有道具')}
   ${row('nb','今天開店後的食物都不會燒焦',nbOk,p.nb?'已備妥':'沒有道具')}
   ${row('pt','開店後第一次有客人耐心快見底時自動回滿（備妥幾份就觸發幾次）',ptOk,'沒有道具')}
-  ${row('fast','開店後這一局爐上的生食材都會立刻熟透（串燒、翻面類料理除外）',fastOk,p.fast?'已備妥':'沒有道具')}
+  ${row('fast','開店後這一局爐上的生食材都會立刻熟透（翻面、捲、刷醬的料理也不用再點）',fastOk,p.fast?'已備妥':'沒有道具')}
   ${row('tip','開店後這一局剩下的客人小費全部加倍',tipOk,p.tip?'已備妥':'沒有道具')}
   <div class="btns"><button class="btn alt" data-act="preback">${T('返回')}</button></div>`)}
 function usePre(k){
