@@ -507,8 +507,8 @@
     },
     "coopInv": {
       "$to": {
+        ".read": "auth != null && auth.uid === $to",
         "$code": {
-          ".read": "auth != null && auth.uid === $to",
           ".write": "auth != null && ((!data.exists() && newData.child('from').val() === auth.uid && root.child('friends').child($to).child(auth.uid).exists() && root.child('friends').child(auth.uid).child($to).exists()) || auth.uid === $to)",
           ".validate": "!newData.exists() || (newData.hasChildren(['from','name','t']) && newData.child('name').isString() && newData.child('name').val().length <= 24)"
         }
