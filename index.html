@@ -380,6 +380,10 @@ body.ovl .hud,body.ovl .hud b{font-weight:500}
 body.ovl .hud .goal em{font-size:11px}
 body.ovl .hud .icon-btn{width:36px;height:36px;font-size:13px;touch-action:manipulation}
 body.ovl .hud .staff{display:none}
+/* HUD 不換行：右邊的按鈕（音效／暫停）不能被擠出畫面，改讓數字膠囊縮窄 */
+body.ovl .hud .icon-btn{flex:0 0 auto}
+body.ovl .hud .pill{min-width:0;flex:0 1 auto;overflow:hidden}
+body.ovl .hud .goal{flex:0 1 22vw;min-width:60px}
 body.ovl #game.wide .cust{margin-top:-46px}
 body.ovl #game.wide .cust .bubble{top:-90px}
 @media (max-height:560px) and (orientation:landscape){
