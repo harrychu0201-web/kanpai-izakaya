@@ -3259,7 +3259,7 @@ document.addEventListener('click',e=>{
   else if(act==='cstkt'){CHT.stkOpen=!CHT.stkOpen;const p=$('cstkp');if(p){if(CHT.stkOpen&&!p.innerHTML)p.innerHTML=stkGrid();p.style.display=CHT.stkOpen?'grid':'none'}}
   else if(act==='cstk'){const n=+a.dataset.id;if(n>=1&&n<=STK_N)chatSend(n)}
   else if(act==='cemo'){const i=$('cin');if(i){i.value=(i.value+a.dataset.id).slice(0,100);i.focus()}}
-  else if(act==='cmsg'){CHT.open=CHT.open===a.dataset.id?null:a.dataset.id;chatDraw()}
+  else if(act==='cmsg'){if(chatSel())return;CHT.open=CHT.open===a.dataset.id?null:a.dataset.id;chatDraw()}
   else if(act==='creply'){const m=CHT.msgs.find(x=>x.id===CHT.open);CHT.open=null;if(m){CHT.replyTo={id:m.id,uid:m.uid,name:m.name||'?',text:chatStk(m.text)?chatClean(m.text):[...chatClean(m.text)].slice(0,30).join('')};chatReplyDraw();const i=$('cin');if(i)i.focus()}chatDraw()}
   else if(act==='crpx'){CHT.replyTo=null;chatReplyDraw()}
   else if(act==='clike'){const m=CHT.msgs.find(x=>x.id===CHT.open);CHT.open=null;if(m&&CL.user&&CL.api)chatLike(m,CL.user.uid);chatDraw()}
@@ -4612,9 +4612,11 @@ setInterval(()=>{if(CHT.unsub&&!$('chatlist'))chatStop()},2000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)chatStop();else if($('chatlist'))chatListen()});
 /* the live list is rebuilt via innerHTML on every snapshot; a rebuild between pointerdown and click swallows the tap (回覆/加好友 'dead' until re-entering). So hold snapshot redraws while a finger/mouse is down on the list, then flush. */
 let CPD=0;
-function chatPressed(){return CPD>0&&performance.now()-CPD<2500}
+function chatSel(){try{const g=getSelection(),l=$('chatlist');return !!(g&&!g.isCollapsed&&l&&g.anchorNode&&l.contains(g.anchorNode)&&String(g).trim())}catch(e){return false}}
+function chatPressed(){return (CPD>0&&performance.now()-CPD<2500)||chatSel()}
 function chatFlush(){CPD=0;if(CHT.dirty){CHT.dirty=0;if($('chatlist'))chatDraw(true)}}
 document.addEventListener('pointerdown',e=>{if(e.target.closest&&e.target.closest('#chatlist'))CPD=performance.now()},true);
+document.addEventListener('selectionchange',()=>{if(CHT.dirty&&!chatPressed())setTimeout(chatFlush,200)});
 ['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,()=>{if(CPD)setTimeout(chatFlush,400)},true));
 function chatDraw(scroll){const l=$('chatlist');if(!l)return;const near=l.scrollHeight-l.scrollTop-l.clientHeight<60;
   const me=CL.user&&CL.user.uid,adm=isAdmin();
