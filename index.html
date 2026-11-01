@@ -4216,6 +4216,7 @@ async function showLB(){if(LB.tab==='fr')return showFriends();
   let foot='';
   if(!me)foot=`<div class="lbme"><span>${T('登入後就能加入排行榜。')}</span><button class="btn" data-act="login">${T('用 Google 登入')}</button></div>`;
   else if(!mine)foot=`<div class="lbme"><span>${T('取個暱稱就能加入排行榜。')}</span><button class="btn" data-act="nick">${T('取暱稱')}</button></div>`;
+  else foot=`<div class="lbme"><span>${T('你的暱稱：{0}',esc(mine.name))}</span><button class="btn alt" data-act="nick">${T('改暱稱')}</button></div>`;
   const f=tb[0],asc=tb[2]==='asc';
   // rank + percentile are worked out from the whole board, so they stay right beyond the top 50
   const rk=(all,N)=>{const mRow=me&&all.find(r=>r.uid===me.uid);const mv=mRow?mRow[f]:(mine?mine[f]:null);
