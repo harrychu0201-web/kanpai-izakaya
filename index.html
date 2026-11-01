@@ -1577,10 +1577,11 @@ function suAct(l){
     /* 有訂單才動手：先接續玩家已經開始做的壽司；沒有可接的，就從空格開新的一份（只針對還在等的訂單） */
     if(i<0){const e=R.maki.findIndex((g,j)=>!g&&j<makiN());if(e<0)continue;i=e}
     const base=R.maki[i]?R.maki[i].parts:[];
-    const id=r[base.length],parts=base.concat(id),res=suResult(parts),pay=res?costOf(res):0;
+    /* 只有做到這個訂單要的那一種才算完成：鮪魚手捲的前兩步（飯＋鮪魚）會被判成鮪魚握，若直接完成就會不停重做握壽司 */
+    const id=r[base.length],parts=base.concat(id),res=suResult(parts),done=res===k?res:null,pay=done?costOf(done):0;
     if(pay&&live()<pay)continue;
     if(!R.maki[i])R.maki[i]={kind:'asm',parts:[],t:0};
-    const g=R.maki[i];g.parts=parts;g.kind=res||'asm';
+    const g=R.maki[i];g.parts=parts;g.kind=done||'asm';
     if(pay){const p=srcCenter({src:'maki',i});charge(pay,p.x,p.y-50);shoPop('健太郎做好'+ITEMS[k].zh)}
     renderStations();return}
 }
