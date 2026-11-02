@@ -3996,12 +3996,22 @@ async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid
     if(k==='ping'){await CL.api.coopSend(COOP.code,me,'ping',Date.now());return}
     if(k==='leave'){await coopLeave();return}
   }catch(e){console.warn('coop',k,e);COOP.err='失敗（'+k+'）：'+String(e&&e.code||e&&e.message||e).slice(0,80);coopNote('連線功能暫時打不開，請稍後再試。');if(document.getElementById('coopmark'))coopPanel()}}
-function coopAttach(code){if(COOP.unsub)COOP.unsub();if(COOP.presOff)COOP.presOff();
+const COOP_SAVE='izakaya-coop';
+function coopSave(on){try{if(on&&COOP.code&&CL.user)localStorage.setItem(COOP_SAVE,JSON.stringify({code:COOP.code,uid:CL.user.uid,t:Date.now()}));else localStorage.removeItem(COOP_SAVE)}catch(e){}}
+/* 手滑跳出去（重新整理、關掉分頁、App 被切走）後，再打開遊戲會自動連回原本的房間 */
+async function coopResume(){if(COOP.code||!CL.user||!CL.api||!CL.api.coopRoomGet||!coopDev())return;let s=null;try{s=JSON.parse(localStorage.getItem(COOP_SAVE)||'null')}catch(e){}
+  if(!s||s.uid!==CL.user.uid||!s.code||Date.now()-s.t>6*3600e3)return;
+  const rm=await CL.api.coopRoomGet(s.code).catch(()=>null),me=CL.user.uid;
+  if(!rm||rm.state==='ended'||(rm.host!==me&&rm.guest!==me)){coopSave(false);return}
+  if(COOP.code)return;COOP.code=s.code;COOP.role=rm.host===me?'host':'guest';
+  if(typeof CO!=='undefined'){CO.resume=COOP.role==='host';CO.pendSt=null}
+  coopAttach(s.code);coopNote('已自動連回連線房間');coopRender()}
+function coopAttach(code){if(COOP.unsub)COOP.unsub();if(COOP.presOff)COOP.presOff();coopSave(true);COOP.attachT=Date.now();
   COOP.on=true;COOP.room=null;COOP.p={};COOP.ev=[];COOP.lastOn={};COOP.graceWho=null;
   COOP.unsub=CL.api.coopWatch(code,(k,v)=>{if(k==='room')coopOnRoom(v);else if(k==='st'){if(typeof coGameOnSt==='function')coGameOnSt(v)}else if(k==='rtc'){if(typeof coVoiceOnRtc==='function')coVoiceOnRtc(v)}else coopOnEv(v)},e=>{console.warn('coop watch',e);coopNote('連線中斷');COOP.on=false});
   CL.api.coopPresence(code,CL.user.uid).then(f=>{COOP.presOff=f}).catch(e=>console.warn('presence',e))}
 function coopOnRoom(v){
-  if(!v){COOP.room=null;COOP.on=false;if(typeof coGameOnRoom==='function')coGameOnRoom(null);coopRender();return}
+  if(!v){COOP.room=null;COOP.on=false;coopSave(false);if(typeof coGameOnRoom==='function')coGameOnRoom(null);coopRender();return}
   COOP.room=v;COOP.p=v.p||{};
   const o=coopOther();
   if(o){const on=!!(COOP.p[o]&&COOP.p[o].on);
@@ -4029,7 +4039,7 @@ async function coopLeave(){const me=CL.user.uid,code=COOP.code;if(!code)return;c
   COOP.on=false;if(COOP.unsub)COOP.unsub();COOP.unsub=null;if(COOP.presOff)COOP.presOff();COOP.presOff=null;
   if(COOP.tick){clearInterval(COOP.tick);COOP.tick=null}
   try{await CL.api.coopPresenceOff(code,me);if(wasHost)await CL.api.coopEnd(code)}catch(e){console.warn('coop leave',e)}
-  if(typeof coReset==='function')coReset();
+  if(typeof coReset==='function')coReset();coopSave(false);
   COOP.code=null;COOP.role=null;COOP.room=null;COOP.p={};COOP.ev=[];COOP.graceWho=null;COOP.lastOn={};coopRender()}
 
 async function cloudInit(){
@@ -4179,7 +4189,7 @@ async function cloudLogin(){if(!CL.api)return;try{if(await CL.api.signIn()==='cl
 // Chrome severs the sign-in popup when the player picks "Use another account", so the popup seems to close by itself.
 // Workaround: add that account to the browser first, then it shows up in the account list and can be picked directly.
 function loginHelp(){if(!HOME)return;modal(`<h2>${T('登入視窗關掉了')}</h2><p>${T('如果你剛剛是按「使用其他帳戶」，Chrome 會把登入視窗切斷。')}</p><p>${T('先按「新增 Google 帳號」，在新分頁登入你要用的帳號，登好後回到遊戲再按一次登入，那個帳號就會直接出現在清單裡，點它就好。')}</p><div class="btns"><button class="btn" data-act="addacct">${T('新增 Google 帳號')}</button><button class="btn" data-act="login">${T('再試一次')}</button><button class="btn" data-act="closem">${T('知道了')}</button></div>`)}
-function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){CL.isPoster=false;if(CL.api)CL.api.isPoster(u.uid).then(v=>{CL.isPoster=v===true}).catch(()=>{});CL.isStaff=false;if(CL.api)CL.api.isStaff(u.uid).then(v=>{CL.isStaff=v===true;if(CL.isStaff&&typeof coopInvStart==='function')coopInvStart()}).catch(()=>{});cloudSync();setTimeout(()=>replyCheck(0),2500);setTimeout(coopInvStart,3000)}else coopInvStop();if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
+function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){CL.isPoster=false;if(CL.api)CL.api.isPoster(u.uid).then(v=>{CL.isPoster=v===true}).catch(()=>{});CL.isStaff=false;if(CL.api)CL.api.isStaff(u.uid).then(v=>{CL.isStaff=v===true;if(CL.isStaff&&typeof coopInvStart==='function')coopInvStart()}).catch(()=>{});cloudSync();setTimeout(()=>replyCheck(0),2500);setTimeout(coopInvStart,3000);setTimeout(()=>{if(typeof coopResume==='function')coopResume().catch(e=>console.warn('coop resume',e))},3200)}else coopInvStop();if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
 async function claimGrants(){const u=CL.user;if(!u||TEST||RP.on||!CL.api||!CL.api.grantsGet)return;
   let g={};try{g=await CL.api.grantsGet(u.uid)||{}}catch(e){console.warn('grants',e);return}
   for(const id of Object.keys(g)){const x=g[id]||{},items={};Object.keys(x.items||{}).forEach(k=>{const n=Math.floor(+x.items[k]);if(PROPS[k]&&n>0)items[k]=Math.min(20,n)});
@@ -4923,7 +4933,8 @@ async function coStart(){if(!coHost()||!COOP.code||!CL.api)return;if(!coBothRdy(
   coPush();
   try{if(!COOP.room||COOP.room.state!=='playing')await CL.api.coopState(COOP.code,'playing')}catch(e){console.warn('co state',e)}
   coOpen();clearInterval(CO.tickT);CO.tickT=setInterval(coTick,250)}
-function coHostAct(e){if(!coHost()||!CO.S||CO.S.over)return;if(CO.seen[e.id])return;CO.seen[e.id]=1;
+function coStale(e){return typeof e.t==='number'&&COOP.attachT&&e.t<COOP.attachT-1500}
+function coHostAct(e){if(!coHost()||!CO.S||CO.S.over)return;if(CO.seen[e.id])return;CO.seen[e.id]=1;if(coStale(e))return;
   if(!COOP.room||e.from!==COOP.room.guest)return;const m=/^g(\d+)\|(.+)$/.exec(e.txt||'');if(!m||+m[1]!==CO.S.rid)return;
   coApply(CO.S.hk==='k'?'f':'k',m[2]);coPush();coPaint()}
 
@@ -4940,7 +4951,7 @@ function coBothRdy(){const rd=coRdObj();return !!(rd&&rd.h&&rd.g)}
 function coReadyToggle(){const rd=coRdObj();if(!rd)return;
   if(coHost()){rd.h=rd.h?0:1;coRdPush();coCheckStart();if(typeof coopRender==='function')coopRender();if(CO.open)coPaint()}
   else if(CL.api&&COOP.code){COOP.w++;CL.api.coopSend(COOP.code,CL.user.uid,'ready',rd.g?0:1,'').catch(e=>console.warn('co rdy',e))}}
-function coHostReady(e){if(!coHost()||CO.seen[e.id])return;CO.seen[e.id]=1;if(!COOP.room||e.from!==COOP.room.guest)return;
+function coHostReady(e){if(!coHost()||CO.seen[e.id])return;CO.seen[e.id]=1;if(coStale(e))return;if(!COOP.room||e.from!==COOP.room.guest)return;
   const rd=coRdObj();if(!rd)return;rd.g=e.d===1?1:0;coRdPush();coCheckStart();if(typeof coopRender==='function')coopRender();if(CO.open)coPaint()}
 function coRoleSwap(){if(!coHost())return;coLobbyInit();COOP.hostRole=COOP.hostRole==='f'?'k':'f';CO.L.hk=COOP.hostRole;CO.L.rd={h:0,g:0};coLobbyPush();if(typeof coopRender==='function')coopRender()}
 function coReset(){CO.L=null;CO.lobby=null;CO.lobbyPushed=false;if(typeof voStop==='function')voStop()}
@@ -4956,13 +4967,21 @@ function coLobbyBtns(){const v=coLobbyView();let s=voLobbyBtns();
   return s+`<button class="btn" data-act="cooprdy" ${v?'':'disabled'}>${my?'✅ 已準備（再按取消）':'🙋 準備'}</button>`+(coHost()?`<button class="btn" data-act="coopstart" ${coBothRdy()?'':'disabled'}>▶ 開始營業</button>`:'')}
 
 /* ---------- both sides: snapshots, open/close ---------- */
-function coGameOnSt(v){if(coHost()||typeof v!=='string')return;let S;try{S=JSON.parse(v)}catch(e){return}
+function coHostRestore(){const v=CO.pendSt;if(!CO.resume||!coHost()||CO.S||typeof v!=='string'||!COOP.room||!COOP.room.state)return;CO.resume=false;CO.pendSt=null;
+  let S;try{S=JSON.parse(v)}catch(e){return}if(!S)return;
+  if(S.lobby){CO.L={lobby:1,hk:S.hk==='f'?'f':'k',rd:{h:0,g:0}};COOP.hostRole=CO.L.hk;CO.lobbyPushed=true;coLobbyPush();if(typeof coopRender==='function')coopRender();return}
+  if(COOP.room.state!=='playing')return;
+  if(!S.over)coShift(S,Math.max(0,Date.now()-(S.now||Date.now())));
+  CO.S=S;CO.rid=S.rid;CO.off=0;CO.seen={};CO.lastTick=0;CO.closedRid=0;CO.lastHtml='';CO.fxSeen=S.fx?S.fx.id:0;if(S.hk)COOP.hostRole=S.hk;
+  coPush();coOpen();if(!S.over){clearInterval(CO.tickT);CO.tickT=setInterval(coTick,250)}coToast('已重新連線，繼續營業！')}
+function coGameOnSt(v){if(coHost()){if(CO.resume&&!CO.S&&typeof v==='string'){CO.pendSt=v;coHostRestore()}return}if(typeof v!=='string')return;let S;try{S=JSON.parse(v)}catch(e){return}
   if(S.lobby){CO.lobby=S;if(typeof coopRender==='function')coopRender();return}
   const fresh=!CO.S||CO.S.rid!==S.rid;CO.S=S;CO.off=S.now-Date.now();CO.rid=S.rid;if(fresh&&CO.open){CO.fxSeen=S.fx?S.fx.id:0;CO.lastHtml=''}coSync();if(CO.open)coPaint()}
 function coSync(){if(CO.open||coHost()||!CO.S||!COOP.room)return;if(COOP.room.state==='playing'&&CO.S.rid!==CO.closedRid)coOpen()}
 function coGameOnRoom(v){
+  if(v&&CO.resume)coHostRestore();
   if(v===null){if(CO.open){coClose(false);coopNote('房間已結束')}return}
-  if(coHost()&&v.state==='lobby'&&!CO.lobbyPushed&&COOP.code){CO.lobbyPushed=true;coLobbyPush()}
+  if(coHost()&&v.state==='lobby'&&!CO.lobbyPushed&&!CO.resume&&COOP.code){CO.lobbyPushed=true;coLobbyPush()}
   if(v.state==='lobby'&&CO.open&&!coHost()&&CO.S&&CO.S.over){coClose(false);return}
   coSync();
   if(v.state==='ended'&&CO.open){if(coHost()){if(CO.S&&!CO.S.over)coEnd('partner')}else if(!(CO.S&&CO.S.over)){coClose(false);coopNote('房間已結束')}}}
@@ -5097,7 +5116,10 @@ function coFit(){const m=document.getElementById('comain'),w=m&&m.querySelector(
   if(w.dataset.fk===key&&w.style.zoom&&(k||t-(+w.dataset.ft||0)<1500))return;
   let nw,nh;if(k){nw=parseFloat(k.style.width)+6;nh=parseFloat(k.style.height)+6}else{w.style.zoom='1';nw=w.offsetWidth;nh=w.offsetHeight}
   if(!nw||!nh)return;const z=String(Math.max(.3,Math.min((aw-16)/nw,(ah-12)/nh,1.6)).toFixed(3));if(w.style.zoom!==z)w.style.zoom=z;w.dataset.fk=key;w.dataset.ft=t}
-function coPaint(){const S=CO.S,ov=document.getElementById('cogame');if(!S||!ov)return;const now=coNow(),me=coRole();
+function coGraceBar(ov){let g=document.getElementById('cograce');if(!g){g=document.createElement('div');g.id='cograce';g.style.cssText='position:absolute;left:50%;top:44px;transform:translateX(-50%);z-index:5;background:#7a1f12;color:#fff;border:2px solid #ffb36b;border-radius:10px;padding:6px 14px;font-size:14px;font-weight:700;pointer-events:none;white-space:nowrap;box-shadow:0 4px 14px #0008';ov.appendChild(g)}
+  const left=COOP.graceWho?Math.max(0,Math.ceil((COOP.graceEnd-Date.now())/1000)):0;
+  if(left>0){g.textContent=`📡 對方斷線了，遊戲暫停，等他回來…（${left} 秒）`;g.style.display=''}else g.style.display='none'}
+function coPaint(){const S=CO.S,ov=document.getElementById('cogame');if(!S||!ov)return;coGraceBar(ov);const now=coNow(),me=coRole();
   const left=Math.max(0,S.t0+S.dur-now),mm=String(Math.floor(left/60000)).padStart(2,'0'),ss=String(Math.floor(left%60000/1000)).padStart(2,'0');
   const ct=document.getElementById('cotop'),cth=`<span>${'❤'.repeat(Math.max(0,S.hearts))||'💔'}</span><span>⏱ ${mm}:${ss}</span><span>接客 ${S.sv}</span>${voGameBtns()}<span class="cosp"></span><span>${me==='k'?'🍳 廚房':'🧾 外場'}</span><span>我的錢包 ¥${Math.round(S.w[me])}</span><button class="cob" data-co="leave" style="min-height:26px;min-width:40px;padding:0 8px">✕</button>`;if(ct.dataset.h!==cth){ct.dataset.h=cth;ct.innerHTML=cth}
   const sh=document.getElementById('cosh');if(sh&&!sh.dataset.r||sh&&sh.dataset.r!==me){sh.dataset.r=me;sh.innerHTML=CO_SH[me].map((t,i)=>`<button class="cob" data-co="sh:${i}" style="min-height:30px;min-width:0;padding:2px 8px;font-size:12px">${esc(t)}</button>`).join('')}
