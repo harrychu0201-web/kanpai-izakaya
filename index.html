@@ -4889,7 +4889,7 @@ function coApply(role,cmd){const S=CO.S;if(!S||S.over)return;const now=Date.now(
       const idx=c.o.findIndex((k,n)=>k===h.k&&!c.s[n]);H.f=null;
       if(idx<0){c.d-=6000;coFx('f','送錯了！客人更不耐煩');return}
       c.s[idx]=1;
-      if(c.s.every(v=>v)){c.e=now;S.sv++;c.o.forEach(k=>{const f=coFoodOf(k);if(CO_FOOD[k]){S.w.k+=f.pr/2;S.w.f+=f.pr/2}else S.w.f+=f.pr})}}
+      if(c.s.every(v=>v)){c.e=now;S.sv++;c.o.forEach(k=>{const f=coFoodOf(k);S.w.k+=f.pr/2;S.w.f+=f.pr/2})}}
     else if(a==='cl'){const c=S.cu[i];if(c&&c.dirty)S.cu[i]=null}
     else if(a==='tr'){H.f=null}
   }
