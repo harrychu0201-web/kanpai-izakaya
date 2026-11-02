@@ -4900,7 +4900,6 @@ function coTick(){const S=CO.S;if(!S||S.over||!coHost())return;const now=Date.no
   if(now<S.t0){coPaint();return}
   let ch=false;
   if(now-S.t0>=S.dur){coEnd('time');return}
-  S.wm.forEach((v,j)=>{if(v&&now-v.t>CO_WARM_LIFE){S.wm[j]=null;ch=true}});
   S.cu.forEach((c,i)=>{if(!c||c.dirty)return;
     if(c.e){if(now-c.e>=CO_EAT){S.cu[i]={dirty:1};ch=true}return}
     if(now>c.d){S.cu[i]=null;S.hearts--;coFx('*','😡 客人氣跑了！愛心 -1');ch=true}});
@@ -5057,8 +5056,8 @@ function coFloor(S,now){
     const face=sp?`<img class="cosp2" src="${sp[mood]||sp.ok}" draggable="false">`:`<span class="coi" style="font-size:26px">🧑</span>`;
     if(c.e)return `<button class="cob cx-seat cx-eat" data-co="sv:${i}">${face}<em>用餐中 😋</em></button>`;
     return `<button class="cob cx-seat" data-co="sv:${i}">${face}<div class="coord">${c.o.map((k,n)=>`<span class="cochip ${c.s[n]?'cx-ok':''}">${coFoodOf(k).n}${c.s[n]?' ✓':''}</span>`).join('')}</div>${coBar(pct,pct<30)}</button>`}).join('');
-  const wm=S.wm.map((v,j)=>{if(!v)return `<div class="cob cx-slot cx-empty"><em>空</em></div>`;const age=(now-v.t)/CO_WARM_LIFE*100;
-    return `<button class="cob cx-slot cx-done" data-co="tw:${j}">${cxI(v.k,'done',44)}<em>${CO_FOOD[v.k].n}</em>${coBar(100-age,age>70)}</button>`}).join('');
+  const wm=S.wm.map((v,j)=>{if(!v)return `<div class="cob cx-slot cx-empty"><em>空</em></div>`;
+    return `<button class="cob cx-slot cx-done" data-co="tw:${j}">${cxI(v.k,'done',44)}<em>${CO_FOOD[v.k].n}</em></button>`}).join('');
   return `<div class="cof"><div class="coseats">${seats}</div>
    <div class="cobtm"><div class="cocol" style="flex:1"><h4>保溫台</h4><div class="corow">${wm}</div></div>
    <div class="cocol"><h4>飲料</h4><div class="corow"><button class="cob" data-co="pr:beer">${cxI('beer','d',46)}<em>啤酒</em></button><button class="cob" data-co="pr:sake" ${S.sk<=0?'style="opacity:.45"':''}>${cxI('sake','d',46)}<em>清酒 ×${S.sk}</em></button></div></div>
