@@ -3956,7 +3956,7 @@ function coopMsgsFill(){const b=document.getElementById('coopmsgs');if(!b)return
 function coopDyn(){const me=CL.user.uid,r=COOP.room;
   const inv=Object.keys(COOP.inv).map(c=>{const v=COOP.inv[c]||{};return `<div class="lbme"><span>📨 ${esc(v.name||T('玩家'))} ${T('邀請你一起開店')} <small>${esc(c)}</small></span><button class="btn" data-act="coopaccept" data-id="${esc(c)}">${T('接受')}</button><button class="btn alt" data-act="coopdecline" data-id="${esc(c)}">${T('拒絕')}</button></div>`}).join('');
   let body;
-  if(!COOP.code)body=`<p class="lbdesc">${T('還沒有連線。從好友列表按「一起開店」邀請朋友，或接受下面的邀請。')}</p>`;
+  if(!COOP.code)body=(COOP.byeMsg?`<p style="color:#e0412c">${T(COOP.byeMsg)}</p>`:'')+`<p class="lbdesc">${T('還沒有連線。從好友列表按「一起開店」邀請朋友，或接受下面的邀請。')}</p>`;
   else{const o=coopOther(),pr=u=>{const p=COOP.p[u];return p&&p.on?'🟢 '+T('在線'):'⚪ '+T('離線')};
     const left=COOP.graceWho?Math.max(0,Math.ceil((COOP.graceEnd-Date.now())/1000)):0;
     const st=r?r.state:T('已結束');
@@ -3976,11 +3976,19 @@ function coopBannerShow(code,v){coopBannerHide();const b=document.createElement(
   b.style.cssText='position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:9000;max-width:92vw;background:#3b2314;color:#f3dfb4;border:2px solid #ffb36b;border-radius:12px;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;box-shadow:0 6px 20px #0008;font-size:15px';
   b.innerHTML=`<span>📨 <b>${esc(v.name||T('玩家'))}</b> ${T('邀請你一起開店')}</span><button class="btn" data-act="coopaccept" data-id="${esc(code)}">${T('接受')}</button><button class="btn alt" data-act="coopdecline" data-id="${esc(code)}">${T('拒絕')}</button>`;
   document.body.appendChild(b)}
+/* 告別訊號：朋友拒絕、改去別的房間、或正在和別人開店時，通知那個房間的房主並結束房間，房主就不會空等 */
+const COOP_BYE={busy:'對方正在和別人開店，這次邀請先取消了',decline:'對方拒絕了這次邀請',switch:'對方離開，去別人的房間了'};
+async function coopBye(code,why){if(!code||!CL.user||!CL.api)return;const me=CL.user.uid;
+  try{await CL.api.coopSend(code,me,'bye',0,why)}catch(e){}
+  try{await CL.api.coopState(code,'ended')}catch(e){}}
+function coopBusy(){const o=coopOther();return !!(COOP.code&&COOP.room&&COOP.room.state!=='ended'&&o&&COOP.p[o]&&COOP.p[o].on)}
 function coopInvStart(){if(COOP.invOn||!CL.api||!CL.api.coopInvWatch||!coopDev()||!CL.user)return;const me=CL.user.uid;COOP.invOn=true;
   COOP.invOff=CL.api.coopInvWatch(me,list=>{COOP.inv=list;const now=Date.now();let show=null;
     Object.keys(list).forEach(c=>{const v=list[c]||{};if(typeof v.t==='number'&&now-v.t>COOP_INV_TTL){CL.api.coopInvDel(me,c).catch(()=>{});delete list[c];return}
-      if(!COOP.invSeen[c]&&!(COOP.code===c)){COOP.invSeen[c]=1;show=[c,v]}});
-    if(show&&!COOP.code){coopBannerShow(show[0],show[1]);try{coopNote('有人邀請你一起開店')}catch(e){}}
+      if(!COOP.invSeen[c]&&!(COOP.code===c)){COOP.invSeen[c]=1;
+        if(coopBusy()){coopBye(c,'busy');CL.api.coopInvDel(me,c).catch(()=>{});delete list[c];return}
+        show=[c,v]}});
+    if(show){coopBannerShow(show[0],show[1]);try{coopNote('有人邀請你一起開店')}catch(e){}}
     if(!Object.keys(list).length)coopBannerHide();coopRender()},e=>{console.warn('coop inv watch',e);COOP.invOn=false})}
 function coopInvStop(){if(COOP.invOff)COOP.invOff();COOP.invOff=null;COOP.invOn=false;COOP.invSeen={};coopBannerHide()}
 async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid;COOP.err='';
@@ -3988,11 +3996,17 @@ async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid
     if(k==='open'){coopPanel();try{COOP.inv=await CL.api.coopInvList(me)}catch(e){console.warn('coop inv',e);COOP.inv={};COOP.err='讀不到邀請（規則還沒更新？）'}coopPanel();return}
     if(k==='make'){if(COOP.code){coopNote('已經在連線中');coopPanel();return}
       const code=coopCode(),nm=(lbEntry()||{}).name||'';
-      await CL.api.coopMake(code,me,id,nm);COOP.code=code;COOP.role='host';coopAttach(code);coopNote('已邀請，等朋友加入');coopPanel();return}
-    if(k==='accept'){coopBannerHide();const rm=await CL.api.coopRoomGet(id).catch(()=>null);
+      await CL.api.coopMake(code,me,id,nm);COOP.code=code;COOP.role='host';COOP.byeMsg='';coopAttach(code);coopNote('已邀請，等朋友加入');coopPanel();return}
+    if(k==='accept'){
+      if(COOP.code&&COOP.code!==id){const a=COOP.swAsk;if(!(a&&a.id===id&&Date.now()-a.t<5000)){COOP.swAsk={id,t:Date.now()};coopNote(coopBusy()?'你正在和別人開店，再按一次「接受」會離開原本的房間':'你已經在等別人加入，再按一次「接受」會關掉原本的房間');return}}
+      COOP.swAsk=null;coopBannerHide();const rm=await CL.api.coopRoomGet(id).catch(()=>null);
       if(!rm||rm.state==='ended'||rm.guest!==me){await CL.api.coopInvDel(me,id).catch(()=>{});delete COOP.inv[id];coopNote('這個邀請已經失效了');coopPanel();return}
-      await CL.api.coopAccept(me,id);delete COOP.inv[id];COOP.code=id;COOP.role='guest';coopAttach(id);coopPanel();return}
-    if(k==='decline'){coopBannerHide();await CL.api.coopInvDel(me,id);delete COOP.inv[id];coopPanel();return}
+      if(COOP.code&&COOP.code!==id){await coopBye(COOP.code,'switch');await coopLeave()}
+      await CL.api.coopAccept(me,id);delete COOP.inv[id];
+      let all=COOP.inv||{};try{all=await CL.api.coopInvList(me)}catch(e){}
+      Object.keys(all).forEach(c=>{if(c===id)return;coopBye(c,'busy');CL.api.coopInvDel(me,c).catch(()=>{});delete COOP.inv[c]});
+      COOP.code=id;COOP.role='guest';COOP.byeMsg='';coopAttach(id);coopPanel();return}
+    if(k==='decline'){coopBannerHide();coopBye(id,'decline');await CL.api.coopInvDel(me,id);delete COOP.inv[id];coopPanel();return}
     if(k==='start'){if(typeof coStart==='function')await coStart();else await CL.api.coopState(COOP.code,'playing');return}
     if(k==='role'){if(typeof coRoleSwap==='function')coRoleSwap();else{COOP.hostRole=COOP.hostRole==='f'?'k':'f';coopRender()}return}
     if(k==='rdy'){if(typeof coReadyToggle==='function')coReadyToggle();return}
@@ -4038,6 +4052,10 @@ function coopTick(){
 function coopOnEv(e){const me=CL.user&&CL.user.uid;const x={id:e.id,from:e.from,type:e.type,d:e.d,txt:typeof e.txt==='string'?e.txt:''};
   if(e.type==='ping'&&e.from!==me&&typeof e.d==='number')x.lat=Date.now()-e.d;
   COOP.ev.push(x);if(COOP.ev.length>80)COOP.ev.splice(0,COOP.ev.length-80);
+  if(x.type==='bye'&&x.from!==me&&e.from===coopOther()&&!(typeof e.t==='number'&&COOP.attachT&&e.t<COOP.attachT-1500)){
+    const m=COOP_BYE[x.txt]||'對方離開了房間';COOP.byeMsg=m;try{coopNote(m)}catch(_){}
+    if(typeof CO!=='undefined'&&CO.open&&typeof coClose==='function')coClose(false);
+    setTimeout(()=>{coopLeave().then(()=>{if(document.getElementById('coopmark'))coopPanel()})},0);return}
   if(x.type==='act'&&typeof coHostAct==='function')coHostAct(e);
   if(x.type==='ready'&&typeof coHostReady==='function')coHostReady(e);
   if((x.type==='mic'||x.type==='rtcreq')&&typeof coVoiceEv==='function')coVoiceEv(e);
