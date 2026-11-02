@@ -3952,7 +3952,8 @@ function coopDyn(){const me=CL.user.uid,r=COOP.room;
      +`<div class="lbme"><span>${T('你')}：${pr(me)}</span><span>${T('對方')}：${o?pr(o):T('等待加入')}</span></div>`
      +(left?`<p style="color:#e0412c">${T('對方離線，{0} 秒內沒回來就結束',left)}</p>`:'')
      +`<p class="lbdesc">${T('寫入次數')}：${COOP.w}</p>`
-     +`<div class="btns" style="justify-content:flex-start">${COOP.role==='host'&&r&&r.state==='lobby'?`<button class="btn alt" data-act="cooprole">${COOP.hostRole==='f'?'🧾 我當外場（朋友當廚房）':'🍳 我當廚房（朋友當外場）'}</button><button class="btn" data-act="coopstart" ${o&&COOP.p[o]&&COOP.p[o].on?'':'disabled'}>${T('開始營業')}</button>`:''}<button class="btn alt" data-act="coopping" ${r&&r.state!=='ended'?'':'disabled'}>${T('測延遲')}</button><button class="btn alt" data-act="coopleave">${T('離開')}</button></div>`}
+     +(r&&r.state==='lobby'&&typeof coLobbyBlock==='function'?coLobbyBlock():'')
+     +`<div class="btns" style="justify-content:flex-start">${r&&r.state==='lobby'&&typeof coLobbyBtns==='function'?coLobbyBtns():''}<button class="btn alt" data-act="coopping" ${r&&r.state!=='ended'?'':'disabled'}>${T('測延遲')}</button><button class="btn alt" data-act="coopleave">${T('離開')}</button></div>`}
   return (COOP.err?`<p style="color:#e0412c">${T(COOP.err)}</p>`:'')+inv+body}
 function coopPanel(){if(!coopDev()||!CL.user){modal(`<h2>${T('連線測試')}</h2><p>${T('需要登入且在測試名單內。')}</p><div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`);return}
   const chat=COOP.code?`<div id="coopmsgs" style="font-size:14px;height:150px;overflow:auto;margin:8px 0;padding:6px 8px;background:#0000000d;border-radius:8px"></div><div class="lbme" style="gap:6px"><input class="nickin" id="coopin" maxlength="100" placeholder="${T('輸入訊息')}" autocomplete="off" style="flex:1;min-width:0;font-size:16px;padding:6px 10px"><button class="btn" data-act="coopsendmsg">${T('送出')}</button></div>`:'';
@@ -3982,7 +3983,8 @@ async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid
       await CL.api.coopAccept(me,id);delete COOP.inv[id];COOP.code=id;COOP.role='guest';coopAttach(id);coopPanel();return}
     if(k==='decline'){coopBannerHide();await CL.api.coopInvDel(me,id);delete COOP.inv[id];coopPanel();return}
     if(k==='start'){if(typeof coStart==='function')await coStart();else await CL.api.coopState(COOP.code,'playing');return}
-    if(k==='role'){COOP.hostRole=COOP.hostRole==='f'?'k':'f';coopRender();return}
+    if(k==='role'){if(typeof coRoleSwap==='function')coRoleSwap();else{COOP.hostRole=COOP.hostRole==='f'?'k':'f';coopRender()}return}
+    if(k==='rdy'){if(typeof coReadyToggle==='function')coReadyToggle();return}
     if(k==='sendmsg'){const i=document.getElementById('coopin');if(!i||!COOP.code)return;const txt=i.value.trim().slice(0,100);if(!txt)return;
       if(!COOP.room||COOP.room.state==='ended'){coopNote('房間已結束');return}
       if(Date.now()-(COOP.lastMsg||0)<700)return;COOP.lastMsg=Date.now();i.value='';
@@ -4014,6 +4016,7 @@ function coopOnEv(e){const me=CL.user&&CL.user.uid;const x={id:e.id,from:e.from,
   if(e.type==='ping'&&e.from!==me&&typeof e.d==='number')x.lat=Date.now()-e.d;
   COOP.ev.push(x);if(COOP.ev.length>80)COOP.ev.splice(0,COOP.ev.length-80);
   if(x.type==='act'&&typeof coHostAct==='function')coHostAct(e);
+  if(x.type==='ready'&&typeof coHostReady==='function')coHostReady(e);
   if(typeof CO!=='undefined'&&CO.open&&typeof coChatFill==='function')coChatFill();
   if(x.type==='msg'&&x.from!==me&&!document.getElementById('coopmark')&&!(typeof CO!=='undefined'&&CO.open)){try{coopNote('💬 '+x.txt.slice(0,30))}catch(_){}}
   coopRender()}
@@ -4021,6 +4024,7 @@ async function coopLeave(){const me=CL.user.uid,code=COOP.code;if(!code)return;c
   COOP.on=false;if(COOP.unsub)COOP.unsub();COOP.unsub=null;if(COOP.presOff)COOP.presOff();COOP.presOff=null;
   if(COOP.tick){clearInterval(COOP.tick);COOP.tick=null}
   try{await CL.api.coopPresenceOff(code,me);if(wasHost)await CL.api.coopEnd(code)}catch(e){console.warn('coop leave',e)}
+  if(typeof coReset==='function')coReset();
   COOP.code=null;COOP.role=null;COOP.room=null;COOP.p={};COOP.ev=[];COOP.graceWho=null;COOP.lastOn={};coopRender()}
 
 async function cloudInit(){
@@ -4840,10 +4844,9 @@ setTimeout(()=>{for(const u of new Set(JSON.stringify([SPR,ROBSPR]).match(/img\/
    All time fields in S are host-clock milliseconds; the guest corrects with CO.off. */
 const CO={open:false,S:null,off:0,rid:0,closedRid:0,seen:{},tickT:null,paintT:null,snapT:null,lastTick:0,fxSeen:0,leaveAt:0,lastShout:0,lastHtml:''};
 const CO_DUR=150000,CO_HEARTS=5,CO_SEATS=4,CO_GRILL=4,CO_FRY=3,CO_WARM=6,CO_WARM_LIFE=35000,CO_SAKE_MAX=4,CO_SAKE_CD=8000,CO_EAT=4000,CO_LEAD=3000;
-const CO_FOOD={chk:{n:'雞肉串',e:'🍢',st:'g',cook:6000,burn:6000,pr:120},fish:{n:'烤魚',e:'🐟',st:'g',cook:8000,burn:6000,pr:150},kara:{n:'唐揚',e:'🍗',st:'f',cook:7000,burn:6000,pr:130},ebi:{n:'炸蝦',e:'🍤',st:'f',cook:7000,burn:6000,pr:160}};
-const CO_DRINK={beer:{n:'啤酒',e:'🍺',pr:100},sake:{n:'清酒',e:'🍶',pr:120}};
-const CO_FACES=['🧑','👩','👴','👵','🧔','👨‍🦱','👩‍🦰','🧑‍🎤'];
-const CO_SH={k:['🍢雞肉串好了','🐟烤魚好了','🍗唐揚好了','🍤炸蝦好了','🍶酒送到了','🔥焦了…','😵來不及了','⏳等我一下'],f:['要雞肉串！','要烤魚！','要唐揚！','要炸蝦！','🍶清酒沒了！','😡客人要生氣了','⚡加快！','📦保溫台滿了']};
+const CO_FOOD={neg:{n:'蔥雞肉串',st:'g',cook:6000,burn:7000,pr:210,art:'negima',sk:1},tsu:{n:'雞肉丸串',st:'g',cook:7000,burn:7000,pr:250,art:'tsukune',sk:1},kara:{n:'唐揚',st:'f',cook:7000,burn:7000,pr:230,art:'karaage'}};
+const CO_DRINK={beer:{n:'啤酒',pr:100},sake:{n:'清酒',pr:120}};
+const CO_SH={k:['蔥雞肉串好了','雞肉丸串好了','唐揚好了','酒送到了','🔥焦了…','😵來不及了','⏳等我一下','👍沒問題'],f:['要蔥雞肉串！','要雞肉丸串！','要唐揚！','🍶清酒沒了！','😡客人要生氣了','⚡加快！','📦保溫台滿了','👍收到']};
 const coNow=()=>Date.now()+(CO.off||0);
 const coHost=()=>COOP.role==='host';
 const coRole=()=>{const S=CO.S;if(!S)return 'k';return coHost()?S.hk:(S.hk==='k'?'f':'k')};
@@ -4854,7 +4857,7 @@ function coFx(r,m){const S=CO.S;S.fx={id:((S.fx&&S.fx.id)||0)+1,r,m}}
 /* ---------- host: simulation ---------- */
 function coNewState(hk){const now=Date.now(),t0=now+CO_LEAD;
   return{rid:now,t0,dur:CO_DUR,over:0,why:'',hearts:CO_HEARTS,hk,gr:Array(CO_GRILL).fill(null),fr:Array(CO_FRY).fill(null),wm:Array(CO_WARM).fill(null),
-    hd:{k:null,f:null},cu:Array(CO_SEATS).fill(null),sk:CO_SAKE_MAX,skc:0,w:{k:0,f:0},sv:0,nx:t0+1500,nid:0,fx:{id:0,r:'*',m:''},now}}
+    hd:{k:null,f:null},rd:{h:0,g:0},cu:Array(CO_SEATS).fill(null),sk:CO_SAKE_MAX,skc:0,w:{k:0,f:0},sv:0,nx:t0+1500,nid:0,fx:{id:0,r:'*',m:''},now}}
 function coApply(role,cmd){const S=CO.S;if(!S||S.over)return;const now=Date.now();if(now<S.t0)return;
   const p=String(cmd).split(':'),a=p[0],x=p[1],i=+x,H=S.hd;
   if(role==='k'){
@@ -4886,8 +4889,8 @@ function coApply(role,cmd){const S=CO.S;if(!S||S.over)return;const now=Date.now(
 function coSpawn(S,now){const free=[];S.cu.forEach((c,i)=>{if(!c)free.push(i)});if(!free.length)return false;
   const i=free[Math.floor(Math.random()*free.length)],prog=Math.min(1,(now-S.t0)/S.dur),n=Math.random()<.45?1:2,o=[];
   for(let q=0;q<n;q++){if(Math.random()<.7){const ks=Object.keys(CO_FOOD);o.push(ks[Math.floor(Math.random()*ks.length)])}else o.push(Math.random()<.5?'beer':'sake')}
-  const pat=Math.round(38000+6000*(n-1)-7000*prog);
-  S.cu[i]={id:++S.nid,f:CO_FACES[Math.floor(Math.random()*CO_FACES.length)],o,s:o.map(()=>0),t:now,d:now+pat,p:pat,e:0};return true}
+  const pat=Math.round(65000+8000*(n-1)-10000*prog);
+  S.cu[i]={id:++S.nid,f:Math.floor(Math.random()*5),o,s:o.map(()=>0),t:now,d:now+pat,p:pat,e:0};return true}
 function coShift(S,dt){S.t0+=dt;S.nx+=dt;if(S.skc)S.skc+=dt;
   S.gr.concat(S.fr,S.wm).forEach(v=>{if(v)v.t+=dt});S.cu.forEach(c=>{if(c&&!c.dirty){c.t+=dt;c.d+=dt;if(c.e)c.e+=dt}})}
 function coTick(){const S=CO.S;if(!S||S.over||!coHost())return;const now=Date.now(),dt=CO.lastTick?now-CO.lastTick:0;CO.lastTick=now;
@@ -4900,7 +4903,7 @@ function coTick(){const S=CO.S;if(!S||S.over||!coHost())return;const now=Date.no
   S.cu.forEach((c,i)=>{if(!c||c.dirty)return;
     if(c.e){if(now-c.e>=CO_EAT){S.cu[i]={dirty:1};ch=true}return}
     if(now>c.d){S.cu[i]=null;S.hearts--;coFx('*','😡 客人氣跑了！愛心 -1');ch=true}});
-  if(now>=S.nx){const prog=Math.min(1,(now-S.t0)/S.dur);if(coSpawn(S,now)){S.nx=now+Math.round((9000-3500*prog)*(.8+Math.random()*.4));ch=true}else S.nx=now+1500}
+  if(now>=S.nx){const prog=Math.min(1,(now-S.t0)/S.dur);if(coSpawn(S,now)){S.nx=now+Math.round((13000-4000*prog)*(.8+Math.random()*.4));ch=true}else S.nx=now+1500}
   if(S.hearts<=0){coEnd('hearts');return}
   if(ch)coDirty();coPaint()}
 function coEnd(why){const S=CO.S;if(!S||S.over)return;S.over=1;S.why=why;clearInterval(CO.tickT);CO.tickT=null;coPush();coPaint()}
@@ -4917,12 +4920,42 @@ function coHostAct(e){if(!coHost()||!CO.S||CO.S.over)return;if(CO.seen[e.id])ret
   if(!COOP.room||e.from!==COOP.room.guest)return;const m=/^g(\d+)\|(.+)$/.exec(e.txt||'');if(!m||+m[1]!==CO.S.rid)return;
   coApply(CO.S.hk==='k'?'f':'k',m[2]);coDirty();coPaint()}
 
+
+/* ---------- lobby: roles + both-ready start ---------- */
+const CO_TASK={k:'你負責烤和炸：生食下鍋 → 熟了拿起 → 放進保溫台。你看不到客人，要聽外場喊要什麼！',f:'你負責接客人：從保溫台拿餐點、倒飲料送給客人，吃完收桌子。你看不到烤台，要什麼就喊給廚房聽！'};
+function coLobbyInit(){if(!coHost())return;if(!CO.L)CO.L={lobby:1,hk:'k',rd:{h:0,g:0}};CO.L.hk=COOP.hostRole==='f'?'f':'k'}
+function coLobbyPush(){if(!coHost()||!COOP.code||!CL.api||!CL.api.coopStSet)return;coLobbyInit();COOP.w++;CL.api.coopStSet(COOP.code,JSON.stringify(Object.assign({now:Date.now()},CO.L))).catch(e=>console.warn('co lobby',e))}
+function coRdObj(){if(CO.open&&CO.S){if(CO.S.over){if(!CO.S.rd)CO.S.rd={h:0,g:0};return CO.S.rd}return null}
+  if(coHost()){coLobbyInit();return CO.L.rd}return CO.lobby?CO.lobby.rd:null}
+function coRdPush(){if(CO.open&&CO.S&&CO.S.over)coPush();else coLobbyPush()}
+function coCheckStart(){const rd=coRdObj();if(!rd||!rd.h||!rd.g)return;const o=coopOther();if(o&&COOP.p[o]&&COOP.p[o].on)coStart()}
+function coReadyToggle(){const rd=coRdObj();if(!rd)return;
+  if(coHost()){rd.h=rd.h?0:1;coRdPush();coCheckStart();if(typeof coopRender==='function')coopRender();if(CO.open)coPaint()}
+  else if(CL.api&&COOP.code){COOP.w++;CL.api.coopSend(COOP.code,CL.user.uid,'ready',rd.g?0:1,'').catch(e=>console.warn('co rdy',e))}}
+function coHostReady(e){if(!coHost()||CO.seen[e.id])return;CO.seen[e.id]=1;if(!COOP.room||e.from!==COOP.room.guest)return;
+  const rd=coRdObj();if(!rd)return;rd.g=e.d===1?1:0;coRdPush();coCheckStart();if(typeof coopRender==='function')coopRender();if(CO.open)coPaint()}
+function coRoleSwap(){if(!coHost())return;coLobbyInit();COOP.hostRole=COOP.hostRole==='f'?'k':'f';CO.L.hk=COOP.hostRole;CO.L.rd={h:0,g:0};coLobbyPush();if(typeof coopRender==='function')coopRender()}
+function coReset(){CO.L=null;CO.lobby=null;CO.lobbyPushed=false}
+function coLobbyView(){if(coHost()){coLobbyInit();return{hk:CO.L.hk,rd:CO.L.rd}}return CO.lobby?{hk:CO.lobby.hk,rd:CO.lobby.rd}:null}
+function coLobbyBlock(){const v=coLobbyView(),host=coHost(),me=v?(host?v.hk:(v.hk==='k'?'f':'k')):null,nm=r=>r==='k'?'🍳 廚房':'🧾 外場';let s='';
+  if(!me)s+=`<p class="lbdesc">等房主選角色…</p>`;
+  else s+=`<div class="lbme"><span>你的角色：<b>${nm(me)}</b></span><small>對方：${nm(me==='k'?'f':'k')}</small></div><p class="lbdesc">${CO_TASK[me]}</p>`;
+  if(v){const a=host?'h':'g',b=host?'g':'h';s+=`<div class="lbme"><span>你：${v.rd[a]?'✅ 已準備':'⏳ 未準備'}</span><span>對方：${v.rd[b]?'✅ 已準備':'⏳ 未準備'}</span></div><p class="lbdesc">雙方都按「準備」就會自動開始。</p>`}
+  return s}
+function coLobbyBtns(){const v=coLobbyView();let s='';
+  if(coHost())s+=`<button class="btn alt" data-act="cooprole">${COOP.hostRole==='f'?'🧾 我當外場（朋友當廚房）':'🍳 我當廚房（朋友當外場）'}</button>`;
+  const my=v?v.rd[coHost()?'h':'g']:0;
+  return s+`<button class="btn" data-act="cooprdy" ${v?'':'disabled'}>${my?'✅ 已準備（再按取消）':'🙋 準備'}</button>`}
+
 /* ---------- both sides: snapshots, open/close ---------- */
 function coGameOnSt(v){if(coHost()||typeof v!=='string')return;let S;try{S=JSON.parse(v)}catch(e){return}
+  if(S.lobby){CO.lobby=S;if(typeof coopRender==='function')coopRender();return}
   const fresh=!CO.S||CO.S.rid!==S.rid;CO.S=S;CO.off=S.now-Date.now();CO.rid=S.rid;if(fresh&&CO.open){CO.fxSeen=S.fx?S.fx.id:0;CO.lastHtml=''}coSync();if(CO.open)coPaint()}
 function coSync(){if(CO.open||coHost()||!CO.S||!COOP.room)return;if(COOP.room.state==='playing'&&CO.S.rid!==CO.closedRid)coOpen()}
 function coGameOnRoom(v){
   if(v===null){if(CO.open){coClose(false);coopNote('房間已結束')}return}
+  if(coHost()&&v.state==='lobby'&&!CO.lobbyPushed&&COOP.code){CO.lobbyPushed=true;coLobbyPush()}
+  if(v.state==='lobby'&&CO.open&&!coHost()&&CO.S&&CO.S.over){coClose(false);return}
   coSync();
   if(v.state==='ended'&&CO.open){if(coHost()){if(CO.S&&!CO.S.over)coEnd('partner')}else if(!(CO.S&&CO.S.over)){coClose(false);coopNote('房間已結束')}}}
 function coOpen(){if(CO.open)return;CO.open=true;
@@ -4934,14 +4967,14 @@ function coOpen(){if(CO.open)return;CO.open=true;
   ov.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&e.target&&e.target.id==='cogin'){e.preventDefault();coTap('say')}e.stopPropagation()});
   CO.fxSeen=CO.S&&CO.S.fx?CO.S.fx.id:0;CO.lastHtml='';coChatFill();coPaint();clearInterval(CO.paintT);CO.paintT=setInterval(coPaint,200)}
 function coClose(user){const S=CO.S;CO.open=false;clearInterval(CO.paintT);CO.paintT=null;
-  if(coHost()){clearInterval(CO.tickT);CO.tickT=null;if(user&&COOP.code&&CL.api&&COOP.room&&COOP.room.state==='playing')CL.api.coopState(COOP.code,'lobby').catch(()=>{})}
+  if(coHost()){clearInterval(CO.tickT);CO.tickT=null;if(user&&COOP.code&&CL.api&&COOP.room&&COOP.room.state==='playing'){CO.L={lobby:1,hk:'k',rd:{h:0,g:0}};coLobbyPush();CL.api.coopState(COOP.code,'lobby').catch(()=>{})}}
   CO.closedRid=S?S.rid:0;const ov=document.getElementById('cogame');if(ov)ov.remove();if(typeof coopRender==='function')coopRender()}
 
 /* ---------- input ---------- */
 function coTap(cmd){const S=CO.S;if(!S)return;
   if(cmd==='say'){coSay();return}
-  if(cmd==='back'){coClose(true);return}
-  if(cmd==='again'){if(coHost())coStart();return}
+  if(cmd==='back'){if(coHost())coClose(true);return}
+  if(cmd==='again'||cmd==='rdy'){coReadyToggle();return}
   if(cmd==='leave'){const t=Date.now();if(t-CO.leaveAt<2000){CO.leaveAt=0;const wasHost=coHost();coClose(false);if(typeof coopLeave==='function')coopLeave()}else{CO.leaveAt=t;coToast('再按一次離開（對方也會結束）')}return}
   if(cmd.indexOf('sh:')===0){const t=CO_SH[coRole()][+cmd.slice(3)];if(t)coSendMsg(t);return}
   if(S.over)return;
@@ -4952,47 +4985,61 @@ function coSendMsg(t){if(Date.now()-CO.lastShout<350)return;CO.lastShout=Date.no
   if(!CL.api||!COOP.code||!CL.user)return;CL.api.coopSend(COOP.code,CL.user.uid,'msg',0,t).catch(e=>console.warn('co msg',e))}
 function coToast(m){const f=document.getElementById('cofx');if(!f)return;f.textContent=m;f.style.opacity=1;clearTimeout(coToast.t);coToast.t=setTimeout(()=>{f.style.opacity=0},1800)}
 function coChatFill(){const b=document.getElementById('cochat');if(!b)return;const me=CL.user&&CL.user.uid;
-  b.innerHTML=COOP.ev.filter(x=>x.type==='msg').slice(-3).map(x=>`<div class="cpm ${x.from===me?'cx-me':''}"><b>${x.from===me?'我':'對方'}</b>：${esc(x.txt||'')}</div>`).join('')}
+  b.innerHTML=COOP.ev.filter(x=>x.type==='msg').slice(-2).map(x=>`<div class="cpm ${x.from===me?'cx-me':''}"><b>${x.from===me?'我':'對方'}</b>：${esc(x.txt||'')}</div>`).join('')}
 
 /* ---------- drawing ---------- */
-function coItem(it,sz){if(!it)return '<span class="coi" style="opacity:.25;font-size:'+(sz||26)+'px">✋</span>';const f=coFoodOf(it.k);
-  const tag=it.s==='raw'?'生':it.s==='done'?'熟':it.s==='burnt'?'焦':'';return `<span class="coi ${it.s?'cx-'+it.s:''}" style="font-size:${sz||26}px">${f.e}</span><em>${f.n}${tag?'·'+tag:''}</em>`}
+const coTag=st=>st==='raw'?'生':st==='done'?'熟':st==='burnt'?'焦':'';
+function coPath(k,st){if(k==='beer')return 'img/art-beermug-1.webp';if(k==='sake')return 'img/art-sake-1.webp';const f=CO_FOOD[k];return `img/art-${f.art}-${st==='raw'?'raw':st==='burnt'?'burnt':'done'}-1.webp`}
+/* skewers: h is the length (flat = lying sideways like on the grill); karaage: h is the width; drinks: h is the height */
+function coImg(k,st,h,flat){const f=CO_FOOD[k];
+  if(f&&f.sk){const t=Math.max(4,Math.round(h*.27));
+    if(flat)return `<span class="cosk" style="width:${h}px;height:${t}px"><img src="${coPath(k,st)}" draggable="false" style="width:${t}px;height:${h}px"></span>`;
+    return `<img class="coim" src="${coPath(k,st)}" draggable="false" style="height:${h}px;width:${t}px">`}
+  if(f)return `<img class="coim" src="${coPath(k,st)}" draggable="false" style="width:${h}px;height:auto">`;
+  return `<img class="coim" src="${coPath(k,st)}" draggable="false" style="height:${h}px;width:auto">`}
+const coSz=k=>CO_FOOD[k]?(CO_FOOD[k].sk?58:42):38;
 function coBar(pct,red){return `<u><b class="${red?'cx-red':''}" style="width:${Math.max(0,Math.min(100,pct))}%"></b></u>`}
-function coSlotHtml(arr,i,now,kp,kt){const sl=arr[i];
-  if(!sl)return `<button class="cob cx-slot" data-co="${kp}:${i}"><span class="coi" style="opacity:.35;font-size:24px">＋</span><em>空</em></button>`;
-  const f=CO_FOOD[sl.k],st=coSlot(sl,now),d=now-sl.t;
-  const pct=st==='raw'?d/f.cook*100:st==='done'?100-(d-f.cook)/f.burn*100:0;
-  return `<button class="cob cx-slot cx-${st}" data-co="${kt}:${i}">${coItem({k:sl.k,s:st},26)}${coBar(pct,st==='done'&&pct<35)}</button>`}
+function coHand(it){return `<div class="cob cx-hand">${it?coImg(it.k,it.s,coSz(it.k),true)+`<em>${coFoodOf(it.k).n}${coTag(it.s)?'·'+coTag(it.s):''}</em>`:`<span class="coi" style="opacity:.3;font-size:22px">✋</span><em>空手</em>`}</div>`}
+function coPct(sl,now){const f=CO_FOOD[sl.k],st=coSlot(sl,now),d=now-sl.t;return{st,pct:st==='raw'?d/f.cook*100:st==='done'?100-(d-f.cook)/f.burn*100:0}}
 function coKitchen(S,now){
-  const raw=Object.keys(CO_FOOD).map(k=>`<button class="cob" data-co="raw:${k}"><span class="coi cx-raw" style="font-size:24px">${CO_FOOD[k].e}</span><em>${CO_FOOD[k].n}</em><em style="opacity:.6">${CO_FOOD[k].st==='g'?'烤台':'油鍋'}</em></button>`).join('');
-  const gr=S.gr.map((_,i)=>coSlotHtml(S.gr,i,now,'pg','kg')).join(''),fr=S.fr.map((_,i)=>coSlotHtml(S.fr,i,now,'pf','kf')).join('');
+  const used=S.wm.filter(Boolean).length;
+  const gr=S.gr.map((sl,i)=>{if(!sl)return `<button class="cogr" data-co="pg:${i}"><em>＋ 放這裡</em></button>`;
+    const q=coPct(sl,now);return `<button class="cogr cx-${q.st}" data-co="kg:${i}">${coImg(sl.k,q.st,58,true)}${coBar(q.pct,q.st==='done'&&q.pct<35)}</button>`}).join('');
+  const fr=S.fr.map((sl,i)=>{if(!sl)return `<button class="cofc" data-co="pf:${i}"><em>＋</em></button>`;
+    const q=coPct(sl,now);return `<button class="cofc cx-${q.st}" data-co="kf:${i}">${coImg(sl.k,q.st,30)}${coBar(q.pct,q.st==='done'&&q.pct<35)}</button>`}).join('');
+  const cr=k=>{const f=CO_FOOD[k];return `<button class="cocr" data-co="raw:${k}"><span class="crart ${f.sk?'':'cx-tr'}">${f.sk?coImg(k,'raw',40)+coImg(k,'raw',40)+coImg(k,'raw',40):coImg(k,'raw',40)}</span><span class="crtx"><b>${f.n}</b><em>${f.st==='g'?'放烤台':'放油鍋'}</em></span></button>`};
   const cd=Math.max(0,Math.ceil((CO_SAKE_CD-(now-S.skc))/1000));
-  return `<div class="cok"><div class="cocol"><h4>備料</h4><div class="corow" style="max-width:150px">${raw}</div></div>
-   <div class="cocol" style="flex:1"><h4>烤台</h4><div class="corow">${gr}</div><h4>油鍋</h4><div class="corow">${fr}</div></div>
-   <div class="cocol" style="width:112px"><h4>手上</h4><div class="cob cx-hand">${coItem(S.hd.k,28)}</div>
-    <button class="cob cx-act" data-co="wm">➡ 放進保溫台</button><button class="cob cx-act" data-co="tr">🗑 丟掉</button><button class="cob cx-act" data-co="sk">🍶 送酒${cd>0&&S.skc?'（'+cd+'s）':''}</button></div></div>
-   <p class="cohint">你看不到客人要什麼 — 聽外場喊！</p>`}
+  return `<div class="cok2">
+   <button class="cowarm" data-co="wm"><span>保溫台（點這裡，把手上的熟食放進去）</span><b>${used}/${CO_WARM}</b></button>
+   <div class="cokrow">
+    <div class="cocrs">${cr('neg')}${cr('tsu')}${cr('kara')}</div>
+    <div class="cogrill"><div class="cogrows">${gr}</div><div class="colab">烤台</div></div>
+    <div class="cofry"><div class="cofcs">${fr}</div><div class="colab">油鍋</div></div>
+    <div class="coside">${coHand(S.hd.k)}<button class="cob cx-act" data-co="sk"><img class="coim" src="img/art-sake-1.webp" style="height:28px;width:auto" draggable="false"><span>送酒${cd>0&&S.skc?'（'+cd+'s）':''}</span></button><button class="cob cx-act" data-co="tr"><img class="coim" src="img/art-trash-1.webp" style="height:24px;width:auto" draggable="false"><span>丟掉</span></button></div>
+   </div></div><p class="cohint">你看不到客人要什麼 — 聽外場喊！</p>`}
 function coFloor(S,now){
   const seats=S.cu.map((c,i)=>{
-    if(!c)return `<div class="cob cx-seat cx-empty"><span class="coi" style="opacity:.3">🪑</span><em>空位</em></div>`;
+    if(!c)return `<div class="cob cx-seat cx-empty"><span class="coi" style="opacity:.3;font-size:24px">🪑</span><em>空位</em></div>`;
     if(c.dirty)return `<button class="cob cx-seat cx-dirty" data-co="cl:${i}"><span class="coi" style="font-size:26px">🍽️</span><em>點一下收拾</em></button>`;
-    if(c.e)return `<button class="cob cx-seat cx-eat" data-co="sv:${i}"><span class="coi" style="font-size:26px">${c.f}</span><em>用餐中 😋</em></button>`;
-    const pct=(c.d-now)/c.p*100;
-    return `<button class="cob cx-seat" data-co="sv:${i}"><span class="coi" style="font-size:24px">${c.f}</span><div class="coord">${c.o.map((k,n)=>`<span class="${c.s[n]?'cx-ok':''}">${coFoodOf(k).e}${c.s[n]?'✓':''}</span>`).join('')}</div>${coBar(pct,pct<30)}</button>`}).join('');
+    const sp=(typeof MOBSPR!=='undefined'&&MOBSPR['mob'+c.f])||null,pct=(c.d-now)/c.p*100,mood=c.e?'happy':pct<30?'angry':pct<55?'worry':'ok';
+    const face=sp?`<img class="cosp2" src="${sp[mood]||sp.ok}" draggable="false">`:`<span class="coi" style="font-size:26px">🧑</span>`;
+    if(c.e)return `<button class="cob cx-seat cx-eat" data-co="sv:${i}">${face}<em>用餐中 😋</em></button>`;
+    return `<button class="cob cx-seat" data-co="sv:${i}">${face}<div class="coord">${c.o.map((k,n)=>`<span class="cochip ${c.s[n]?'cx-ok':''}">${coFoodOf(k).n}${c.s[n]?' ✓':''}</span>`).join('')}</div>${coBar(pct,pct<30)}</button>`}).join('');
   const wm=S.wm.map((v,j)=>{if(!v)return `<div class="cob cx-slot cx-empty"><em>空</em></div>`;const age=(now-v.t)/CO_WARM_LIFE*100;
-    return `<button class="cob cx-slot cx-done" data-co="tw:${j}">${coItem({k:v.k,s:'done'},24)}${coBar(100-age,age>70)}</button>`}).join('');
+    return `<button class="cob cx-slot cx-done" data-co="tw:${j}">${coImg(v.k,'done',coSz(v.k),true)}<em>${CO_FOOD[v.k].n}</em>${coBar(100-age,age>70)}</button>`}).join('');
   return `<div class="cof"><div class="coseats">${seats}</div>
    <div class="cobtm"><div class="cocol" style="flex:1"><h4>保溫台</h4><div class="corow">${wm}</div></div>
-   <div class="cocol"><h4>飲料</h4><div class="corow"><button class="cob" data-co="pr:beer"><span class="coi" style="font-size:24px">🍺</span><em>啤酒</em></button><button class="cob" data-co="pr:sake" ${S.sk<=0?'style="opacity:.45"':''}><span class="coi" style="font-size:24px">🍶</span><em>清酒 ×${S.sk}</em></button></div></div>
-   <div class="cocol"><h4>手上</h4><div class="corow"><div class="cob cx-hand">${coItem(S.hd.f,26)}</div><button class="cob cx-act" data-co="tr">🗑</button></div></div></div></div>
+   <div class="cocol"><h4>飲料</h4><div class="corow"><button class="cob" data-co="pr:beer">${coImg('beer','d',40)}<em>啤酒</em></button><button class="cob" data-co="pr:sake" ${S.sk<=0?'style="opacity:.45"':''}>${coImg('sake','d',34)}<em>清酒 ×${S.sk}</em></button></div></div>
+   <div class="cocol"><h4>手上</h4><div class="corow">${coHand(S.hd.f)}<button class="cob cx-act" data-co="tr" style="width:auto"><img class="coim" src="img/art-trash-1.webp" style="height:24px;width:auto" draggable="false"></button></div></div></div></div>
    <p class="cohint">你看不到烤台 — 要什麼就喊給廚房聽！</p>`}
-function coResult(S){const me=coRole(),other=me==='k'?'f':'k',win=S.why==='time';
+function coResult(S){const me=coRole(),other=me==='k'?'f':'k',win=S.why==='time',rd=S.rd||{h:0,g:0},a=coHost()?'h':'g',b=coHost()?'g':'h';
   const title=!win?'店面開不下去了…':S.hearts>=5?'完美默契！':S.hearts>=3?'配合得不錯':'驚險過關';
   return `<div class="cores"><h2>${win?'營業結束':'提早打烊'}</h2><h3>${title}</h3>
    <p>接待客人：<b>${S.sv}</b> 位　剩餘愛心：<b>${'❤'.repeat(Math.max(0,S.hearts))||'0'}</b></p>
    <p>我的錢包：<b>¥${Math.round(S.w[me])}</b>　對方：<b>¥${Math.round(S.w[other])}</b></p>
    <p class="cohint">這局的錢只在本局有效，不會進存檔或排行榜。</p>
-   <div class="corow" style="justify-content:center">${coHost()?'<button class="cob" data-co="again" style="min-width:110px">再來一局</button>':'<span class="cohint">等房主開始下一局…</span>'}<button class="cob" data-co="back" style="min-width:110px">返回</button></div></div>`}
+   <p>我：${rd[a]?'✅ 已準備':'⏳ 未準備'}　對方：${rd[b]?'✅ 已準備':'⏳ 未準備'}</p>
+   <div class="corow" style="justify-content:center"><button class="cob" data-co="rdy" style="min-width:150px">${rd[a]?'已準備（再按取消）':'🙋 準備再來一局'}</button>${coHost()?'<button class="cob" data-co="back" style="min-width:90px">返回大廳</button>':''}</div>${coHost()?'':'<p class="cohint">房主按「返回大廳」後，你會回到連線面板。</p>'}</div>`}
 function coPaint(){const S=CO.S,ov=document.getElementById('cogame');if(!S||!ov)return;const now=coNow(),me=coRole();
   const left=Math.max(0,S.t0+S.dur-now),mm=String(Math.floor(left/60000)).padStart(2,'0'),ss=String(Math.floor(left%60000/1000)).padStart(2,'0');
   document.getElementById('cotop').innerHTML=`<span>${'❤'.repeat(Math.max(0,S.hearts))||'💔'}</span><span>⏱ ${mm}:${ss}</span><span>接客 ${S.sv}</span><span class="cosp"></span><span>${me==='k'?'🍳 廚房':'🧾 外場'}</span><span>我的錢包 ¥${Math.round(S.w[me])}</span><button class="cob" data-co="leave" style="min-height:26px;min-width:40px;padding:0 8px">✕</button>`;
@@ -5024,6 +5071,29 @@ function coStyle(){if(document.getElementById('costyle'))return;const s=document
 #cogame .cobot{background:#1b0e07;padding:4px 8px;display:flex;flex-direction:column;gap:3px;min-width:0}#cogame .cosh{display:flex;gap:5px;overflow-x:auto;white-space:nowrap}#cogame .cosh .cob{flex:none}
 #cogame .cochat{min-height:34px;font-size:13px}#cogame .cpm.cx-me{color:#ffb36b}#cogame .cobin{display:flex;gap:6px}#cogame .cobin input{flex:1;min-width:0;font-size:16px;padding:4px 8px;border-radius:8px;border:2px solid #7a4a2a;background:#2a170d;color:#f3dfb4}
 #cogame .cores{text-align:center;padding:14px 6px}#cogame .cores h1{font-size:54px;margin:6px 0}
+#cogame .coim{display:block;object-fit:contain;pointer-events:none}#cogame .cosk{position:relative;display:inline-block;flex:none;pointer-events:none}#cogame .cosk img{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(90deg);pointer-events:none}
+#cogame .cok2{border-radius:12px;padding:8px;background:#2a170d url(img/art-kitchen-1.webp) center bottom/cover no-repeat;border:2px solid #4a2c19;display:flex;flex-direction:column;gap:8px}
+#cogame .cowarm{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#f6ead2;color:#6b3b17;border:3px solid #fff;border-bottom-color:#f4a261;border-radius:10px;padding:3px 12px;font:inherit;font-size:13px;cursor:pointer;width:100%}#cogame .cowarm:active{background:#ffe9b8}#cogame .cowarm b{font-size:15px}
+#cogame .cokrow{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;justify-content:center}
+#cogame .cocrs{display:flex;flex-direction:column;gap:6px}
+#cogame .cocr{display:flex;align-items:center;gap:6px;width:118px;height:46px;background:#0007;border:2px solid #7a4a2a;border-radius:10px;color:#f3dfb4;font:inherit;padding:2px 6px;cursor:pointer}#cogame .cocr:active{background:#3b2314}
+#cogame .crart{position:relative;flex:none;width:42px;height:38px;background:url(img/art-box-1.webp) center bottom/contain no-repeat;display:flex;gap:1px;align-items:flex-end;justify-content:center;pointer-events:none}
+#cogame .crart.cx-tr{background:url(img/art-ftray-1.webp) center/contain no-repeat;align-items:center}#cogame .crart .coim{margin-bottom:6px}
+#cogame .crtx{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;pointer-events:none}#cogame .crtx b{font-size:12px}#cogame .crtx em{font-style:normal;font-size:10px;opacity:.7}
+#cogame .cogrill{position:relative;width:214px;height:142px;background:url(img/art-grill-1.webp) center/100% 100% no-repeat}
+#cogame .cogrows{position:absolute;left:18px;right:18px;top:28px;bottom:28px;display:flex;flex-direction:column;gap:2px}
+#cogame .cogr{flex:1;min-height:0;border:1px dashed #ffb36b88;border-radius:6px;background:#0006;color:#ffd9a8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:0;cursor:pointer;font:inherit}
+#cogame .cogr em{font-style:normal;font-size:11px;opacity:.7}#cogame .cogr.cx-done{border:2px solid #7ed957}#cogame .cogr.cx-burnt{border:2px solid #e0412c}#cogame .cogr u{width:70%;height:4px}
+#cogame .cofry{position:relative;width:120px;height:124px;background:url(img/art-fryer-1.webp) center/100% 100% no-repeat}
+#cogame .cofcs{position:absolute;left:14px;right:14px;top:30px;bottom:24px;display:flex;gap:4px}
+#cogame .cofc{flex:1;min-width:0;border:1px dashed #ffe08a99;border-radius:6px;background:#0006;color:#ffe;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0;cursor:pointer;font:inherit}#cogame .cofc em{font-style:normal;font-size:11px;opacity:.7}
+#cogame .cofc.cx-done{border:2px solid #7ed957}#cogame .cofc.cx-burnt{border:2px solid #e0412c}#cogame .cofc u{width:80%;height:4px}
+#cogame .colab{position:absolute;left:50%;bottom:3px;transform:translateX(-50%);background:#000a;border-radius:8px;padding:0 10px;font-size:12px;pointer-events:none}
+#cogame .coside{width:108px;display:flex;flex-direction:column;gap:4px}
+#cogame .cob.cx-act{gap:6px;min-height:32px}#cogame .cob.cx-hand{min-height:56px}
+#cogame .cosp2{height:60px;width:auto;max-width:100%;object-fit:contain;pointer-events:none}
+#cogame .cochip{background:#0005;border-radius:6px;padding:1px 6px;font-size:11px}#cogame .coord{flex-wrap:wrap;justify-content:center;font-size:11px;gap:3px}
+@media (max-height:460px){#cogame .cobot{gap:2px;padding:3px 8px}#cogame .cosh .cob{min-height:26px!important;font-size:11px!important;padding:1px 8px!important}#cogame .cochat{min-height:0;font-size:12px;line-height:1.25}#cogame .cobin input{padding:2px 8px}#cogame .cobin .cob{min-height:30px!important}#cogame .cotop{padding:2px 8px}#cogame .cok2{padding:6px;gap:6px}}
 #cofx{position:fixed;left:50%;top:44px;transform:translateX(-50%);z-index:8600;background:#3b2314;color:#f3dfb4;border:2px solid #ffb36b;border-radius:10px;padding:6px 14px;font-size:15px;pointer-events:none;opacity:0;transition:opacity .2s}`;
   document.head.appendChild(s)}
 </script>
