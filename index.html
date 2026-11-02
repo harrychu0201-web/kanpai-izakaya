@@ -5194,8 +5194,12 @@ function coStyle(){if(document.getElementById('costyle'))return;const s=document
 #cogame .cxfi{display:block;flex:none;pointer-events:none}#cogame .cxfi svg{width:100%;height:100%;display:block}#cogame .cxwi{position:absolute;pointer-events:none}#cogame .cxwi svg{width:100%;height:100%}
 #cogame .cxhand{position:absolute;background:#f6ead2;border:3px solid #3a2318;border-radius:12px;color:#5a3418;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-size:14px;padding-bottom:16px}#cogame .cxhand svg{width:56px;height:56px}
 #cogame .cxpart{position:absolute;inset:0;pointer-events:none}#cogame .cxpart>*{pointer-events:auto}#cogame .cxpart .cxwi,#cogame .cxpart .cxl{pointer-events:none}#cogame .cxhp{display:flex;flex-direction:column;align-items:center;gap:2px}#cogame .cxhint{position:absolute;color:#f3dfb4;opacity:.8;font-size:12px;line-height:1.4}
-@media (min-aspect-ratio:3/2) and (max-height:760px){#cogame .cochat{height:2.8em;font-size:14px;line-height:1.35}}
-@media (max-height:460px){#cogame .cobot{gap:2px;padding:3px 8px}#cogame .cosh .cob{min-height:26px!important;font-size:11px!important;padding:1px 8px!important}#cogame .cochat{height:2.8em;font-size:14px;line-height:1.35}#cogame .cobin input{padding:2px 8px}#cogame .cobin .cob{min-height:30px!important}#cogame .cotop{padding:2px 8px}#cogame .cok2{padding:6px;gap:6px}}
+@media (max-height:460px){#cogame .cobot{gap:2px;padding:3px 8px}#cogame .cosh .cob{min-height:26px!important;font-size:11px!important;padding:1px 8px!important}#cogame .cobin input{padding:2px 8px}#cogame .cobin .cob{min-height:30px!important}#cogame .cotop{padding:2px 8px}#cogame .cok2{padding:6px;gap:6px}}
+@media (min-aspect-ratio:4/3){
+#cogame{grid-template-columns:minmax(0,1fr) clamp(190px,22vw,340px);grid-template-rows:auto minmax(0,1fr) auto auto;grid-template-areas:"top top" "main chat" "sh sh" "in in"}
+#cogame .cotop{grid-area:top}#cogame #comain{grid-area:main}#cogame .cobot{display:contents}
+#cogame .cosh{grid-area:sh;background:#1b0e07;padding:4px 8px 2px}#cogame .cobin{grid-area:in;background:#1b0e07;padding:2px 8px 4px}
+#comain[data-m=fit] .cof .corow,#comain[data-m=fit] .cof .cobtm{flex-wrap:nowrap}#cogame .cochat{grid-area:chat;height:auto;min-height:0;margin:6px 8px 6px 0;font-size:15px;line-height:1.4;border:2px solid #4a2c19}}
 #cofx{position:fixed;left:50%;top:44px;transform:translateX(-50%);z-index:8600;background:#3b2314;color:#f3dfb4;border:2px solid #ffb36b;border-radius:10px;padding:6px 14px;font-size:15px;pointer-events:none;opacity:0;transition:opacity .2s}`;
   document.head.appendChild(s)}
 /* ---- voice chat (WebRTC P2P, signaling via rooms/<code>/rtc/<uid>) ---- */
