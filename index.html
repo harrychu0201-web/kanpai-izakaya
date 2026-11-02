@@ -5001,22 +5001,22 @@ const coSz=k=>CO_FOOD[k]?(CO_FOOD[k].sk?58:42):38;
 function coBar(pct,red){return `<u><b class="${red?'cx-red':''}" style="width:${Math.max(0,Math.min(100,pct))}%"></b></u>`}
 function coHand(it){return `<div class="cob cx-hand">${it?coImg(it.k,it.s,coSz(it.k),true)+`<em>${coFoodOf(it.k).n}${coTag(it.s)?'·'+coTag(it.s):''}</em>`:`<span class="coi" style="opacity:.3;font-size:22px">✋</span><em>空手</em>`}</div>`}
 function coPct(sl,now){const f=CO_FOOD[sl.k],st=coSlot(sl,now),d=now-sl.t;return{st,pct:st==='raw'?d/f.cook*100:st==='done'?100-(d-f.cook)/f.burn*100:0}}
+const KEMO={neg:'🍢',tsu:'🍡',kara:'🍗'};
+function kSlot(arr,i,now,kp,kt){const sl=arr[i];
+  if(!sl)return `<button class="cob cx-slot" data-co="${kp}:${i}"><span class="coi" style="opacity:.35;font-size:24px">＋</span><em>空</em></button>`;
+  const q=coPct(sl,now);
+  return `<button class="cob cx-slot cx-${q.st}" data-co="${kt}:${i}"><span class="coi${q.st==='raw'?' cx-raw':q.st==='burnt'?' cx-burnt':''}" style="font-size:26px">${KEMO[sl.k]}</span><em>${CO_FOOD[sl.k].n}</em>${coBar(q.pct,q.st==='done'&&q.pct<35)}</button>`}
 function coKitchen(S,now){
   const used=S.wm.filter(Boolean).length;
-  const gr=S.gr.map((sl,i)=>{if(!sl)return `<button class="cogr" data-co="pg:${i}"><em>＋ 放這裡</em></button>`;
-    const q=coPct(sl,now);return `<button class="cogr cx-${q.st}" data-co="kg:${i}">${coImg(sl.k,q.st,58,true)}${coBar(q.pct,q.st==='done'&&q.pct<35)}</button>`}).join('');
-  const fr=S.fr.map((sl,i)=>{if(!sl)return `<button class="cofc" data-co="pf:${i}"><em>＋</em></button>`;
-    const q=coPct(sl,now);return `<button class="cofc cx-${q.st}" data-co="kf:${i}">${coImg(sl.k,q.st,30)}${coBar(q.pct,q.st==='done'&&q.pct<35)}</button>`}).join('');
-  const cr=k=>{const f=CO_FOOD[k];return `<button class="cocr" data-co="raw:${k}"><span class="crart ${f.sk?'':'cx-tr'}">${f.sk?coImg(k,'raw',40)+coImg(k,'raw',40)+coImg(k,'raw',40):coImg(k,'raw',40)}</span><span class="crtx"><b>${f.n}</b><em>${f.st==='g'?'放烤台':'放油鍋'}</em></span></button>`};
+  const raw=Object.keys(CO_FOOD).map(k=>`<button class="cob" data-co="raw:${k}"><span class="coi cx-raw" style="font-size:24px">${KEMO[k]}</span><em>${CO_FOOD[k].n}</em><em style="opacity:.6">${CO_FOOD[k].st==='g'?'烤台':'油鍋'}</em></button>`).join('');
+  const gr=S.gr.map((_,i)=>kSlot(S.gr,i,now,'pg','kg')).join(''),fr=S.fr.map((_,i)=>kSlot(S.fr,i,now,'pf','kf')).join('');
   const cd=Math.max(0,Math.ceil((CO_SAKE_CD-(now-S.skc))/1000));
-  return `<div class="cok2">
-   <button class="cowarm" data-co="wm"><span>保溫台（點這裡，把手上的熟食放進去）</span><b>${used}/${CO_WARM}</b></button>
-   <div class="cokrow">
-    <div class="cocrs">${cr('neg')}${cr('tsu')}${cr('kara')}</div>
-    <div class="cogrill"><div class="cogrows">${gr}</div><div class="colab">烤台</div></div>
-    <div class="cofry"><div class="cofcs">${fr}</div><div class="colab">油鍋</div></div>
-    <div class="coside">${coHand(S.hd.k)}<button class="cob cx-act" data-co="sk"><img class="coim" src="img/art-sake-1.webp" style="height:28px;width:auto" draggable="false"><span>送酒${cd>0&&S.skc?'（'+cd+'s）':''}</span></button><button class="cob cx-act" data-co="tr"><img class="coim" src="img/art-trash-1.webp" style="height:24px;width:auto" draggable="false"><span>丟掉</span></button></div>
-   </div></div><p class="cohint">你看不到客人要什麼 — 聽外場喊！</p>`}
+  const hd=S.hd.k,hand=hd?`<span class="coi${hd.s==='raw'?' cx-raw':''}" style="font-size:28px">${KEMO[hd.k]}</span><em>${CO_FOOD[hd.k].n}${coTag(hd.s)?'·'+coTag(hd.s):''}</em>`:`<span class="coi" style="opacity:.25;font-size:26px">✋</span><em>空手</em>`;
+  return `<div class="cok"><div class="cocol"><h4>備料</h4><div class="corow" style="max-width:150px">${raw}</div></div>
+   <div class="cocol" style="flex:1"><h4>烤台</h4><div class="corow">${gr}</div><h4>油鍋</h4><div class="corow">${fr}</div></div>
+   <div class="cocol" style="width:112px"><h4>手上</h4><div class="cob cx-hand">${hand}</div>
+    <button class="cob cx-act" data-co="wm">➡ 放進保溫台 ${used}/${CO_WARM}</button><button class="cob cx-act" data-co="tr">🗑 丟掉</button><button class="cob cx-act" data-co="sk">🍶 送酒${cd>0&&S.skc?'（'+cd+'s）':''}</button></div></div>
+   <p class="cohint">你看不到客人要什麼 — 聽外場喊！</p>`}
 function coFloor(S,now){
   const seats=S.cu.map((c,i)=>{
     if(!c)return `<div class="cob cx-seat cx-empty"><span class="coi" style="opacity:.3;font-size:24px">🪑</span><em>空位</em></div>`;
