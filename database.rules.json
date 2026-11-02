@@ -538,6 +538,25 @@
           ".validate": "!newData.exists() || (newData.hasChildren(['from','name','t']) && newData.child('name').isString() && newData.child('name').val().length <= 24)"
         }
       }
+    },
+    "online": {
+      ".read": "auth != null",
+      ".indexOn": [
+        "t"
+      ],
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['t']) && newData.child('t').val() === now",
+        "t": {
+          ".validate": "newData.isNumber()"
+        },
+        "off": {
+          ".validate": "newData.isBoolean()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
     }
   }
 }
