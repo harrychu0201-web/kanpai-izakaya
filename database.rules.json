@@ -494,6 +494,10 @@
             ".validate": "!newData.exists() || newData.hasChildren(['on','t'])"
           }
         },
+        "st": {
+          ".write": "auth != null && root.child('rooms').child($code).child('host').val() === auth.uid",
+          ".validate": "newData.isString() && newData.val().length <= 8000"
+        },
         "ev": {
           "$id": {
             ".write": "auth != null && !data.exists() && newData.child('from').val() === auth.uid && (root.child('rooms').child($code).child('host').val() === auth.uid || root.child('rooms').child($code).child('guest').val() === auth.uid)",
