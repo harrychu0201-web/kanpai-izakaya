@@ -3934,7 +3934,17 @@ function coopNote(m){let d=document.getElementById('coopnote');if(!d){d=document
 function coopDev(){const e=CL.user&&CL.user.email;return !!e&&(COOP_TESTERS.indexOf(e.toLowerCase())>=0||CL.isStaff===true)} /* 測試名單 + admins/ 管理員 */
 function coopCode(){const A='23456789ABCDEFGHJKMNPQRSTUVWXYZ';let s='';for(let i=0;i<6;i++)s+=A[Math.floor(Math.random()*A.length)];return s}
 function coopOther(){const r=COOP.room,me=CL.user&&CL.user.uid;if(!r||!me)return null;return r.host===me?r.guest:r.host}
-function coopRender(){const m=document.getElementById('coopmark');if(!m)return;
+/* 在連線房間裡、但面板被關掉時（按到返回或點到空白處），畫面上方一直顯示「回到連線房間」 */
+function coopFloatUpd(){let b=document.getElementById('coopfloat');
+  const show=!!(COOP.code&&CL.user&&coopDev()&&typeof HOME!=='undefined'&&HOME&&!document.getElementById('coopmark')&&!(typeof CO!=='undefined'&&CO.open)&&!document.querySelector('#homeModal .modal,#modalLayer .modal'));
+  if(!show){if(b)b.remove();return}
+  const r=COOP.room,st=r&&r.state==='playing'?T('遊戲進行中'):T('準備中');
+  const html=`🔗 ${T('回到連線房間')}<small style="opacity:.8;font-size:12px;margin-left:6px">${st}</small>`;
+  if(!b){b=document.createElement('button');b.id='coopfloat';b.dataset.act='coopopen';b.className='btn';
+    b.style.cssText='position:fixed;left:50%;top:58px;transform:translateX(-50%);z-index:8000;box-shadow:0 4px 16px #000a;animation:none';document.body.appendChild(b)}
+  if(b.innerHTML!==html)b.innerHTML=html}
+setInterval(coopFloatUpd,800);
+function coopRender(){coopFloatUpd();const m=document.getElementById('coopmark');if(!m)return;
   if((m.dataset.code||'')!==(COOP.code||'')){coopPanel();return}
   const d=document.getElementById('coopdyn');if(d)d.innerHTML=coopDyn();coopMsgsFill()}
 function coopMsgsFill(){const b=document.getElementById('coopmsgs');if(!b)return;const me=CL.user&&CL.user.uid;
@@ -3953,7 +3963,6 @@ function coopDyn(){const me=CL.user.uid,r=COOP.room;
     body=`<div class="lbme"><span>${T('房號')}：<b style="letter-spacing:2px">${esc(COOP.code)}</b></span><small>${T('狀態')}：${esc(st)}</small></div>`
      +`<div class="lbme"><span>${T('你')}：${pr(me)}</span><span>${T('對方')}：${o?pr(o):T('等待加入')}</span></div>`
      +(left?`<p style="color:#e0412c">${T('對方離線，{0} 秒內沒回來就結束',left)}</p>`:'')
-     +`<p class="lbdesc">${T('寫入次數')}：${COOP.w}</p>`
      +(r&&r.state==='lobby'&&typeof coLobbyBlock==='function'?coLobbyBlock():'')
      +`<div class="btns" style="justify-content:flex-start">${r&&r.state==='lobby'&&typeof coLobbyBtns==='function'?coLobbyBtns():''}<button class="btn alt" data-act="coopping" ${r&&r.state!=='ended'?'':'disabled'}>${T('測延遲')}</button><button class="btn alt" data-act="coopleave">${T('離開')}</button></div>`}
   return (COOP.err?`<p style="color:#e0412c">${T(COOP.err)}</p>`:'')+inv+body}
