@@ -2682,7 +2682,8 @@ const SIDEI={
  records:['#5a3420','#2e170c',`<rect x="13" y="38" width="9" height="12" rx="2" fill="#f3dfb4"/><rect x="27" y="28" width="9" height="22" rx="2" fill="#f3dfb4"/><rect x="41" y="18" width="9" height="32" rx="2" fill="#f3dfb4"/><path d="M12 52h40" stroke="#f3dfb4" stroke-width="3" stroke-linecap="round"/><circle cx="18" cy="24" r="7" fill="#ffd43a" stroke="#a87a10" stroke-width="2"/><path d="M18 20v8" stroke="#a87a10" stroke-width="2"/>`]};
 function alignMh(h){const row=h.querySelector('.menu .mhrow'),ch=h.querySelector('.menu .chbtn');if(!row)return;row.style.position='relative';row.style.top='';if(h.classList.contains('port')||!ch)return;const ics=[...row.querySelectorAll('.sideb')];if(!ics.length)return;const ic=row.querySelector('.sideb svg');if(!ic)return;row.style.top='0px';
   const a=ic.getBoundingClientRect(),c=ch.getBoundingClientRect(),bs=ics.map(x=>x.getBoundingClientRect()),L=Math.min(...bs.map(x=>x.left)),R=Math.max(...bs.map(x=>x.right)),B=Math.max(...bs.map(x=>x.bottom));
-  if(c.right>L-6&&c.left<R+6)return; /* would sit on top of the 無限挑戰 pill: keep the original spot */
+  if(c.right>L-6&&c.left<R+6){ /* no save: the 無限挑戰 pill sits right under the icon row, so lift the row to leave a clear gap above the pill */
+    const gap=c.top-B,need=14-gap;row.style.top=need>0?(-Math.round(need))+'px':'0px';return}
   let d=(c.top+c.bottom)/2-(a.top+a.bottom)/2;
   h.querySelectorAll('.menu .plq').forEach(q=>{const r=q.getBoundingClientRect();if(r.right>L&&r.left<R)d=Math.min(d,r.top-B-2)});
   row.style.top=Math.max(0,Math.round(d*10)/10)+'px'}
