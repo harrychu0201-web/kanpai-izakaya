@@ -5112,21 +5112,62 @@ const CX_LAY={L:{W:784,H:268,warm:[150,4,480,54],grill:[104,70],rawN:[366,70,82,
 function coKitchenPaint(mn,S,now){const lay=mn.clientWidth>=mn.clientHeight*1.1?'L':'P',L=CX_LAY[lay];
   if(CO.kLay!==lay||CO.lastHtml!=='#k'||!mn.querySelector('.cxk')){mn.innerHTML='<div class="cofit">'+cxSkel(L)+'</div>';CO.kLay=lay;CO.kParts={};CO.lastHtml='#k'}
   const p=cxParts(S,now,L);for(const id in p)if(CO.kParts[id]!==p[id]){CO.kParts[id]=p[id];const el=document.getElementById('cxp-'+id);if(el)coPatch(el,p[id])}}
-function coFloor(S,now){
-  const seats=S.cu.map((c,i)=>{
-    if(!c)return `<div class="cob cx-seat cx-empty"><span class="coi" style="opacity:.3;font-size:24px">🪑</span><em>空位</em></div>`;
-    if(c.dirty)return `<button class="cob cx-seat cx-dirty" data-co="cl:${i}"><span class="coi" style="font-size:26px">🍽️</span><em>點一下收拾</em></button>`;
-    const sp=(typeof MOBSPR!=='undefined'&&MOBSPR['mob'+c.f])||null,pct=(c.d-now)/c.p*100,mood=c.e?'happy':pct<30?'angry':pct<55?'worry':'ok';
-    const face=sp?`<img class="cosp2" src="${sp[mood]||sp.ok}" draggable="false">`:`<span class="coi" style="font-size:26px">🧑</span>`;
-    if(c.e)return `<button class="cob cx-seat cx-eat" data-co="sv:${i}">${face}<em>用餐中 😋</em></button>`;
-    return `<button class="cob cx-seat" data-co="sv:${i}">${face}<div class="coord">${c.o.map((k,n)=>`<span class="cochip ${c.s[n]?'cx-ok':''}">${coFoodOf(k).n}${c.s[n]?' ✓':''}</span>`).join('')}</div>${coBar(pct,pct<30)}</button>`}).join('');
-  const wm=S.wm.map((v,j)=>{if(!v)return S.hd.f&&CO_FOOD[S.hd.f.k]?`<button class="cob cx-slot cx-put" data-co="tb:${j}"><em>放回這裡</em></button>`:`<div class="cob cx-slot cx-empty"><em>空</em></div>`;
-    return `<button class="cob cx-slot cx-done" data-co="tw:${j}">${cxI(v.k,'done',44)}<em>${CO_FOOD[v.k].n}</em></button>`}).join('');
-  return `<div class="cof"><div class="coseats">${seats}</div>
-   <div class="cobtm"><div class="cocol" style="flex:1"><h4>保溫台</h4><div class="corow">${wm}</div></div>
-   <div class="cocol"><h4>飲料</h4><div class="corow"><button class="cob" data-co="pr:beer">${cxI('beer','d',46)}<em>啤酒</em></button><button class="cob" data-co="pr:sake" ${S.sk<=0?'style="opacity:.45"':''}>${cxI('sake','d',46)}<em>清酒 ×${S.sk}</em></button></div></div>
-   <div class="cocol"><h4>手上</h4><div class="corow">${coHand(S.hd.f)}<button class="cob cx-act" data-co="tr" style="width:auto;flex-direction:column;gap:2px;white-space:nowrap"><span class="cxfi" style="width:58px;height:26px">${sv(`<rect x="4" y="6" width="120" height="40" rx="10" fill="#5a5f66" stroke="${O}" stroke-width="3"/><path d="M48 16h32M58 16v-4h12v4M52 16l3 24h18l3-24" fill="#8a9098" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`,'0 0 128 52')}</span><em>丟掉</em></button></div></div></div></div>
-   <p class="cohint">你看不到烤台 — 要什麼就喊給廚房聽！</p>`}
+/* 外場：跟單人模式一樣的店內櫃台畫面（客人坐在櫃台後、頭上冒對話框點餐），下方是保溫台、飲料、手上、丟掉 */
+const CF_LAY={L:{W:784,H:448,sh:304,cy:252,sw:150,st:92,bt:[8,8,8,8],bs:1,wm:[8,316,478,92],beer:[496,316,84,92],sake:[588,316,84,92],hand:[680,316,96,64],trash:[680,386,96,38],hint:[8,418,770]},
+  P:{W:400,H:616,sh:330,cy:270,sw:112,st:150,bt:[6,64,6,64],bs:.66,wm:[8,342,384,96],beer:[8,448,88,96],sake:[104,448,88,96],hand:[200,448,104,96],trash:[312,448,80,96],hint:[8,556,384]}};
+const CF_MENU=['啤酒','清酒','蔥雞肉串','雞肉丸串','唐揚'];
+const CF_IK={neg:'negima',tsu:'tsukune',kara:'karaage',beer:'beer',sake:'sake'};
+function cfTag(x,y,w,t){const ch=[...t],fs=Math.min(20,Math.floor(58/Math.max(2,ch.length)));
+  return `<rect x="${x}" y="${y}" width="${w}" height="66" rx="2" fill="#fbf3e0" stroke="#3a2318" stroke-width="2"/><rect x="${x}" y="${y}" width="${w}" height="5" fill="#b8372a"/>`+ch.map((c,i)=>`<text x="${x+w/2}" y="${y+8+fs+i*(fs+1)}" font-size="${fs}" font-weight="900" text-anchor="middle" fill="#3a2318">${c}</text>`).join('')}
+function cfLant(x,y,t){return `<path d="M${x} ${y-14}v10" stroke="#3a2318" stroke-width="3"/><rect x="${x-14}" y="${y-6}" width="28" height="8" rx="2" fill="#2a1a10"/><ellipse cx="${x}" cy="${y+34}" rx="26" ry="36" fill="#d6402c" stroke="#3a2318" stroke-width="3"/><path d="M${x-24} ${y+20}h48M${x-26} ${y+34}h52M${x-24} ${y+48}h48" stroke="#9a2a1c" stroke-width="2" opacity=".6"/><rect x="${x-14}" y="${y+66}" width="28" height="8" rx="2" fill="#2a1a10"/>${[...t].map((c,i)=>`<text x="${x}" y="${y+30+i*22}" font-size="20" font-weight="900" text-anchor="middle" fill="#fff">${c}</text>`).join('')}`}
+function cfBg(L){const W=L.W,H=L.sh,P=W<500;let s=`<defs><linearGradient id="cfw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a4424"/><stop offset="1" stop-color="#55301a"/></linearGradient><radialGradient id="cfg" cx=".5" cy=".35" r=".6"><stop offset="0" stop-color="#ffd58a" stop-opacity=".45"/><stop offset="1" stop-color="#ffd58a" stop-opacity="0"/></radialGradient></defs><rect width="${W}" height="${H}" fill="url(#cfw)"/>`;
+  for(let x=0;x<W;x+=46)s+=`<path d="M${x} 0v${H}" stroke="#3d2010" stroke-width="2" opacity=".45"/>`;
+  /* shoji window behind the customers */
+  const sx=P?70:200,sw=P?260:384,sy=P?84:86,shh=P?150:146;
+  s+=`<rect x="${sx}" y="${sy}" width="${sw}" height="${shh}" fill="#fbecc8" stroke="#3a2318" stroke-width="5"/>`;
+  for(let x=sx+sw/6;x<sx+sw-2;x+=sw/6)s+=`<path d="M${x} ${sy}v${shh}" stroke="#8a5a34" stroke-width="3"/>`;
+  for(let y=sy+shh/4;y<sy+shh-2;y+=shh/4)s+=`<path d="M${sx} ${y}h${sw}" stroke="#8a5a34" stroke-width="3"/>`;
+  s+=`<rect width="${W}" height="${H}" fill="url(#cfg)"/>`;
+  /* noren */
+  const nw=P?58:76;s+=`<rect x="0" y="0" width="${nw+8}" height="10" fill="#3a2318"/>`;for(let i=0;i<3;i++)s+=`<rect x="${4+i*nw/3}" y="8" width="${nw/3-3}" height="${P?62:84}" fill="#b8372a" stroke="#3a2318" stroke-width="2"/>`;
+  s+=`<text x="${4+nw/2}" y="${P?52:62}" font-size="${P?26:34}" font-weight="900" text-anchor="middle" fill="#fff">酒</text>`;
+  /* menu strip */
+  const tw=P?30:40,gap=P?4:6,tx=P?nw+16:nw+40;s+=`<rect x="${tx-6}" y="4" width="${CF_MENU.length*(tw+gap)+8}" height="${P?76:76}" fill="#3a2318" rx="3"/>`;
+  CF_MENU.forEach((t,i)=>{s+=cfTag(tx+i*(tw+gap),8,tw,t)});
+  /* lanterns + bottle shelf */
+  if(P){s+=cfLant(W-30,18,'焼鳥')}
+  else{s+=cfLant(W-200,20,'酒')+cfLant(W-120,20,'焼鳥');const bx=W-150;s+=`<rect x="${bx-20}" y="150" width="166" height="8" fill="#3a2318"/>`;
+    ['#2a5a8a','#3a6a3a','#7a2a2a','#2a5a8a','#5a3a1a','#3a6a3a'].forEach((c,i)=>{const x=bx-10+i*26;s+=`<rect x="${x}" y="116" width="16" height="34" rx="4" fill="${c}" stroke="#1a0e06" stroke-width="2"/><rect x="${x+5}" y="104" width="6" height="14" fill="${c}" stroke="#1a0e06" stroke-width="2"/><rect x="${x+3}" y="126" width="10" height="12" fill="#f3e3b4"/>`})}
+  return sv(s,`0 0 ${W} ${H}`)}
+function cfCounter(L){const W=L.W,y=L.cy,h=L.sh-y;return sv(`<rect x="0" y="0" width="${W}" height="16" fill="#e8b878" stroke="#3a2318" stroke-width="3"/><rect x="0" y="14" width="${W}" height="${h-14}" fill="#9a5a2e"/>${Array.from({length:Math.ceil(W/120)},(_,i)=>`<path d="M${i*120+60} 16v${h-16}" stroke="#6e3c1c" stroke-width="3"/>`).join('')}<rect x="0" y="${h-8}" width="${W}" height="8" fill="#b8372a"/>`,`0 0 ${W} ${h}`)}
+function cfDish(k){const ik=CF_IK[k];return `<span class="cfd">${ik?icon(ik):''}</span>`}
+function cfSeat(c,i,L,now){const n=CO_SEATS,cw=L.W/n,x=i*cw,cx=cw/2,st=`left:${x}px;top:0;width:${cw}px;height:${L.sh}px`;
+  const plate=`<span class="cfplate" style="left:${cx-34}px;top:${L.cy-14}px"></span>`;
+  if(!c)return `<div class="cff-seat" style="${st}"></div>`;
+  if(c.dirty)return `<button class="cxs cff-seat cff-dirty" data-co="cl:${i}" style="${st}"><span class="cfmess" style="left:${cx-42}px;top:${L.cy-30}px">${sv(`<ellipse cx="42" cy="34" rx="38" ry="10" fill="#f3efe6" stroke="#3a2318" stroke-width="3"/><path d="M20 30q10-8 18 0M46 28q8-6 14 2" stroke="#b07a3a" stroke-width="3" fill="none"/><rect x="60" y="6" width="18" height="26" rx="3" fill="#ffffff99" stroke="#3a2318" stroke-width="3"/><path d="M26 18l14 12" stroke="#c9a26a" stroke-width="3"/>`,'0 0 84 46')}</span><b class="cftap" style="top:${L.cy-70}px">🧽 點一下收拾</b></button>`;
+  const sp=(typeof MOBSPR!=='undefined'&&MOBSPR['mob'+c.f])||null,pct=Math.max(0,(c.d-now)/c.p*100),mood=c.e?'happy':pct<30?'angry':pct<55?'worry':'ok';
+  const fig=sp?`<img class="cff-sp cff-${mood}" src="${sp[mood]||sp.ok}" draggable="false" style="left:${cx-L.sw/2}px;top:${L.st}px;width:${L.sw}px">`:'';
+  const bt=L.bt[i],bub=c.e?`<div class="bubble cff-bub cff-eat" style="top:${bt}px;--bs:${L.bs}"><span style="font-size:30px;line-height:1">😋</span><b>用餐中</b></div>`
+    :`<div class="bubble cff-bub${pct<30?' cx-hurry':''}" style="top:${bt}px;--bs:${L.bs}"><div class="pat"><i class="${pct>50?'':pct>22?'mid':'low'}" style="height:${Math.round(pct/4)*4}%"></i></div>${c.o.map((k,n)=>`<div class="oi${c.s[n]?' done':''}">${icon(CF_IK[k])}</div>`).join('')}</div>`;
+  const served=c.o.map((k,n)=>c.s[n]?k:null).filter(Boolean),dish=served.length?`<span class="cfon" style="left:${cx}px;top:${L.cy-34}px">${served.map(cfDish).join('')}</span>`:'';
+  return `<button class="cxs cff-seat" data-co="sv:${i}" style="${st}">${fig}${bub}${dish}</button>`}
+function coFloor(S,now,lay){const L=CF_LAY[lay||'L'],r=(a)=>`left:${a[0]}px;top:${a[1]}px;width:${a[2]}px;height:${a[3]}px`;
+  const seats=S.cu.map((c,i)=>cfSeat(c,i,L,now)).join('');
+  const w=L.wm,n=CO_WARM,sw=(w[2]-16)/n,holdFood=S.hd.f&&CO_FOOD[S.hd.f.k];
+  const wm=S.wm.map((v,j)=>{const s=`left:${8+j*sw}px;width:${sw-4}px`;
+    if(!v)return holdFood?`<button class="cxs cfws cf-put" data-co="tb:${j}" style="${s}"><em>放回這裡</em></button>`:`<div class="cfws cf-emp" style="${s}"></div>`;
+    return `<button class="cxs cfws cf-has" data-co="tw:${j}" style="${s}">${cxI(v.k,'done',Math.min(56,sw-12))}<em>${CO_FOOD[v.k].n}</em></button>`}).join('');
+  const h=S.hd.f,hand=h?`<button class="cxs cfbox cf-hold" data-co="bk" style="${r(L.hand)}">${cxI(h.k,h.s,lay==='P'?44:34)}<em>${coFoodOf(h.k).n}${coTag(h.s)?'·'+coTag(h.s):''}</em><em class="cxback">↩ 點這裡放回</em></button>`
+    :`<div class="cfbox cf-empty" style="${r(L.hand)}"><span style="font-size:22px;opacity:.4">✋</span><em>空手</em></div>`;
+  return `<div class="cxk cff" style="width:${L.W}px;height:${L.H}px">
+   <div class="cff-bg" style="height:${L.sh}px">${cfBg(L)}</div>${seats}
+   <div class="cff-ctr" style="top:${L.cy}px;height:${L.sh-L.cy}px">${cfCounter(L)}</div>
+   <div class="cfwm" style="${r(w)}"><span class="cxl">保溫台 ${S.wm.filter(Boolean).length}/${n}</span>${wm}</div>
+   <button class="cxs cfbox" data-co="pr:beer" style="${r(L.beer)}">${cxI('beer','d',lay==='P'?54:50)}<em>啤酒</em></button>
+   <button class="cxs cfbox" data-co="pr:sake" style="${r(L.sake)}${S.sk<=0?';opacity:.45':''}">${cxI('sake','d',lay==='P'?54:50)}<em>清酒 ×${S.sk}</em></button>
+   ${hand}
+   <button class="cxs cfbox cf-tr" data-co="tr" style="${r(L.trash)}"><span>🗑️</span><em>丟掉</em></button>
+   <p class="cfhint" style="left:${L.hint[0]}px;top:${L.hint[1]}px;width:${L.hint[2]}px">點客人送上手上的餐點　·　你看不到烤台，要什麼就喊給廚房聽！</p></div>`}
 function coResult(S){const me=coRole(),other=me==='k'?'f':'k',win=S.why==='time',rd=S.rd||{h:0,g:0},a=coHost()?'h':'g',b=coHost()?'g':'h';
   const title=!win?'店面開不下去了…':S.hearts>=5?'完美默契！':S.hearts>=3?'配合得不錯':'驚險過關';
   return `<div class="cores"><h2>${win?'營業結束':'提早打烊'}</h2><h3>${title}</h3>
@@ -5162,7 +5203,7 @@ function coPaint(){const S=CO.S,ov=document.getElementById('cogame');if(!S||!ov)
   let html;
   if(S.over)html=coResult(S);
   else if(now<S.t0)html=`<div class="cores"><h2>${me==='k'?'你是廚房':'你是外場'}</h2><p>${me==='k'?'生食下鍋→熟了拿起→放進保溫台。你看不到客人，聽外場喊！':'接待客人→從保溫台拿餐點送給客人→收拾桌面。你看不到烤台，喊廚房！'}</p><h1>${S.t0-now>1000?Math.min(3,Math.ceil((S.t0-now-1000)/1000)):'開店！'}</h1></div>`;
-  else if(me!=='k')html='<div class="cofit">'+coFloor(S,now)+'</div>';
+  else if(me!=='k'){const m0=document.getElementById('comain');html='<div class="cofit">'+coFloor(S,now,m0&&m0.clientWidth<m0.clientHeight*1.1?'P':'L')+'</div>'}
   const mn=document.getElementById('comain');if(html==null)coKitchenPaint(mn,S,now);else if(html!==CO.lastHtml){CO.lastHtml=html;coPatch(mn,html)}
   coFit();
   if(S.fx&&S.fx.id!==CO.fxSeen){CO.fxSeen=S.fx.id;if(S.fx.m&&(S.fx.r==='*'||S.fx.r===me))coToast(S.fx.m)}}
@@ -5226,7 +5267,31 @@ function coStyle(){if(document.getElementById('costyle'))return;const s=document
 #cogame .cotop{grid-area:top}#cogame #comain{grid-area:main}#cogame .cobot{display:contents}
 #cogame .cosh{grid-area:sh;background:#1b0e07;padding:4px 8px 2px}#cogame .cobin{grid-area:in;background:#1b0e07;padding:2px 8px 4px}
 #comain[data-m=fit] .cof .corow,#comain[data-m=fit] .cof .cobtm{flex-wrap:nowrap}#cogame .cochat{grid-area:chat;height:auto;min-height:0;margin:6px 8px 6px 0;font-size:15px;line-height:1.4;border:2px solid #4a2c19}}
-#cofx{position:fixed;left:50%;top:44px;transform:translateX(-50%);z-index:8600;background:#3b2314;color:#f3dfb4;border:2px solid #ffb36b;border-radius:10px;padding:6px 14px;font-size:15px;pointer-events:none;opacity:0;transition:opacity .2s}`;
+#cofx{position:fixed;left:50%;top:44px;transform:translateX(-50%);z-index:8600;background:#3b2314;color:#f3dfb4;border:2px solid #ffb36b;border-radius:10px;padding:6px 14px;font-size:15px;pointer-events:none;opacity:0;transition:opacity .2s}
+#cogame .cff{background:#2a170d;overflow:hidden}
+#cogame .cff-bg{position:absolute;left:0;top:0;right:0;pointer-events:none}#cogame .cff-bg>svg{width:100%;height:100%;display:block}
+#cogame .cff-ctr{position:absolute;left:0;right:0;z-index:2;pointer-events:none;filter:drop-shadow(0 -2px 0 #0003)}#cogame .cff-ctr>svg{width:100%;height:100%;display:block}
+#cogame .cff-seat{position:absolute;border-radius:0}#cogame button.cff-seat:active{background:#ffffff14}
+#cogame .cff-sp{position:absolute;height:auto;z-index:1;pointer-events:none;animation:cffin .45s ease-out;filter:drop-shadow(0 3px 0 #0004)}
+@keyframes cffin{from{opacity:0;transform:translateY(18px)}}
+#cogame .cff-sp.cff-angry{filter:sepia(.3) saturate(1.5) hue-rotate(-12deg) brightness(.97);animation:mobmad .35s infinite}#cogame .cff-sp.cff-worry{animation:mobfret 1.2s infinite ease-in-out}
+#cogame .cff-bub{z-index:3;pointer-events:none;color:#3a2318}#cogame .cff-bub.cx-hurry{box-shadow:0 0 0 3px #e74c3c,0 0 14px #e74c3c;animation:hurry .6s ease-in-out infinite alternate}
+#cogame .cff-bub.cff-eat{gap:4px;font-size:14px;padding:6px 12px;white-space:nowrap}
+#cogame .cfon{position:absolute;z-index:3;transform:translateX(-50%);display:flex;gap:2px;pointer-events:none}#cogame .cfd{display:block;width:40px;height:40px}#cogame .cfd svg{width:100%;height:100%;display:block}
+#cogame .cfmess{position:absolute;z-index:3;width:84px;height:46px;pointer-events:none}#cogame .cfmess svg{width:100%;height:100%}
+#cogame .cftap{position:absolute;left:50%;transform:translateX(-50%);z-index:3;background:#fffaf0;color:#3a2318;border:3px solid #3a2318;border-radius:14px;padding:3px 10px;font-size:14px;white-space:nowrap;box-shadow:0 4px 0 #0004;animation:cfpulse .9s ease-in-out infinite alternate;pointer-events:none}
+@keyframes cfpulse{to{transform:translateX(-50%) translateY(-4px)}}
+#cogame .cfwm{position:absolute;background:#f6ead2;border:3px solid #fff;border-bottom-color:#f4a261;border-radius:12px;box-shadow:0 4px 0 #0005}
+#cogame .cfwm .cxl{bottom:auto;top:-12px}
+#cogame .cfws{position:absolute;top:12px;bottom:8px;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:#6b3b17}
+#cogame .cfws em{font-style:normal;font-size:11px;font-weight:700;white-space:nowrap}
+#cogame .cfws.cf-emp{border:2px dashed #e2c9a0}#cogame .cfws.cf-has{background:#fff;border:2px solid #7ed957}#cogame .cfws.cf-has:active{background:#eaffdd}
+#cogame .cfws.cf-put{border:2px dashed #f4a261;background:#fff3df}#cogame .cfws.cf-put em{color:#d9761e}
+#cogame .cfbox{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:#4a2c19;border:2px solid #7a4a2a;border-radius:12px;box-shadow:0 4px 0 #0005;text-align:center}
+#cogame .cfbox:active{transform:translateY(2px);background:#6a3d22}#cogame .cfbox em{font-style:normal;font-size:12px;font-weight:700;line-height:1.15}
+#cogame .cfbox.cf-empty{background:#3b2314;opacity:.75}#cogame .cfbox.cf-hold{background:#5a3a1a;border-color:#ffb36b}
+#cogame .cfbox.cf-tr{flex-direction:row;gap:6px;background:#3d4146;border-color:#5a5f66}#cogame .cfbox.cf-tr span{font-size:18px}
+#cogame .cfhint{position:absolute;margin:0;text-align:center;font-size:12px;opacity:.6;color:#f3dfb4}`;
   document.head.appendChild(s)}
 /* ---- voice chat (WebRTC P2P, signaling via rooms/<code>/rtc/<uid>) ---- */
 const VO={pc:null,tr:null,n:0,ans:0,ms:null,on:false,peerOn:false,au:null,lvl:0,st:'',err:'',needTap:0,statT:null,reqT:null,lastIn:0,retryT:null};
