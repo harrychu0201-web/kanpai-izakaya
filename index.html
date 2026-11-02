@@ -5193,6 +5193,9 @@ function coStyle(){if(document.getElementById('costyle'))return;const s=document
 const VO={pc:null,tr:null,n:0,ans:0,ms:null,on:false,peerOn:false,au:null,lvl:0,st:'',err:'',needTap:0,statT:null,reqT:null,lastIn:0,retryT:null};
 const VO_ICE=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}];
 function voErr(m){VO.err=m;voRedraw()}
+function voFail(e,what){console.warn('voice',what,e);const c=String(e&&(e.code||e.message)||e);
+  voErr(/PERMISSION|permission_denied/i.test(c)?'語音被 Firebase 擋住：請把最新的規則貼到 Firebase 並按發布':'語音連線失敗（'+what+'）')}
+function voWatchdog(){clearTimeout(VO.wdT);VO.wdT=setTimeout(()=>{if((VO.on||VO.peerOn)&&VO.st!=='connected'&&!VO.err)voErr('語音一直連不上：可能是規則還沒更新，或網路擋住了（換 Wi-Fi 試試）')},15000)}
 function voRedraw(){try{if(CO.open)coPaint();else if(typeof coopRender==='function')coopRender()}catch(e){}}
 function voAudio(){let a=VO.au;if(!a){a=VO.au=document.createElement('audio');a.autoplay=true;a.playsInline=true;a.setAttribute('playsinline','');a.style.display='none';document.body.appendChild(a)}return a}
 function voPlay(){const a=VO.au;if(!a||!a.srcObject)return;a.play().then(()=>{if(VO.needTap){VO.needTap=0;voRedraw()}}).catch(()=>{if(!VO.needTap){VO.needTap=1;voRedraw()}})}
@@ -5215,17 +5218,17 @@ async function voUseMic(){if(VO.tr)await VO.tr.sender.replaceTrack(VO.on&&VO.ms?
 async function voOffer(){if(!coHost()||!COOP.code||!CL.api||!CL.api.coopRtcSet)return;const pc=voNewPc(),n=Date.now();VO.n=n;
   VO.tr=pc.addTransceiver('audio',{direction:'sendrecv'});await voUseMic();
   await pc.setLocalDescription(await pc.createOffer());await voWaitIce(pc);if(VO.pc!==pc)return;
-  COOP.w++;await CL.api.coopRtcSet(COOP.code,CL.user.uid,{d:JSON.stringify(pc.localDescription),n})}
+  COOP.w++;try{await CL.api.coopRtcSet(COOP.code,CL.user.uid,{d:JSON.stringify(pc.localDescription),n})}catch(e){voFail(e,'送出邀請');return}voWatchdog()}
 async function voAnswer(o){if(VO.ans===o.n)return;VO.ans=o.n;const pc=voNewPc();
   await pc.setRemoteDescription(JSON.parse(o.d));VO.tr=pc.getTransceivers()[0]||null;if(VO.tr)VO.tr.direction='sendrecv';await voUseMic();
   await pc.setLocalDescription(await pc.createAnswer());await voWaitIce(pc);if(VO.pc!==pc)return;
-  COOP.w++;await CL.api.coopRtcSet(COOP.code,CL.user.uid,{d:JSON.stringify(pc.localDescription),n:o.n})}
+  COOP.w++;try{await CL.api.coopRtcSet(COOP.code,CL.user.uid,{d:JSON.stringify(pc.localDescription),n:o.n})}catch(e){VO.ans=0;voFail(e,'回覆');return}voWatchdog()}
 function coVoiceOnRtc(v){if(!v||!COOP.room||!CL.user||!window.RTCPeerConnection)return;const o=v[coopOther()];if(!o||typeof o.d!=='string'||typeof o.n!=='number')return;
   if(coHost()){const pc=VO.pc;if(pc&&o.n===VO.n&&pc.signalingState==='have-local-offer')pc.setRemoteDescription(JSON.parse(o.d)).catch(e=>console.warn('vo ans',e))}
   else voAnswer(o).catch(e=>{console.warn('vo answer',e);VO.ans=0})}
 function voReq(){if(!COOP.code||!CL.api)return;COOP.w++;CL.api.coopSend(COOP.code,CL.user.uid,'rtcreq',Date.now(),'').catch(e=>console.warn('vo req',e))}
 function coVoiceEv(e){if(!CL.user||e.from===CL.user.uid||!COOP.room)return;if(e.from!==coopOther())return;
-  if(e.type==='mic'){VO.peerOn=e.d===1;voRedraw();return}
+  if(e.type==='mic'){VO.peerOn=e.d===1;if(VO.peerOn&&!coStale(e))voWatchdog();voRedraw();return}
   if(e.type==='rtcreq'&&coHost()){clearTimeout(VO.reqT);VO.reqT=setTimeout(()=>voOffer().catch(x=>console.warn('vo offer',x)),300)}}
 function voLive(){const pc=VO.pc;return !!(pc&&VO.tr&&['new','connecting','connected'].includes(pc.connectionState))}
 async function coVoiceToggle(){
@@ -5234,14 +5237,14 @@ async function coVoiceToggle(){
   if(VO.on){VO.on=false;if(VO.ms)VO.ms.getTracks().forEach(t=>t.stop());VO.ms=null;await voUseMic();voMicEv(0);voRedraw();return}
   try{VO.ms=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}
   catch(e){voErr('沒有拿到麥克風權限（請在瀏覽器允許麥克風）');return}
-  VO.on=true;VO.err='';voPlay();
+  VO.on=true;VO.err='';voPlay();voWatchdog();
   if(voLive())await voUseMic();else if(coHost())voOffer().catch(e=>{console.warn(e);voErr('語音連線失敗')});else voReq();
   voMicEv(1);voRedraw()}
 function voMicEv(d){if(!COOP.code||!CL.api)return;COOP.w++;CL.api.coopSend(COOP.code,CL.user.uid,'mic',d,'').catch(e=>console.warn('vo mic',e))}
 function voTalk(){return VO.lvl>.02}
 function voStop(){voClosePc();clearTimeout(VO.retryT);clearTimeout(VO.reqT);if(VO.ms)VO.ms.getTracks().forEach(t=>t.stop());VO.ms=null;VO.on=false;VO.peerOn=false;VO.n=0;VO.ans=0;VO.err='';VO.needTap=0;if(VO.au){VO.au.srcObject=null;VO.au.remove();VO.au=null}}
 function voPeerTxt(){return VO.peerOn?(voTalk()?'對方🔊說話中':(VO.st==='connected'?'對方🎤開著':'語音連線中…')):'對方🔇'}
-function voGameBtns(){return `<button class="cob" data-co="mic" style="min-height:26px;min-width:0;padding:0 8px;${VO.on?'background:#2f6b2a;border-color:#7ed957':''}">${VO.on?'🎙️ 麥克風開著':'🎤 開麥克風'}</button><span style="font-size:12px;opacity:.85">${voPeerTxt()}</span>${VO.needTap?'<button class="cob" data-co="vplay" style="min-height:26px;min-width:0;padding:0 8px;background:#7a4a10">🔈 點這裡聽對方</button>':''}${VO.err?`<span style="font-size:11px;color:#ff9b8a">${esc(VO.err)}</span>`:''}`}
+function voGameBtns(){return `<button class="cob" data-co="mic" style="min-height:26px;min-width:0;padding:0 8px;${VO.on?'background:#2f6b2a;border-color:#7ed957':''}">${VO.on?'🎙️ 麥克風開著'+(VO.st==='connected'?'':'（連線中…）'):'🎤 開麥克風'}</button><span style="font-size:12px;opacity:.85">${voPeerTxt()}</span>${VO.needTap?'<button class="cob" data-co="vplay" style="min-height:26px;min-width:0;padding:0 8px;background:#7a4a10">🔈 點這裡聽對方</button>':''}${VO.err?`<span style="font-size:11px;color:#ff9b8a">${esc(VO.err)}</span>`:''}`}
 function voLobbyLine(){return `<div class="lbme"><span>語音：${VO.on?'🎙️ 你的麥克風開著':'🎤 你的麥克風關著'}</span><span>${voPeerTxt()}</span></div>${VO.err?`<p class="lbdesc" style="color:#c0392b">${esc(VO.err)}</p>`:''}${VO.needTap?'<p class="lbdesc">對方在說話，但瀏覽器擋住了聲音 — 點「🔈 聽對方」。</p>':''}`}
 function voLobbyBtns(){return `<button class="btn alt" data-act="coopmic">${VO.on?'🎙️ 關麥克風':'🎤 開麥克風'}</button>${VO.needTap?'<button class="btn alt" data-act="coopvplay">🔈 聽對方</button>':''}`}
 </script>
