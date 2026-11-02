@@ -826,8 +826,8 @@ function chWrong(c){c.chMis=1;c.pat=Math.max(0,c.pat-c.max*.35);chStrike('上錯
 function chCycle(){R.t-=DAYLEN*(24-CHG.h0)/24;CHG.h0=0;ST.coins+=net();R.earned=0;R.cost=0;R.stolen=0;R.fines=0;R.rent=0;R.wage=wages();ST.day++;CHG.day=ST.day;pickToday();R.ev=evNow();renderHUD();toast(T('第 {0} 天！客人越來越多了',ST.day))}
 function chFail(why){if(!chOn())return;CHG.on=false;chRecord();if(R)R.over=true;renderHUD();
   const r=loadRec(),best=CHG.hard?r.chalh:r.chal,act=CHG.hard?'chstarth':'chstart';
-  modal(`<h2>${T('無限挑戰結束')}</h2><p>${T('最後一次失誤：{0}',T(why))}</p><div class="goalrow"><span>${T('營業時間 {0}',chTime(CHG.sec))}</span><span>${T('撐到第 {0} 天',ST.day)}</span><span>${T('滿意 {0} 位',R?R.served:0)}</span></div><p>${T('這次的營業時間會登上排行榜。目前最佳：{0}',chTime(best||0))}</p>${!CL.user?`<p>${T('登入並取暱稱後才會上榜。')}</p>`:!r.nick?`<p>${T('取個暱稱就能加入排行榜。')}</p>`:''}<div class="btns"><button class="btn" data-act="${act}">${T('再挑戰一次')}</button><button class="btn alt" data-act="lb">${T('排行榜')}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`)}
-function chStart(hard){if(CHG)chQuit();
+  modal(CHEND=`<h2>${T('無限挑戰結束')}</h2><p>${T('最後一次失誤：{0}',T(why))}</p><div class="goalrow"><span>${T('營業時間 {0}',chTime(CHG.sec))}</span><span>${T('撐到第 {0} 天',ST.day)}</span><span>${T('滿意 {0} 位',R?R.served:0)}</span></div><p>${T('這次的營業時間會登上排行榜。目前最佳：{0}',chTime(best||0))}</p>${!CL.user?`<p>${T('登入並取暱稱後才會上榜。')}</p>`:!r.nick?`<p>${T('取個暱稱就能加入排行榜。')}</p>`:''}<div class="btns"><button class="btn" data-act="${act}">${T('再挑戰一次')}</button><button class="btn alt" data-act="chlb" data-id="${CHG.hard?'chalh':'chal'}">${T('排行榜')}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`)}
+function chStart(hard){if(CHG)chQuit();LB.ch=0;CHEND='';
   CHG={on:true,hard:!!hard,sec:0,strikes:0,log:[],day:1,h0:16};
   ST=Object.assign(load()||fresh(),{day:1,coins:3000,debt:0,loans:0,dues:[],stars:{},where:'iz',pendingNext:false,pre:null});
   delete ST.today;delete ST.past;
@@ -2708,7 +2708,7 @@ document.addEventListener('click',e=>{if(!HOME)return;const m=e.target.closest('
 function branchPick(){const o=load()||{},cur=o.where==='sushi'&&o.sushi?'sushi':o.where==='rm'&&o.rm?'rm':'iz';
   const btn=(id,name,sub,ok)=>`<button class="btn ${cur===id?'':'alt'}" data-act="pickbranch" data-id="${id}" ${ok?'':'disabled'}>${T(name)}${cur===id?` · ${T('目前')}`:''}<small>${T(sub)}</small></button>`;
   modal(`<h2>${T('分店')}</h2><p class="hint">${T('選一家店，下次營業就在那裡開門。')}</p><div class="pickrow">${btn('iz','🏮 居酒屋本店','',true)}${btn('rm','🍜 深夜拉麵屋台',o.rm?'':'買下整棟店面後開放',!!o.rm)}${sushiDev()?(o.sushi?btn('sushi','🍣 海風壽司','',true):`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖')}</small></button>`):''}</div><div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
-function showHome(){if(CHG)chQuit();if(RP.on)abandonReplay();
+function showHome(){if(CHG)chQuit();LB.ch=0;CHEND='';if(RP.on)abandonReplay();
   if(CUR!=='iz'){CUR='iz';chooseLayout(true)}SHOPHOME=false;DEMO=false;if(TUT){TUT=null;tutLayer().innerHTML=''}HOME=true;R=null;ST=null;closeModal();setTimeout(fit,0);renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
   const saved=load();
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
@@ -3254,7 +3254,9 @@ document.addEventListener('click',e=>{
   else if(act==='arcdrop')arcDrop();
   else if(act==='lang')showLang();
   else if(act==='update')doUpdate();
-  else if(act==='lb')showLB();
+  else if(act==='lb'){LB.ch=0;showLB()}
+  else if(act==='chlb'){LB.ch=1;LB.tab=a.dataset.id==='chalh'?'chalh':'chal';delete LB.cache[LB.tab];showLB()}
+  else if(act==='chback'){LB.ch=0;if(CHEND&&R&&R.over)modal(CHEND);else closeModal()}
   else if(act==='frhome'){LB.tab='fr';showLB()}
   else if(act==='chat')showChat();
   else if(act==='csend')chatSend();
@@ -4257,7 +4259,7 @@ function cloudAsk(){const c=CL.pick;if(!c||!HOME)return;
   <div class="pickrow"><button class="btn" data-act="pickcloud">${T('雲端存檔')}<small>${saveSummary(c.game)}</small></button><button class="btn alt" data-act="picklocal">${T('這台裝置')}<small>${saveSummary(lsGet(KEY))}</small></button></div>`)}
 /* ===== leaderboard: one public doc per player in lb/{uid}; written only by its owner, readable by all ===== */
 const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['dex','扭蛋圖鑑','desc','收集到的扭蛋種類越多越前面，秘密扭蛋機的款式也算。'],['chal','無限挑戰','desc','店不打烊一直營業，三次失誤就結束，比誰的營業時間長（暫停不算）。'],['chalh','極限挑戰','desc','禁用店員和道具的無限挑戰，比誰的營業時間長。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
-const LB={tab:'best',cache:{},last:null};
+const LB={tab:'best',cache:{},last:null,ch:0};let CHEND='';
 function lbEntry(){const r=loadRec();
   if(!r.nick)return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.maxDay>0)d.days=Math.round(r.maxDay);if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;return d}
 async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return} /* a save touched by the author test tools never goes on the leaderboard */
@@ -4266,7 +4268,7 @@ async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=nu
   catch(e){const d2=Object.assign({},d);delete d2.dex;delete d2.chal;delete d2.chalh;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}} /* rules not updated yet: still keep the rest of the entry */
   LB.last=u.uid+k;LB.cache={}}
 const lbVal=(t,v)=>t==='chal'||t==='chalh'?chTime(v):t==='dex'?T('{0} 種',v):t==='days'?T('{0} 天',v):yen(v);
-const lbHead=tb=>`<h2>${T('排行榜')}</h2><div class="lbtabs">${LBT.map(([k,n])=>`<button class="stab ${LB.tab===k?'on':''}" data-act="lbtab" data-id="${k}">${T(n)}</button>`).join('')}</div><p class="lbdesc">${T(tb[3])}</p>`;
+const lbHead=tb=>`<h2>${T('排行榜')}</h2><div class="lbtabs">${LBT.filter(x=>!(LB.ch&&x[0]==='fr')).map(([k,n])=>`<button class="stab ${LB.tab===k?'on':''}" data-act="lbtab" data-id="${k}">${T(n)}</button>`).join('')}</div><p class="lbdesc">${T(tb[3])}</p>`;
 async function showLB(){if(LB.tab==='fr')return showFriends();
   const tb=LBT.find(x=>x[0]===LB.tab),me=CL.user,mine=lbEntry();
   const head=lbHead(tb);
@@ -4284,8 +4286,8 @@ async function showLB(){if(LB.tab==='fr')return showFriends();
   const rkTxt=x=>!x?'':x.total<2?T('目前只有你一位上榜。'):x.all?T('第 {0} 名（共 {1} 人），超過全部其他玩家！',x.rank,x.total):T('第 {0} 名（共 {1} 人），超過 {2}% 的玩家',x.rank,x.total,x.pct);
   const mineRk=()=>{const x=LB.cache[f]&&rk(LB.cache[f].rows,LB.cache[f].rows.length);return x};
   const foot0=foot;
-  const btns=`<div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`;
-  const draw=body=>{if(HOME&&LB.tab===f){const x=mineRk();const ft=x&&mine?foot0.replace('</span>',`<br><small>${rkTxt(x)}</small></span>`):foot0;modal(head+`<div class="lblist">${body}</div>`+ft+btns)}};
+  const btns=`<div class="btns"><button class="btn" data-act="${LB.ch?'chback':'closem'}">${T('返回')}</button></div>`;
+  const draw=body=>{if((HOME||LB.ch)&&LB.tab===f){const x=mineRk();const ft=x&&mine?foot0.replace('</span>',`<br><small>${rkTxt(x)}</small></span>`):foot0;modal(head+`<div class="lblist">${body}</div>`+ft+btns)}};
   const c=LB.cache[f];
   if(!c||Date.now()-c.t>60000){draw(`<p>${T('載入中…')}</p>`);
     try{if(!CL.api)throw 0;LB.cache[f]={t:Date.now(),rows:await CL.api.all(f,tb[2])}}catch(e){console.warn('lb',e);draw(`<p>${T('排行榜載入失敗，請稍後再試。')}</p><p style="font-size:12px;color:#8a5a34;word-break:break-all">${esc(String((e&&(e.code||e.message))||e))}</p>`);return}}
