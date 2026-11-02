@@ -521,6 +521,12 @@
               ".validate": false
             }
           }
+        },
+        "rtc": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && (root.child('rooms').child($code).child('host').val() === auth.uid || root.child('rooms').child($code).child('guest').val() === auth.uid)",
+            ".validate": "!newData.exists() || (newData.hasChildren(['d','n','t']) && newData.child('d').isString() && newData.child('d').val().length <= 12000 && newData.child('n').isNumber() && newData.child('t').isNumber())"
+          }
         }
       }
     },

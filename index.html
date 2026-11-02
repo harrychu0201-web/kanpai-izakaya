@@ -3987,6 +3987,8 @@ async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid
     if(k==='start'){if(typeof coStart==='function')await coStart();else await CL.api.coopState(COOP.code,'playing');return}
     if(k==='role'){if(typeof coRoleSwap==='function')coRoleSwap();else{COOP.hostRole=COOP.hostRole==='f'?'k':'f';coopRender()}return}
     if(k==='rdy'){if(typeof coReadyToggle==='function')coReadyToggle();return}
+    if(k==='mic'){if(typeof coVoiceToggle==='function')await coVoiceToggle();return}
+    if(k==='vplay'){if(typeof voPlay==='function')voPlay();return}
     if(k==='sendmsg'){const i=document.getElementById('coopin');if(!i||!COOP.code)return;const txt=i.value.trim().slice(0,100);if(!txt)return;
       if(!COOP.room||COOP.room.state==='ended'){coopNote('房間已結束');return}
       if(Date.now()-(COOP.lastMsg||0)<700)return;COOP.lastMsg=Date.now();i.value='';
@@ -3996,7 +3998,7 @@ async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid
   }catch(e){console.warn('coop',k,e);COOP.err='失敗（'+k+'）：'+String(e&&e.code||e&&e.message||e).slice(0,80);coopNote('連線功能暫時打不開，請稍後再試。');if(document.getElementById('coopmark'))coopPanel()}}
 function coopAttach(code){if(COOP.unsub)COOP.unsub();if(COOP.presOff)COOP.presOff();
   COOP.on=true;COOP.room=null;COOP.p={};COOP.ev=[];COOP.lastOn={};COOP.graceWho=null;
-  COOP.unsub=CL.api.coopWatch(code,(k,v)=>{if(k==='room')coopOnRoom(v);else if(k==='st'){if(typeof coGameOnSt==='function')coGameOnSt(v)}else coopOnEv(v)},e=>{console.warn('coop watch',e);coopNote('連線中斷');COOP.on=false});
+  COOP.unsub=CL.api.coopWatch(code,(k,v)=>{if(k==='room')coopOnRoom(v);else if(k==='st'){if(typeof coGameOnSt==='function')coGameOnSt(v)}else if(k==='rtc'){if(typeof coVoiceOnRtc==='function')coVoiceOnRtc(v)}else coopOnEv(v)},e=>{console.warn('coop watch',e);coopNote('連線中斷');COOP.on=false});
   CL.api.coopPresence(code,CL.user.uid).then(f=>{COOP.presOff=f}).catch(e=>console.warn('presence',e))}
 function coopOnRoom(v){
   if(!v){COOP.room=null;COOP.on=false;if(typeof coGameOnRoom==='function')coGameOnRoom(null);coopRender();return}
@@ -4019,6 +4021,7 @@ function coopOnEv(e){const me=CL.user&&CL.user.uid;const x={id:e.id,from:e.from,
   COOP.ev.push(x);if(COOP.ev.length>80)COOP.ev.splice(0,COOP.ev.length-80);
   if(x.type==='act'&&typeof coHostAct==='function')coHostAct(e);
   if(x.type==='ready'&&typeof coHostReady==='function')coHostReady(e);
+  if((x.type==='mic'||x.type==='rtcreq')&&typeof coVoiceEv==='function')coVoiceEv(e);
   if(typeof CO!=='undefined'&&CO.open&&typeof coChatFill==='function')coChatFill();
   if(x.type==='msg'&&x.from!==me&&!document.getElementById('coopmark')&&!(typeof CO!=='undefined'&&CO.open)){try{coopNote('💬 '+x.txt.slice(0,30))}catch(_){}}
   coopRender()}
@@ -4098,9 +4101,11 @@ async function cloudInit(){
         offs.push(rd.onValue(rf('state'),s=>{room.state=s.val();fire()},err));
         offs.push(rd.onValue(rf('p'),s=>{room.p=s.val()||{};fire()},err));
         offs.push(rd.onValue(rf('st'),s=>cb('st',s.val()),err));
+        offs.push(rd.onValue(rf('rtc'),s=>cb('rtc',s.val()||{}),err));
         offs.push(rd.onChildAdded(rf('ev'),s=>cb('ev',Object.assign({id:s.key},s.val()||{}))))}).catch(err);
         return ()=>{dead=true;offs.forEach(f=>{if(typeof f==='function')f()})}},
       coopStSet:(code,str)=>rt((rd,r)=>rd.set(rd.ref(r,'rooms/'+code+'/st'),String(str))),
+      coopRtcSet:(code,uid,o)=>rt((rd,r)=>rd.set(rd.ref(r,'rooms/'+code+'/rtc/'+uid),{d:String(o.d),n:+o.n,t:rd.serverTimestamp()})),
       coopPresence:(code,uid)=>rtdb().then(({rd,db:r})=>{rd.goOnline(r);const p=rd.ref(r,'rooms/'+code+'/p/'+uid);
         const reg=()=>{COOP.w+=2;rd.onDisconnect(p).set({on:false,t:rd.serverTimestamp()});return rd.set(p,{on:true,t:rd.serverTimestamp()})};
         const off=rd.onValue(rd.ref(r,'.info/connected'),s=>{if(s.val()===true)reg().catch(e=>console.warn('presence',e))});
@@ -4938,14 +4943,14 @@ function coReadyToggle(){const rd=coRdObj();if(!rd)return;
 function coHostReady(e){if(!coHost()||CO.seen[e.id])return;CO.seen[e.id]=1;if(!COOP.room||e.from!==COOP.room.guest)return;
   const rd=coRdObj();if(!rd)return;rd.g=e.d===1?1:0;coRdPush();coCheckStart();if(typeof coopRender==='function')coopRender();if(CO.open)coPaint()}
 function coRoleSwap(){if(!coHost())return;coLobbyInit();COOP.hostRole=COOP.hostRole==='f'?'k':'f';CO.L.hk=COOP.hostRole;CO.L.rd={h:0,g:0};coLobbyPush();if(typeof coopRender==='function')coopRender()}
-function coReset(){CO.L=null;CO.lobby=null;CO.lobbyPushed=false}
+function coReset(){CO.L=null;CO.lobby=null;CO.lobbyPushed=false;if(typeof voStop==='function')voStop()}
 function coLobbyView(){if(coHost()){coLobbyInit();return{hk:CO.L.hk,rd:CO.L.rd}}return CO.lobby?{hk:CO.lobby.hk,rd:CO.lobby.rd}:null}
 function coLobbyBlock(){const v=coLobbyView(),host=coHost(),me=v?(host?v.hk:(v.hk==='k'?'f':'k')):null,nm=r=>r==='k'?'🍳 廚房':'🧾 外場';let s='';
   if(!me)s+=`<p class="lbdesc">等房主選角色…</p>`;
   else s+=`<div class="lbme"><span>你的角色：<b>${nm(me)}</b></span><small>對方：${nm(me==='k'?'f':'k')}</small></div><p class="lbdesc">${CO_TASK[me]}</p>`;
-  if(v){const a=host?'h':'g',b=host?'g':'h';s+=`<div class="lbme"><span>你：${v.rd[a]?'✅ 已準備':'⏳ 未準備'}</span><span>對方：${v.rd[b]?'✅ 已準備':'⏳ 未準備'}</span></div><p class="lbdesc">雙方都按「準備」後，由房主按「開始營業」，兩邊會一起倒數 3、2、1 開店。</p>`}
+  if(v){const a=host?'h':'g',b=host?'g':'h';s+=`<div class="lbme"><span>你：${v.rd[a]?'✅ 已準備':'⏳ 未準備'}</span><span>對方：${v.rd[b]?'✅ 已準備':'⏳ 未準備'}</span></div>${voLobbyLine()}<p class="lbdesc">雙方都按「準備」後，由房主按「開始營業」，兩邊會一起倒數 3、2、1 開店。</p>`}
   return s}
-function coLobbyBtns(){const v=coLobbyView();let s='';
+function coLobbyBtns(){const v=coLobbyView();let s=voLobbyBtns();
   if(coHost())s+=`<button class="btn alt" data-act="cooprole">${COOP.hostRole==='f'?'🧾 我當外場（朋友當廚房）':'🍳 我當廚房（朋友當外場）'}</button>`;
   const my=v?v.rd[coHost()?'h':'g']:0;
   return s+`<button class="btn" data-act="cooprdy" ${v?'':'disabled'}>${my?'✅ 已準備（再按取消）':'🙋 準備'}</button>`+(coHost()?`<button class="btn" data-act="coopstart" ${coBothRdy()?'':'disabled'}>▶ 開始營業</button>`:'')}
@@ -4978,6 +4983,8 @@ function coTap(cmd){const S=CO.S;if(!S)return;
   if(cmd==='say'){coSay();return}
   if(cmd==='back'){if(coHost())coClose(true);return}
   if(cmd==='go'){if(coHost()&&S.over)coStart();return}
+  if(cmd==='mic'){coVoiceToggle();return}
+  if(cmd==='vplay'){voPlay();return}
   if(cmd==='again'||cmd==='rdy'){coReadyToggle();return}
   if(cmd==='leave'){const t=Date.now();if(t-CO.leaveAt<2000){CO.leaveAt=0;const wasHost=coHost();coClose(false);if(typeof coopLeave==='function')coopLeave()}else{CO.leaveAt=t;coToast('再按一次離開（對方也會結束）')}return}
   if(cmd.indexOf('sh:')===0){const t=CO_SH[coRole()][+cmd.slice(3)];if(t)coSendMsg(t);return}
@@ -5092,7 +5099,7 @@ function coFit(){const m=document.getElementById('comain'),w=m&&m.querySelector(
   if(!nw||!nh)return;const z=String(Math.max(.3,Math.min((aw-16)/nw,(ah-12)/nh,1.6)).toFixed(3));if(w.style.zoom!==z)w.style.zoom=z;w.dataset.fk=key;w.dataset.ft=t}
 function coPaint(){const S=CO.S,ov=document.getElementById('cogame');if(!S||!ov)return;const now=coNow(),me=coRole();
   const left=Math.max(0,S.t0+S.dur-now),mm=String(Math.floor(left/60000)).padStart(2,'0'),ss=String(Math.floor(left%60000/1000)).padStart(2,'0');
-  const ct=document.getElementById('cotop'),cth=`<span>${'❤'.repeat(Math.max(0,S.hearts))||'💔'}</span><span>⏱ ${mm}:${ss}</span><span>接客 ${S.sv}</span><span class="cosp"></span><span>${me==='k'?'🍳 廚房':'🧾 外場'}</span><span>我的錢包 ¥${Math.round(S.w[me])}</span><button class="cob" data-co="leave" style="min-height:26px;min-width:40px;padding:0 8px">✕</button>`;if(ct.dataset.h!==cth){ct.dataset.h=cth;ct.innerHTML=cth}
+  const ct=document.getElementById('cotop'),cth=`<span>${'❤'.repeat(Math.max(0,S.hearts))||'💔'}</span><span>⏱ ${mm}:${ss}</span><span>接客 ${S.sv}</span>${voGameBtns()}<span class="cosp"></span><span>${me==='k'?'🍳 廚房':'🧾 外場'}</span><span>我的錢包 ¥${Math.round(S.w[me])}</span><button class="cob" data-co="leave" style="min-height:26px;min-width:40px;padding:0 8px">✕</button>`;if(ct.dataset.h!==cth){ct.dataset.h=cth;ct.innerHTML=cth}
   const sh=document.getElementById('cosh');if(sh&&!sh.dataset.r||sh&&sh.dataset.r!==me){sh.dataset.r=me;sh.innerHTML=CO_SH[me].map((t,i)=>`<button class="cob" data-co="sh:${i}" style="min-height:30px;min-width:0;padding:2px 8px;font-size:12px">${esc(t)}</button>`).join('')}
   let html;
   if(S.over)html=coResult(S);
@@ -5158,6 +5165,61 @@ function coStyle(){if(document.getElementById('costyle'))return;const s=document
 @media (max-height:460px){#cogame .cobot{gap:2px;padding:3px 8px}#cogame .cosh .cob{min-height:26px!important;font-size:11px!important;padding:1px 8px!important}#cogame .cochat{min-height:0;font-size:12px;line-height:1.25}#cogame .cobin input{padding:2px 8px}#cogame .cobin .cob{min-height:30px!important}#cogame .cotop{padding:2px 8px}#cogame .cok2{padding:6px;gap:6px}}
 #cofx{position:fixed;left:50%;top:44px;transform:translateX(-50%);z-index:8600;background:#3b2314;color:#f3dfb4;border:2px solid #ffb36b;border-radius:10px;padding:6px 14px;font-size:15px;pointer-events:none;opacity:0;transition:opacity .2s}`;
   document.head.appendChild(s)}
+/* ---- voice chat (WebRTC P2P, signaling via rooms/<code>/rtc/<uid>) ---- */
+const VO={pc:null,tr:null,n:0,ans:0,ms:null,on:false,peerOn:false,au:null,lvl:0,st:'',err:'',needTap:0,statT:null,reqT:null,lastIn:0,retryT:null};
+const VO_ICE=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}];
+function voErr(m){VO.err=m;voRedraw()}
+function voRedraw(){try{if(CO.open)coPaint();else if(typeof coopRender==='function')coopRender()}catch(e){}}
+function voAudio(){let a=VO.au;if(!a){a=VO.au=document.createElement('audio');a.autoplay=true;a.playsInline=true;a.setAttribute('playsinline','');a.style.display='none';document.body.appendChild(a)}return a}
+function voPlay(){const a=VO.au;if(!a||!a.srcObject)return;a.play().then(()=>{if(VO.needTap){VO.needTap=0;voRedraw()}}).catch(()=>{if(!VO.needTap){VO.needTap=1;voRedraw()}})}
+function voClosePc(){clearInterval(VO.statT);VO.statT=null;if(VO.pc){try{VO.pc.close()}catch(e){}}VO.pc=null;VO.tr=null;VO.st='';VO.lvl=0}
+function voNewPc(){voClosePc();const pc=new RTCPeerConnection({iceServers:VO_ICE});VO.pc=pc;
+  pc.ontrack=e=>{const a=voAudio();a.srcObject=e.streams&&e.streams[0]?e.streams[0]:new MediaStream([e.track]);voPlay()};
+  pc.onconnectionstatechange=()=>{if(VO.pc!==pc)return;VO.st=pc.connectionState;
+    if(VO.st==='connected'){VO.err='';voPlay()}
+    if(VO.st==='failed')VO.err='語音連不上（網路擋住了），先用文字快喊';
+    if(VO.st==='failed'||VO.st==='disconnected')voRetry();
+    voRedraw()};
+  VO.statT=setInterval(()=>voStats(pc),400);return pc}
+function voRetry(){clearTimeout(VO.retryT);VO.retryT=setTimeout(()=>{const pc=VO.pc;if(!pc||!['failed','disconnected'].includes(pc.connectionState))return;
+  if(!(VO.on||VO.peerOn))return;const o=coopOther();if(!(o&&COOP.p&&COOP.p[o]&&COOP.p[o].on))return;
+  if(coHost())voOffer().catch(e=>console.warn('vo retry',e));else voReq()},4000)}
+async function voStats(pc){if(VO.pc!==pc)return;try{const r=await pc.getStats();let lv=0,b=0;r.forEach(s=>{if(s.type==='inbound-rtp'&&s.kind==='audio'){lv=s.audioLevel||0;b=s.bytesReceived||0}});
+  const was=VO.lvl>.02;VO.lvl=lv;VO.lastIn=b;if((lv>.02)!==was)voRedraw()}catch(e){}}
+function voWaitIce(pc){return new Promise(r=>{if(pc.iceGatheringState==='complete')return r();const t=setTimeout(r,2500);pc.addEventListener('icegatheringstatechange',()=>{if(pc.iceGatheringState==='complete'){clearTimeout(t);r()}})})}
+async function voUseMic(){if(VO.tr)await VO.tr.sender.replaceTrack(VO.on&&VO.ms?VO.ms.getAudioTracks()[0]:null).catch(e=>console.warn('vo track',e))}
+async function voOffer(){if(!coHost()||!COOP.code||!CL.api||!CL.api.coopRtcSet)return;const pc=voNewPc(),n=Date.now();VO.n=n;
+  VO.tr=pc.addTransceiver('audio',{direction:'sendrecv'});await voUseMic();
+  await pc.setLocalDescription(await pc.createOffer());await voWaitIce(pc);if(VO.pc!==pc)return;
+  COOP.w++;await CL.api.coopRtcSet(COOP.code,CL.user.uid,{d:JSON.stringify(pc.localDescription),n})}
+async function voAnswer(o){if(VO.ans===o.n)return;VO.ans=o.n;const pc=voNewPc();
+  await pc.setRemoteDescription(JSON.parse(o.d));VO.tr=pc.getTransceivers()[0]||null;if(VO.tr)VO.tr.direction='sendrecv';await voUseMic();
+  await pc.setLocalDescription(await pc.createAnswer());await voWaitIce(pc);if(VO.pc!==pc)return;
+  COOP.w++;await CL.api.coopRtcSet(COOP.code,CL.user.uid,{d:JSON.stringify(pc.localDescription),n:o.n})}
+function coVoiceOnRtc(v){if(!v||!COOP.room||!CL.user||!window.RTCPeerConnection)return;const o=v[coopOther()];if(!o||typeof o.d!=='string'||typeof o.n!=='number')return;
+  if(coHost()){const pc=VO.pc;if(pc&&o.n===VO.n&&pc.signalingState==='have-local-offer')pc.setRemoteDescription(JSON.parse(o.d)).catch(e=>console.warn('vo ans',e))}
+  else voAnswer(o).catch(e=>{console.warn('vo answer',e);VO.ans=0})}
+function voReq(){if(!COOP.code||!CL.api)return;COOP.w++;CL.api.coopSend(COOP.code,CL.user.uid,'rtcreq',Date.now(),'').catch(e=>console.warn('vo req',e))}
+function coVoiceEv(e){if(!CL.user||e.from===CL.user.uid||!COOP.room)return;if(e.from!==coopOther())return;
+  if(e.type==='mic'){VO.peerOn=e.d===1;voRedraw();return}
+  if(e.type==='rtcreq'&&coHost()){clearTimeout(VO.reqT);VO.reqT=setTimeout(()=>voOffer().catch(x=>console.warn('vo offer',x)),300)}}
+function voLive(){const pc=VO.pc;return !!(pc&&VO.tr&&['new','connecting','connected'].includes(pc.connectionState))}
+async function coVoiceToggle(){
+  if(!COOP.code||!COOP.room){coopNote('先進房間');return}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||!window.RTCPeerConnection){voErr('這個瀏覽器不支援語音');return}
+  if(VO.on){VO.on=false;if(VO.ms)VO.ms.getTracks().forEach(t=>t.stop());VO.ms=null;await voUseMic();voMicEv(0);voRedraw();return}
+  try{VO.ms=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}
+  catch(e){voErr('沒有拿到麥克風權限（請在瀏覽器允許麥克風）');return}
+  VO.on=true;VO.err='';voPlay();
+  if(voLive())await voUseMic();else if(coHost())voOffer().catch(e=>{console.warn(e);voErr('語音連線失敗')});else voReq();
+  voMicEv(1);voRedraw()}
+function voMicEv(d){if(!COOP.code||!CL.api)return;COOP.w++;CL.api.coopSend(COOP.code,CL.user.uid,'mic',d,'').catch(e=>console.warn('vo mic',e))}
+function voTalk(){return VO.lvl>.02}
+function voStop(){voClosePc();clearTimeout(VO.retryT);clearTimeout(VO.reqT);if(VO.ms)VO.ms.getTracks().forEach(t=>t.stop());VO.ms=null;VO.on=false;VO.peerOn=false;VO.n=0;VO.ans=0;VO.err='';VO.needTap=0;if(VO.au){VO.au.srcObject=null;VO.au.remove();VO.au=null}}
+function voPeerTxt(){return VO.peerOn?(voTalk()?'對方🔊說話中':(VO.st==='connected'?'對方🎤開著':'語音連線中…')):'對方🔇'}
+function voGameBtns(){return `<button class="cob" data-co="mic" style="min-height:26px;min-width:0;padding:0 8px;${VO.on?'background:#2f6b2a;border-color:#7ed957':''}">${VO.on?'🎙️ 麥克風開著':'🎤 開麥克風'}</button><span style="font-size:12px;opacity:.85">${voPeerTxt()}</span>${VO.needTap?'<button class="cob" data-co="vplay" style="min-height:26px;min-width:0;padding:0 8px;background:#7a4a10">🔈 點這裡聽對方</button>':''}${VO.err?`<span style="font-size:11px;color:#ff9b8a">${esc(VO.err)}</span>`:''}`}
+function voLobbyLine(){return `<div class="lbme"><span>語音：${VO.on?'🎙️ 你的麥克風開著':'🎤 你的麥克風關著'}</span><span>${voPeerTxt()}</span></div>${VO.err?`<p class="lbdesc" style="color:#c0392b">${esc(VO.err)}</p>`:''}${VO.needTap?'<p class="lbdesc">對方在說話，但瀏覽器擋住了聲音 — 點「🔈 聽對方」。</p>':''}`}
+function voLobbyBtns(){return `<button class="btn alt" data-act="coopmic">${VO.on?'🎙️ 關麥克風':'🎤 開麥克風'}</button>${VO.needTap?'<button class="btn alt" data-act="coopvplay">🔈 聽對方</button>':''}`}
 </script>
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{}));</script>
 </body>
