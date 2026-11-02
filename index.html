@@ -437,7 +437,7 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 .lbdesc{font-size:13px!important;color:#7a4a2a}
 .lblist{display:flex;flex-direction:column;gap:4px;min-height:120px}
 .lbrow{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:8px;background:#f6ead0;border-radius:10px;padding:6px 12px;font-size:15px}
-.frrow{grid-template-columns:44px 1fr auto auto auto}.frrow .frb{font-size:13px;padding:4px 8px;min-width:0}.frv{grid-template-columns:1fr auto}
+.frrow{grid-template-columns:44px 1fr auto auto auto auto}.frrow.co{grid-template-columns:44px 1fr auto auto auto auto auto}.frrow .frb{font-size:13px;padding:4px 8px;min-width:0}.frrow .frx{padding:4px 7px;color:#b3341f}.frv{grid-template-columns:1fr auto}
 .lbrow b{font-family:var(--f-disp);font-weight:400;color:#7a4a2a;text-align:center;font-size:18px;line-height:1}
 .card>*{flex-shrink:0}
 /* mobile legibility: stage is scaled down (--s), so enlarge modal text by --fz (1 on desktop) */
@@ -4381,8 +4381,8 @@ function frDraw(){FR.view='list';if(!HOME||LB.tab!=='fr')return;
   const rows=ids.map(k=>Object.assign({uid:k},D.lbs[k]||{}));rows.push({uid:me.uid,me:1,name:mine.name,best:mine.best,earned:mine.earned,rt:(shopRate(load()||{})||{}).rt});
   rows.sort((x,y)=>(y[FR.sort]||0)-(x[FR.sort]||0));
   const sum=D.pend.reduce((s,f)=>s+D.gifts[f].a,0);
-  const list=rows.map((x,i)=>{const act=x.me?'':(coopDev()?`<button class="btn alt frb" data-act="coopmake" data-id="${esc(x.uid)}">${T('一起開店')}</button>`:'')+`<button class="btn alt frb" data-act="frvisit" data-id="${esc(x.uid)}">${T('參觀')}</button><button class="btn alt frb" data-act="frgift" data-id="${esc(x.uid)}" ${(r.frG||{})[x.uid]===today?'disabled':''}>🎁</button>`;
-    return `<div class="lbrow frrow ${x.me?'me':''}"><b>${i<3?['🥇','🥈','🥉'][i]:i+1}</b><span>${esc(x.name||T('玩家'))}${rtTag(x.rt)}</span><em>${yen(x[FR.sort]||0)}</em>${act}</div>`}).join('');
+  const list=rows.map((x,i)=>{const act=x.me?'':(coopDev()?`<button class="btn alt frb" data-act="coopmake" data-id="${esc(x.uid)}">${T('一起開店')}</button>`:'')+`<button class="btn alt frb" data-act="frvisit" data-id="${esc(x.uid)}">${T('參觀')}</button><button class="btn alt frb" data-act="frgift" data-id="${esc(x.uid)}" ${(r.frG||{})[x.uid]===today?'disabled':''}>🎁</button><button class="btn alt frb frx" data-act="frdel" data-id="${esc(x.uid)}" aria-label="${esc(T('移除好友'))}" title="${esc(T('移除好友'))}">✕</button>`;
+    return `<div class="lbrow frrow ${x.me?'me':''} ${coopDev()?'co':''}"><b>${i<3?['🥇','🥈','🥉'][i]:i+1}</b><span>${esc(x.name||T('玩家'))}${rtTag(x.rt)}</span><em>${yen(x[FR.sort]||0)}</em>${act}</div>`}).join('');
   const unsent=ids.filter(k=>(r.frG||{})[k]!==today).length;
   modal(lbHead(tb)+(D.pend.length?`<div class="lbme"><span>🎁 ${T('收到 {0} 份禮物，共 {1}',D.pend.length,yen(sum))}</span><button class="btn" data-act="frclaim">${T('一鍵領取')}</button></div>`:'')
    +(ids.length?`<div class="lbme"><span>${unsent?T('今天還可送 {0} 位好友',unsent):T('今天已經全部送過了')}</span><button class="btn" data-act="frgiftall" ${unsent?'':'disabled'}>${T('一鍵送禮')}</button></div>`:'')
