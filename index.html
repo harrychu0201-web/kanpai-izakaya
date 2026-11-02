@@ -5072,7 +5072,7 @@ function cxParts(S,now,L){const tw=L.warm[2],n=CO_WARM,sw=(tw-8)/n,ic=Math.min(5
   const h=S.hd.k,hd=h?cxIcon(h.k,h.s==='raw'?'raw':h.s==='burnt'?'burnt':'done')+`<b>${CO_FOOD[h.k].n}${coTag(h.s)?'·'+coTag(h.s):''}</b>`:`<span style="font-size:30px;opacity:.35">✋</span><b style="opacity:.5">空手</b>`;
   const cd=Math.max(0,Math.ceil((CO_SAKE_CD-(now-S.skc))/1000));
   return {wm,gr,fr,hd,sk:'送清酒'+(cd>0&&S.skc?`（${cd}s）`:'')}}
-const CX_LAY={L:{W:900,H:330,warm:[170,4,560,54],grill:[136,80],rawN:[400,78,92,112],rawT:[400,204,92,112],fry:[512,80],rawC:[506,214,150,66],hand:[680,80,206,124],sake:[16,84,104,112],trash:[680,226,206,82],hint:[16,214,108]},
+const CX_LAY={L:{W:784,H:268,warm:[150,4,480,54],grill:[104,70],rawN:[366,70,82,86],rawT:[366,166,82,86],fry:[458,70],rawC:[454,200,144,56],hand:[608,70,170,116],sake:[8,72,88,92],trash:[608,196,170,58],hint:[8,176,92]},
   P:{W:400,H:560,warm:[8,4,384,54],grill:[8,80],rawN:[272,78,120,92],rawT:[272,180,120,92],fry:[8,290],rawC:[150,292,140,62],hand:[150,372,242,96],sake:[300,282,92,84],trash:[8,430,136,56],hint:[8,500,384]}};
 function coKitchenPaint(mn,S,now){const lay=mn.clientWidth>=mn.clientHeight*1.1?'L':'P',L=CX_LAY[lay];
   if(CO.kLay!==lay||CO.lastHtml!=='#k'||!mn.querySelector('.cxk')){mn.innerHTML='<div class="cofit">'+cxSkel(L)+'</div>';CO.kLay=lay;CO.kParts={};CO.lastHtml='#k'}
@@ -5116,7 +5116,7 @@ function coFit(){const m=document.getElementById('comain'),w=m&&m.querySelector(
   const key=aw+'x'+ah+'|'+(k?k.style.width+k.style.height:'f'),t=Date.now();
   if(w.dataset.fk===key&&w.style.zoom&&(k||t-(+w.dataset.ft||0)<1500))return;
   let nw,nh;if(k){nw=parseFloat(k.style.width)+6;nh=parseFloat(k.style.height)+6}else{w.style.zoom='1';nw=w.offsetWidth;nh=w.offsetHeight}
-  if(!nw||!nh)return;const z=String(Math.max(.3,Math.min((aw-16)/nw,(ah-12)/nh,1.6)).toFixed(3));if(w.style.zoom!==z)w.style.zoom=z;w.dataset.fk=key;w.dataset.ft=t}
+  if(!nw||!nh)return;const z=String(Math.max(.3,Math.min((aw-16)/nw,(ah-12)/nh,k?2:1.6)).toFixed(3));if(w.style.zoom!==z)w.style.zoom=z;w.dataset.fk=key;w.dataset.ft=t}
 function coGraceBar(ov){let g=document.getElementById('cograce');if(!g){g=document.createElement('div');g.id='cograce';g.style.cssText='position:absolute;left:50%;top:44px;transform:translateX(-50%);z-index:5;background:#7a1f12;color:#fff;border:2px solid #ffb36b;border-radius:10px;padding:6px 14px;font-size:14px;font-weight:700;pointer-events:none;white-space:nowrap;box-shadow:0 4px 14px #0008';ov.appendChild(g)}
   const left=COOP.graceWho?Math.max(0,Math.ceil((COOP.graceEnd-Date.now())/1000)):0;
   if(left>0){g.textContent=`📡 對方斷線了，遊戲暫停，等他回來…（${left} 秒）`;g.style.display=''}else g.style.display='none'}
@@ -5183,9 +5183,10 @@ function coStyle(){if(document.getElementById('costyle'))return;const s=document
 #cogame .cxbar{position:absolute;left:4px;right:4px;bottom:3px;height:7px;background:#000a;border-radius:4px;overflow:hidden;pointer-events:none}#cogame .cxbar>i{display:block;height:100%}
 #cogame .cxburn{position:absolute;left:50%;top:2px;transform:translateX(-50%);font-size:11px;color:#fff;background:#000c;padding:0 4px;border-radius:4px;white-space:nowrap;pointer-events:none}
 #cogame .cxfi{display:block;flex:none;pointer-events:none}#cogame .cxfi svg{width:100%;height:100%;display:block}#cogame .cxwi{position:absolute;pointer-events:none}#cogame .cxwi svg{width:100%;height:100%}
-#cogame .cxhand{position:absolute;background:#f6ead2;border:3px solid #3a2318;border-radius:12px;color:#5a3418;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:14px;padding-bottom:8px}#cogame .cxhand svg{width:64px;height:64px}
+#cogame .cxhand{position:absolute;background:#f6ead2;border:3px solid #3a2318;border-radius:12px;color:#5a3418;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-size:14px;padding-bottom:16px}#cogame .cxhand svg{width:56px;height:56px}
 #cogame .cxpart{position:absolute;inset:0;pointer-events:none}#cogame .cxpart>*{pointer-events:auto}#cogame .cxpart .cxwi,#cogame .cxpart .cxl{pointer-events:none}#cogame .cxhp{display:flex;flex-direction:column;align-items:center;gap:2px}#cogame .cxhint{position:absolute;color:#f3dfb4;opacity:.8;font-size:12px;line-height:1.4}
-@media (max-height:460px){#cogame .cobot{gap:2px;padding:3px 8px}#cogame .cosh .cob{min-height:26px!important;font-size:11px!important;padding:1px 8px!important}#cogame .cochat{height:4.2em;font-size:15px;line-height:1.35}#cogame .cobin input{padding:2px 8px}#cogame .cobin .cob{min-height:30px!important}#cogame .cotop{padding:2px 8px}#cogame .cok2{padding:6px;gap:6px}}
+@media (min-aspect-ratio:3/2) and (max-height:760px){#cogame .cochat{height:2.8em;font-size:14px;line-height:1.35}}
+@media (max-height:460px){#cogame .cobot{gap:2px;padding:3px 8px}#cogame .cosh .cob{min-height:26px!important;font-size:11px!important;padding:1px 8px!important}#cogame .cochat{height:2.8em;font-size:14px;line-height:1.35}#cogame .cobin input{padding:2px 8px}#cogame .cobin .cob{min-height:30px!important}#cogame .cotop{padding:2px 8px}#cogame .cok2{padding:6px;gap:6px}}
 #cofx{position:fixed;left:50%;top:44px;transform:translateX(-50%);z-index:8600;background:#3b2314;color:#f3dfb4;border:2px solid #ffb36b;border-radius:10px;padding:6px 14px;font-size:15px;pointer-events:none;opacity:0;transition:opacity .2s}`;
   document.head.appendChild(s)}
 /* ---- voice chat (WebRTC P2P, signaling via rooms/<code>/rtc/<uid>) ---- */
