@@ -3462,6 +3462,7 @@ document.addEventListener('click',e=>{
   else if(act==='lbman')showLbMan();
   else if(act==='lbmansave')saveLbMan();
   else if(act==='lbmandel')delLbMan(a.dataset.id);
+  else if(act==='lbunflag')saveUnflag();
   else if(act==='chlb'){LB.ch=1;LB.tab=a.dataset.id==='chalh'?'chalh':'chal';delete LB.cache[LB.tab];showLB()}
   else if(act==='chback'){LB.ch=0;if(CHEND&&R&&R.over)modal(CHEND);else closeModal()}
   else if(act==='frhome'){LB.tab='fr';showLB()}
@@ -4327,6 +4328,7 @@ async function cloudInit(){
       putLb:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lb/'+uid),d)),
       lbMan:()=>rt((rd,r)=>rd.get(rd.ref(r,'notice/lbman')).then(s=>s.val()||{})),
       setLbMan:(k,d)=>rt((rd,r)=>rd.set(rd.ref(r,'notice/lbman/'+k),d)),
+      setUnflag:(k,d)=>rt((rd,r)=>rd.set(rd.ref(r,'notice/unflag/'+k),d)),
       // friends: a public shop snapshot (lbx), friend codes, friend lists, daily gifts
       putLbx:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lbx/'+uid),d)),
       onlineBeat:(uid,off)=>rt((rd,r)=>rd.set(rd.ref(r,'online/'+uid),off?{t:rd.serverTimestamp(),off:true}:{t:rd.serverTimestamp()})),
@@ -4546,12 +4548,12 @@ const LB={tab:'best',cache:{},last:null,ch:0};let CHEND='';
 /* nicknames with these words are rejected by database.rules.json (chat/lb/lbx name), so block them here too instead of failing silently; the owner account is exempt like in the rules */
 const NICK_BAD=/作者|站長|站长|客服|官方|admin/i;
 const nickBad=v=>!!v&&NICK_BAD.test(v)&&!(CL.user&&CL.user.email===ADMIN_EMAIL);
-(function(){const A={'zh-Hans':['你的昵称「{0}」含有保留字（作者、官方、admin 等），无法上榜或聊天，请换个名字。','昵称不能包含“作者”“官方”“admin”等保留字','排行榜上传失败：{0}','这个存档用过测试面板的功能，不会上排行榜。'],
-'en':['Your nickname "{0}" contains a reserved word (admin, author, official, etc.), so you can\'t be on the leaderboard or chat. Please pick another name.','Nicknames can\'t contain reserved words like "admin", "author" or "official".','Leaderboard upload failed: {0}','This save has used test panel tools, so it won\'t appear on the leaderboard.'],
-'ja':['ニックネーム「{0}」に予約語（作者・公式・admin など）が含まれているため、ランキングやチャットを利用できません。別の名前にしてください。','ニックネームに「作者」「公式」「admin」などの予約語は使えません','ランキングへの送信に失敗しました：{0}','このセーブはテストパネルの機能を使ったため、ランキングに載りません。'],
-'ko':['닉네임 "{0}"에 예약어(작가, 공식, admin 등)가 들어 있어 랭킹과 채팅을 이용할 수 없어요. 다른 이름으로 바꿔 주세요.','닉네임에 "작가", "공식", "admin" 같은 예약어는 쓸 수 없어요','랭킹 업로드 실패: {0}','이 저장 데이터는 테스트 패널 기능을 사용해서 랭킹에 오르지 않아요.'],
-'id':['Nama panggilan "{0}" mengandung kata terlarang (admin, penulis, resmi, dll.), jadi tidak bisa masuk papan peringkat atau chat. Silakan ganti nama.','Nama panggilan tidak boleh mengandung kata terlarang seperti "admin", "penulis", atau "resmi".','Gagal mengunggah ke papan peringkat: {0}','Simpanan ini pernah memakai fitur panel tes, jadi tidak masuk papan peringkat.']};
-for(const l in A){if(I18N[l])Object.assign(I18N[l],{'你的暱稱「{0}」含有保留字（作者、官方、admin 等），無法上榜或聊天，請改個名字。':A[l][0],'排行榜上傳失敗：{0}':A[l][2],'這個存檔用過測試面板的功能，不會上排行榜。':A[l][3],'暱稱不能包含「作者」「官方」「admin」等保留字':A[l][1]})}})();
+(function(){const A={'zh-Hans':['你的昵称「{0}」含有保留字（作者、官方、admin 等），无法上榜或聊天，请换个名字。','昵称不能包含“作者”“官方”“admin”等保留字','排行榜上传失败：{0}','这个存档用过测试面板的功能，不会上排行榜。','作者已帮你恢复上排行榜的资格！'],
+'en':['Your nickname "{0}" contains a reserved word (admin, author, official, etc.), so you can\'t be on the leaderboard or chat. Please pick another name.','Nicknames can\'t contain reserved words like "admin", "author" or "official".','Leaderboard upload failed: {0}','This save has used test panel tools, so it won\'t appear on the leaderboard.','The author restored your save\'s leaderboard eligibility!'],
+'ja':['ニックネーム「{0}」に予約語（作者・公式・admin など）が含まれているため、ランキングやチャットを利用できません。別の名前にしてください。','ニックネームに「作者」「公式」「admin」などの予約語は使えません','ランキングへの送信に失敗しました：{0}','このセーブはテストパネルの機能を使ったため、ランキングに載りません。','作者がランキング参加資格を戻してくれました！'],
+'ko':['닉네임 "{0}"에 예약어(작가, 공식, admin 등)가 들어 있어 랭킹과 채팅을 이용할 수 없어요. 다른 이름으로 바꿔 주세요.','닉네임에 "작가", "공식", "admin" 같은 예약어는 쓸 수 없어요','랭킹 업로드 실패: {0}','이 저장 데이터는 테스트 패널 기능을 사용해서 랭킹에 오르지 않아요.','작가가 랭킹 참가 자격을 되돌려 줬어요!'],
+'id':['Nama panggilan "{0}" mengandung kata terlarang (admin, penulis, resmi, dll.), jadi tidak bisa masuk papan peringkat atau chat. Silakan ganti nama.','Nama panggilan tidak boleh mengandung kata terlarang seperti "admin", "penulis", atau "resmi".','Gagal mengunggah ke papan peringkat: {0}','Simpanan ini pernah memakai fitur panel tes, jadi tidak masuk papan peringkat.','Penulis sudah memulihkan hakmu masuk papan peringkat!']};
+for(const l in A){if(I18N[l])Object.assign(I18N[l],{'你的暱稱「{0}」含有保留字（作者、官方、admin 等），無法上榜或聊天，請改個名字。':A[l][0],'排行榜上傳失敗：{0}':A[l][2],'作者已幫你恢復上排行榜的資格！':A[l][4],'這個存檔用過測試面板的功能，不會上排行榜。':A[l][3],'暱稱不能包含「作者」「官方」「admin」等保留字':A[l][1]})}})();
 function lbEntry(){const r=loadRec();
   if(!r.nick||nickBad(r.nick))return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.maxDay>0)d.days=Math.round(r.maxDay);if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;return d}
 async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return} /* a save touched by the author test tools never goes on the leaderboard */
@@ -4583,7 +4585,11 @@ async function showLbMan(){if(!isAdmin())return;modal(`<h2>手動登錄成績</h
   <p id="lmtime"><input id="lmm" type="number" min="0" inputmode="numeric" style="width:90px;font-size:16px"> 分 <input id="lms" type="number" min="0" max="59" inputmode="numeric" style="width:90px;font-size:16px"> 秒</p>
   <p id="lmnum" hidden><input id="lmv" type="number" min="0" inputmode="numeric" style="width:200px;font-size:16px"> <span id="lmunit"></span></p>
   <p id="lmerr" style="color:#e0412c;font-size:14px" hidden></p>
-  <div class="btns"><button class="btn" data-act="lbmansave">儲存</button><button class="btn alt" data-act="lb">返回排行榜</button></div>`);
+  <div class="btns"><button class="btn" data-act="lbmansave">儲存</button><button class="btn alt" data-act="lb">返回排行榜</button></div>
+  <hr style="border:0;border-top:1px dashed #c9a77a;margin:14px 0">
+  <h3 style="margin:0 0 6px">清除測試標記</h3><p style="font-size:14px">玩家的存檔如果用過測試面板，就永遠不會上榜。輸入他的暱稱按「清除」，他下次打開遊戲時標記就會消失，之後成績會自動上傳。</p>
+  <p><input class="nickin" id="ufname" maxlength="24" placeholder="玩家暱稱" autocomplete="off"></p><p id="uferr" style="color:#e0412c;font-size:14px" hidden></p>
+  <div class="btns"><button class="btn" data-act="lbunflag">清除</button></div>`);
   const sel=$('lmf');if(!sel)return;const upd=()=>{const t=LBMAN_F.find(x=>x[0]===sel.value);$('lmtime').hidden=!t[2];$('lmnum').hidden=!!t[2];$('lmunit').textContent=sel.value==='days'?'天':sel.value==='dex'?'種':'円'};sel.onchange=upd;upd()}
 async function saveLbMan(){if(!isAdmin())return;const err=x=>{const e=$('lmerr');if(e){e.textContent=x;e.hidden=false}};
   const name=(($('lmname')||{}).value||'').replace(/[<>\u0000-\u001f]/g,'').trim().slice(0,24),f=($('lmf')||{}).value,t=LBMAN_F.find(x=>x[0]===f);
@@ -4593,6 +4599,10 @@ async function saveLbMan(){if(!isAdmin())return;const err=x=>{const e=$('lmerr')
   const k=name.replace(/[.#$\[\]\/]/g,'_');
   try{const man=await CL.api.lbMan();await CL.api.setLbMan(k,Object.assign({},man[k]||{},{name,[f]:v,at:Date.now()}));LB.cache={};toast('已登錄：'+name+' '+t[1]+' '+lbVal(f,v));showLbMan()}
   catch(e){err('儲存失敗：'+String((e&&(e.code||e.message))||e))}}
+async function saveUnflag(){if(!isAdmin())return;const name=(($('ufname')||{}).value||'').replace(/[<>\u0000-\u001f]/g,'').trim().slice(0,24);
+  const err=x=>{const e=$('uferr');if(e){e.textContent=x;e.hidden=false}};if(!name)return err('請輸入玩家暱稱');
+  try{await CL.api.setUnflag(lmNm(name).replace(/[.#$\[\]\/]/g,'_')||'_',{name,t:Date.now()});toast('已送出：'+name+' 下次打開遊戲就會恢復');const i=$('ufname');if(i)i.value=''}
+  catch(e){err('送出失敗：'+String((e&&(e.code||e.message))||e))}}
 async function delLbMan(k){if(!isAdmin()||!k)return;try{await CL.api.setLbMan(k,null);LB.cache={};toast('已刪除');showLbMan()}catch(e){toast('刪除失敗')}}
 async function showLB(){if(LB.tab==='fr')return showFriends();
   const tb=LBT.find(x=>x[0]===LB.tab),me=CL.user,mine=lbEntry();
@@ -4803,7 +4813,12 @@ async function noticeDelete(id){const n=noticeAll().find(x=>x.id===String(id));i
    Give each new built-in notice an 'at' (its real release time), or any in-game notice from earlier that same day hides it. */
 function noticeTime(id){id=String(id||'');const t=/^\d{4}-\d\d-\d\dT\d\d:\d\d/.test(id)?Date.parse(id.slice(0,16)+'Z'):Date.parse(id.slice(0,10)+'T00:00:00+08:00');return isNaN(t)?0:t}
 function noticeClean(x){const o={id:String(x.id),title:x.title?String(x.title):'',text:String(x.text),sign:x.sign?String(x.sign):''};if(x.at)o.at=String(x.at);if(x.edited)o.edited=+x.edited;return o}
-async function noticeRemote(){try{const d=await CL.api.notice();const del=d&&d.del&&typeof d.del==='object'?d.del:{};NOTICE_DEL=del;try{localStorage.setItem('izakaya-notice-del',JSON.stringify(del))}catch(e){}
+function unflagApply(u){if(TEST||!u||typeof u!=='object')return;const nick=lmNm(loadRec().nick);if(!nick)return;
+  let t=0;Object.keys(u).forEach(k=>{const x=u[k];if(x&&lmNm(x.name)===nick&&typeof x.t==='number')t=Math.max(t,x.t)});if(!t)return;
+  let o=null;try{o=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(!o||!o.cheat||(o.cheatAt||0)>t)return;
+  delete o.cheat;delete o.cheatAt;lsSet(KEY,JSON.stringify(o));if(typeof ST==='object'&&ST){delete ST.cheat;delete ST.cheatAt}
+  LB.last=null;LB.cache={};if(CL.user)cloudUpload(true).catch(()=>{});toast(T('作者已幫你恢復上排行榜的資格！'))}
+async function noticeRemote(){try{const d=await CL.api.notice();try{if(d&&d.unflag)unflagApply(d.unflag)}catch(e){}const del=d&&d.del&&typeof d.del==='object'?d.del:{};NOTICE_DEL=del;try{localStorage.setItem('izakaya-notice-del',JSON.stringify(del))}catch(e){}
   if(!d){NOTICE_HIST={};NOTICE=noticeAll()[0]||null;NOTICE_REMOTE=false;noticePop();return}const h={};
   if(d.hist&&typeof d.hist==='object')Object.keys(d.hist).forEach(k=>{const x=d.hist[k];if(x&&x.id&&x.text){const c=noticeClean(x);h[c.id]=c}});
   // the single latest post from before the history existed
@@ -5092,7 +5107,10 @@ function tstSet(on,copy){
     TEST=true;KEY=TKEY;RKEY=TRKEY;const r=loadRec();if(!r.tut){r.tut=true;saveRec(r)}}
   else{TEST=false;TSPD=1;KEY=REAL_KEY;RKEY=REAL_RKEY;if(CL.user){if(CL.synced)cloudUpload(true);else cloudSync()}}
   LB.cache={};tstBadge();showHome()}
-function tstEdit(fn){const o=load()||fresh();if(!TEST&&!o.cheat){slBackup(lsGet(KEY),'cheat');o.cheat=1}fn(o);lsSet(KEY,JSON.stringify(o));if(!TEST)touchLocal();showHome();tstPanel()}
+let TSTPEND=null;
+function tstEdit(fn,ok){const o=load()||fresh();
+  if(!TEST&&!o.cheat&&!isAdmin()&&!ok){TSTPEND=fn;modal(`<h2>⚠️ 注意</h2><p>這是測試功能。用了之後，<b>這個存檔就不會再上排行榜</b>（所有分頁都不會）。</p><p style="font-size:14px">只是想測試的話，建議改用「另開獨立測試存檔」，正式存檔就不受影響。</p><div class="btns"><button class="btn" data-act="tstcheatok">我知道，還是要用</button><button class="btn alt" data-act="tstpanel">取消</button></div>`);return}
+  if(!TEST&&!o.cheat){slBackup(lsGet(KEY),'cheat');o.cheat=1;o.cheatAt=Date.now()}fn(o);lsSet(KEY,JSON.stringify(o));if(!TEST)touchLocal();showHome();tstPanel()}
 function tstPanel(){
   const o=load(),f=(o&&o.tforce)||{};
   modal(`<h2>🧪 測試面板</h2><div class="tstp">
@@ -5112,6 +5130,7 @@ function tstPanel(){
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act^="tst"]');if(!a)return;const act=a.dataset.act;
   if(!TEST&&!isTester())return;
   if(act==='tstpanel'){if(!HOME){toast('回到主畫面再開測試面板');return}tstPanel()}
+  else if(act==='tstcheatok'){const f=TSTPEND;TSTPEND=null;if(f)tstEdit(f,true);else tstPanel()}
   else if(act==='tston')tstSet(true,false);
   else if(act==='tstcopy'){if(CL.pick){toast('先選好要用哪份存檔');return}tstSet(true,true)}
   else if(act==='tstoff')tstSet(false);
