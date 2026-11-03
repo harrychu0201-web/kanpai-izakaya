@@ -5435,7 +5435,9 @@ function coOpen(){if(CO.open)return;CO.open=true;
   CO.fxSeen=CO.S&&CO.S.fx?CO.S.fx.id:0;CO.lastHtml='';coChatFill();coPaint();clearInterval(CO.paintT);CO.paintT=setInterval(coPaint,200)}
 function coClose(user){const S=CO.S;CO.open=false;clearInterval(CO.paintT);CO.paintT=null;
   if(coHost()){clearInterval(CO.tickT);CO.tickT=null;if(user&&COOP.code&&CL.api&&COOP.room&&COOP.room.state==='playing'){CO.L={lobby:1,hk:'k',rd:{h:0,g:0}};coLobbyPush();CL.api.coopState(COOP.code,'lobby').catch(()=>{})}}
-  CO.closedRid=S?S.rid:0;const ov=document.getElementById('cogame');if(ov)ov.remove();if(typeof coopRender==='function')coopRender()}
+  CO.closedRid=S?S.rid:0;const ov=document.getElementById('cogame');if(ov)ov.remove();if(typeof coopRender==='function')coopRender();
+  /* 回到房間：關掉遊戲後直接打開連線房間面板，不要讓人看起來像被丟回首頁 */
+  setTimeout(()=>{if(!CO.open&&COOP.code&&COOP.room&&COOP.room.state!=='ended'&&typeof coopPanel==='function'&&!document.getElementById('coopmark')&&typeof HOME!=='undefined'&&HOME)coopPanel()},150)}
 
 /* ---------- input ---------- */
 function coTap(cmd){const S=CO.S;if(!S)return;
@@ -5616,7 +5618,7 @@ function coResult(S){const me=coRole(),other=me==='k'?'f':'k',rd=S.rd||{h:0,g:0}
 function cxSync(a,b){const an=a.childNodes,bn=b.childNodes;
   if(an.length!==bn.length){a.replaceChildren(...[...bn].map(n=>n.cloneNode(true)));return}
   for(let i=0;i<bn.length;i++){const x=an[i],y=bn[i];
-    if(x.nodeType!==y.nodeType||x.nodeName!==y.nodeName){a.replaceChild(y.cloneNode(true),x);continue}
+    if(x.nodeType!==y.nodeType||x.nodeName!==y.nodeName||(x.nodeType===1&&x.classList.contains('cofit')!==y.classList.contains('cofit'))){a.replaceChild(y.cloneNode(true),x);continue}
     if(x.nodeType===3){if(x.data!==y.data)x.data=y.data;continue}
     if(x.nodeType!==1||x.isEqualNode(y))continue;
     for(const at of [...x.attributes])if(at.name!=='style'||!x.classList.contains('cofit'))if(!y.hasAttribute(at.name))x.removeAttribute(at.name);
