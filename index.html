@@ -5297,8 +5297,9 @@ async function coStart(){if(!coHost()||!COOP.code||!CL.api)return;if(!coBothRdy(
   try{if(!COOP.room||COOP.room.state!=='playing')await CL.api.coopState(COOP.code,'playing')}catch(e){console.warn('co state',e)}
   coOpen();clearInterval(CO.tickT);CO.tickT=setInterval(coTick,250)}
 function coStale(e){return typeof e.t==='number'&&COOP.attachT&&e.t<COOP.attachT-1500}
-function coHostAct(e){if(!coHost()||!CO.S||CO.S.over)return;if(CO.seen[e.id])return;CO.seen[e.id]=1;if(coStale(e))return;
+function coHostAct(e){if(!coHost()||!CO.S)return;if(CO.seen[e.id])return;CO.seen[e.id]=1;if(coStale(e))return;
   if(!COOP.room||e.from!==COOP.room.guest)return;const m=/^g(\d+)\|(.+)$/.exec(e.txt||'');if(!m||+m[1]!==CO.S.rid)return;
+  if(m[2]==='back'){if(CO.S.over&&CO.open)coClose(true);return}if(CO.S.over)return;
   coApply(CO.S.hk==='k'?'f':'k',m[2]);coPush();coPaint()}
 
 
@@ -5363,7 +5364,7 @@ function coClose(user){const S=CO.S;CO.open=false;clearInterval(CO.paintT);CO.pa
 /* ---------- input ---------- */
 function coTap(cmd){const S=CO.S;if(!S)return;
   if(cmd==='say'){coSay();return}
-  if(cmd==='back'){if(coHost())coClose(true);return}
+  if(cmd==='back'){if(!S.over)return;if(coHost())coClose(true);else if(CL.api&&COOP.code){COOP.w++;CL.api.coopSend(COOP.code,CL.user.uid,'act',0,'g'+S.rid+'|back').catch(e=>console.warn('co back',e));coClose(false)}return}
   if(cmd==='go'){if(coHost()&&S.over)coStart();return}
   if(cmd==='mic'){coVoiceToggle();return}
   if(cmd==='vplay'){voPlay();return}
@@ -5532,7 +5533,7 @@ function coResult(S){const me=coRole(),other=me==='k'?'f':'k',win=S.why==='time'
    <p>我的錢包：<b>¥${Math.round(S.w[me])}</b>　對方：<b>¥${Math.round(S.w[other])}</b></p>
    <p class="cohint">這局的錢只在本局有效，不會進存檔或排行榜。</p>
    <p>我：${rd[a]?'✅ 已準備':'⏳ 未準備'}　對方：${rd[b]?'✅ 已準備':'⏳ 未準備'}</p>
-   <div class="corow" style="justify-content:center"><button class="cob" data-co="rdy" style="min-width:150px">${rd[a]?'已準備（再按取消）':'🙋 準備再來一局'}</button>${coHost()?`<button class="cob" data-co="go" style="min-width:120px${rd.h&&rd.g?'':';opacity:.4'}">▶ 開始下一局</button><button class="cob" data-co="back" style="min-width:90px">返回大廳</button>`:''}</div><p class="cohint">${coHost()?'雙方都準備好後，按「開始下一局」。':'雙方都準備好後，等房主按開始。房主按「返回大廳」你會回到連線面板。'}</p></div>`}
+   <div class="corow" style="justify-content:center"><button class="cob" data-co="rdy" style="min-width:150px">${rd[a]?'已準備（再按取消）':'🙋 準備再來一局'}</button>${coHost()?`<button class="cob" data-co="go" style="min-width:120px${rd.h&&rd.g?'':';opacity:.4'}">▶ 開始下一局</button>`:''}<button class="cob" data-co="back" style="min-width:110px">🏠 回到房間</button></div><p class="cohint">${coHost()?'雙方都準備好後，按「開始下一局」。':'雙方都準備好後，等房主按開始。'}任一方按「回到房間」，兩人都會回到連線房間。</p></div>`}
 function cxSync(a,b){const an=a.childNodes,bn=b.childNodes;
   if(an.length!==bn.length){a.replaceChildren(...[...bn].map(n=>n.cloneNode(true)));return}
   for(let i=0;i<bn.length;i++){const x=an[i],y=bn[i];
@@ -5544,7 +5545,7 @@ function cxSync(a,b){const an=a.childNodes,bn=b.childNodes;
     cxSync(x,y)}}
 function coPatch(el,html){const t=document.createElement('template');t.innerHTML=html;cxSync(el,t.content)}
 function coFit(){const m=document.getElementById('comain'),w=m&&m.querySelector('.cofit');if(!w)return;const aw=m.clientWidth,ah=m.clientHeight;if(!aw||!ah)return;
-  const k=w.querySelector('.cxk'),land=aw>=ah*1.2||!!k,mode=land?'fit':'flow';if(m.dataset.m!==mode)m.dataset.m=mode;
+  const k=w.querySelector('.cxk'),land=aw>=ah*1.2||!!k,mode=land?'fit':'flow';if(m.dataset.m!==mode)m.dataset.m=mode;{const ai=k?'flex-start':'';if(m.style.alignItems!==ai)m.style.alignItems=ai}
   if(!land){if(w.style.zoom)w.style.zoom='';return}
   const key=aw+'x'+ah+'|'+(k?k.style.width+k.style.height:'f'),t=Date.now();
   if(w.dataset.fk===key&&w.style.zoom&&(k||t-(+w.dataset.ft||0)<1500))return;
@@ -5625,9 +5626,9 @@ function coStyle(){if(document.getElementById('costyle'))return;const s=document
 #cogame .cosh{grid-area:sh;background:#1b0e07;padding:4px 8px 2px}#cogame .cobin{grid-area:in;background:#1b0e07;padding:2px 8px 4px}
 #comain[data-m=fit] .cof .corow,#comain[data-m=fit] .cof .cobtm{flex-wrap:nowrap}#cogame .cochat{grid-area:chat;height:auto;min-height:0;margin:6px 8px 6px 0;font-size:15px;line-height:1.4;border:2px solid #4a2c19}}
 @media (min-aspect-ratio:4/3) and (max-height:540px){
-#cogame{grid-template-columns:minmax(0,1fr) clamp(168px,20vw,300px);grid-template-rows:auto auto minmax(0,1fr) auto;grid-template-areas:"top top" "main sh" "main chat" "main in"}
-#cogame .cosh{flex-wrap:wrap;white-space:normal;overflow-x:hidden;overflow-y:auto;max-height:40vh;padding:4px 6px;align-content:flex-start}#cogame .cosh .cob{flex:1 1 auto}
-#cogame .cochat{margin:4px 6px;font-size:14px}#cogame .cobin{padding:2px 6px 4px}#cogame .cobin .cob{min-width:48px!important}#comain{padding:2px 4px}}
+#cogame{grid-template-columns:minmax(0,1fr) clamp(168px,20vw,300px);grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"top top" "main chat" "sh in"}
+#cogame .cosh{padding:3px 6px;align-items:center;overscroll-behavior:contain;touch-action:pan-x}
+#cogame .cores{padding:2px 6px}#cogame .cores h2,#cogame .cores h3{margin:2px 0}#cogame .cores p{margin:3px 0}#cogame .cores .corow{margin:4px 0}#cogame .cochat{margin:4px 6px;font-size:14px}#cogame .cobin{padding:2px 6px 4px}#cogame .cobin .cob{min-width:48px!important}#comain{padding:2px 4px}}
 #cofx{position:fixed;left:50%;top:44px;transform:translateX(-50%);z-index:8600;background:#3b2314;color:#f3dfb4;border:2px solid #ffb36b;border-radius:10px;padding:6px 14px;font-size:15px;pointer-events:none;opacity:0;transition:opacity .2s}
 #cogame .cff{background:#2a170d;overflow:hidden}
 #cogame .cff-bg{position:absolute;left:0;top:0;right:0;pointer-events:none}#cogame .cff-bg>svg{width:100%;height:100%;display:block}
