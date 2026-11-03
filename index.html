@@ -506,9 +506,10 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 .crp button{font-size:16px;padding:0 6px}.cemo button{font-size:20px;padding:2px 4px;border-radius:8px}.cemo button:active{background:#efdcb8}
 .langbtn{display:flex;align-items:center;gap:6px;padding:5px 12px 5px 8px;border-radius:999px;background:#1a0e08cc;border:2px solid #c9963e;color:#f3dfb4;font-size:14px;font-weight:900;cursor:pointer}
 .langbtn svg{width:20px;height:20px}
+.langbtn.langsm{gap:4px;padding:4px 9px;font-size:13px;white-space:nowrap}
 .langlist{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .langlist .btn{font-size:20px;padding:12px 10px}
-@media (max-height:560px) and (orientation:landscape){.langbtn{font-size:12px;padding:3px 10px 3px 6px}.langbtn svg{width:16px;height:16px}}
+@media (max-height:560px) and (orientation:landscape){.langbtn{font-size:12px;padding:3px 10px 3px 6px}.langbtn svg{width:16px;height:16px}.langbtn.langsm{padding:3px 8px;font-size:12px}}
 :root:lang(ko){--f-disp:'Dela Gothic One','Noto Sans KR',sans-serif;--f-ui:'Zen Maru Gothic','Noto Sans KR',system-ui,sans-serif}
 :root:lang(zh-Hans){--f-disp:'Dela Gothic One','Noto Sans SC',sans-serif;--f-ui:'Zen Maru Gothic','Noto Sans SC',system-ui,sans-serif}
 :root:lang(en) .plt{letter-spacing:.02em}
@@ -595,9 +596,14 @@ setTimeout(function(){var b=document.getElementById('bootR');if(b)b.style.displa
    Source strings are the original Traditional Chinese; T() looks them up in I18N[LANG] (defined further down).
    Placeholders are {0},{1}… Missing keys fall back to the Chinese text. */
 const LANGS=[['zh-Hant','繁體中文'],['zh-Hans','简体中文'],['en','English'],['ja','日本語'],['ko','한국어'],['id','Bahasa Indonesia']];
-let LANG=(()=>{try{const v=localStorage.getItem('izakaya-lang');if(v&&LANGS.some(l=>l[0]===v))return v}catch(e){}
-  const n=String((navigator.languages&&navigator.languages[0])||navigator.language||'').toLowerCase();
-  if(n.startsWith('zh'))return /hans|cn|sg|my/.test(n)?'zh-Hans':'zh-Hant';if(n.startsWith('ja'))return 'ja';if(n.startsWith('ko'))return 'ko';if(n.startsWith('id')||n.startsWith('in'))return 'id';return 'en'})();
+/* first visit: pick the first browser language we support (navigator.languages is in the user's priority order); a saved manual choice always wins */
+const detectLang=()=>{const ls=(navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language||'']);
+  for(const raw of ls){const n=String(raw||'').toLowerCase();
+    if(n.startsWith('zh'))return /hant|tw|hk|mo/.test(n)?'zh-Hant':/hans|cn|sg|my/.test(n)?'zh-Hans':'zh-Hant';
+    if(n.startsWith('ja'))return 'ja';if(n.startsWith('ko'))return 'ko';if(n.startsWith('id')||n.startsWith('in'))return 'id';if(n.startsWith('en'))return 'en'}
+  return 'en'};
+let LANG=(()=>{try{const v=localStorage.getItem('izakaya-lang');if(v&&LANGS.some(l=>l[0]===v))return v}catch(e){}return detectLang()})();
+const LSHORT={'zh-Hant':'中','zh-Hans':'简','en':'EN','ja':'日','ko':'한','id':'ID'};
 let I18N={};
 function T(s,...a){let r=(LANG!=='zh-Hant'&&I18N[LANG]&&I18N[LANG][s])||s;return a.length?r.replace(/\{(\d)\}/g,(_,i)=>a[i]):r}
 /* same word, different meaning in different places (普通 = normal effort / common rarity / average rating): look up "word@ctx" first */
@@ -2869,7 +2875,7 @@ function showHome(){if(CHG)chQuit();LB.ch=0;CHEND='';if(RP.on)abandonReplay();
   const saved=load();
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
   <div class="htitle"><h1 class="logo"><img src="img/logo-9e60dada.webp" alt="${T('乾杯！居酒屋')}" draggable="false"></h1><div class="sub">${T('～ 巷子裡的小居酒屋 ～')}</div></div>
-  <div class="menu"><div class="mhrow">${sideBtn('ach','成就')}${sideBtn('share','分享')}${sideBtn('dc','Discord')}${NOTICE?sideBtn('notice','公告'):''}</div>${'<div class="pricol"><button class="chbtn" data-act="chopen">♾️ '+T('無限挑戰')+'</button>'+(saved?plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1):plaque('newgame','開始營業','',1))+'</div>'}${saved?plaque('asknew','新的一局')+plaque('rwfr','獎勵 & 好友'):plaque('rwfr','獎勵 & 好友')}</div><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','遊戲廳')+(FB_CONFIG?'':sideBtn('replay','選日重玩')):''}${sideBtn('howto','說明')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side-rw"><div class="side side-r">${sideBtn('records','個人資料')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反映'):''}</div></div><div class="topl"><button class="langbtn ntbtn" data-act="slots" aria-label="${T('存檔欄位')}">💾<span class="ntl"> ${T('存檔')}</span></button><button class="langbtn ntbtn" data-act="reload" aria-label="${T('重新整理')}">🔄<span class="ntl"> ${T('重新整理')}</span></button></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${acctBtn()}<button class="langbtn" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>${LANGS.find(l=>l[0]===LANG)[1]}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}${FB_CONFIG&&saved?`<div class="replayfab">${sideBtn('replay','選日重玩')}</div>`:''}<div id="homeModal"></div></div>`;
+  <div class="menu"><div class="mhrow">${sideBtn('ach','成就')}${sideBtn('share','分享')}${sideBtn('dc','Discord')}${NOTICE?sideBtn('notice','公告'):''}</div>${'<div class="pricol"><button class="chbtn" data-act="chopen">♾️ '+T('無限挑戰')+'</button>'+(saved?plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1):plaque('newgame','開始營業','',1))+'</div>'}${saved?plaque('asknew','新的一局')+plaque('rwfr','獎勵 & 好友'):plaque('rwfr','獎勵 & 好友')}</div><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','遊戲廳')+(FB_CONFIG?'':sideBtn('replay','選日重玩')):''}${sideBtn('howto','說明')}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side-rw"><div class="side side-r">${sideBtn('records','個人資料')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','音效')}${FB_CONFIG?sideBtn('fb','意見反映'):''}</div></div><div class="topl"><button class="langbtn ntbtn" data-act="slots" aria-label="${T('存檔欄位')}">💾<span class="ntl"> ${T('存檔')}</span></button><button class="langbtn ntbtn" data-act="reload" aria-label="${T('重新整理')}">🔄<span class="ntl"> ${T('重新整理')}</span></button></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${acctBtn()}<button class="langbtn langsm" data-act="lang" aria-label="Language">🌐 ${LSHORT[LANG]||'EN'}</button></div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}${FB_CONFIG&&saved?`<div class="replayfab">${sideBtn('replay','選日重玩')}</div>`:''}<div id="homeModal"></div></div>`;
   placeChat();requestAnimationFrame(placeChat);setTimeout(placeChat,300);syncRewardDot();achSoon();
   if(noticeDue()){if(NOTICE_LOADED||!FB_CONFIG)setTimeout(()=>{if(HOME&&!document.querySelector('#homeModal .modal')){NAUTOREQ=true;showNotice()}},400);else setTimeout(noticePop,3500)}else if(CL.pick)setTimeout(cloudAsk,0);
 }
