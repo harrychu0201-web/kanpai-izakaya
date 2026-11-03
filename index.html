@@ -309,6 +309,7 @@ body.tutmode:has(.modal) #tut{display:none}
 @keyframes sbglow{0%,100%{filter:drop-shadow(0 0 2px rgba(255,190,90,.35))}50%{filter:drop-shadow(0 0 9px rgba(255,190,90,.95))}}
 .sideb:has(>.rdot) svg{animation:sbglow 1.8s ease-in-out infinite}
 .dex-c,.mdx-c{position:relative}
+.noticefab{position:relative}.noticefab .rdot{top:-5px;right:-4px}
 .dex-new{position:absolute;top:-5px;right:-3px;z-index:2;background:#e0412c;color:#fff;border:2px solid #fff;border-radius:9px;font:900 10px/1 sans-serif;font-style:normal;padding:2px 5px;animation:rdotp 1.6s ease-out infinite;pointer-events:none}
 .mdx-c .dex-new{top:-6px;right:8px}.sideb{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:0;padding:0;cursor:pointer;transition:transform .12s}
 .sideb:hover{transform:scale(1.08)}.sideb:active{transform:scale(.94)}
@@ -2892,7 +2893,7 @@ function showHome(){if(CHG)chQuit();LB.ch=0;CHEND='';if(RP.on)abandonReplay();
   const saved=load();
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
   <div class="htitle"><h1 class="logo"><img src="img/logo-9e60dada.webp" alt="${T('乾杯！居酒屋')}" draggable="false"></h1><div class="sub">${T('～ 巷子裡的小居酒屋 ～')}</div></div>
-  <div class="menu"><div class="mhrow">${sideBtn('ach','成就')}</div>${'<div class="pricol"><button class="chbtn" data-act="chopen">♾️ '+T('無限挑戰')+'</button>'+(saved?plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1):plaque('newgame','開始營業','',1))+'</div>'}${saved?plaque('asknew','新的一局')+plaque('rwfr','獎勵 & 好友'):plaque('rwfr','獎勵 & 好友')}</div><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','遊戲廳')+(FB_CONFIG?'':sideBtn('replay','選日重玩')):''}${FB_CONFIG?sideBtn('lb','排行榜'):''}${sideBtn('social','分享')}</div><div class="side-rw"><div class="side side-r">${sideBtn('records','個人資料')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','設定')}${FB_CONFIG?sideBtn('fb','意見反映'):''}</div></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${acctBtn()}</div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}${FB_CONFIG&&saved?`<div class="replayfab">${sideBtn('replay','選日重玩')}</div>`:''}<div id="homeModal"></div></div>`;
+  <div class="menu"><div class="mhrow">${sideBtn('ach','成就')}</div>${'<div class="pricol"><button class="chbtn" data-act="chopen">♾️ '+T('無限挑戰')+'</button>'+(saved?plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1):plaque('newgame','開始營業','',1))+'</div>'}${saved?plaque('asknew','新的一局')+plaque('rwfr','獎勵 & 好友'):plaque('rwfr','獎勵 & 好友')}</div><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','遊戲廳')+(FB_CONFIG?'':sideBtn('replay','選日重玩')):''}${FB_CONFIG?sideBtn('lb','排行榜'):''}${sideBtn('social','分享')}</div><div class="side-rw"><div class="side side-r">${sideBtn('records','個人資料')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','設定')}${FB_CONFIG?sideBtn('fb','意見反映'):''}</div></div><div class="topl">${NOTICE?`<button class="langbtn noticefab" data-act="notice" aria-label="${T('公告')}">📢 ${T('公告')}${noticeDue()?'<i class="rdot"></i>':''}</button>`:''}</div><div class="topr"><span id="tstslot">${tstBtn()}</span>${acctBtn()}</div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}${FB_CONFIG&&saved?`<div class="replayfab">${sideBtn('replay','選日重玩')}</div>`:''}<div id="homeModal"></div></div>`;
   placeChat();requestAnimationFrame(placeChat);setTimeout(placeChat,300);syncRewardDot();achSoon();
   if(noticeDue()){if(NOTICE_LOADED||!FB_CONFIG)setTimeout(()=>{if(HOME&&!document.querySelector('#homeModal .modal')){NAUTOREQ=true;showNotice()}},400);else setTimeout(noticePop,3500)}else if(CL.pick)setTimeout(cloudAsk,0);
 }
@@ -2946,9 +2947,8 @@ function homeDotOn(act){try{
   if(act==='ach')return achStat(loadRec()).due>0;
   if(act==='dex')return dxsNew('').length>0;
   if(act==='notice')return !!noticeDue();
-  if(act==='social')return !!NOTICE&&!!noticeDue();
 }catch(e){}return false}
-function homeDots(){if(!HOME)return;document.querySelectorAll('.sideb[data-act]').forEach(b=>{const on=homeDotOn(b.dataset.act),d=b.querySelector(':scope>.rdot');if(on&&!d)b.insertAdjacentHTML('afterbegin','<i class="rdot"></i>');else if(!on&&d)d.remove()});try{syncRewardDot()}catch(e){}}
+function homeDots(){if(!HOME)return;document.querySelectorAll('.sideb[data-act],.noticefab[data-act]').forEach(b=>{const on=homeDotOn(b.dataset.act),d=b.querySelector(':scope>.rdot');if(on&&!d)b.insertAdjacentHTML('afterbegin','<i class="rdot"></i>');else if(!on&&d)d.remove()});try{syncRewardDot()}catch(e){}}
 function showDex(){const met=metSet(),n=CHARS.filter(c=>met[c.spr]).length,nwC=dxsNew('c:'),nwM=dxsNew('m:').length,nwH=dxsNew('h:').length;
   const sel=DEXSEL&&met[DEXSEL]?DEXSEL:null,c=sel&&CHARS.find(x=>x.spr===sel),p=sel&&PROF[sel];
   const Q=LANG==='en'?['“','”']:LANG==='zh-Hans'?['“','”']:LANG==='ko'?['“','”']:['「','」'];
@@ -3501,7 +3501,7 @@ document.addEventListener('click',e=>{
   else if(act==='fbsend')sendFb();
   else if(act==='dc')window.open('https://discord.gg/KfSnuMQtj','_blank','noopener');
   else if(act==='notice')showNotice(true);
-  else if(act==='social')modal(`<h2>${T('分享')}</h2><div class="btns" style="flex-direction:column;align-items:stretch"><button class="btn" data-act="share">📤 ${T('分享')}</button><button class="btn alt" data-act="dc">💬 Discord</button>${NOTICE?`<button class="btn alt" data-act="notice" style="position:relative">📢 ${T('公告')}${noticeDue()?'<i class="rdot" style="top:-6px;right:-6px"></i>':''}</button>`:''}<button class="btn alt" data-act="closem">${T('返回')}</button></div>`)
+  else if(act==='social')modal(`<h2>${T('分享')}</h2><div class="btns" style="flex-direction:column;align-items:stretch"><button class="btn" data-act="share">📤 ${T('分享')}</button><button class="btn alt" data-act="dc">💬 Discord</button><button class="btn alt" data-act="closem">${T('返回')}</button></div>`)
   else if(act==='noticeold')showNotice(true,a.dataset.id);
   else if(act==='noticelist')noticeList();
   else if(act==='noticenew')inboxNotice();
