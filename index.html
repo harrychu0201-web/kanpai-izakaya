@@ -4551,8 +4551,9 @@ function lbEntry(){const r=loadRec();
   if(!r.nick||nickBad(r.nick))return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.maxDay>0)d.days=Math.round(r.maxDay);if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;return d}
 async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return} /* a save touched by the author test tools never goes on the leaderboard */
   const k=JSON.stringify(d);if(LB.last===u.uid+k)return;
-  try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d))}
-  catch(e){const d2=Object.assign({},d);delete d2.dex;delete d2.chal;delete d2.chalh;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}} /* rules not updated yet: still keep the rest of the entry */
+  const put=async dd=>{try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},dd))}
+    catch(e){const d2=Object.assign({},dd);delete d2.dex;delete d2.chal;delete d2.chalh;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}}}; /* rules not updated yet: still keep the rest of the entry */
+  try{await put(d)}catch(e){const nn=String(d.name).replace(/管理[員员]/g,'').trim();if(nn===d.name)throw e;await put(Object.assign({},d,{name:nn||'玩家'}))} /* published rules may still reject 管理員 in names: show the name without it instead of not showing him at all */
   LB.last=u.uid+k;LB.cache={}}
 const lbVal=(t,v)=>t==='chal'||t==='chalh'?chTime(v):t==='dex'?T('{0} 種',v):t==='days'?T('{0} 天',v):yen(v);
 const lbHead=tb=>`<h2>${T('排行榜')}</h2><div class="lbtabs">${LBT.filter(x=>!(LB.ch&&x[0]==='fr')).map(([k,n])=>`<button class="stab ${LB.tab===k?'on':''}" data-act="lbtab" data-id="${k}">${T(n)}</button>`).join('')}</div><p class="lbdesc">${T(tb[3])}</p>`;
@@ -4607,7 +4608,7 @@ const rtFull=rt=>{const t=RT.find(x=>x[1]===rt);return t?`${TX(t[2],'rate')}<br>
 function lbxEntry(){const d=lbEntry();if(!d)return null;let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(!g)return null;
   delete d.days;d.day=Math.max(1,(g.day||1)+(g.pendingNext?1:0));d.ya=g.rm?1:0;d.k2=g.rm&&g.rm.k2?1:0;let c=0;for(const k in(g.dec||{}))if(g.dec[k])c++;if(g.rm&&g.rm.dec)for(const k in g.rm.dec)if(g.rm.dec[k])c++;d.dc=c;const sr=shopRate(g);if(sr)d.rt=sr.rt;return d}
 async function lbxPush(u){try{if(!CL.api.putLbx)return;let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return;const d=lbxEntry();if(!d)return;
-  const k=JSON.stringify(d);if(LB.lastx===u.uid+k)return;try{await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d))}catch(e){if(!d.rt)throw e;const d2=Object.assign({},d);delete d2.rt;await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d2))} /* rules not updated yet: keep the rest of the snapshot */
+  const k=JSON.stringify(d);if(LB.lastx===u.uid+k)return;try{await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d))}catch(e){if(d.name&&/管理[員员]/.test(d.name)){await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d,{name:d.name.replace(/管理[員员]/g,'').trim()||'玩家'}))}else{if(!d.rt)throw e;const d2=Object.assign({},d);delete d2.rt;await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d2))}} /* rules not updated yet: keep the rest of the snapshot */
   LB.lastx=u.uid+k}catch(e){console.warn('lbx',e)}}
 async function frLoad(){const me=CL.user,a=CL.api,uid=me.uid;
   if(FR.reg!==uid){await a.regCode(uid,fcodeOf(uid));FR.reg=uid}
@@ -5010,7 +5011,7 @@ async function chatSend(stk){const i=$('cin'),m=$('cmsg');if(!i||!CL.user||!CL.a
   if(nickBad(name)){showNick();CHT.back=true;toast(T('你的暱稱「{0}」含有保留字（作者、官方、admin 等），無法上榜或聊天，請改個名字。',name));return}
   const w=5600-(Date.now()-CHT.last);if(w>0){say(T('慢一點～ {0} 秒後才能再發',Math.ceil(w/1000)));return}
   const prev=CHT.last,draft=i.value;CHT.last=Date.now();if(!stk)i.value='';say('');const rp=CHT.replyTo?{id:CHT.replyTo.id,uid:CHT.replyTo.uid,name:CHT.replyTo.name,text:CHT.replyTo.text}:null;
-  try{const sent=CL.api.chatSend(CL.user.uid,name,text,isAdmin(),rp);if(await Promise.race([sent.then(()=>1),new Promise(r=>setTimeout(r,8000,0))])===0){sent.catch(()=>{});say(T('送出失敗，請稍後再試'));return}CHT.replyTo=null;chatReplyDraw();const l=$('chatlist');if(l)l.scrollTop=l.scrollHeight}
+  try{const sendAs=n=>CL.api.chatSend(CL.user.uid,n,text,isAdmin(),rp);let sent=sendAs(name);if(/管理[員员]/.test(name))sent=sent.catch(e=>{if(/permission/i.test(String(e&&e.code||'')))return sendAs(name.replace(/管理[員员]/g,'').trim()||'玩家');throw e});if(await Promise.race([sent.then(()=>1),new Promise(r=>setTimeout(r,8000,0))])===0){sent.catch(()=>{});say(T('送出失敗，請稍後再試'));return}CHT.replyTo=null;chatReplyDraw();const l=$('chatlist');if(l)l.scrollTop=l.scrollHeight}
   catch(e){console.warn('chat send',e);i.value=stk?draft:text;CHT.last=0;const c=String(e&&e.code||'');
     if(/permission/i.test(c)){const b=await CL.api.banned(CL.user.uid).catch(()=>false);if(b){CHT.banned=true;showChat();return}say(prev&&Date.now()-prev<8000?T('發太快了，等幾秒再試'):T('伺服器規則拒絕了這則訊息（不是你發太快），請回報作者'))}else say(T('送出失敗，請稍後再試'))}}
 function chatBlocks(){const ks=Object.keys(CHT.block);
