@@ -4187,6 +4187,11 @@ Object.assign(I18N["en"],{"電腦店員": "CPU staff", "等太久了嗎？先跟
 Object.assign(I18N["ja"],{"電腦店員": "CPU店員", "等太久了嗎？先跟電腦店員搭檔": "待ちくたびれた？CPU店員と組もう", "選了就會停止配對。電腦店員會接手另一個位置。": "選ぶとマッチングを止めます。CPU店員がもう一方の役を担当します。", "我當廚房": "私が厨房", "我當外場": "私がホール"});
 Object.assign(I18N["ko"],{"電腦店員": "CPU 점원", "等太久了嗎？先跟電腦店員搭檔": "너무 오래 기다렸나요? CPU 점원과 함께하기", "選了就會停止配對。電腦店員會接手另一個位置。": "선택하면 매칭이 멈춥니다. CPU 점원이 다른 역할을 맡아요.", "我當廚房": "내가 주방", "我當外場": "내가 홀"});
 Object.assign(I18N["id"],{"電腦店員": "Staf CPU", "等太久了嗎？先跟電腦店員搭檔": "Kelamaan menunggu? Main bareng staf CPU", "選了就會停止配對。電腦店員會接手另一個位置。": "Ini menghentikan pencarian. CPU mengambil peran lainnya.", "我當廚房": "Aku masak", "我當外場": "Aku melayani"});
+Object.assign(I18N["zh-Hans"],{"與電腦配對":"与电脑配对","沒人在線上也能玩，電腦店員接手另一個位置。":"没人在线上也能玩，电脑店员接手另一个位置。"});
+Object.assign(I18N["en"],{"與電腦配對":"Play with CPU","沒人在線上也能玩，電腦店員接手另一個位置。":"Play even when no one is online. A CPU staffer takes the other role."});
+Object.assign(I18N["ja"],{"與電腦配對":"CPUと組む","沒人在線上也能玩，電腦店員接手另一個位置。":"誰もオンラインでなくても遊べます。CPU店員がもう一方の役を担当します。"});
+Object.assign(I18N["ko"],{"與電腦配對":"CPU와 함께하기","沒人在線上也能玩，電腦店員接手另一個位置。":"아무도 온라인이 아니어도 플레이할 수 있어요. CPU 점원이 다른 역할을 맡아요."});
+Object.assign(I18N["id"],{"與電腦配對":"Main dengan CPU","沒人在線上也能玩，電腦店員接手另一個位置。":"Tetap bisa main meski tak ada yang online. Staf CPU mengambil peran lainnya."});
 /* ===== co-op (多人模式，開放給所有登入玩家): room + invite + presence + event channel + 30s reconnect grace ===== */
 const COOP={hostRole:'k',err:'',invOn:false,invOff:null,invSeen:{},on:false,w:0,code:null,role:null,room:null,p:{},ev:[],unsub:null,presOff:null,inv:{},graceWho:null,graceEnd:0,tick:null,lastOn:{},open:false};
 const COOP_GRACE=30000;
@@ -4244,7 +4249,9 @@ async function mmTick(){if(!MM.on)return;MM.n++;
   catch(e){console.warn('mm tick',e)}finally{MM.busy=false}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&MM.on)mmStop(true)});
 function coopMmBlock(){if(MM.on)return `<div class="lbme"><span>🔎 <span id="mmsec">${T('配對中…已等 {0} 秒',Math.floor((Date.now()-MM.t0)/1000))}</span></span><button class="btn alt" data-act="coopmmstop">${T('取消配對')}</button></div>`+(MM.offer?mmBotRow():'');
-  return (MM.msg?`<p style="color:#e0412c;margin:2px 0">${T(MM.msg)}</p>`+(MM.offer?mmBotRow():''):'')+`<div class="lbme"><span>🎲 <b>${T('隨機配對')}</b><br><small>${T('和線上的陌生玩家配對，一起開店。')}</small></span><button class="btn" data-act="coopmm">${T('開始配對')}</button></div>`}
+  return (MM.msg?`<p style="color:#e0412c;margin:2px 0">${T(MM.msg)}</p>`:'')+`<div class="lbme"><span>🎲 <b>${T('隨機配對')}</b><br><small>${T('和線上的陌生玩家配對，一起開店。')}</small></span><button class="btn" data-act="coopmm">${T('開始配對')}</button></div>`+mmCpuRow()}
+/* 與電腦配對：沒人在線上時也能直接玩多人模式 */
+function mmCpuRow(){return `<div class="lbme" style="flex-wrap:wrap;gap:8px"><span style="flex:1 1 100%">🤖 <b>${T('與電腦配對')}</b><br><small>${T('沒人在線上也能玩，電腦店員接手另一個位置。')}</small></span><button class="btn" data-act="coopbot" data-id="k">🍳 ${T('我當廚房')}</button><button class="btn" data-act="coopbot" data-id="f">🧾 ${T('我當外場')}</button></div>`}
 function coopFriendsBlock(){const head=`<p class="lbdesc">${T('邀請在線上的好友一起開店，對方會收到邀請通知。')}</p>`,D=typeof FR!=='undefined'&&FR.data;
   if(!lbEntry())return head+`<div class="lbme"><span>${T('取個暱稱，好友才看得到你。')}</span><button class="btn" data-act="nick">${T('取暱稱')}</button></div>`;
   const mmb=coopMmBlock();
