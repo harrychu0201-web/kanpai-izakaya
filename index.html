@@ -4170,6 +4170,11 @@ Object.assign(I18N["en"],{"隨機配對":"Random match","和線上的陌生玩�
 Object.assign(I18N["ja"],{"隨機配對":"ランダムマッチ","和線上的陌生玩家配對，一起開店。":"オンラインのプレイヤーとマッチして、一緒にお店を開こう。","開始配對":"マッチ開始","配對中…已等 {0} 秒":"検索中… {0} 秒","取消配對":"キャンセル","找不到人，稍後再試一次吧。":"相手が見つかりませんでした。もう一度お試しください。","配對成功！等對方加入":"マッチ成功！相手の参加を待っています","隨機配對暫時還不能用，晚點再試。":"ランダムマッチは今は使えません。後でもう一度お試しください。","也可以邀請好友":"友だちを招待することもできます"});
 Object.assign(I18N["ko"],{"隨機配對":"랜덤 매칭","和線上的陌生玩家配對，一起開店。":"온라인 플레이어와 매칭되어 함께 가게를 열어요.","開始配對":"매칭 시작","配對中…已等 {0} 秒":"찾는 중… {0}초","取消配對":"취소","找不到人，稍後再試一次吧。":"상대를 찾지 못했어요. 잠시 후 다시 시도해 주세요.","配對成功！等對方加入":"매칭 성공! 상대가 들어오길 기다리는 중","隨機配對暫時還不能用，晚點再試。":"랜덤 매칭을 지금은 쓸 수 없어요. 나중에 다시 시도해 주세요.","也可以邀請好友":"친구를 초대할 수도 있어요"});
 Object.assign(I18N["id"],{"隨機配對":"Acak pasangan","和線上的陌生玩家配對，一起開店。":"Dipasangkan dengan pemain online untuk membuka kedai bersama.","開始配對":"Cari pasangan","配對中…已等 {0} 秒":"Mencari… {0} dtk","取消配對":"Batal","找不到人，稍後再試一次吧。":"Tidak ada yang ditemukan. Coba lagi sebentar lagi.","配對成功！等對方加入":"Cocok! Menunggu mereka bergabung","隨機配對暫時還不能用，晚點再試。":"Acak pasangan belum tersedia. Coba lagi nanti.","也可以邀請好友":"Atau undang teman"});
+Object.assign(I18N["zh-Hans"],{"搭檔": "搭档", "配對成功！搭檔是 {0}，等對方加入": "配对成功！搭档是 {0}，等对方加入", "搭檔是 {0}": "搭档是 {0}"});
+Object.assign(I18N["en"],{"搭檔": "Partner", "配對成功！搭檔是 {0}，等對方加入": "Matched with {0}! Waiting for them to join", "搭檔是 {0}": "Your partner: {0}"});
+Object.assign(I18N["ja"],{"搭檔": "パートナー", "配對成功！搭檔是 {0}，等對方加入": "マッチ成功！相手は {0}。参加を待っています", "搭檔是 {0}": "パートナーは {0}"});
+Object.assign(I18N["ko"],{"搭檔": "파트너", "配對成功！搭檔是 {0}，等對方加入": "매칭 성공! 상대는 {0}. 들어오길 기다리는 중", "搭檔是 {0}": "파트너: {0}"});
+Object.assign(I18N["id"],{"搭檔": "Partner", "配對成功！搭檔是 {0}，等對方加入": "Cocok dengan {0}! Menunggu mereka bergabung", "搭檔是 {0}": "Partnermu: {0}"});
 /* ===== co-op (多人模式，開放給所有登入玩家): room + invite + presence + event channel + 30s reconnect grace ===== */
 const COOP={hostRole:'k',err:'',invOn:false,invOff:null,invSeen:{},on:false,w:0,code:null,role:null,room:null,p:{},ev:[],unsub:null,presOff:null,inv:{},graceWho:null,graceEnd:0,tick:null,lastOn:{},open:false};
 const COOP_GRACE=30000;
@@ -4177,6 +4182,7 @@ function coopNote(m){let d=document.getElementById('coopnote');if(!d){d=document
   d.textContent=T(m);d.style.opacity=1;clearTimeout(coopNote.t);coopNote.t=setTimeout(()=>{d.style.opacity=0},2600)}
 function coopDev(){return !!(CL.user&&FB_CONFIG)} /* 多人模式：所有登入的玩家 */
 function coopCode(){const A='23456789ABCDEFGHJKMNPQRSTUVWXYZ';let s='';for(let i=0;i<6;i++)s+=A[Math.floor(Math.random()*A.length)];return s}
+function coopPN(){return COOP.pname||T('對方')}
 function coopOther(){const r=COOP.room,me=CL.user&&CL.user.uid;if(!r||!me)return null;return r.host===me?r.guest:r.host}
 /* 在連線房間裡、但面板被關掉時（按到返回或點到空白處），畫面上方一直顯示「回到連線房間」 */
 function coopFloatUpd(){let b=document.getElementById('coopfloat');
@@ -4194,8 +4200,8 @@ function coopRender(){coopFloatUpd();const m=document.getElementById('coopmark')
 function coopMsgsFill(){const b=document.getElementById('coopmsgs');if(!b)return;const me=CL.user&&CL.user.uid;
   const near=b.scrollHeight-b.scrollTop-b.clientHeight<40;
   b.innerHTML=COOP.ev.filter(x=>x.type==='msg'||x.type==='ping').slice(-40).map(x=>{const mine=x.from===me;
-    if(x.type==='ping')return `<div class="cpm sys">${mine?T('我'):T('對方')} · ping${x.lat!=null?` · ${x.lat}ms`:''}</div>`;
-    return `<div class="cpm ${mine?'me':''}"><b>${mine?T('我'):T('對方')}</b>：${esc(x.txt||'')}</div>`}).join('')||`<div class="cpm sys">${T('還沒有訊息，打個招呼吧')}</div>`;
+    if(x.type==='ping')return `<div class="cpm sys">${mine?T('我'):esc(coopPN())} · ping${x.lat!=null?` · ${x.lat}ms`:''}</div>`;
+    return `<div class="cpm ${mine?'me':''}"><b>${mine?T('我'):esc(coopPN())}</b>：${esc(x.txt||'')}</div>`}).join('')||`<div class="cpm sys">${T('還沒有訊息，打個招呼吧')}</div>`;
   if(near)b.scrollTop=b.scrollHeight}
 /* 隨機配對：兩人同時在 mm/ 排隊（互相同意）才能互發邀請；uid 較小的一方建房，另一方自動接受 */
 const MM={on:false,t0:0,n:0,timer:null,busy:false,msg:''};
@@ -4219,7 +4225,7 @@ async function mmTick(){if(!MM.on)return;MM.n++;
     const list=await CL.api.mmList();if(!MM.on)return;
     const mine=list.find(x=>x.uid===me);if(!mine){await CL.api.mmJoin(me,mmName());return}
     const c=list.filter(x=>x.uid!==me&&x.uid>me&&Math.abs(mine.t-x.t)<40000).sort((a,b)=>a.t-b.t)[0];
-    if(c&&MM.on&&!COOP.code){await coopAct('make',c.uid);if(COOP.code){coopNote('配對成功！等對方加入');mmStop(true)}}}
+    if(c&&MM.on&&!COOP.code){await coopAct('make',c.uid);if(COOP.code){if(c.name)COOP.pname=String(c.name).slice(0,24);coopNote(COOP.pname?T('配對成功！搭檔是 {0}，等對方加入',COOP.pname):T('配對成功！等對方加入'));mmStop(true)}}}
   catch(e){console.warn('mm tick',e)}finally{MM.busy=false}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&MM.on)mmStop(true)});
 function coopMmBlock(){if(MM.on)return `<div class="lbme"><span>🔎 <span id="mmsec">${T('配對中…已等 {0} 秒',Math.floor((Date.now()-MM.t0)/1000))}</span></span><button class="btn alt" data-act="coopmmstop">${T('取消配對')}</button></div>`;
@@ -4241,7 +4247,7 @@ function coopDyn(){const me=CL.user.uid,r=COOP.room;
     const left=COOP.graceWho?Math.max(0,Math.ceil((COOP.graceEnd-Date.now())/1000)):0;
     const st=r?r.state:T('已結束');
     body=`<div class="lbme"><span>${T('房號')}：<b style="letter-spacing:2px">${esc(COOP.code)}</b></span><small>${T('狀態')}：${esc(st)}</small></div>`
-     +`<div class="lbme"><span>${T('你')}：${pr(me)}</span><span>${T('對方')}：${o?pr(o):T('等待加入')}</span></div>`
+     +`<div class="lbme"><span>${T('你')}：${pr(me)}</span><span>${T('搭檔')}：${COOP.pname?'<b>'+esc(COOP.pname)+'</b> ':''}${o?pr(o):T('等待加入')}</span></div>`
      +(left?`<p style="color:#e0412c">${T('對方離線，{0} 秒內沒回來就結束',left)}</p>`:'')
      +(r&&r.state==='lobby'&&typeof coLobbyBlock==='function'?coLobbyBlock():'')
      +`<div class="btns" style="justify-content:flex-start">${r&&r.state==='lobby'&&typeof coLobbyBtns==='function'?coLobbyBtns():''}<button class="btn alt" data-act="coopping" ${r&&r.state!=='ended'?'':'disabled'}>${T('測延遲')}</button><button class="btn alt" data-act="coopleave">${T('離開')}</button></div>`}
@@ -4287,10 +4293,11 @@ async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid
       COOP.swAsk=null;coopBannerHide();const rm=await CL.api.coopRoomGet(id).catch(()=>null);
       if(!rm||rm.state==='ended'||rm.guest!==me){await CL.api.coopInvDel(me,id).catch(()=>{});delete COOP.inv[id];coopNote('這個邀請已經失效了');coopPanel();return}
       if(COOP.code&&COOP.code!==id){await coopBye(COOP.code,'switch');await coopLeave()}
-      await CL.api.coopAccept(me,id);delete COOP.inv[id];
+      const inv0=Object.assign({},COOP.inv||{});await CL.api.coopAccept(me,id);delete COOP.inv[id];
       let all=COOP.inv||{};try{all=await CL.api.coopInvList(me)}catch(e){}
+      if(inv0[id])all=Object.assign({},all,{[id]:inv0[id]});
       Object.keys(all).forEach(c=>{if(c===id)return;coopBye(c,'busy');CL.api.coopInvDel(me,c).catch(()=>{});delete COOP.inv[c]});
-      COOP.code=id;COOP.role='guest';COOP.byeMsg='';coopAttach(id);coopPanel();return}
+      const inm=String(((all||{})[id]||{}).name||'');COOP.code=id;COOP.role='guest';COOP.byeMsg='';coopAttach(id);if(inm)COOP.pname=inm.slice(0,24);coopPanel();if(COOP.pname)coopNote(T('搭檔是 {0}',COOP.pname));return}
     if(k==='decline'){coopBannerHide();coopBye(id,'decline');await CL.api.coopInvDel(me,id);delete COOP.inv[id];coopPanel();return}
     if(k==='start'){if(typeof coStart==='function')await coStart();else await CL.api.coopState(COOP.code,'playing');return}
     if(k==='role'){if(typeof coRoleSwap==='function')coRoleSwap();else{COOP.hostRole=COOP.hostRole==='f'?'k':'f';coopRender()}return}
@@ -4315,9 +4322,11 @@ async function coopResume(){if(COOP.code||!CL.user||!CL.api||!CL.api.coopRoomGet
   if(typeof CO!=='undefined'){CO.resume=COOP.role==='host';CO.pendSt=null}
   coopAttach(s.code);coopNote('已自動連回連線房間');coopRender()}
 function coopAttach(code){if(COOP.unsub)COOP.unsub();if(COOP.presOff)COOP.presOff();coopSave(true);COOP.attachT=Date.now();
-  COOP.on=true;COOP.room=null;COOP.p={};COOP.ev=[];COOP.lastOn={};COOP.graceWho=null;
+  COOP.on=true;COOP.room=null;COOP.p={};COOP.ev=[];COOP.lastOn={};COOP.graceWho=null;COOP.pname='';
   COOP.unsub=CL.api.coopWatch(code,(k,v)=>{if(k==='room')coopOnRoom(v);else if(k==='st'){if(typeof coGameOnSt==='function')coGameOnSt(v)}else if(k==='rtc'){if(typeof coVoiceOnRtc==='function')coVoiceOnRtc(v)}else coopOnEv(v)},e=>{console.warn('coop watch',e);coopNote('連線中斷');COOP.on=false});
-  CL.api.coopPresence(code,CL.user.uid).then(f=>{COOP.presOff=f}).catch(e=>console.warn('presence',e))}
+  CL.api.coopPresence(code,CL.user.uid).then(f=>{COOP.presOff=f}).catch(e=>console.warn('presence',e));
+  /* 告訴對方我的暱稱：隨機配對時才知道跟誰排到 */
+  {const nm=mmName();if(nm)CL.api.coopSend(code,CL.user.uid,'name',0,nm).catch(e=>console.warn('coop name',e))}}
 function coopOnRoom(v){
   if(!v){COOP.room=null;COOP.on=false;coopSave(false);if(typeof coGameOnRoom==='function')coGameOnRoom(null);coopRender();return}
   COOP.room=v;COOP.p=v.p||{};
@@ -4336,9 +4345,11 @@ function coopTick(){
   coopRender()}
 function coopOnEv(e){const me=CL.user&&CL.user.uid;const x={id:e.id,from:e.from,type:e.type,d:e.d,txt:typeof e.txt==='string'?e.txt:''};
   if(e.type==='ping'&&e.from!==me&&typeof e.d==='number')x.lat=Date.now()-e.d;
+  if(x.type==='name'){if(x.from!==me&&x.txt){const nw=!COOP.pname;COOP.pname=x.txt.slice(0,24);if(nw&&Date.now()-(COOP.attachT||0)<20000&&!(typeof e.t==='number'&&e.t<(COOP.attachT||0)-1500)){try{coopNote(T('搭檔是 {0}',COOP.pname))}catch(_){}}coopRender();if(typeof CO!=='undefined'&&CO.open&&typeof coPaint==='function'){CO.lastHtml='';coPaint()}}return}
   COOP.ev.push(x);if(COOP.ev.length>80)COOP.ev.splice(0,COOP.ev.length-80);
   if(x.type==='bye'&&x.from!==me&&e.from===coopOther()&&!(typeof e.t==='number'&&COOP.attachT&&e.t<COOP.attachT-1500)){
     const m=COOP_BYE[x.txt]||'對方離開了房間';COOP.byeMsg=m;try{coopNote(m)}catch(_){}
+    if(typeof CO!=='undefined'&&CO.open&&CO.S&&CO.S.over){CO.S[coHost()?'gb':'hb']=1;CO.leaveOnBack=1;CO.lastHtml='';coPaint();return}
     if(typeof CO!=='undefined'&&CO.open&&typeof coClose==='function')coClose(false);
     setTimeout(()=>{coopLeave().then(()=>{if(document.getElementById('coopmark'))coopPanel()})},0);return}
   if(x.type==='act'&&typeof coHostAct==='function')coHostAct(e);
@@ -4352,7 +4363,7 @@ async function coopLeave(){const me=CL.user.uid,code=COOP.code;if(!code)return;c
   if(COOP.tick){clearInterval(COOP.tick);COOP.tick=null}
   try{await CL.api.coopPresenceOff(code,me);if(wasHost)await CL.api.coopEnd(code)}catch(e){console.warn('coop leave',e)}
   if(typeof coReset==='function')coReset();coopSave(false);
-  COOP.code=null;COOP.role=null;COOP.room=null;COOP.p={};COOP.ev=[];COOP.graceWho=null;COOP.lastOn={};coopRender()}
+  COOP.code=null;COOP.role=null;COOP.room=null;COOP.p={};COOP.ev=[];COOP.graceWho=null;COOP.lastOn={};COOP.pname='';coopRender()}
 
 /* the sign-in SDK is loaded from gstatic; if that download fails (bad signal right after tapping 更新, in-app browsers),
    the old code gave up for good: no sign-in button, no leaderboard until the page was reopened. Now it retries on its own
@@ -5385,7 +5396,7 @@ async function coStart(){if(!coHost()||!COOP.code||!CL.api)return;if(!coBothRdy(
 function coStale(e){return typeof e.t==='number'&&COOP.attachT&&e.t<COOP.attachT-1500}
 function coHostAct(e){if(!coHost()||!CO.S)return;if(CO.seen[e.id])return;CO.seen[e.id]=1;if(coStale(e))return;
   if(!COOP.room||e.from!==COOP.room.guest)return;const m=/^g(\d+)\|(.+)$/.exec(e.txt||'');if(!m||+m[1]!==CO.S.rid)return;
-  if(m[2]==='back'){if(CO.S.over&&CO.open)coClose(true);return}if(CO.S.over)return;
+  if(m[2]==='back'){if(CO.S.over&&!CO.S.gb){CO.S.gb=1;if(CO.S.rd)CO.S.rd.g=0;coPush();if(CO.open)coPaint()}return}if(CO.S.over)return;
   coApply(CO.S.hk==='k'?'f':'k',m[2]);coPush();coPaint()}
 
 
@@ -5408,8 +5419,8 @@ function coReset(){CO.L=null;CO.lobby=null;CO.lobbyPushed=false;if(typeof voStop
 function coLobbyView(){if(coHost()){coLobbyInit();return{hk:CO.L.hk,rd:CO.L.rd}}return CO.lobby?{hk:CO.lobby.hk,rd:CO.lobby.rd}:null}
 function coLobbyBlock(){const v=coLobbyView(),host=coHost(),me=v?(host?v.hk:(v.hk==='k'?'f':'k')):null,nm=r=>r==='k'?'🍳 廚房':'🧾 外場';let s='';
   if(!me)s+=`<p class="lbdesc">等房主選角色…</p>`;
-  else s+=`<div class="lbme"><span>你的角色：<b>${nm(me)}</b></span><small>對方：${nm(me==='k'?'f':'k')}</small></div><p class="lbdesc">${CO_TASK[me]}</p>`;
-  if(v){const a=host?'h':'g',b=host?'g':'h';s+=`<div class="lbme"><span>你：${v.rd[a]?'✅ 已準備':'⏳ 未準備'}</span><span>對方：${v.rd[b]?'✅ 已準備':'⏳ 未準備'}</span></div>${voLobbyLine()}<p class="lbdesc">雙方都按「準備」後，由房主按「開始營業」，兩邊會一起倒數 3、2、1 開店。</p><p class="lbdesc">🌙 營業沒有時間限制；想結束時，按上方正中間的「打烊」，雙方都同意就能休息並結算。</p>`}
+  else s+=`<div class="lbme"><span>你的角色：<b>${nm(me)}</b></span><small>${esc(coopPN())}：${nm(me==='k'?'f':'k')}</small></div><p class="lbdesc">${CO_TASK[me]}</p>`;
+  if(v){const a=host?'h':'g',b=host?'g':'h';s+=`<div class="lbme"><span>你：${v.rd[a]?'✅ 已準備':'⏳ 未準備'}</span><span>${esc(coopPN())}：${v.rd[b]?'✅ 已準備':'⏳ 未準備'}</span></div>${voLobbyLine()}<p class="lbdesc">雙方都按「準備」後，由房主按「開始營業」，兩邊會一起倒數 3、2、1 開店。</p><p class="lbdesc">🌙 營業沒有時間限制；想結束時，按上方正中間的「打烊」，雙方都同意就能休息並結算。</p>`}
   return s}
 function coLobbyBtns(){const v=coLobbyView();let s=voLobbyBtns();
   if(coHost())s+=`<button class="btn alt" data-act="cooprole">${COOP.hostRole==='f'?'🧾 我當外場（朋友當廚房）':'🍳 我當廚房（朋友當外場）'}</button>`;
@@ -5426,16 +5437,16 @@ function coHostRestore(){const v=CO.pendSt;if(!CO.resume||!coHost()||CO.S||typeo
   coPush();coOpen();if(!S.over){clearInterval(CO.tickT);CO.tickT=setInterval(coTick,250)}coToast('已重新連線，繼續營業！')}
 function coGameOnSt(v){if(coHost()){if(CO.resume&&!CO.S&&typeof v==='string'){CO.pendSt=v;coHostRestore()}return}if(typeof v!=='string')return;let S;try{S=JSON.parse(v)}catch(e){return}
   if(S.lobby){CO.lobby=S;if(typeof coopRender==='function')coopRender();return}
-  const fresh=!CO.S||CO.S.rid!==S.rid;CO.S=S;CO.off=S.now-Date.now();CO.rid=S.rid;if(fresh&&CO.open){CO.fxSeen=S.fx?S.fx.id:0;CO.lastHtml=''}coSync();if(CO.open)coPaint()}
+  const fresh=!CO.S||CO.S.rid!==S.rid;if(!fresh&&CO.S.hb)S.hb=1;CO.S=S;CO.off=S.now-Date.now();CO.rid=S.rid;if(fresh&&CO.open){CO.fxSeen=S.fx?S.fx.id:0;CO.lastHtml=''}coSync();if(CO.open)coPaint()}
 function coSync(){if(CO.open||coHost()||!CO.S||!COOP.room)return;if(COOP.room.state==='playing'&&CO.S.rid!==CO.closedRid)coOpen()}
 function coGameOnRoom(v){
   if(v&&CO.resume)coHostRestore();
-  if(v===null){if(CO.open){coClose(false);coopNote('房間已結束')}return}
+  if(v===null){if(CO.open){if(CO.S&&CO.S.over){CO.S[coHost()?'gb':'hb']=1;CO.leaveOnBack=1;CO.lastHtml='';coPaint();return}coClose(false);coopNote('房間已結束')}return}
   if(coHost()&&v.state==='lobby'&&!CO.lobbyPushed&&!CO.resume&&COOP.code){CO.lobbyPushed=true;coLobbyPush()}
-  if(v.state==='lobby'&&CO.open&&!coHost()&&CO.S&&CO.S.over){coClose(false);return}
+  if(v.state==='lobby'&&CO.open&&!coHost()&&CO.S&&CO.S.over){if(!CO.S.hb){CO.S.hb=1;CO.lastHtml='';coPaint()}return}
   coSync();
   if(v.state==='ended'&&CO.open){if(coHost()){if(CO.S&&!CO.S.over)coEnd('partner')}else if(!(CO.S&&CO.S.over)){coClose(false);coopNote('房間已結束')}}}
-function coOpen(){if(CO.open)return;CO.open=true;
+function coOpen(){if(CO.open)return;CO.open=true;CO.leaveOnBack=0;
   try{if(typeof R!=='undefined'&&R&&!R.over&&!R.paused&&typeof pause==='function')pause()}catch(e){}
   coStyle();let ov=document.getElementById('cogame');if(ov)ov.remove();ov=document.createElement('div');ov.id='cogame';
   ov.innerHTML=`<div class="cotop" id="cotop"></div><div id="comain"></div><div class="cobot"><div class="cosh" id="cosh"></div><div class="cochat" id="cochat"></div><div class="cobin"><input id="cogin" maxlength="100" placeholder="輸入訊息" autocomplete="off"><button class="cob" data-co="say" style="min-height:34px;min-width:56px">送出</button></div></div><div id="cofx"></div>`;
@@ -5452,11 +5463,12 @@ function coClose(user){const S=CO.S;CO.open=false;clearInterval(CO.paintT);CO.pa
 /* ---------- input ---------- */
 function coTap(cmd){const S=CO.S;if(!S)return;
   if(cmd==='say'){coSay();return}
-  if(cmd==='back'){if(!S.over)return;if(coHost())coClose(true);else if(CL.api&&COOP.code){COOP.w++;CL.api.coopSend(COOP.code,CL.user.uid,'act',0,'g'+S.rid+'|back').catch(e=>console.warn('co back',e));coClose(false)}return}
-  if(cmd==='go'){if(coHost()&&S.over)coStart();return}
+  if(S.over&&(cmd==='back'||cmd==='rdy'||cmd==='again'||cmd==='go')&&Date.now()-(CO.resAt||0)<900)return; /* 結算剛跳出來時擋掉誤觸 */
+  if(cmd==='back'){if(!S.over)return;if(CO.leaveOnBack){CO.leaveOnBack=0;coClose(false);if(COOP.code)coopLeave().then(()=>{if(HOME&&!document.getElementById('coopmark'))coopPanel()});return}if(coHost())coClose(true);else if(CL.api&&COOP.code){COOP.w++;CL.api.coopSend(COOP.code,CL.user.uid,'act',0,'g'+S.rid+'|back').catch(e=>console.warn('co back',e));coClose(false)}return}
+  if(cmd==='go'){if(coHost()&&S.over&&!S.gb)coStart();return}
   if(cmd==='mic'){coVoiceToggle();return}
   if(cmd==='vplay'){voPlay();return}
-  if(cmd==='again'||cmd==='rdy'){coReadyToggle();return}
+  if(cmd==='again'||cmd==='rdy'){if(S.over&&(coHost()?S.gb:S.hb))return;coReadyToggle();return}
   if(cmd==='leave'){const t=Date.now();if(t-CO.leaveAt<2000){CO.leaveAt=0;const wasHost=coHost();coClose(false);if(typeof coopLeave==='function')coopLeave()}else{CO.leaveAt=t;coToast('再按一次離開（對方也會結束）')}return}
   if(cmd.indexOf('sh:')===0){const t=CO_SH[coRole()][+cmd.slice(3)];if(t)coSendMsg(t);return}
   if(S.over)return;
@@ -5471,7 +5483,7 @@ function coSendMsg(t){if(Date.now()-CO.lastShout<350)return;CO.lastShout=Date.no
   if(!CL.api||!COOP.code||!CL.user)return;CL.api.coopSend(COOP.code,CL.user.uid,'msg',0,t).catch(e=>console.warn('co msg',e))}
 function coToast(m){const f=document.getElementById('cofx');if(!f)return;f.textContent=m;f.style.opacity=1;clearTimeout(coToast.t);coToast.t=setTimeout(()=>{f.style.opacity=0},1800)}
 function coChatFill(){const b=document.getElementById('cochat');if(!b)return;const me=CL.user&&CL.user.uid;
-  const h=COOP.ev.filter(x=>x.type==='msg').slice(-30).map(x=>`<div class="cpm ${x.from===me?'cx-me':''}"><b>${x.from===me?'我':'對方'}</b>：${esc(x.txt||'')}</div>`).join('')||'<div class="cpm" style="opacity:.45">訊息會顯示在這裡</div>';
+  const h=COOP.ev.filter(x=>x.type==='msg').slice(-30).map(x=>`<div class="cpm ${x.from===me?'cx-me':''}"><b>${x.from===me?'我':esc(coopPN())}</b>：${esc(x.txt||'')}</div>`).join('')||'<div class="cpm" style="opacity:.45">訊息會顯示在這裡</div>';
   if(b.innerHTML!==h){b.innerHTML=h;b.scrollTop=b.scrollHeight}}
 
 /* ---------- drawing ---------- */
@@ -5615,7 +5627,7 @@ function coFloor(S,now,lay){const L=CF_LAY[lay||'L'],r=(a)=>`left:${a[0]}px;top:
    ${hand}
    <button class="cxs cfbox cf-tr" data-co="tr" style="${r(L.trash)}"><span>🗑️</span><em>丟掉</em></button>
    ${L.hint?`<p class="cfhint" style="left:${L.hint[0]}px;top:${L.hint[1]}px;width:${L.hint[2]}px">點客人送上手上的餐點　·　你看不到烤台，要什麼就喊給廚房聽！</p>`:''}</div>`}
-function coResult(S){const me=coRole(),other=me==='k'?'f':'k',rd=S.rd||{h:0,g:0},a=coHost()?'h':'g',b=coHost()?'g':'h';
+function coResult(S){const me=coRole(),other=me==='k'?'f':'k',rd=S.rd||{h:0,g:0},a=coHost()?'h':'g',b=coHost()?'g':'h',gone=coHost()?!!S.gb:!!S.hb;
   const el=Math.max(0,(S.endAt||Date.now())-S.t0),em=Math.floor(el/60000),es=String(Math.floor(el%60000/1000)).padStart(2,'0');
   const title=S.sv>=30?'完美默契！':S.sv>=15?'配合得不錯':S.sv>=5?'還要再練練':'下次會更好';
   const days=Math.floor(el/CO_DAY)+1,tot=Math.round(S.w.k+S.w.f),half=Math.round((S.w.k+S.w.f)/2);
@@ -5623,8 +5635,11 @@ function coResult(S){const me=coRole(),other=me==='k'?'f':'k',rd=S.rd||{h:0,g:0}
    <p>營業了：<b>${days}</b> 天（${em}:${es}）　接待客人：<b>${S.sv}</b> 位</p>
    <p>雙方營收合計 <b>¥${tot}</b>，平分後每人 <b>¥${half}</b></p>
    <p class="cohint">這局的錢只在本局有效，不會進存檔或排行榜。</p>
-   <p>我：${rd[a]?'✅ 已準備':'⏳ 未準備'}　對方：${rd[b]?'✅ 已準備':'⏳ 未準備'}</p>
-   <div class="corow" style="justify-content:center"><button class="cob" data-co="rdy" style="min-width:150px">${rd[a]?'已準備（再按取消）':'🙋 準備再來一局'}</button>${coHost()?`<button class="cob" data-co="go" style="min-width:120px${rd.h&&rd.g?'':';opacity:.4'}">▶ 開始下一局</button>`:''}<button class="cob" data-co="back" style="min-width:110px">🏠 回到房間</button></div><p class="cohint">${coHost()?'雙方都準備好後，按「開始下一局」。':'雙方都準備好後，等房主按開始。'}任一方按「回到房間」，兩人都會回到連線房間。</p></div>`}
+   ${COOP.pname?`<p>搭檔：<b>${esc(COOP.pname)}</b></p>`:''}
+   ${gone?`<p style="color:#ffc65a">${esc(coopPN())} 已經回到連線房間了</p>
+   <div class="corow" style="justify-content:center"><button class="cob" data-co="back" style="min-width:150px">🏠 回到房間</button></div><p class="cohint">結果會一直留在這裡，看完再按「回到房間」。</p></div>`
+   :`<p>我：${rd[a]?'✅ 已準備':'⏳ 未準備'}　${esc(coopPN())}：${rd[b]?'✅ 已準備':'⏳ 未準備'}</p>
+   <div class="corow" style="justify-content:center"><button class="cob" data-co="rdy" style="min-width:150px">${rd[a]?'已準備（再按取消）':'🙋 準備再來一局'}</button>${coHost()?`<button class="cob" data-co="go" style="min-width:120px${rd.h&&rd.g?'':';opacity:.4'}">▶ 開始下一局</button>`:''}<button class="cob" data-co="back" style="min-width:110px">🏠 回到房間</button></div><p class="cohint">${coHost()?'雙方都準備好後，按「開始下一局」。':'雙方都準備好後，等房主按開始。'}按「回到房間」只有你自己會離開結算畫面。</p></div>`}`}
 function cxSync(a,b){const an=a.childNodes,bn=b.childNodes;
   if(an.length!==bn.length){a.replaceChildren(...[...bn].map(n=>n.cloneNode(true)));return}
   for(let i=0;i<bn.length;i++){const x=an[i],y=bn[i];
@@ -5649,10 +5664,10 @@ function coPaint(){const S=CO.S,ov=document.getElementById('cogame');if(!S||!ov)
   const left=Math.max(0,(S.over&&S.endAt?S.endAt:now)-S.t0),mm=String(Math.floor(left/60000)).padStart(2,'0'),ss=String(Math.floor(left%60000/1000)).padStart(2,'0');
   if(!S.over&&now>=S.t0){const dn=Math.floor((now-S.t0)/CO_DAY);if(dn>=1&&dn!==CO.hintDay&&!(S.cl&&(S.cl.k||S.cl.f))){CO.hintDay=dn;if(dn===1||dn%3===0)coToast('🌙 累了嗎？按上方「打烊」，雙方同意就能休息並結算')}}
   const cls=S.cl||{k:0,f:0},clMy=cls[me],clOt=cls[me==='k'?'f':'k'],clBtn=S.over||now<S.t0?'':`<button class="cob${clOt&&!clMy?' cx-act':''}" data-co="close" style="min-height:26px;min-width:40px;padding:0 10px;font-size:13px;white-space:nowrap${clOt&&!clMy?';border-color:#ffc65a;color:#ffc65a;background:#5a3a10':clMy?';opacity:.85':''}">${clMy?'⏳ 取消打烊':clOt?'🌙 同意打烊':'🌙 打烊'}</button>`,
-  ct=document.getElementById('cotop'),cth=`<div class="cotl"><span>${'❤'.repeat(Math.max(0,S.hearts))||'💔'}</span><span>第 ${Math.floor(left/CO_DAY)+1} 天</span><span>⏱ ${mm}:${ss}</span><span>接客 ${S.sv}</span>${voGameBtns()}</div><div class="cotc">${clBtn}</div><div class="cotr"><span>${me==='k'?'🍳 廚房':'🧾 外場'}</span><span>我的錢包 ¥${Math.round(S.w[me])}</span><button class="cob" data-co="leave" style="min-height:26px;min-width:40px;padding:0 8px">✕</button></div>`;if(ct.dataset.h!==cth){ct.dataset.h=cth;ct.innerHTML=cth}
+  ct=document.getElementById('cotop'),cth=`<div class="cotl"><span>${'❤'.repeat(Math.max(0,S.hearts))||'💔'}</span><span>第 ${Math.floor(left/CO_DAY)+1} 天</span><span>⏱ ${mm}:${ss}</span><span>接客 ${S.sv}</span>${voGameBtns()}</div><div class="cotc">${clBtn}</div><div class="cotr">${COOP.pname?`<span class="mtx" style="max-width:9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🤝 ${esc(COOP.pname)}</span>`:''}<span>${me==='k'?'🍳 廚房':'🧾 外場'}</span><span>我的錢包 ¥${Math.round(S.w[me])}</span><button class="cob" data-co="leave" style="min-height:26px;min-width:40px;padding:0 8px">✕</button></div>`;if(ct.dataset.h!==cth){ct.dataset.h=cth;ct.innerHTML=cth}
   const sh=document.getElementById('cosh');if(sh&&!sh.dataset.r||sh&&sh.dataset.r!==me){sh.dataset.r=me;const hh=Math.ceil(CO_SH[me].length/2);sh.innerHTML=CO_SH[me].map((t,i)=>`<button class="cob" data-co="sh:${i}" style="grid-row:${i<hh?1:2};grid-column:${i%hh+1};min-height:30px;min-width:0;padding:2px 8px;font-size:12px">${esc(t)}</button>`).join('')}
   let html;
-  if(S.over)html=coResult(S);
+  if(S.over){if(CO.resRid!==S.rid){CO.resRid=S.rid;CO.resAt=Date.now()}html=coResult(S)}
   else if(now<S.t0)html=`<div class="cores"><h2>${me==='k'?'你是廚房':'你是外場'}</h2><p>${me==='k'?'生食下鍋→熟了拿起→放進保溫台。你看不到客人，聽外場喊！':'接待客人→從保溫台拿餐點送給客人→收拾桌面。你看不到烤台，喊廚房！'}</p><p class="cohint" style="opacity:.8">🌙 想結束時，按上方正中間的「打烊」，雙方都同意就能休息並結算。</p><h1>${S.t0-now>1000?Math.min(3,Math.ceil((S.t0-now-1000)/1000)):'開店！'}</h1></div>`;
   else if(me!=='k'){const m0=document.getElementById('comain');html='<div class="cofit">'+coFloor(S,now,m0&&m0.clientWidth<m0.clientHeight*1.1?'P':m0&&m0.clientHeight<380?'S':'L')+'</div>'}
   const mn=document.getElementById('comain');if(html==null)coKitchenPaint(mn,S,now);else if(html!==CO.lastHtml){CO.lastHtml=html;coPatch(mn,html)}
