@@ -4155,6 +4155,11 @@ Object.assign(I18N["en"],{"多人模式":"Multiplayer","新推出！":"NEW!","�
 Object.assign(I18N["ja"],{"多人模式":"マルチプレイ","新推出！":"NEW！","離線":"オフライン","邀請":"招待","邀請在線上的好友一起開店，對方會收到邀請通知。":"オンラインの友だちを招待して一緒にお店を開こう。相手に通知が届きます。","還沒有好友，先去加好友吧！":"まだ友だちがいません。先に追加しましょう！","{0} 位好友在線上":"{0} 人がオンライン","登入後才能玩多人模式。":"ログインするとマルチプレイで遊べます。"});
 Object.assign(I18N["ko"],{"多人模式":"멀티플레이","新推出！":"NEW!","離線":"오프라인","邀請":"초대","邀請在線上的好友一起開店，對方會收到邀請通知。":"온라인 친구를 초대해 함께 가게를 열어요. 상대에게 알림이 갑니다.","還沒有好友，先去加好友吧！":"아직 친구가 없어요. 먼저 추가해 보세요!","{0} 位好友在線上":"친구 {0}명 온라인","登入後才能玩多人模式。":"로그인하면 멀티플레이를 즐길 수 있어요."});
 Object.assign(I18N["id"],{"多人模式":"Multipemain","新推出！":"BARU!","離線":"Offline","邀請":"Undang","邀請在線上的好友一起開店，對方會收到邀請通知。":"Undang teman yang online untuk membuka kedai bersama. Mereka akan menerima notifikasi.","還沒有好友，先去加好友吧！":"Belum ada teman — tambahkan dulu!","{0} 位好友在線上":"{0} teman online","登入後才能玩多人模式。":"Masuk untuk bermain multipemain."});
+Object.assign(I18N["zh-Hans"],{"隨機配對":"随机配对","和線上的陌生玩家配對，一起開店。":"和在线的陌生玩家配对，一起开店。","開始配對":"开始配对","配對中…已等 {0} 秒":"配对中…已等 {0} 秒","取消配對":"取消配对","找不到人，稍後再試一次吧。":"找不到人，稍后再试一次吧。","配對成功！等對方加入":"配对成功！等对方加入","隨機配對暫時還不能用，晚點再試。":"随机配对暂时还不能用，晚点再试。","也可以邀請好友":"也可以邀请好友"});
+Object.assign(I18N["en"],{"隨機配對":"Random match","和線上的陌生玩家配對，一起開店。":"Get paired with an online player and run a shop together.","開始配對":"Find a partner","配對中…已等 {0} 秒":"Searching… {0}s","取消配對":"Cancel","找不到人，稍後再試一次吧。":"No one found. Try again in a bit.","配對成功！等對方加入":"Matched! Waiting for them to join","隨機配對暫時還不能用，晚點再試。":"Random match isn't available right now. Try again later.","也可以邀請好友":"Or invite a friend"});
+Object.assign(I18N["ja"],{"隨機配對":"ランダムマッチ","和線上的陌生玩家配對，一起開店。":"オンラインのプレイヤーとマッチして、一緒にお店を開こう。","開始配對":"マッチ開始","配對中…已等 {0} 秒":"検索中… {0} 秒","取消配對":"キャンセル","找不到人，稍後再試一次吧。":"相手が見つかりませんでした。もう一度お試しください。","配對成功！等對方加入":"マッチ成功！相手の参加を待っています","隨機配對暫時還不能用，晚點再試。":"ランダムマッチは今は使えません。後でもう一度お試しください。","也可以邀請好友":"友だちを招待することもできます"});
+Object.assign(I18N["ko"],{"隨機配對":"랜덤 매칭","和線上的陌生玩家配對，一起開店。":"온라인 플레이어와 매칭되어 함께 가게를 열어요.","開始配對":"매칭 시작","配對中…已等 {0} 秒":"찾는 중… {0}초","取消配對":"취소","找不到人，稍後再試一次吧。":"상대를 찾지 못했어요. 잠시 후 다시 시도해 주세요.","配對成功！等對方加入":"매칭 성공! 상대가 들어오길 기다리는 중","隨機配對暫時還不能用，晚點再試。":"랜덤 매칭을 지금은 쓸 수 없어요. 나중에 다시 시도해 주세요.","也可以邀請好友":"친구를 초대할 수도 있어요"});
+Object.assign(I18N["id"],{"隨機配對":"Acak pasangan","和線上的陌生玩家配對，一起開店。":"Dipasangkan dengan pemain online untuk membuka kedai bersama.","開始配對":"Cari pasangan","配對中…已等 {0} 秒":"Mencari… {0} dtk","取消配對":"Batal","找不到人，稍後再試一次吧。":"Tidak ada yang ditemukan. Coba lagi sebentar lagi.","配對成功！等對方加入":"Cocok! Menunggu mereka bergabung","隨機配對暫時還不能用，晚點再試。":"Acak pasangan belum tersedia. Coba lagi nanti.","也可以邀請好友":"Atau undang teman"});
 /* ===== co-op (多人模式，開放給所有登入玩家): room + invite + presence + event channel + 30s reconnect grace ===== */
 const COOP={hostRole:'k',err:'',invOn:false,invOff:null,invSeen:{},on:false,w:0,code:null,role:null,room:null,p:{},ev:[],unsub:null,presOff:null,inv:{},graceWho:null,graceEnd:0,tick:null,lastOn:{},open:false};
 const COOP_GRACE=30000;
@@ -4182,13 +4187,41 @@ function coopMsgsFill(){const b=document.getElementById('coopmsgs');if(!b)return
     if(x.type==='ping')return `<div class="cpm sys">${mine?T('我'):T('對方')} · ping${x.lat!=null?` · ${x.lat}ms`:''}</div>`;
     return `<div class="cpm ${mine?'me':''}"><b>${mine?T('我'):T('對方')}</b>：${esc(x.txt||'')}</div>`}).join('')||`<div class="cpm sys">${T('還沒有訊息，打個招呼吧')}</div>`;
   if(near)b.scrollTop=b.scrollHeight}
+/* 隨機配對：兩人同時在 mm/ 排隊（互相同意）才能互發邀請；uid 較小的一方建房，另一方自動接受 */
+const MM={on:false,t0:0,n:0,timer:null,busy:false,msg:''};
+function mmName(){return String((lbEntry()||{}).name||'').slice(0,24)}
+function mmStop(leave){const was=MM.on;MM.on=false;clearInterval(MM.timer);MM.timer=null;MM.busy=false;
+  if(leave&&was&&CL.user&&CL.api&&CL.api.mmLeave)CL.api.mmLeave(CL.user.uid).catch(()=>{});if(was)coopRender()}
+async function mmStart(){if(MM.on)return;if(!CL.user||!CL.api||!CL.api.mmJoin)return;
+  if(!lbEntry()){coopRender();return}
+  if(COOP.code){coopNote('已經在連線中');return}
+  MM.msg='';
+  try{await CL.api.mmJoin(CL.user.uid,mmName())}catch(e){console.warn('mm join',e);MM.msg='隨機配對暫時還不能用，晚點再試。';coopRender();return}
+  MM.on=true;MM.t0=Date.now();MM.n=0;MM.busy=false;clearInterval(MM.timer);MM.timer=setInterval(mmTick,1000);coopRender()}
+async function mmTick(){if(!MM.on)return;MM.n++;
+  if(COOP.code||!CL.user){mmStop(true);return}
+  if(!document.getElementById('coopmark')){mmStop(true);return}
+  if(Date.now()-MM.t0>90000){MM.msg='找不到人，稍後再試一次吧。';mmStop(true);return}
+  {const e=document.getElementById('mmsec');if(e)e.textContent=T('配對中…已等 {0} 秒',Math.floor((Date.now()-MM.t0)/1000))}
+  if(MM.busy||MM.n%4!==0)return;MM.busy=true;
+  try{const me=CL.user.uid;
+    if(MM.n%20===0)await CL.api.mmJoin(me,mmName());
+    const list=await CL.api.mmList();if(!MM.on)return;
+    const mine=list.find(x=>x.uid===me);if(!mine){await CL.api.mmJoin(me,mmName());return}
+    const c=list.filter(x=>x.uid!==me&&x.uid>me&&Math.abs(mine.t-x.t)<40000).sort((a,b)=>a.t-b.t)[0];
+    if(c&&MM.on&&!COOP.code){await coopAct('make',c.uid);if(COOP.code){coopNote('配對成功！等對方加入');mmStop(true)}}}
+  catch(e){console.warn('mm tick',e)}finally{MM.busy=false}}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&MM.on)mmStop(true)});
+function coopMmBlock(){if(MM.on)return `<div class="lbme"><span>🔎 <span id="mmsec">${T('配對中…已等 {0} 秒',Math.floor((Date.now()-MM.t0)/1000))}</span></span><button class="btn alt" data-act="coopmmstop">${T('取消配對')}</button></div>`;
+  return (MM.msg?`<p style="color:#e0412c;margin:2px 0">${T(MM.msg)}</p>`:'')+`<div class="lbme"><span>🎲 <b>${T('隨機配對')}</b><br><small>${T('和線上的陌生玩家配對，一起開店。')}</small></span><button class="btn" data-act="coopmm">${T('開始配對')}</button></div>`}
 function coopFriendsBlock(){const head=`<p class="lbdesc">${T('邀請在線上的好友一起開店，對方會收到邀請通知。')}</p>`,D=typeof FR!=='undefined'&&FR.data;
   if(!lbEntry())return head+`<div class="lbme"><span>${T('取個暱稱，好友才看得到你。')}</span><button class="btn" data-act="nick">${T('取暱稱')}</button></div>`;
-  if(!D)return head+`<p>${T('載入中…')}</p>`;
+  const mmb=coopMmBlock();
+  if(!D)return mmb+head+`<p>${T('載入中…')}</p>`;
   const on=D.on||{},ids=Object.keys(D.fl).sort((a,b)=>(onIs(on[b])?1:0)-(onIs(on[a])?1:0));
-  if(!ids.length)return head+`<p class="lbdesc">${T('還沒有好友，先去加好友吧！')}</p><div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="frhome">👥 ${T('好友')}</button></div>`;
+  if(!ids.length)return mmb+head+`<p class="lbdesc">${T('還沒有好友，先去加好友吧！')}</p><div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="frhome">👥 ${T('好友')}</button></div>`;
   const n=ids.filter(k=>onIs(on[k])).length;
-  return head+`<div class="lbme"><span>🟢 ${T('{0} 位好友在線上',n)}</span><button class="btn alt" data-act="cooprefresh">🔄 ${T('重新整理')}</button></div><div class="lblist">`
+  return mmb+head+`<div class="lbme"><span>🟢 ${T('{0} 位好友在線上',n)}</span><button class="btn alt" data-act="cooprefresh">🔄 ${T('重新整理')}</button></div><div class="lblist">`
    +ids.map(k=>{const o=onIs(on[k]);return `<div style="display:flex;align-items:center;gap:10px;padding:5px 10px;margin:4px 0;background:#0000000d;border-radius:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px">${esc((D.lbs[k]||{}).name||T('玩家'))}${onTag(on[k])}</span>${o?`<button class="btn" data-act="coopmake" data-id="${esc(k)}" style="flex:none;min-width:92px;margin:0">${T('邀請')}</button>`:`<button class="btn alt" disabled style="flex:none;min-width:92px;margin:0">${T('離線')}</button>`}</div>`}).join('')+`</div>`}
 function coopDyn(){const me=CL.user.uid,r=COOP.room;
   const inv=Object.keys(COOP.inv).map(c=>{const v=COOP.inv[c]||{};return `<div class="lbme"><span>📨 ${esc(v.name||T('玩家'))} ${T('邀請你一起開店')} <small>${esc(c)}</small></span><button class="btn" data-act="coopaccept" data-id="${esc(c)}">${T('接受')}</button><button class="btn alt" data-act="coopdecline" data-id="${esc(c)}">${T('拒絕')}</button></div>`}).join('');
@@ -4224,6 +4257,7 @@ function coopInvStart(){if(COOP.invOn||!CL.api||!CL.api.coopInvWatch||!coopDev()
     Object.keys(list).forEach(c=>{const v=list[c]||{};if(typeof v.t==='number'&&now-v.t>COOP_INV_TTL){CL.api.coopInvDel(me,c).catch(()=>{});delete list[c];return}
       if(!COOP.invSeen[c]&&!(COOP.code===c)){COOP.invSeen[c]=1;
         if(coopBusy()){coopBye(c,'busy');CL.api.coopInvDel(me,c).catch(()=>{});delete list[c];return}
+        if(MM.on){CL.api.coopRoomGet(c).then(rm=>{if(MM.on&&rm&&rm.guest===me&&rm.state!=='ended')coopAct('accept',c).then(()=>mmStop(true))}).catch(()=>{});return}
         show=[c,v]}});
     if(show){coopBannerShow(show[0],show[1]);try{coopNote('有人邀請你一起開店')}catch(e){}}
     if(!Object.keys(list).length)coopBannerHide();coopRender()},e=>{console.warn('coop inv watch',e);COOP.invOn=false})}
@@ -4232,6 +4266,8 @@ async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid
   try{if(!CL.api)throw new Error('no api');
     if(k==='open'){coopPanel();try{COOP.inv=await CL.api.coopInvList(me)}catch(e){console.warn('coop inv',e);COOP.inv={};COOP.err='讀不到邀請（規則還沒更新？）'}coopPanel();
       if(!COOP.code&&lbEntry()&&(!FR.data||Date.now()-FR.t>20000)){try{await frLoad()}catch(e){console.warn('coop friends',e)}coopRender()}return}
+    if(k==='mm'){await mmStart();return}
+    if(k==='mmstop'){mmStop(true);return}
     if(k==='refresh'){try{await frLoad()}catch(e){console.warn('coop friends',e)}coopRender();return}
     if(k==='make'){if(COOP.code){coopNote('已經在連線中');coopPanel();return}
       const code=coopCode(),nm=(lbEntry()||{}).name||'';
@@ -4376,6 +4412,9 @@ async function cloudInit1(){
       frDel:(me,fu)=>rt((rd,r)=>rd.update(rd.ref(r),{['friends/'+me+'/'+fu]:null,['freq/'+fu+'/'+me]:null})),
       // co-op skeleton (author-only UI): room node, invites, presence, event channel. COOP.w counts writes for quota checks.
       coopMake:(code,host,guest,name)=>rt((rd,r)=>{COOP.w+=2;return rd.update(rd.ref(r),{['rooms/'+code]:{host,guest,state:'lobby',t:rd.serverTimestamp()},['coopInv/'+guest+'/'+code]:{from:host,name:String(name||'').slice(0,24),t:rd.serverTimestamp()}})}),
+      mmJoin:(uid,name)=>rt((rd,r)=>{COOP.w++;return rd.set(rd.ref(r,'mm/'+uid),{t:rd.serverTimestamp(),name:String(name||'').slice(0,24)})}),
+      mmLeave:uid=>rt((rd,r)=>rd.remove(rd.ref(r,'mm/'+uid))),
+      mmList:()=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'mm'),rd.orderByChild('t'),rd.limitToLast(30))).then(s=>{const a=[];s.forEach(c=>{const v=c.val();if(v&&typeof v.t==='number')a.push({uid:c.key,t:v.t,name:v.name||''})});return a})),
       coopInvList:uid=>rt((rd,r)=>rd.get(rd.ref(r,'coopInv/'+uid)).then(s=>s.val()||{})),
       coopInvWatch:(uid,cb,err)=>{let off=null,dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
         off=rd.onValue(rd.ref(r,'coopInv/'+uid),s=>cb(s.val()||{}),err)}).catch(err);
