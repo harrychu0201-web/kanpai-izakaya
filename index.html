@@ -4541,12 +4541,12 @@ const LB={tab:'best',cache:{},last:null,ch:0};let CHEND='';
 /* nicknames with these words are rejected by database.rules.json (chat/lb/lbx name), so block them here too instead of failing silently; the owner account is exempt like in the rules */
 const NICK_BAD=/作者|站長|站长|客服|官方|admin/i;
 const nickBad=v=>!!v&&NICK_BAD.test(v)&&!(CL.user&&CL.user.email===ADMIN_EMAIL);
-(function(){const A={'zh-Hans':['你的昵称「{0}」含有保留字（作者、官方、admin 等），无法上榜或聊天，请换个名字。','昵称不能包含“作者”“官方”“admin”等保留字'],
-'en':['Your nickname "{0}" contains a reserved word (admin, author, official, etc.), so you can\'t be on the leaderboard or chat. Please pick another name.','Nicknames can\'t contain reserved words like "admin", "author" or "official".'],
-'ja':['ニックネーム「{0}」に予約語（管理者・作者・公式・admin など）が含まれているため、ランキングやチャットを利用できません。別の名前にしてください。','ニックネームに「管理者」「作者」「公式」「admin」などの予約語は使えません'],
-'ko':['닉네임 "{0}"에 예약어(관리자, 작가, 공식, admin 등)가 들어 있어 랭킹과 채팅을 이용할 수 없어요. 다른 이름으로 바꿔 주세요.','닉네임에 "관리자", "작가", "공식", "admin" 같은 예약어는 쓸 수 없어요'],
-'id':['Nama panggilan "{0}" mengandung kata terlarang (admin, penulis, resmi, dll.), jadi tidak bisa masuk papan peringkat atau chat. Silakan ganti nama.','Nama panggilan tidak boleh mengandung kata terlarang seperti "admin", "penulis", atau "resmi".']};
-for(const l in A){if(I18N[l])Object.assign(I18N[l],{'你的暱稱「{0}」含有保留字（作者、官方、admin 等），無法上榜或聊天，請改個名字。':A[l][0],'暱稱不能包含「作者」「官方」「admin」等保留字':A[l][1]})}})();
+(function(){const A={'zh-Hans':['你的昵称「{0}」含有保留字（作者、官方、admin 等），无法上榜或聊天，请换个名字。','昵称不能包含“作者”“官方”“admin”等保留字','排行榜上传失败：{0}'],
+'en':['Your nickname "{0}" contains a reserved word (admin, author, official, etc.), so you can\'t be on the leaderboard or chat. Please pick another name.','Nicknames can\'t contain reserved words like "admin", "author" or "official".','Leaderboard upload failed: {0}'],
+'ja':['ニックネーム「{0}」に予約語（作者・公式・admin など）が含まれているため、ランキングやチャットを利用できません。別の名前にしてください。','ニックネームに「作者」「公式」「admin」などの予約語は使えません','ランキングへの送信に失敗しました：{0}'],
+'ko':['닉네임 "{0}"에 예약어(작가, 공식, admin 등)가 들어 있어 랭킹과 채팅을 이용할 수 없어요. 다른 이름으로 바꿔 주세요.','닉네임에 "작가", "공식", "admin" 같은 예약어는 쓸 수 없어요','랭킹 업로드 실패: {0}'],
+'id':['Nama panggilan "{0}" mengandung kata terlarang (admin, penulis, resmi, dll.), jadi tidak bisa masuk papan peringkat atau chat. Silakan ganti nama.','Nama panggilan tidak boleh mengandung kata terlarang seperti "admin", "penulis", atau "resmi".','Gagal mengunggah ke papan peringkat: {0}']};
+for(const l in A){if(I18N[l])Object.assign(I18N[l],{'你的暱稱「{0}」含有保留字（作者、官方、admin 等），無法上榜或聊天，請改個名字。':A[l][0],'排行榜上傳失敗：{0}':A[l][2],'暱稱不能包含「作者」「官方」「admin」等保留字':A[l][1]})}})();
 function lbEntry(){const r=loadRec();
   if(!r.nick||nickBad(r.nick))return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.maxDay>0)d.days=Math.round(r.maxDay);if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;return d}
 async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return} /* a save touched by the author test tools never goes on the leaderboard */
@@ -4558,11 +4558,13 @@ const lbVal=(t,v)=>t==='chal'||t==='chalh'?chTime(v):t==='dex'?T('{0} 種',v):t=
 const lbHead=tb=>`<h2>${T('排行榜')}</h2><div class="lbtabs">${LBT.filter(x=>!(LB.ch&&x[0]==='fr')).map(([k,n])=>`<button class="stab ${LB.tab===k?'on':''}" data-act="lbtab" data-id="${k}">${T(n)}</button>`).join('')}</div><p class="lbdesc">${T(tb[3])}</p>`;
 async function showLB(){if(LB.tab==='fr')return showFriends();
   const tb=LBT.find(x=>x[0]===LB.tab),me=CL.user,mine=lbEntry();
+  /* opening the board retries the upload (a failed one is never remembered as done) and keeps the real server error to show under the board; at most one retry per 15s */
+  if(me&&mine&&(!LB.errAt||Date.now()-LB.errAt>15000||!LB.err)){try{await Promise.race([lbPush(me),new Promise((_,j)=>setTimeout(j,8000,{message:'timeout'}))]);LB.err=''}catch(e){LB.err=String((e&&(e.code||e.message))||e);LB.errAt=Date.now()}}
   const head=lbHead(tb);
   let foot='';
   if(!me)foot=`<div class="lbme"><span>${T('登入後就能加入排行榜。')}</span><button class="btn" data-act="login">${T('用 Google 登入')}</button></div>`;
   else if(!mine){const bn=nickBad(loadRec().nick);foot=`<div class="lbme"><span>${bn?T('你的暱稱「{0}」含有保留字（作者、官方、admin 等），無法上榜或聊天，請改個名字。',esc(loadRec().nick)):T('取個暱稱就能加入排行榜。')}</span><button class="btn" data-act="nick">${T(bn?'改暱稱':'取暱稱')}</button></div>`}
-  else foot=`<div class="lbme"><span>${T('你的暱稱：{0}',esc(mine.name))}</span><button class="btn alt" data-act="nick">${T('改暱稱')}</button></div>`;
+  else foot=`<div class="lbme"><span>${T('你的暱稱：{0}',esc(mine.name))}${LB.err?`<br><small style="color:#e0412c">${T('排行榜上傳失敗：{0}',esc(LB.err))}</small>`:''}</span><button class="btn alt" data-act="nick">${T('改暱稱')}</button></div>`;
   const f=tb[0],asc=tb[2]==='asc';
   // rank + percentile are worked out from the whole board, so they stay right beyond the top 50
   const rk=(all,N)=>{const mRow=me&&all.find(r=>r.uid===me.uid);const mv=mRow?mRow[f]:(mine?mine[f]:null);
