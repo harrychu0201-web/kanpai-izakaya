@@ -548,7 +548,8 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 .achbar{display:inline-block;vertical-align:middle;width:min(160px,40%);height:7px;background:#e7d3a8;border:2px solid var(--soot);border-radius:99px;overflow:hidden;margin:0 6px 0 0}
 .achbar.big{display:block;width:auto;height:8px;margin:0 0 8px}
 .achbar i{display:block;height:100%;background:linear-gradient(#f3b73a,#d9822b)}
-.achtabs{display:flex;gap:6px;margin:0 -2px 8px;padding:4px 2px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.achtabs{display:flex;gap:6px;margin:0 -2px 8px;padding:4px 2px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-x;overscroll-behavior:contain;cursor:grab}
+.achtabs.dragging{cursor:grabbing;scroll-behavior:auto}.achtabs.dragging .achtab{pointer-events:none}
 .achtabs::-webkit-scrollbar{display:none}
 .achtab{position:relative;flex:none;font:inherit;font-size:13px;font-weight:900;color:var(--soot);background:#fffaf0;border:2px solid var(--soot);border-radius:99px;padding:3px 10px;cursor:pointer;white-space:nowrap}
 .achtab small{margin-left:5px;font-size:11px;font-weight:700;color:#7a5}
@@ -2510,6 +2511,13 @@ function achRow(a,r){const got=!!(r.ach&&r.ach[a.id]),ok=a.c(r),max=AM(a.max),cu
   const prog=(!hid&&!ok&&max>1)?`<br><span class="achbar"><i style="width:${Math.max(2,Math.round(cur/max*100))}%"></i></span><small>${f(cur)} / ${f(max)}</small>`:'';
   const btn=hid?'':got?`<span style="font-size:13px">${T('已領取')}</span>`:`<button class="btn" data-act="achclaim" data-id="${a.id}" ${ok?'':'disabled'}>${T('領取')}</button>`;
   return `<div class="achrow${got?' got':ok?' ok':''}"><span class="achic">${hid?'❓':got?'✅':ok?'🎉':'🔒'}</span><span class="achtx"><b>${hid?'？？？':T(a.n)}</b><br>${hid?T('隱藏成就，自己去發現吧。'):T(a.d)}${prog}${hid?'':`<br><span class="achrw">${T('獎勵：{0}',rwText(a.rw))}</span>`}</span><span>${btn}</span></div>`}
+/* 成就分類列：滑鼠可以按住拖曳左右捲動、滾輪也能橫向捲（觸控本來就能滑）；拖過的那次放開不算點擊分類 */
+let ATDRAG=null,ATSUP=0;
+document.addEventListener('pointerdown',e=>{const bar=e.target.closest&&e.target.closest('.achtabs');if(!bar||e.pointerType!=='mouse'||e.button!==0)return;ATDRAG={bar,x:e.clientX,left:bar.scrollLeft,moved:false}},true);
+document.addEventListener('pointermove',e=>{if(!ATDRAG)return;const dx=e.clientX-ATDRAG.x;if(!ATDRAG.moved){if(Math.abs(dx)<5)return;ATDRAG.moved=true;ATDRAG.bar.classList.add('dragging')}ATDRAG.bar.scrollLeft=ATDRAG.left-dx},true);
+['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,()=>{if(!ATDRAG)return;if(ATDRAG.moved)ATSUP=performance.now();const b=ATDRAG.bar;setTimeout(()=>b.classList.remove('dragging'),0);ATDRAG=null},true));
+document.addEventListener('click',e=>{if(ATSUP&&performance.now()-ATSUP<400&&e.target.closest&&e.target.closest('.achtabs')){e.stopPropagation();e.preventDefault();ATSUP=0}},true);
+document.addEventListener('wheel',e=>{const bar=e.target.closest&&e.target.closest('.achtabs');if(!bar||Math.abs(e.deltaX)>Math.abs(e.deltaY)||bar.scrollWidth<=bar.clientWidth)return;e.preventDefault();bar.scrollLeft+=e.deltaY},{passive:false});
 function showAch(tab){const c0=curCard(),top=c0&&!tab?c0.scrollTop:0;if(tab)ACHTAB=tab;const r=loadRec(),n=achStat(r);
   const tabs=ACH_CATS.map(([k,ic,t])=>{const ls=ACHS.filter(a=>a.cat===k),dn=ls.filter(a=>a.c(r)).length,due=ls.some(a=>a.c(r)&&!(r.ach&&r.ach[a.id]));
     return `<button class="achtab${k===ACHTAB?' on':''}" data-act="achtab" data-id="${k}">${ic} ${T(t)}<small>${dn}/${ls.length}</small>${due?'<i class="rdot" style="top:-5px;right:-5px;width:10px;height:10px"></i>':''}</button>`}).join('');
