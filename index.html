@@ -5557,7 +5557,7 @@ function coGraceBar(ov){let g=document.getElementById('cograce');if(!g){g=docume
 function coPaint(){const S=CO.S,ov=document.getElementById('cogame');if(!S||!ov)return;coGraceBar(ov);const now=coNow(),me=coRole();
   const left=Math.max(0,S.t0+S.dur-now),mm=String(Math.floor(left/60000)).padStart(2,'0'),ss=String(Math.floor(left%60000/1000)).padStart(2,'0');
   const ct=document.getElementById('cotop'),cth=`<span>${'❤'.repeat(Math.max(0,S.hearts))||'💔'}</span><span>⏱ ${mm}:${ss}</span><span>接客 ${S.sv}</span>${voGameBtns()}<span class="cosp"></span><span>${me==='k'?'🍳 廚房':'🧾 外場'}</span><span>我的錢包 ¥${Math.round(S.w[me])}</span><button class="cob" data-co="leave" style="min-height:26px;min-width:40px;padding:0 8px">✕</button>`;if(ct.dataset.h!==cth){ct.dataset.h=cth;ct.innerHTML=cth}
-  const sh=document.getElementById('cosh');if(sh&&!sh.dataset.r||sh&&sh.dataset.r!==me){sh.dataset.r=me;sh.innerHTML=CO_SH[me].map((t,i)=>`<button class="cob" data-co="sh:${i}" style="min-height:30px;min-width:0;padding:2px 8px;font-size:12px">${esc(t)}</button>`).join('')}
+  const sh=document.getElementById('cosh');if(sh&&!sh.dataset.r||sh&&sh.dataset.r!==me){sh.dataset.r=me;const hh=Math.ceil(CO_SH[me].length/2);sh.innerHTML=CO_SH[me].map((t,i)=>`<button class="cob" data-co="sh:${i}" style="grid-row:${i<hh?1:2};grid-column:${i%hh+1};min-height:30px;min-width:0;padding:2px 8px;font-size:12px">${esc(t)}</button>`).join('')}
   let html;
   if(S.over)html=coResult(S);
   else if(now<S.t0)html=`<div class="cores"><h2>${me==='k'?'你是廚房':'你是外場'}</h2><p>${me==='k'?'生食下鍋→熟了拿起→放進保溫台。你看不到客人，聽外場喊！':'接待客人→從保溫台拿餐點送給客人→收拾桌面。你看不到烤台，喊廚房！'}</p><h1>${S.t0-now>1000?Math.min(3,Math.ceil((S.t0-now-1000)/1000)):'開店！'}</h1></div>`;
@@ -5583,7 +5583,7 @@ function coStyle(){if(document.getElementById('costyle'))return;const s=document
 #cogame .cob.cx-seat.cx-dirty{border-color:#8a6;opacity:.9}#cogame .cob.cx-seat.cx-eat{border-color:#7ed957}
 #cogame .coord{display:flex;gap:4px;font-size:18px;line-height:1}#cogame .coord .cx-ok{opacity:.45}
 #cogame .cobtm{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}#cogame .cohint{opacity:.55;font-size:12px;margin:6px 0 0}
-#cogame .cobot{background:#1b0e07;padding:4px 8px;display:flex;flex-direction:column;gap:3px;min-width:0}#cogame .cosh{display:flex;gap:5px;overflow-x:auto;white-space:nowrap}#cogame .cosh .cob{flex:none}
+#cogame .cobot{background:#1b0e07;padding:4px 8px;display:flex;flex-direction:column;gap:3px;min-width:0}#cogame .cosh{display:grid;grid-template-rows:repeat(2,auto);grid-auto-flow:column;grid-auto-columns:max-content;gap:4px 5px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;overscroll-behavior-x:contain;touch-action:pan-x}#cogame .cosh .cob{flex:none}
 #cogame .cochat{height:6.9em;overflow-y:auto;font-size:16px;line-height:1.35;background:#0004;border-radius:8px;padding:2px 10px;-webkit-user-select:text;user-select:text}#cogame .cpm b{color:#9fd8ff}#cogame .cpm.cx-me,#cogame .cpm.cx-me b{color:#ffb36b}#cogame .cobin{display:flex;gap:6px}#cogame .cobin input{flex:1;min-width:0;font-size:16px;padding:4px 8px;border-radius:8px;border:2px solid #7a4a2a;background:#2a170d;color:#f3dfb4}
 #cogame .cores{text-align:center;padding:14px 6px}#cogame .cores h1{font-size:54px;margin:6px 0}
 #cogame .coim{display:block;object-fit:contain;pointer-events:none}#cogame .cosk{position:relative;display:inline-block;flex:none;pointer-events:none}#cogame .cosk img{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(90deg);pointer-events:none}
