@@ -4539,14 +4539,14 @@ function cloudAsk(){const c=CL.pick;if(!c||!HOME)return;
 const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['dex','扭蛋圖鑑','desc','收集到的扭蛋種類越多越前面，秘密扭蛋機的款式也算。'],['chal','無限挑戰','desc','店不打烊一直營業，三次失誤就結束，比誰的營業時間長（暫停不算）。'],['chalh','極限挑戰','desc','禁用店員和道具的無限挑戰，比誰的營業時間長。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
 const LB={tab:'best',cache:{},last:null,ch:0};let CHEND='';
 /* nicknames with these words are rejected by database.rules.json (chat/lb/lbx name), so block them here too instead of failing silently; the owner account is exempt like in the rules */
-const NICK_BAD=/作者|站長|站长|管理員|管理员|客服|官方|admin/i;
+const NICK_BAD=/作者|站長|站长|客服|官方|admin/i;
 const nickBad=v=>!!v&&NICK_BAD.test(v)&&!(CL.user&&CL.user.email===ADMIN_EMAIL);
-(function(){const A={'zh-Hans':['你的昵称「{0}」含有保留字（管理员、作者、官方、admin 等），无法上榜或聊天，请换个名字。','昵称不能包含“管理员”“作者”“官方”“admin”等保留字'],
+(function(){const A={'zh-Hans':['你的昵称「{0}」含有保留字（作者、官方、admin 等），无法上榜或聊天，请换个名字。','昵称不能包含“作者”“官方”“admin”等保留字'],
 'en':['Your nickname "{0}" contains a reserved word (admin, author, official, etc.), so you can\'t be on the leaderboard or chat. Please pick another name.','Nicknames can\'t contain reserved words like "admin", "author" or "official".'],
 'ja':['ニックネーム「{0}」に予約語（管理者・作者・公式・admin など）が含まれているため、ランキングやチャットを利用できません。別の名前にしてください。','ニックネームに「管理者」「作者」「公式」「admin」などの予約語は使えません'],
 'ko':['닉네임 "{0}"에 예약어(관리자, 작가, 공식, admin 등)가 들어 있어 랭킹과 채팅을 이용할 수 없어요. 다른 이름으로 바꿔 주세요.','닉네임에 "관리자", "작가", "공식", "admin" 같은 예약어는 쓸 수 없어요'],
 'id':['Nama panggilan "{0}" mengandung kata terlarang (admin, penulis, resmi, dll.), jadi tidak bisa masuk papan peringkat atau chat. Silakan ganti nama.','Nama panggilan tidak boleh mengandung kata terlarang seperti "admin", "penulis", atau "resmi".']};
-for(const l in A){if(I18N[l])Object.assign(I18N[l],{'你的暱稱「{0}」含有保留字（管理員、作者、官方、admin 等），無法上榜或聊天，請改個名字。':A[l][0],'暱稱不能包含「管理員」「作者」「官方」「admin」等保留字':A[l][1]})}})();
+for(const l in A){if(I18N[l])Object.assign(I18N[l],{'你的暱稱「{0}」含有保留字（作者、官方、admin 等），無法上榜或聊天，請改個名字。':A[l][0],'暱稱不能包含「作者」「官方」「admin」等保留字':A[l][1]})}})();
 function lbEntry(){const r=loadRec();
   if(!r.nick||nickBad(r.nick))return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.maxDay>0)d.days=Math.round(r.maxDay);if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;return d}
 async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return} /* a save touched by the author test tools never goes on the leaderboard */
@@ -4561,7 +4561,7 @@ async function showLB(){if(LB.tab==='fr')return showFriends();
   const head=lbHead(tb);
   let foot='';
   if(!me)foot=`<div class="lbme"><span>${T('登入後就能加入排行榜。')}</span><button class="btn" data-act="login">${T('用 Google 登入')}</button></div>`;
-  else if(!mine){const bn=nickBad(loadRec().nick);foot=`<div class="lbme"><span>${bn?T('你的暱稱「{0}」含有保留字（管理員、作者、官方、admin 等），無法上榜或聊天，請改個名字。',esc(loadRec().nick)):T('取個暱稱就能加入排行榜。')}</span><button class="btn" data-act="nick">${T(bn?'改暱稱':'取暱稱')}</button></div>`}
+  else if(!mine){const bn=nickBad(loadRec().nick);foot=`<div class="lbme"><span>${bn?T('你的暱稱「{0}」含有保留字（作者、官方、admin 等），無法上榜或聊天，請改個名字。',esc(loadRec().nick)):T('取個暱稱就能加入排行榜。')}</span><button class="btn" data-act="nick">${T(bn?'改暱稱':'取暱稱')}</button></div>`}
   else foot=`<div class="lbme"><span>${T('你的暱稱：{0}',esc(mine.name))}</span><button class="btn alt" data-act="nick">${T('改暱稱')}</button></div>`;
   const f=tb[0],asc=tb[2]==='asc';
   // rank + percentile are worked out from the whole board, so they stay right beyond the top 50
@@ -4589,7 +4589,7 @@ function showNick(){const r=loadRec();
   setTimeout(()=>{const i=$('nickin');if(i)i.focus()},50)}
 async function saveNick(){const i=$('nickin');if(!i)return;const v=i.value.replace(/[<>\u0000-\u001f]/g,'').trim().slice(0,12);
   if(!v){const e=$('nickerr');e.textContent=T('暱稱不能空白');e.hidden=false;return}
-  if(nickBad(v)){const e=$('nickerr');e.textContent=T('暱稱不能包含「管理員」「作者」「官方」「admin」等保留字');e.hidden=false;return}
+  if(nickBad(v)){const e=$('nickerr');e.textContent=T('暱稱不能包含「作者」「官方」「admin」等保留字');e.hidden=false;return}
   const r=loadRec();r.nick=v;saveRec(r);LB.cache={};await cloudUpload(true);if(CHT.back){CHT.back=false;showChat()}else if(PF.back){PF.back=false;showProfile()}else showLB()}
 /* ===== friends: add by code, ranking among friends, visit a friend's shop, one gift per friend per day (all Realtime Database) =====
    fcode/<CODE>=uid · friends/<me>/<friend>=t · freq/<friend>/<me>=t (pending add, accepted when the friend opens this tab)
@@ -5005,7 +5005,7 @@ async function chatAddFriend(m){const me=CL.user;if(!me||!CL.api||!m||!m.uid)ret
 async function chatSend(stk){const i=$('cin'),m=$('cmsg');if(!i||!CL.user||!CL.api)return;const say=x=>{if(m)m.textContent=x};
   const name=(loadRec().nick||'').slice(0,12),text=stk?`[[s:${String(stk).padStart(2,'0')}]]`:chatClean(i.value);
   if(!text){return}if(!name){showNick();CHT.back=true;return}
-  if(nickBad(name)){showNick();CHT.back=true;toast(T('你的暱稱「{0}」含有保留字（管理員、作者、官方、admin 等），無法上榜或聊天，請改個名字。',name));return}
+  if(nickBad(name)){showNick();CHT.back=true;toast(T('你的暱稱「{0}」含有保留字（作者、官方、admin 等），無法上榜或聊天，請改個名字。',name));return}
   const w=5600-(Date.now()-CHT.last);if(w>0){say(T('慢一點～ {0} 秒後才能再發',Math.ceil(w/1000)));return}
   const prev=CHT.last,draft=i.value;CHT.last=Date.now();if(!stk)i.value='';say('');const rp=CHT.replyTo?{id:CHT.replyTo.id,uid:CHT.replyTo.uid,name:CHT.replyTo.name,text:CHT.replyTo.text}:null;
   try{const sent=CL.api.chatSend(CL.user.uid,name,text,isAdmin(),rp);if(await Promise.race([sent.then(()=>1),new Promise(r=>setTimeout(r,8000,0))])===0){sent.catch(()=>{});say(T('送出失敗，請稍後再試'));return}CHT.replyTo=null;chatReplyDraw();const l=$('chatlist');if(l)l.scrollTop=l.scrollHeight}

@@ -14,7 +14,7 @@
           ".validate": "newData.isString()"
         },
         "name": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24 && (!newData.val().matches(/作者|站長|站长|管理員|管理员|客服|官方|[Aa][Dd][Mm][Ii][Nn]/) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))"
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24 && (!newData.val().matches(/作者|站長|站长|客服|官方|[Aa][Dd][Mm][Ii][Nn]/) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))"
         },
         "text": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
@@ -102,7 +102,7 @@
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "newData.hasChildren(['name', 'best', 'earned', 'at'])",
         "name": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24 && (!newData.val().matches(/作者|站長|站长|管理員|管理员|客服|官方|[Aa][Dd][Mm][Ii][Nn]/) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))"
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24 && (!newData.val().matches(/作者|站長|站长|客服|官方|[Aa][Dd][Mm][Ii][Nn]/) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))"
         },
         "best": {
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000000000"
@@ -295,7 +295,7 @@
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "newData.hasChildren(['name', 'day'])",
         "name": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24 && (!newData.val().matches(/作者|站長|站长|管理員|管理员|客服|官方|[Aa][Dd][Mm][Ii][Nn]/) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))"
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24 && (!newData.val().matches(/作者|站長|站长|客服|官方|[Aa][Dd][Mm][Ii][Nn]/) || (auth != null && auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))"
         },
         "best": {
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000000000"
