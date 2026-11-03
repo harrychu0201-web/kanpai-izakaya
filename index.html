@@ -4624,7 +4624,7 @@ function cloudAsk(){const c=CL.pick;if(!c||!HOME)return;
   modal(`<h2>${T('選擇要用哪一份存檔')}</h2><p>${T('這台裝置和雲端各有一份不同的存檔，要用哪一份？另一份會被覆蓋。')}</p>
   <div class="pickrow"><button class="btn" data-act="pickcloud">${T('雲端存檔')}<small>${saveSummary(c.game)}</small></button><button class="btn alt" data-act="picklocal">${T('這台裝置')}<small>${saveSummary(lsGet(KEY))}</small></button></div>`)}
 /* ===== leaderboard: one public doc per player in lb/{uid}; written only by its owner, readable by all ===== */
-const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['dex','扭蛋圖鑑','desc','收集到的扭蛋種類越多越前面，秘密扭蛋機的款式也算。'],['chal','無限挑戰','desc','店不打烊一直營業，三次失誤就結束，比誰的營業時間長（暫停不算）。'],['chalh','極限挑戰','desc','禁用店員和道具的無限挑戰，比誰的營業時間長。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
+const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['chal','無限挑戰','desc','店不打烊一直營業，三次失誤就結束，比誰的營業時間長（暫停不算）。'],['chalh','極限挑戰','desc','禁用店員和道具的無限挑戰，比誰的營業時間長。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
 const LB={tab:'best',cache:{},last:null,ch:0};let CHEND='';
 /* nicknames with these words are rejected by database.rules.json (chat/lb/lbx name), so block them here too instead of failing silently; the owner account is exempt like in the rules */
 const NICK_BAD=/作者|站長|站长|客服|官方|admin/i;
@@ -4654,7 +4654,7 @@ async function lbWithMan(f,dir){const asc=dir==='asc';let rows=await CL.api.all(
     if(real)rows=rows.filter(r=>r!==real);
     rows.push({uid:'man:'+k,name:m.name,[f]:m[f]})});
   return rows.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f])}
-const LBMAN_F=[['chal','無限挑戰',1],['chalh','極限挑戰',1],['best','單日淨利',0],['earned','累計營收',0],['days','最長營業',0],['dex','扭蛋圖鑑',0]];
+const LBMAN_F=[['chal','無限挑戰',1],['chalh','極限挑戰',1],['best','單日淨利',0],['earned','累計營收',0],['days','最長營業',0]];
 async function showLbMan(){if(!isAdmin())return;modal(`<h2>手動登錄成績</h2><p>載入中…</p>`);let man={};
   try{man=await CL.api.lbMan()}catch(e){modal(`<h2>手動登錄成績</h2><p>讀取失敗：${esc(String((e&&(e.code||e.message))||e))}</p><div class="btns"><button class="btn" data-act="lb">返回排行榜</button></div>`);return}
   const list=Object.keys(man).map(k=>{const m=man[k]||{};const v=LBMAN_F.filter(x=>typeof m[x[0]]==='number').map(x=>x[1]+' '+lbVal(x[0],m[x[0]])).join('、');
@@ -4685,7 +4685,7 @@ async function saveUnflag(){if(!isAdmin())return;const name=(($('ufname')||{}).v
   try{await CL.api.setUnflag(lmNm(name).replace(/[.#$\[\]\/]/g,'_')||'_',{name,t:Date.now()});toast('已送出：'+name+' 下次打開遊戲就會恢復');const i=$('ufname');if(i)i.value=''}
   catch(e){err('送出失敗：'+String((e&&(e.code||e.message))||e))}}
 async function delLbMan(k){if(!isAdmin()||!k)return;try{await CL.api.setLbMan(k,null);LB.cache={};toast('已刪除');showLbMan()}catch(e){toast('刪除失敗')}}
-async function showLB(){if(!CL.api&&FB_CONFIG){await cloudInit();if(!CL.api)return cloudDown()}if(LB.tab==='fr')return showFriends();
+async function showLB(){if(!LBT.some(x=>x[0]===LB.tab))LB.tab='best';if(!CL.api&&FB_CONFIG){await cloudInit();if(!CL.api)return cloudDown()}if(LB.tab==='fr')return showFriends();
   const tb=LBT.find(x=>x[0]===LB.tab),me=CL.user,mine=lbEntry();
   const chs=(()=>{try{const g=JSON.parse(lsGet(KEY)||'null');return !!(g&&g.cheat)}catch(e){return false}})(); /* save touched by test tools: never uploaded */
   /* opening the board retries the upload (a failed one is never remembered as done) and keeps the real server error to show under the board; at most one retry per 15s */
