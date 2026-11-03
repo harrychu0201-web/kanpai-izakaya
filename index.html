@@ -5399,7 +5399,7 @@ function coLobbyView(){if(coHost()){coLobbyInit();return{hk:CO.L.hk,rd:CO.L.rd}}
 function coLobbyBlock(){const v=coLobbyView(),host=coHost(),me=v?(host?v.hk:(v.hk==='k'?'f':'k')):null,nm=r=>r==='k'?'🍳 廚房':'🧾 外場';let s='';
   if(!me)s+=`<p class="lbdesc">等房主選角色…</p>`;
   else s+=`<div class="lbme"><span>你的角色：<b>${nm(me)}</b></span><small>對方：${nm(me==='k'?'f':'k')}</small></div><p class="lbdesc">${CO_TASK[me]}</p>`;
-  if(v){const a=host?'h':'g',b=host?'g':'h';s+=`<div class="lbme"><span>你：${v.rd[a]?'✅ 已準備':'⏳ 未準備'}</span><span>對方：${v.rd[b]?'✅ 已準備':'⏳ 未準備'}</span></div>${voLobbyLine()}<p class="lbdesc">雙方都按「準備」後，由房主按「開始營業」，兩邊會一起倒數 3、2、1 開店。</p>`}
+  if(v){const a=host?'h':'g',b=host?'g':'h';s+=`<div class="lbme"><span>你：${v.rd[a]?'✅ 已準備':'⏳ 未準備'}</span><span>對方：${v.rd[b]?'✅ 已準備':'⏳ 未準備'}</span></div>${voLobbyLine()}<p class="lbdesc">雙方都按「準備」後，由房主按「開始營業」，兩邊會一起倒數 3、2、1 開店。</p><p class="lbdesc">🌙 營業沒有時間限制；想結束時，按上方正中間的「打烊」，雙方都同意就能休息並結算。</p>`}
   return s}
 function coLobbyBtns(){const v=coLobbyView();let s=voLobbyBtns();
   if(coHost())s+=`<button class="btn alt" data-act="cooprole">${COOP.hostRole==='f'?'🧾 我當外場（朋友當廚房）':'🍳 我當廚房（朋友當外場）'}</button>`;
@@ -5635,12 +5635,13 @@ function coGraceBar(ov){let g=document.getElementById('cograce');if(!g){g=docume
   if(left>0){g.textContent=`📡 對方斷線了，遊戲暫停，等他回來…（${left} 秒）`;g.style.display=''}else g.style.display='none'}
 function coPaint(){const S=CO.S,ov=document.getElementById('cogame');if(!S||!ov)return;coGraceBar(ov);const now=coNow(),me=coRole();
   const left=Math.max(0,(S.over&&S.endAt?S.endAt:now)-S.t0),mm=String(Math.floor(left/60000)).padStart(2,'0'),ss=String(Math.floor(left%60000/1000)).padStart(2,'0');
+  if(!S.over&&now>=S.t0){const dn=Math.floor((now-S.t0)/CO_DAY);if(dn>=1&&dn!==CO.hintDay&&!(S.cl&&(S.cl.k||S.cl.f))){CO.hintDay=dn;if(dn===1||dn%3===0)coToast('🌙 累了嗎？按上方「打烊」，雙方同意就能休息並結算')}}
   const cls=S.cl||{k:0,f:0},clMy=cls[me],clOt=cls[me==='k'?'f':'k'],clBtn=S.over||now<S.t0?'':`<button class="cob${clOt&&!clMy?' cx-act':''}" data-co="close" style="min-height:26px;min-width:40px;padding:0 10px;font-size:13px;white-space:nowrap${clOt&&!clMy?';border-color:#ffc65a;color:#ffc65a;background:#5a3a10':clMy?';opacity:.85':''}">${clMy?'⏳ 取消打烊':clOt?'🌙 同意打烊':'🌙 打烊'}</button>`,
   ct=document.getElementById('cotop'),cth=`<div class="cotl"><span>${'❤'.repeat(Math.max(0,S.hearts))||'💔'}</span><span>第 ${Math.floor(left/CO_DAY)+1} 天</span><span>⏱ ${mm}:${ss}</span><span>接客 ${S.sv}</span>${voGameBtns()}</div><div class="cotc">${clBtn}</div><div class="cotr"><span>${me==='k'?'🍳 廚房':'🧾 外場'}</span><span>我的錢包 ¥${Math.round(S.w[me])}</span><button class="cob" data-co="leave" style="min-height:26px;min-width:40px;padding:0 8px">✕</button></div>`;if(ct.dataset.h!==cth){ct.dataset.h=cth;ct.innerHTML=cth}
   const sh=document.getElementById('cosh');if(sh&&!sh.dataset.r||sh&&sh.dataset.r!==me){sh.dataset.r=me;const hh=Math.ceil(CO_SH[me].length/2);sh.innerHTML=CO_SH[me].map((t,i)=>`<button class="cob" data-co="sh:${i}" style="grid-row:${i<hh?1:2};grid-column:${i%hh+1};min-height:30px;min-width:0;padding:2px 8px;font-size:12px">${esc(t)}</button>`).join('')}
   let html;
   if(S.over)html=coResult(S);
-  else if(now<S.t0)html=`<div class="cores"><h2>${me==='k'?'你是廚房':'你是外場'}</h2><p>${me==='k'?'生食下鍋→熟了拿起→放進保溫台。你看不到客人，聽外場喊！':'接待客人→從保溫台拿餐點送給客人→收拾桌面。你看不到烤台，喊廚房！'}</p><h1>${S.t0-now>1000?Math.min(3,Math.ceil((S.t0-now-1000)/1000)):'開店！'}</h1></div>`;
+  else if(now<S.t0)html=`<div class="cores"><h2>${me==='k'?'你是廚房':'你是外場'}</h2><p>${me==='k'?'生食下鍋→熟了拿起→放進保溫台。你看不到客人，聽外場喊！':'接待客人→從保溫台拿餐點送給客人→收拾桌面。你看不到烤台，喊廚房！'}</p><p class="cohint" style="opacity:.8">🌙 想結束時，按上方正中間的「打烊」，雙方都同意就能休息並結算。</p><h1>${S.t0-now>1000?Math.min(3,Math.ceil((S.t0-now-1000)/1000)):'開店！'}</h1></div>`;
   else if(me!=='k'){const m0=document.getElementById('comain');html='<div class="cofit">'+coFloor(S,now,m0&&m0.clientWidth<m0.clientHeight*1.1?'P':m0&&m0.clientHeight<380?'S':'L')+'</div>'}
   const mn=document.getElementById('comain');if(html==null)coKitchenPaint(mn,S,now);else if(html!==CO.lastHtml){CO.lastHtml=html;coPatch(mn,html)}
   coFit();
