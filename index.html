@@ -4816,7 +4816,7 @@ function noticeClean(x){const o={id:String(x.id),title:x.title?String(x.title):'
 function unflagApply(u){if(TEST||!u||typeof u!=='object')return;const nick=lmNm(loadRec().nick);if(!nick)return;
   let t=0;Object.keys(u).forEach(k=>{const x=u[k];if(x&&lmNm(x.name)===nick&&typeof x.t==='number')t=Math.max(t,x.t)});if(!t)return;
   let o=null;try{o=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(!o||!o.cheat||(o.cheatAt||0)>t)return;
-  delete o.cheat;delete o.cheatAt;lsSet(KEY,JSON.stringify(o));if(typeof ST==='object'&&ST){delete ST.cheat;delete ST.cheatAt}
+  delete o.cheat;delete o.cheatAt;lsSet(KEY,JSON.stringify(o));touchLocal(); /* mark the local save newer so the login sync uploads it instead of asking which save to keep (the cloud copy still has the flag) */if(typeof ST==='object'&&ST){delete ST.cheat;delete ST.cheatAt}
   LB.last=null;LB.cache={};if(CL.user)cloudUpload(true).catch(()=>{});toast(T('作者已幫你恢復上排行榜的資格！'))}
 async function noticeRemote(){try{const d=await CL.api.notice();try{if(d&&d.unflag)unflagApply(d.unflag)}catch(e){}const del=d&&d.del&&typeof d.del==='object'?d.del:{};NOTICE_DEL=del;try{localStorage.setItem('izakaya-notice-del',JSON.stringify(del))}catch(e){}
   if(!d){NOTICE_HIST={};NOTICE=noticeAll()[0]||null;NOTICE_REMOTE=false;noticePop();return}const h={};
