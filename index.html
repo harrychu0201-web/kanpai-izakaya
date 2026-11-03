@@ -4267,16 +4267,27 @@ async function coopBye(code,why){if(!code||!CL.user||!CL.api)return;const me=CL.
   try{await CL.api.coopSend(code,me,'bye',0,why)}catch(e){}
   try{await CL.api.coopState(code,'ended')}catch(e){}}
 function coopBusy(){const o=coopOther();return !!(COOP.code&&COOP.room&&COOP.room.state!=='ended'&&o&&COOP.p[o]&&COOP.p[o].on)}
-function coopInvStart(){if(COOP.invOn||!CL.api||!CL.api.coopInvWatch||!coopDev()||!CL.user)return;const me=CL.user.uid;COOP.invOn=true;
-  COOP.invOff=CL.api.coopInvWatch(me,list=>{COOP.inv=list;const now=Date.now();let show=null;
+/* invites used to be a live listener on coopInv/<uid> for every signed-in player, which kept one connection per open game
+   (free plan: 100 at once). Now they are polled: every 20s while the game is on screen, every 4s while random matching, none in the background;
+   each poll connects, reads and drops the line again 1.5s later */
+const COOP_INV_POLL=20000;
+function coopInvGot(me,list){COOP.inv=list;const now=Date.now();let show=null;
     Object.keys(list).forEach(c=>{const v=list[c]||{};if(typeof v.t==='number'&&now-v.t>COOP_INV_TTL){CL.api.coopInvDel(me,c).catch(()=>{});delete list[c];return}
       if(!COOP.invSeen[c]&&!(COOP.code===c)){COOP.invSeen[c]=1;
         if(coopBusy()){coopBye(c,'busy');CL.api.coopInvDel(me,c).catch(()=>{});delete list[c];return}
         if(MM.on){CL.api.coopRoomGet(c).then(rm=>{if(MM.on&&rm&&rm.guest===me&&rm.state!=='ended')coopAct('accept',c).then(()=>mmStop(true))}).catch(()=>{});return}
         show=[c,v]}});
     if(show){coopBannerShow(show[0],show[1]);try{coopNote('有人邀請你一起開店')}catch(e){}}
-    if(!Object.keys(list).length)coopBannerHide();coopRender()},e=>{console.warn('coop inv watch',e);COOP.invOn=false})}
-function coopInvStop(){if(COOP.invOff)COOP.invOff();COOP.invOff=null;COOP.invOn=false;COOP.invSeen={};coopBannerHide()}
+    if(!Object.keys(list).length)coopBannerHide();coopRender()}
+function coopInvPoll(force){if(!COOP.invOn||COOP.invBusy||!CL.user||!CL.api||!CL.api.coopInvList)return;if(document.hidden&&!force)return;
+  const now=Date.now(),gap=(MM.on?4000:COOP_INV_POLL)*Math.min(6,1+(COOP.invBad||0));if(!force&&now-(COOP.invAt||0)<gap)return;
+  COOP.invAt=now;COOP.invBusy=true;const me=CL.user.uid;
+  CL.api.coopInvList(me,1500).then(list=>{COOP.invBad=0;if(COOP.invOn&&CL.user&&CL.user.uid===me)coopInvGot(me,list||{})})
+    .catch(e=>{if(!COOP.invBad)console.warn('coop inv poll',e);COOP.invBad=(COOP.invBad||0)+1}).finally(()=>{COOP.invBusy=false})}
+function coopInvStart(){if(COOP.invOn||!CL.api||!CL.api.coopInvList||!coopDev()||!CL.user)return;COOP.invOn=true;COOP.invAt=0;COOP.invBad=0;
+  clearInterval(COOP.invT);COOP.invT=setInterval(()=>coopInvPoll(),1000);coopInvPoll(true)}
+function coopInvStop(){clearInterval(COOP.invT);COOP.invT=null;if(COOP.invOff)COOP.invOff();COOP.invOff=null;COOP.invOn=false;COOP.invSeen={};coopBannerHide()}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&COOP.invOn)coopInvPoll(true)});
 async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid;COOP.err='';
   try{if(!CL.api)throw new Error('no api');
     if(k==='open'){coopPanel();try{COOP.inv=await CL.api.coopInvList(me)}catch(e){console.warn('coop inv',e);COOP.inv={};COOP.err='讀不到邀請（規則還沒更新？）'}coopPanel();
@@ -4383,9 +4394,11 @@ async function cloudInit1(){
     /* App Check: proves a request comes from this real site, so scripts and curl can't hammer the database. Inert until APPCHECK_KEY (reCAPTCHA v3 site key) is filled in. */
     if(APPCHECK_KEY){try{const ac=await import(B+'firebase-app-check.js');ac.initializeAppCheck(app,{provider:new ac.ReCaptchaV3Provider(APPCHECK_KEY),isTokenAutoRefreshEnabled:true})}catch(e){console.warn('app check',e)}}
     const auth=au.getAuth(app),db=fs.getFirestore(app);
-    let RD=null,rtT=null;const rtdb=async()=>{if(!RD){const rd=await import(B+'firebase-database.js');RD={rd,db:rd.getDatabase(app,RTDB_URL)}}return RD};
-    const rtIdle=()=>{clearTimeout(rtT);rtT=setTimeout(()=>{if(RD&&!CHT.unsub&&!COOP.on&&!COOP.invOn)RD.rd.goOffline(RD.db)},8000)};
-    const rt=async f=>{const x=await rtdb();clearTimeout(rtT);x.rd.goOnline(x.db);try{return await f(x.rd,x.db)}finally{rtIdle()}};
+    let RD=null,rtT=null,rtN=0;const rtdb=async()=>{if(!RD){const rd=await import(B+'firebase-database.js');RD={rd,db:rd.getDatabase(app,RTDB_URL)}}return RD};
+    /* free plan = 100 simultaneous connections: drop the socket once nothing needs it. rtN counts requests still in flight so a short idle never cuts one off;
+       only an open chat or a co-op room keeps the line up (invites are polled, see coopInvPoll) */
+    const rtIdle=ms=>{clearTimeout(rtT);rtT=setTimeout(()=>{if(RD&&!rtN&&!CHT.unsub&&!COOP.on)RD.rd.goOffline(RD.db)},ms||8000)};
+    const rt=async(f,ms)=>{const x=await rtdb();clearTimeout(rtT);rtN++;x.rd.goOnline(x.db);try{return await f(x.rd,x.db)}finally{rtN--;rtIdle(ms)}};
     CL.api={
       signIn:async()=>{const pv=new au.GoogleAuthProvider();pv.setCustomParameters({prompt:'select_account'});
         try{await au.signInWithPopup(auth,pv)}catch(e){const c=e&&e.code||'';
@@ -4435,7 +4448,7 @@ async function cloudInit1(){
       mmJoin:(uid,name)=>rt((rd,r)=>{COOP.w++;return rd.set(rd.ref(r,'mm/'+uid),{t:rd.serverTimestamp(),name:String(name||'').slice(0,24)})}),
       mmLeave:uid=>rt((rd,r)=>rd.remove(rd.ref(r,'mm/'+uid))),
       mmList:()=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'mm'),rd.orderByChild('t'),rd.limitToLast(30))).then(s=>{const a=[];s.forEach(c=>{const v=c.val();if(v&&typeof v.t==='number')a.push({uid:c.key,t:v.t,name:v.name||''})});return a})),
-      coopInvList:uid=>rt((rd,r)=>rd.get(rd.ref(r,'coopInv/'+uid)).then(s=>s.val()||{})),
+      coopInvList:(uid,ms)=>rt((rd,r)=>rd.get(rd.ref(r,'coopInv/'+uid)).then(s=>s.val()||{}),ms),
       coopInvWatch:(uid,cb,err)=>{let off=null,dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
         off=rd.onValue(rd.ref(r,'coopInv/'+uid),s=>cb(s.val()||{}),err)}).catch(err);
         return ()=>{dead=true;if(off)off()}},
