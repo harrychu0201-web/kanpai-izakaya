@@ -5282,7 +5282,11 @@ function coTick(){const S=CO.S;if(!S||S.over||!coHost())return;const now=Date.no
   S.cu.forEach((c,i)=>{if(!c||c.dirty)return;
     if(c.e){if(now-c.e>=CO_EAT){S.cu[i]={dirty:1};ch=true}return}
     if(now>c.d){S.cu[i]=null;S.hearts--;coFx('*','😡 客人氣跑了！命 -1');ch=true}});
-  if(now>=S.nx){const prog=Math.min(1,(now-S.t0)/S.dur);if(coSpawn(S,now)){S.nx=now+Math.round((13000-4000*prog)*(.8+Math.random()*.4));ch=true}else S.nx=now+1500}
+  {const wt=S.cu.filter(c=>c&&!c.dirty&&!c.e),pend=wt.reduce((n,c)=>n+c.s.filter(v=>!v).length,0);
+   if(!wt.length&&S.nx-now>2500)S.nx=now+2500;
+   if(now>=S.nx){const prog=Math.min(1,(now-S.t0)/S.dur);
+    if(wt.length>=3||pend>=6)S.nx=now+1500;
+    else if(coSpawn(S,now)){S.nx=now+Math.round((13000-4000*prog)*(.9+Math.random()*.2));ch=true}else S.nx=now+1500}}
   if(S.hearts<=0){coEnd('hearts');return}
   if(ch)coDirty();coPaint()}
 function coEnd(why){const S=CO.S;if(!S||S.over)return;S.over=1;S.why=why;S.endAt=Date.now();clearInterval(CO.tickT);CO.tickT=null;coPush();coPaint()}
