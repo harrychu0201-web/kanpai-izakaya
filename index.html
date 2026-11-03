@@ -5281,7 +5281,7 @@ setTimeout(()=>{for(const u of new Set(JSON.stringify([SPR,ROBSPR]).match(/img\/
    ('act', txt = "g<rid>|<cmd>") and renders the snapshots the host writes to rooms/<code>/st.
    All time fields in S are host-clock milliseconds; the guest corrects with CO.off. */
 const CO={open:false,S:null,off:0,rid:0,closedRid:0,seen:{},tickT:null,paintT:null,snapT:null,lastTick:0,fxSeen:0,leaveAt:0,lastShout:0,lastHtml:''};
-const CO_DUR=150000,CO_HEARTS=3,CO_SEATS=4,CO_GRILL=4,CO_FRY=3,CO_WARM=6,CO_WARM_LIFE=35000,CO_SAKE_MAX=4,CO_SAKE_CD=8000,CO_EAT=4000,CO_LEAD=4000;
+const CO_DAY=150000,CO_DUR=150000,CO_HEARTS=3,CO_SEATS=4,CO_GRILL=4,CO_FRY=3,CO_WARM=6,CO_WARM_LIFE=35000,CO_SAKE_MAX=4,CO_SAKE_CD=8000,CO_EAT=4000,CO_LEAD=4000;
 const CO_FOOD={neg:{n:'蔥雞肉串',st:'g',cook:6000,burn:14000,pr:210,art:'negima',sk:1,ik:'negima',raw:'蔥雞肉串'},tsu:{n:'雞肉丸串',st:'g',cook:7000,burn:14000,pr:250,art:'tsukune',sk:1,ik:'tsukune',raw:'雞肉丸串'},kara:{n:'唐揚',st:'f',cook:7000,burn:14000,pr:230,art:'karaage',ik:'karaage',raw:'生雞肉（唐揚）'},
   buta:{n:'薑燒肉',st:'t',cook:7000,burn:14000,pr:280,ik:'buta',raw:'生豬肉'},ika:{n:'烤魷魚',st:'t',cook:8000,burn:14000,pr:300,ik:'ika',raw:'生魷魚'},
   ebi:{n:'炸蝦',st:'p',cook:6000,burn:13000,pr:320,ik:'ebiten',raw:'生蝦'},kaki:{n:'炸牡蠣',st:'p',cook:8000,burn:13000,pr:340,ik:'kakifry',raw:'生牡蠣'},
@@ -5302,9 +5302,11 @@ function coFx(r,m){const S=CO.S;S.fx={id:((S.fx&&S.fx.id)||0)+1,r,m}}
 /* ---------- host: simulation ---------- */
 function coNewState(hk){const now=Date.now(),t0=now+CO_LEAD;
   return{rid:now,t0,dur:CO_DUR,over:0,why:'',hearts:CO_HEARTS,hk,gr:Array(CO_GRILL).fill(null),fr:Array(CO_FRY).fill(null),tp:Array(4).fill(null),tm:Array(3).fill(null),tk:Array(4).fill(null),on:Array(3).fill(null),wm:Array(CO_WARM).fill(null),
-    hd:{k:null,f:null},rd:{h:0,g:0},cu:Array(CO_SEATS).fill(null),sk:CO_SAKE_MAX,skc:0,w:{k:0,f:0},sv:0,nx:t0+1500,nid:0,fx:{id:0,r:'*',m:''},now}}
+    hd:{k:null,f:null},rd:{h:0,g:0},cl:{k:0,f:0},cu:Array(CO_SEATS).fill(null),sk:CO_SAKE_MAX,skc:0,w:{k:0,f:0},sv:0,nx:t0+1500,nid:0,fx:{id:0,r:'*',m:''},now}}
 function coApply(role,cmd){const S=CO.S;if(!S||S.over)return;const now=Date.now();if(now<S.t0)return;
   const p=String(cmd).split(':'),x=p[1],i=+x,H=S.hd;let a=p[0];
+  if(a==='close'){const c=S.cl||(S.cl={k:0,f:0});c[role]=c[role]?0:1;if(c.k&&c.f){coEnd('close');return}
+    if(c[role])coFx(role==='k'?'f':'k','🌙 對方想打烊了，按上方「打烊」同意');return}
   if(role==='k'){
     if(a==='wd'){if(!H.k||H.k.s!=='done')return;a='wm'}
     const km=/^([ke])([gftpyo])$/.exec(a);
@@ -5603,9 +5605,10 @@ function coFloor(S,now,lay){const L=CF_LAY[lay||'L'],r=(a)=>`left:${a[0]}px;top:
 function coResult(S){const me=coRole(),other=me==='k'?'f':'k',rd=S.rd||{h:0,g:0},a=coHost()?'h':'g',b=coHost()?'g':'h';
   const el=Math.max(0,(S.endAt||Date.now())-S.t0),em=Math.floor(el/60000),es=String(Math.floor(el%60000/1000)).padStart(2,'0');
   const title=S.sv>=30?'完美默契！':S.sv>=15?'配合得不錯':S.sv>=5?'還要再練練':'下次會更好';
-  return `<div class="cores"><h2>${S.why==='partner'?'對方離開了':'三條命用完了'}</h2><h3>${title}</h3>
-   <p>撐了：<b>${em}:${es}</b>　接待客人：<b>${S.sv}</b> 位</p>
-   <p>我的錢包：<b>¥${Math.round(S.w[me])}</b>　對方：<b>¥${Math.round(S.w[other])}</b></p>
+  const days=Math.floor(el/CO_DAY)+1,tot=Math.round(S.w.k+S.w.f),half=Math.round((S.w.k+S.w.f)/2);
+  return `<div class="cores"><h2>${S.why==='partner'?'對方離開了':S.why==='close'?'打烊囉':'三條命用完了'}</h2><h3>${title}</h3>
+   <p>營業了：<b>${days}</b> 天（${em}:${es}）　接待客人：<b>${S.sv}</b> 位</p>
+   <p>雙方營收合計 <b>¥${tot}</b>，平分後每人 <b>¥${half}</b></p>
    <p class="cohint">這局的錢只在本局有效，不會進存檔或排行榜。</p>
    <p>我：${rd[a]?'✅ 已準備':'⏳ 未準備'}　對方：${rd[b]?'✅ 已準備':'⏳ 未準備'}</p>
    <div class="corow" style="justify-content:center"><button class="cob" data-co="rdy" style="min-width:150px">${rd[a]?'已準備（再按取消）':'🙋 準備再來一局'}</button>${coHost()?`<button class="cob" data-co="go" style="min-width:120px${rd.h&&rd.g?'':';opacity:.4'}">▶ 開始下一局</button>`:''}<button class="cob" data-co="back" style="min-width:110px">🏠 回到房間</button></div><p class="cohint">${coHost()?'雙方都準備好後，按「開始下一局」。':'雙方都準備好後，等房主按開始。'}任一方按「回到房間」，兩人都會回到連線房間。</p></div>`}
@@ -5631,7 +5634,8 @@ function coGraceBar(ov){let g=document.getElementById('cograce');if(!g){g=docume
   if(left>0){g.textContent=`📡 對方斷線了，遊戲暫停，等他回來…（${left} 秒）`;g.style.display=''}else g.style.display='none'}
 function coPaint(){const S=CO.S,ov=document.getElementById('cogame');if(!S||!ov)return;coGraceBar(ov);const now=coNow(),me=coRole();
   const left=Math.max(0,(S.over&&S.endAt?S.endAt:now)-S.t0),mm=String(Math.floor(left/60000)).padStart(2,'0'),ss=String(Math.floor(left%60000/1000)).padStart(2,'0');
-  const ct=document.getElementById('cotop'),cth=`<span>${'❤'.repeat(Math.max(0,S.hearts))||'💔'}</span><span>⏱ ${mm}:${ss}</span><span>接客 ${S.sv}</span>${voGameBtns()}<span class="cosp"></span><span>${me==='k'?'🍳 廚房':'🧾 外場'}</span><span>我的錢包 ¥${Math.round(S.w[me])}</span><button class="cob" data-co="leave" style="min-height:26px;min-width:40px;padding:0 8px">✕</button>`;if(ct.dataset.h!==cth){ct.dataset.h=cth;ct.innerHTML=cth}
+  const cls=S.cl||{k:0,f:0},clMy=cls[me],clOt=cls[me==='k'?'f':'k'],clBtn=S.over||now<S.t0?'':`<button class="cob${clOt&&!clMy?' cx-act':''}" data-co="close" style="min-height:26px;min-width:40px;padding:0 8px;font-size:12px${clOt&&!clMy?';border-color:#ffc65a;color:#ffc65a':''}">${clMy?'⏳ 等對方同意（取消）':clOt?'🌙 對方想打烊・同意':'🌙 打烊'}</button>`,
+  ct=document.getElementById('cotop'),cth=`<span>${'❤'.repeat(Math.max(0,S.hearts))||'💔'}</span><span>第 ${Math.floor(left/CO_DAY)+1} 天</span><span>⏱ ${mm}:${ss}</span><span>接客 ${S.sv}</span>${voGameBtns()}<span class="cosp"></span><span>${me==='k'?'🍳 廚房':'🧾 外場'}</span><span>我的錢包 ¥${Math.round(S.w[me])}</span>${clBtn}<button class="cob" data-co="leave" style="min-height:26px;min-width:40px;padding:0 8px">✕</button>`;if(ct.dataset.h!==cth){ct.dataset.h=cth;ct.innerHTML=cth}
   const sh=document.getElementById('cosh');if(sh&&!sh.dataset.r||sh&&sh.dataset.r!==me){sh.dataset.r=me;const hh=Math.ceil(CO_SH[me].length/2);sh.innerHTML=CO_SH[me].map((t,i)=>`<button class="cob" data-co="sh:${i}" style="grid-row:${i<hh?1:2};grid-column:${i%hh+1};min-height:30px;min-width:0;padding:2px 8px;font-size:12px">${esc(t)}</button>`).join('')}
   let html;
   if(S.over)html=coResult(S);
