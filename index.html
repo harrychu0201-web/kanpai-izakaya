@@ -304,7 +304,13 @@ body.tutmode:has(.modal) #tut{display:none}
 .tut-box .btn{font-size:15px;padding:7px 16px}
 .tut-n{font-size:12px;opacity:.6;font-weight:700}
 .home .side{position:absolute;left:max(clamp(10px,2.2vw,34px),env(safe-area-inset-left,0px));top:24%;display:flex;flex-direction:column;gap:clamp(8px,1.6vh,18px);z-index:2}
-.rdot{position:absolute;top:2px;right:8px;width:12px;height:12px;border-radius:50%;background:#e0412c;border:2px solid #fff;z-index:2}.sideb{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:0;padding:0;cursor:pointer;transition:transform .12s}
+.rdot{position:absolute;top:2px;right:8px;width:12px;height:12px;border-radius:50%;background:#e0412c;border:2px solid #fff;z-index:2;animation:rdotp 1.6s ease-out infinite}
+@keyframes rdotp{0%{box-shadow:0 0 0 0 rgba(224,65,44,.7)}70%{box-shadow:0 0 0 9px rgba(224,65,44,0)}100%{box-shadow:0 0 0 0 rgba(224,65,44,0)}}
+@keyframes sbglow{0%,100%{filter:drop-shadow(0 0 2px rgba(255,190,90,.35))}50%{filter:drop-shadow(0 0 9px rgba(255,190,90,.95))}}
+.sideb:has(>.rdot) svg{animation:sbglow 1.8s ease-in-out infinite}
+.dex-c,.mdx-c{position:relative}
+.dex-new{position:absolute;top:-5px;right:-3px;z-index:2;background:#e0412c;color:#fff;border:2px solid #fff;border-radius:9px;font:900 10px/1 sans-serif;font-style:normal;padding:2px 5px;animation:rdotp 1.6s ease-out infinite;pointer-events:none}
+.mdx-c .dex-new{top:-6px;right:8px}.sideb{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:0;padding:0;cursor:pointer;transition:transform .12s}
 .sideb:hover{transform:scale(1.08)}.sideb:active{transform:scale(.94)}
 .sideb svg{width:clamp(54px,6.2vw,84px);height:clamp(54px,6.2vw,84px);filter:drop-shadow(0 3px 0 #3a1a10) drop-shadow(0 4px 8px rgba(0,0,0,.45))}
 .sideb span{font-family:var(--f-ui);font-weight:900;font-size:clamp(13px,1.3vw,19px);color:#f3dfb4;letter-spacing:.06em;text-shadow:2px 0 #3a1a10,-2px 0 #3a1a10,0 2px #3a1a10,0 -2px #3a1a10,1.5px 1.5px #3a1a10,-1.5px 1.5px #3a1a10,1.5px -1.5px #3a1a10,-1.5px -1.5px #3a1a10,0 3px 3px rgba(0,0,0,.5)}
@@ -2127,7 +2133,7 @@ function spawn(){
   const look=R.forceLook||(hg?pick(MOBS):pickChar());R.forceLook=null;
   const c={seat:i,look,hg,critic:look.spr==='kuroda'&&evNow().ev==='critic'&&!R.criticDone,order,filled:order.map(()=>false),pat:max,max,st:'in',t:0,fig:'ok'};
   c.tr=TRAITS[look.spr]||{};if(c.tr.pat){c.max*=c.tr.pat;c.pat=c.max}
-  R.seats[i]=c;R.spawned++;sfx('door');if(c.look.spr&&PROF[c.look.spr]&&!DEMO){const rr=loadRec();rr.met=rr.met||{};if(!rr.met[c.look.spr]){rr.met[c.look.spr]=1;saveRec(rr);achSoon()}}
+  R.seats[i]=c;R.spawned++;sfx('door');if(c.look.spr&&PROF[c.look.spr]&&!DEMO){const rr=loadRec();rr.met=rr.met||{};if(!rr.met[c.look.spr]){dxsPrep(rr);rr.met[c.look.spr]=1;saveRec(rr);achSoon()}}
   const el=document.createElement('div');el.className='cust walk';el.dataset.seat=i;el.dataset.m='ok';if(c.look.spr){el.classList.add('sp');el.dataset.c=c.look.spr;if(c.look.mob)el.classList.add('mob')}{const tx=seatX(i,seatsN())-80;el.style.left=tx+'px';el.style.transform=`translateX(${-(tx+170)}px)`}
   if(!c.critic&&Math.random()<BONUSP){const ex=bonusPick(order);
     if(ex){c.extra=ex;
@@ -2135,7 +2141,7 @@ function spawn(){
         if(ST.wish[ex.base]===WISHN)setTimeout(()=>toast(T('最近好像有很多客人想吃{0}…打烊後去商店看看！',JP(ex.base))),1200)}}}
   if(c.extra&&c.extra.ok){c.max*=BONUSPAT;c.pat=c.max} // 加碼的客人願意多等一會兒，免得還沒上菜就走了
   el.innerHTML=custFig(c.look,'ok')+`<div class="bubble hide"></div>`+(hg?`<div class="hg-badge">${hg.ic}</div>`:'');
-  if(hg&&!DEMO){const rr=loadRec();rr.hg=rr.hg||{};rr.hg[hg.id]=(rr.hg[hg.id]||0)+1;saveRec(rr);setTimeout(()=>{if(R)toast(T('{0}來了！',T(hg.zh)))},300)}
+  if(hg&&!DEMO){const rr=loadRec();rr.hg=rr.hg||{};if(!rr.hg[hg.id])dxsPrep(rr);rr.hg[hg.id]=(rr.hg[hg.id]||0)+1;saveRec(rr);setTimeout(()=>{if(R)toast(T('{0}來了！',T(hg.zh)))},300)}
   $('custLayer').appendChild(el);c.el=el;seatClasses();
   c.walkT=(seatX(i,seatsN())-80+170)/WALKV;el.style.transitionDuration=c.walkT.toFixed(2)+'s';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.transform='translateX(0)'}));
@@ -2712,7 +2718,7 @@ function mishapRoll(type){
   if(last[type]){last[type]=false;return false} // never twice in a row for the same kind
   if(Math.random()<MISHAP_P){last[type]=true;return true}return false}
 function mishapLog(type){
-  if(DEMO)return;const r=loadRec(),m=r.mishap||(r.mishap={}),first=!m[type];m[type]=(m[type]||0)+1;
+  if(DEMO)return;const r=loadRec(),m=r.mishap||(r.mishap={}),first=!m[type];if(first)dxsPrep(r);m[type]=(m[type]||0)+1;
   const all=first&&!r.mishapReward&&Object.keys(MISHAPS).every(k=>m[k]);if(all)r.mishapReward=1;saveRec(r);achSoon();
   if(first){setTimeout(()=>{if(R){sfx('star');popup(W/2,250,T('新事故！已記入事故圖鑑'))}},700)}
   if(all){ST.coins+=MISHAP_REWARD;save();setTimeout(()=>{if(R){popup(W/2,210,T('事故圖鑑集滿！獎勵 {0}',yen(MISHAP_REWARD)));renderHUD()}},2000)}}
@@ -2754,16 +2760,18 @@ function showCalendar(){
   <div class="cal">${months}</div>
   <div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`)}
 function showHolDex(){
+  const nwH=dxsNew('h:');dxsMark(nwH);
   const hg=loadRec().hg||{},all=Object.values(HOLGUESTS).flat(),n=all.filter(g=>hg[g.id]).length;
   modal(`<h2>${T('節日客圖鑑')} <span style="font-size:16px;color:#7a4a2a">${T('已遇見 {0} / {1}',n,all.length)}</span></h2>
   <p style="font-size:14px">${T('只有節日那天才會來的特別客人，第一次遇見就會登記在這裡。')}</p>
-  ${Object.entries(HOLGUESTS).map(([h,gs])=>`<h3 style="margin:8px 0 4px">${T(holInfo(h).zh)}</h3><div class="mdx">${gs.map(g=>hg[g.id]?`<div class="mdx-c"><div class="ic">${g.ic}</div><div><b>${T(g.zh)}</b><small>${T('遇見 {0} 次',hg[g.id])}</small><p class="q">${T(g.line)}</p></div></div>`:`<div class="mdx-c lock"><div class="ic">${g.ic}</div><div><b>？？？</b><p>${T('節日那天可能會遇見。')}</p></div></div>`).join('')}</div>`).join('')}
+  ${Object.entries(HOLGUESTS).map(([h,gs])=>`<h3 style="margin:8px 0 4px">${T(holInfo(h).zh)}</h3><div class="mdx">${gs.map(g=>hg[g.id]?`<div class="mdx-c">${nwH.includes('h:'+g.id)?'<i class="dex-new">NEW</i>':''}<div class="ic">${g.ic}</div><div><b>${T(g.zh)}</b><small>${T('遇見 {0} 次',hg[g.id])}</small><p class="q">${T(g.line)}</p></div></div>`:`<div class="mdx-c lock"><div class="ic">${g.ic}</div><div><b>？？？</b><p>${T('節日那天可能會遇見。')}</p></div></div>`).join('')}</div>`).join('')}
   <div class="btns"><button class="btn" data-act="dex">${T('返回')}</button></div>`)}
 function showMishapDex(){
+  const nwM=dxsNew('m:');dxsMark(nwM);
   const m=loadRec().mishap||{},ks=Object.keys(MISHAPS),n=ks.filter(k=>m[k]).length,done=!!loadRec().mishapReward;
   modal(`<h2>${T('事故圖鑑')} <span style="font-size:16px;color:#7a4a2a">${T('已發現 {0} / {1}',n,ks.length)}</span></h2>
   <p style="font-size:14px">${T('店裡偶爾會發生小意外，每種第一次發生就會記在這裡。')}</p>
-  <div class="mdx">${ks.map(k=>{const x=MISHAPS[k];return m[k]?`<div class="mdx-c"><div class="ic">${x.ic}</div><div><b>${T(x.zh)}</b><small>${T('發生過 {0} 次',m[k])}</small><p>${T(x.d)}</p><p class="q">${T(x.q)}</p></div></div>`:`<div class="mdx-c lock"><div class="ic">${x.ic}</div><div><b>？？？</b><p>${T(x.hint)}</p></div></div>`}).join('')}</div>
+  <div class="mdx">${ks.map(k=>{const x=MISHAPS[k];return m[k]?`<div class="mdx-c">${nwM.includes('m:'+k)?'<i class="dex-new">NEW</i>':''}<div class="ic">${x.ic}</div><div><b>${T(x.zh)}</b><small>${T('發生過 {0} 次',m[k])}</small><p>${T(x.d)}</p><p class="q">${T(x.q)}</p></div></div>`:`<div class="mdx-c lock"><div class="ic">${x.ic}</div><div><b>？？？</b><p>${T(x.hint)}</p></div></div>`}).join('')}</div>
   <p style="font-size:14px;font-weight:900">${done?T('集滿獎勵已領取！'):T('三種都遇過，會得到 {0} 獎勵。',yen(MISHAP_REWARD))}</p>
   <div class="btns"><button class="btn" data-act="dex">${T('返回')}</button></div>`)}
 function deliver(seat){
@@ -2807,7 +2815,7 @@ function renderHUD(){document.body.classList.toggle('playing',!!R);
 
 /* ---- modals ---- */
 function modal(html){const h=HOME&&$('homeModal');(h||$('modalLayer')).innerHTML=`<div class="modal" data-close="${T('點空白處關閉')}"><div class="card">${html}</div></div>`}
-function closeModal(){$('modalLayer').innerHTML='';const h=$('homeModal');if(h)h.innerHTML=''}
+function closeModal(){$('modalLayer').innerHTML='';const h=$('homeModal');if(h)h.innerHTML='';try{homeDots()}catch(e){}}
 const HOME_IMG='img/home-ffe867f5.webp';
 let HOME=false;
 function homeArt(w,h,port){
@@ -2869,7 +2877,7 @@ function placeChat(){const h=document.querySelector('.home'),c=document.querySel
   const rec=document.querySelector('.home .side-r [data-act=records] svg');
   if(rw&&rec){const rr=rec.getBoundingClientRect();rw.style.left=(rr.left-hr.left-rw.offsetWidth-10)+'px';rw.style.bottom='auto';rw.style.top=((rr.top+rr.bottom)/2-hr.top-rw.offsetHeight/2)+'px';if(fr){fr.style.left=rw.style.left;fr.style.bottom='auto';fr.style.top=(parseFloat(rw.style.top)+rw.offsetHeight+8)+'px'}}
 }
-function sideBtn(act,label){const [a,b,ic]=SIDEI[act];return `<button class="sideb" data-act="${act}"><svg viewBox="0 0 64 64"><defs><linearGradient id="sg-${act}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><circle cx="32" cy="32" r="29" fill="url(#sg-${act})" stroke="#3a1a10" stroke-width="3.5"/><circle cx="32" cy="32" r="25.5" fill="none" stroke="#c9963e" stroke-width="2.5"/><ellipse cx="32" cy="16" rx="17" ry="6" fill="#fff" opacity=".1"/>${ic}</svg>${(act==='rewards'&&rewardDue())||(act==='ach'&&achStat(loadRec()).due)?'<i class="rdot"></i>':''}<span>${T(label)}</span></button>`}
+function sideBtn(act,label){const [a,b,ic]=SIDEI[act];return `<button class="sideb" data-act="${act}"><svg viewBox="0 0 64 64"><defs><linearGradient id="sg-${act}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><circle cx="32" cy="32" r="29" fill="url(#sg-${act})" stroke="#3a1a10" stroke-width="3.5"/><circle cx="32" cy="32" r="25.5" fill="none" stroke="#c9963e" stroke-width="2.5"/><ellipse cx="32" cy="16" rx="17" ry="6" fill="#fff" opacity=".1"/>${ic}</svg>${homeDotOn(act)?'<i class="rdot"></i>':''}<span>${T(label)}</span></button>`}
 function plaque(act,label,sub,primary){return `<button class="plq ${primary?'pri':''}" data-act="${act}"><span class="plan">${sv(lanternG(''),'0 0 60 84')}</span><span class="plt">${T(label)}${sub?`<small>${sub}</small>`:''}</span></button>`}
 let SHOPHOME=false,TYPING=0;
 document.addEventListener('pointerdown',e=>{const a=document.activeElement;TYPING=a&&/^(INPUT|TEXTAREA)$/.test(a.tagName)&&a.closest('.modal')&&e.target.classList.contains('modal')?performance.now():0},true);
@@ -2925,13 +2933,27 @@ const PROF={
  ryuji:['44 歲・花店老闆','長得像流氓，其實是溫柔的花店老闆，手臂上的刺青是一朵小花。','……這花，送你。','威士忌蘇打、炸牡蠣']};
 let DEXSEL=null;
 function metSet(){const r=loadRec();return r.met||{}}
-function showDex(){const met=metSet(),n=CHARS.filter(c=>met[c.spr]).length;
+/* ===== 入口按鈕的紅點：每個入口各自判斷「有沒有新東西」，進去看過就消失 =====
+   圖鑑的「新」記在 rec.dxs（c:常客 / m:事故 / h:節日客）。舊存檔沒有 dxs 時一律當作都看過；
+   第一次登記新項目之前會先把舊的補進去（dxsPrep），所以只有真正新遇到的才會亮 */
+function dxsAll(r){const s={};Object.keys(r.met||{}).forEach(k=>s['c:'+k]=1);Object.keys(r.mishap||{}).forEach(k=>s['m:'+k]=1);Object.keys(r.hg||{}).forEach(k=>s['h:'+k]=1);return s}
+function dxsPrep(r){if(!r.dxs)r.dxs=dxsAll(r)}
+function dxsNew(pre){const r=loadRec();if(!r.dxs)return [];return Object.keys(dxsAll(r)).filter(k=>k.startsWith(pre)&&!r.dxs[k])}
+function dxsMark(keys){if(!keys.length)return;const r=loadRec();dxsPrep(r);let ch=false;keys.forEach(k=>{if(!r.dxs[k]){r.dxs[k]=1;ch=true}});if(ch)saveRec(r)}
+function homeDotOn(act){try{
+  if(act==='rewards')return !!rewardDue();
+  if(act==='ach')return achStat(loadRec()).due>0;
+  if(act==='dex')return dxsNew('').length>0;
+  if(act==='notice')return !!noticeDue();
+}catch(e){}return false}
+function homeDots(){if(!HOME)return;document.querySelectorAll('.sideb[data-act]').forEach(b=>{const on=homeDotOn(b.dataset.act),d=b.querySelector(':scope>.rdot');if(on&&!d)b.insertAdjacentHTML('afterbegin','<i class="rdot"></i>');else if(!on&&d)d.remove()});try{syncRewardDot()}catch(e){}}
+function showDex(){const met=metSet(),n=CHARS.filter(c=>met[c.spr]).length,nwC=dxsNew('c:'),nwM=dxsNew('m:').length,nwH=dxsNew('h:').length;
   const sel=DEXSEL&&met[DEXSEL]?DEXSEL:null,c=sel&&CHARS.find(x=>x.spr===sel),p=sel&&PROF[sel];
   const Q=LANG==='en'?['“','”']:LANG==='zh-Hans'?['“','”']:LANG==='ko'?['“','”']:['「','」'];
   modal(`<h2>${T('常客圖鑑')} <span style="font-size:16px;color:#7a4a2a">${T('已遇見 {0} / {1}',n,CHARS.length)}</span></h2>
   ${sel?`<div class="dex-d"><img src="${SPR[sel].happy}" alt=""><div><b>${T(c.name)}</b><small>${T(p[0])}</small><p>${T(p[1])}</p><p class="q">${Q[0]}${T(p[2].replace(/^「|」$/g,''))}${Q[1]}</p><p class="fav">${T('愛點：{0}',T(p[3]))}</p></div></div>`:`<p style="font-size:14px">${T('在店裡遇見的常客會登記在這裡，點頭像看介紹。')}</p>`}
-  <div class="dex">${CHARS.map(x=>met[x.spr]?`<button class="dex-c ${x.spr===sel?'on':''}" data-act="dex" data-id="${x.spr}"><img src="${SPR[x.spr].ok}" alt=""><span>${T({kuroda:'黑田',nakamura:'課長',ryuji:'龍二',sachiko:'幸子'}[x.spr]||x.name.split(' ').pop())}</span></button>`:`<div class="dex-c lock"><img src="${SPR[x.spr].ok}" alt=""><span>？？？</span></div>`).join('')}</div>
-  <div class="btns"><button class="btn alt" data-act="mishapdex">😵 ${T('事故圖鑑')}</button><button class="btn alt" data-act="holdex">🎉 ${T('節日客圖鑑')}</button><button class="btn alt" data-act="calendar">📅 ${T('日曆')}</button><button class="btn" data-act="closem">${T('返回')}</button></div>`)}
+  <div class="dex">${CHARS.map(x=>met[x.spr]?`<button class="dex-c ${x.spr===sel?'on':''}" data-act="dex" data-id="${x.spr}">${nwC.includes('c:'+x.spr)?'<i class="dex-new">NEW</i>':''}<img src="${SPR[x.spr].ok}" alt=""><span>${T({kuroda:'黑田',nakamura:'課長',ryuji:'龍二',sachiko:'幸子'}[x.spr]||x.name.split(' ').pop())}</span></button>`:`<div class="dex-c lock"><img src="${SPR[x.spr].ok}" alt=""><span>？？？</span></div>`).join('')}</div>
+  <div class="btns"><button class="btn alt" data-act="mishapdex" style="position:relative">😵 ${T('事故圖鑑')}${nwM?'<i class="rdot" style="top:-6px;right:-6px"></i>':''}</button><button class="btn alt" data-act="holdex" style="position:relative">🎉 ${T('節日客圖鑑')}${nwH?'<i class="rdot" style="top:-6px;right:-6px"></i>':''}</button><button class="btn alt" data-act="calendar">📅 ${T('日曆')}</button><button class="btn" data-act="closem">${T('返回')}</button></div>`)}
 const PF={back:false};
 function showProfile(){const r=loadRec(),me=CL.user;
   const nk=!me?`<div class="lbme"><span>${T('登入後才能取暱稱。')}</span><button class="btn" data-act="login">${T('用 Google 登入')}</button></div>`
@@ -3523,7 +3545,7 @@ document.addEventListener('click',e=>{
   else if(act==='artstyle'){setArtStyle(a.dataset.id);showSndModal()}
   else if(act==='togsfx'){sndWake();sfxSet(!SND.sfxOn);if(SND.sfxOn)sfx('click');showSndModal();renderHUD()}
   else if(act==='homeshop'){ST=load();if(ST){SHOPHOME=true;SHOPTAB=SHOPTAB||'menu';showShop()}}
-  else if(act==='dex'){DEXSEL=a.dataset.id||null;showDex()}
+  else if(act==='dex'){DEXSEL=a.dataset.id||null;if(DEXSEL)dxsMark(['c:'+DEXSEL]);showDex()}
   else if(act==='mishapdex')showMishapDex();
   else if(act==='holdex')showHolDex();
   else if(act==='calendar')showCalendar();
@@ -4100,6 +4122,7 @@ function mergeRec(a,b){const pj=s=>{try{return s?JSON.parse(s)||{}:{}}catch(e){r
   {const ax={};[x.ax||{},y.ax||{}].forEach(h=>{for(const k in h)ax[k]=Math.max(ax[k]||0,h[k]||0)});if(Object.keys(ax).length)o.ax=ax}
   {const eg=Object.assign({},x.eg||{}),ye=y.eg||{};for(const k in ye){if(ye[k]&&typeof ye[k]==='object')eg[k]=Object.assign({},eg[k]&&typeof eg[k]==='object'?eg[k]:{},ye[k]);else if(ye[k])eg[k]=1}if(Object.keys(eg).length)o.eg=eg}
   {const v=Math.max(x.achV||0,y.achV||0);if(v)o.achV=v}
+  if(x.dxs||y.dxs)o.dxs=Object.assign({},x.dxs||{},y.dxs||{});
   {const ci=[x.ci,y.ci].filter(Boolean).sort((p,q)=>String(q.last||'').localeCompare(String(p.last||'')));if(ci[0])o.ci=ci[0]}
   return JSON.stringify(o)}
 /* ===== co-op (milestone 1, author-only): room + invite + presence + event channel + 30s reconnect grace ===== */
@@ -4662,7 +4685,7 @@ function noticeSeen(id){const v=String(id||NOTICE.id);try{localStorage.setItem('
 function noticeIsSeen(id){const v=String(id);return noticeSeenList().includes(v)||noticeSeenId()===v}
 /* The auto pop-up must not run ahead of the database: the built-in newest one used to pop up before the posted ones arrived, and 知道了 then marked the (newer) posted one as read without ever showing it.
    So: wait for the database (3.5s at most), mark only the notice that was really shown, and if a newer one is still due afterwards, show it next. */
-function noticePop(){NOTICE_LOADED=true;if(!HOME||R)return;
+function noticePop(){NOTICE_LOADED=true;if(!HOME||R)return;try{homeDots()}catch(e){}
   if(!document.querySelector('#homeModal .modal')){if(noticeDue()){NAUTOREQ=true;showNotice()}}
   else if(NAUTO&&NSHOW!=null&&NOTICE&&String(NSHOW)!==String(NOTICE.id)&&document.querySelector('#homeModal .notice')){NAUTOREQ=true;showNotice()}}
 function noticeDue(){return !!NOTICE&&!!NOTICE.id&&!noticeIsSeen(NOTICE.id)&&!NOTICE_DEL[nkey(NOTICE.id)]}
@@ -4681,7 +4704,7 @@ function noticeVoteDraw(){const b=$('nvbox');if(!b)return;const on=!!CL.user&&NV
 async function noticeVote(val){if(!CL.user||!CL.api||NV.v==null||!NV.id)return;const id=NV.id,old=NV.v,nv=old===val?0:val;
   NV.v=nv;noticeVoteDraw();
   try{await CL.api.noticeVoteSet(id,CL.user.uid,nv);if(isAdmin())noticeVoteStat()}catch(e){if(NV.id===id){NV.v=old;noticeVoteDraw()}toast('送出失敗，晚點再試')}}
-function showNotice(again,id){const au=NAUTOREQ;NAUTOREQ=false;const all=noticeAll(),old=id!=null,n=old?all.find(x=>x.id===String(id)):NOTICE;if(!n){closeModal();return}const rem=!!n.rem;NSHOW=String(n.id);NAUTO=au&&!old;if(NAUTO)noticeSeen(NSHOW);
+function showNotice(again,id){const au=NAUTOREQ;NAUTOREQ=false;const all=noticeAll(),old=id!=null,n=old?all.find(x=>x.id===String(id)):NOTICE;if(!n){closeModal();return}const rem=!!n.rem;NSHOW=String(n.id);NAUTO=au&&!old;if(NAUTO||(again&&!old))noticeSeen(NSHOW);
   const text=rem?n.text:T(n.text),sign=rem?(n.sign||''):T(n.sign),dt=noticeDate(n);
   modal(`<div class="notice"><h2>📢 ${rem?(n.title?esc(n.title):T('公告')):T(n.title)}</h2>${dt?`<p style="font-size:12px;opacity:.7;margin-top:-6px">${dt}${n.edited?' · 已編輯':''}</p>`:''}<p>${esc(text)}</p>${sign?`<p class="sign">${esc(sign)}</p>`:''}<div class="nvbox" id="nvbox"></div></div>
   <div class="btns"><button class="btn" data-act="noticeok">${T('知道了')}</button>${all.length>1?`<button class="btn alt" data-act="noticelist">📜 ${T('之前的公告')}</button>`:''}${FB_CONFIG?`<button class="btn alt" data-act="fb">${T('意見反映')}</button>`:''}${canPost()?`<button class="btn alt" data-act="noticenew">📢 發布</button>`:''}${canPost()?`<button class="btn alt" data-act="noticeedit" data-id="${esc(n.id)}">✏️ 編輯</button>`:''}${canDelNotice()?`<button class="btn alt" data-act="noticedel" data-id="${esc(n.id)}">🗑️ 刪除</button>`:''}</div>`);noticeVoteInit(n)}
