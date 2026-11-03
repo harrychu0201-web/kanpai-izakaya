@@ -879,7 +879,7 @@ function chStart(hard){if(CHG)chQuit();LB.ch=0;CHEND='';
   ST=Object.assign(load()||fresh(),{day:1,coins:3000,debt:0,loans:0,dues:[],stars:{},where:'iz',pendingNext:false,pre:null});
   delete ST.today;delete ST.past;
   closeModal();closeHome();R=null;setCur('iz');
-  pickToday();startDay();DAYLEN=159*24/8.5;goFS();refitBurst();
+  pickToday();startDay();DAYLEN=159*24/8.5;goFS();playReset();refitBurst();
   toast(T(hard?'極限挑戰開始！禁用店員和道具':'無限挑戰開始！三次失誤就結束'))}
 function showChallenge(){const r=loadRec();
   modal(`<h2>♾️ ${T('無限挑戰')}</h2><p>${T('店不打烊，一直營業下去。三次失誤就結束，排行榜比的是營業時間（暫停和選單的時間不算）。')}</p>
@@ -1781,7 +1781,7 @@ function fillH(ww,stageW,minH){
 }
 function chooseLayout(force){
   const AE=document.activeElement;if(!force&&AE&&/^(INPUT|TEXTAREA)$/.test(AE.tagName))return; // soft keyboard resizes the viewport; re-laying out here would rebuild the home screen and close the open modal (chat / nickname)
-  const OV=document.body.classList.contains('ovl'),ww=(OV?window.innerWidth:(TOUCH?(landT()?window.innerWidth:stableWrapW()):$('wrap').clientWidth))-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):24),ah=(OV||TOUCH)?stableVisH():Math.max(300,window.innerHeight-60),want=(!landT()&&ww<760&&ww/ah<1.05)?'port':'land';
+  const OV=document.body.classList.contains('ovl'),ww=(OV?landW():(TOUCH?(landT()?landW():stableWrapW()):$('wrap').clientWidth))-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):24),ah=(OV||TOUCH)?stableVisH():Math.max(300,window.innerHeight-60),want=(!landT()&&ww<760&&ww/ah<1.05)?'port':'land';
   const lockW=!!R&&LAY==='land'&&want==='land'&&W&&!OV;const nw=want==='port'?600:lockW?W:OV?Math.round(Math.max(960,Math.min(1800,600*ww/ah))):Math.round(Math.max(960,Math.min(1500,600*ww/ah))/10)*10;
   /* 舞台寬度由 nw 決定，高度依照螢幕可用高度拉高，讓畫面上下填滿（平板橫向、手機直向原本底下會留一大塊空白；地板會跟著延伸）。 */
   /* 遊戲中（已開店）且橫向、寬度沒變時，高度只在變動很大時才重算：HUD 的內容（淨利列換行、借款/銀行按鈕出現等）會讓可用高度小幅跳動，
@@ -2843,7 +2843,8 @@ function homeArt(w,h,port){
   return s;
 }
 function homeLayer(){let l=$('homeLayer');if(!l){l=document.createElement('div');l.id='homeLayer';document.body.appendChild(l)}return l}
-function closeHome(){HOME=false;homeLayer().innerHTML='';STAB={o:'',h:0};STABW={o:'',w:0};setTimeout(fit,0);refitBurst()}
+function closeHome(){HOME=false;homeLayer().innerHTML='';playReset();setTimeout(fit,0);refitBurst()}
+function playReset(){STAB={o:'',h:0};STABW={o:'',w:0};LANDW={o:'',w:0};PLAYT=Date.now()}
 const SIDEI={
  ach:['#5a3420','#2e170c',`<path d="M20 15h24v11q0 10-12 12q-12-2-12-12z" fill="#f3dfb4" stroke="#7a3a12" stroke-width="2.5" stroke-linejoin="round"/><path d="M20 19h-6q0 11 8 13M44 19h6q0 11-8 13" fill="none" stroke="#f3dfb4" stroke-width="3" stroke-linecap="round"/><path d="M32 38v8M23 49h18" stroke="#f3dfb4" stroke-width="4" stroke-linecap="round"/>`],
  share:['#5a3420','#2e170c',`<circle cx="20" cy="32" r="6.5" fill="#f3dfb4"/><circle cx="44" cy="20" r="6.5" fill="#f3dfb4"/><circle cx="44" cy="44" r="6.5" fill="#f3dfb4"/><path d="M20 32L44 20M20 32L44 44" stroke="#f3dfb4" stroke-width="3.5" stroke-linecap="round"/>`],
@@ -2890,7 +2891,7 @@ function branchPick(){const o=load()||{},cur=o.where==='sushi'&&o.sushi?'sushi':
   const btn=(id,name,sub,ok)=>`<button class="btn ${cur===id?'':'alt'}" data-act="pickbranch" data-id="${id}" ${ok?'':'disabled'}>${T(name)}${cur===id?` · ${T('目前')}`:''}<small>${T(sub)}</small></button>`;
   modal(`<h2>${T('分店')}</h2><p class="hint">${T('選一家店，下次營業就在那裡開門。')}</p><div class="pickrow">${btn('iz','🏮 居酒屋本店','',true)}${btn('rm','🍜 深夜拉麵屋台',o.rm?'':'買下整棟店面後開放',!!o.rm)}${sushiDev()?(o.sushi?btn('sushi','🍣 海風壽司','',true):`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖')}</small></button>`):''}</div><div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
 function showHome(){if(CHG)chQuit();LB.ch=0;CHEND='';if(RP.on)abandonReplay();
-  if(CUR!=='iz'){CUR='iz';chooseLayout(true)}SHOPHOME=false;DEMO=false;if(TUT){TUT=null;tutLayer().innerHTML=''}HOME=true;R=null;ST=null;closeModal();setTimeout(fit,0);renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
+  if(CUR!=='iz'){CUR='iz';chooseLayout(true)}SHOPHOME=false;DEMO=false;if(TUT){TUT=null;tutLayer().innerHTML=''}const wasPlay=!HOME;HOME=true;R=null;ST=null;closeModal();if(wasPlay){PLAYT=0;STAB={o:'',h:0};STABW={o:'',w:0};LANDW={o:'',w:0};refitBurst()}setTimeout(fit,0);renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
   const saved=load();
   const nbtn=NOTICE?`<button class="langbtn noticefab" data-act="notice" aria-label="${T('公告')}">📢 ${T('公告')}${noticeDue()?'<i class="rdot"></i>':''}</button>`:'';
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
@@ -3574,7 +3575,7 @@ document.addEventListener('click',e=>{
   else if(act==='calendar')showCalendar();
   else if(act==='closem'){if(SETBACK){showSndModal(false);return}closeModal();if(FR.dirty){FR.dirty=0;showHome()}}
   else if(act==='chopen')showChallenge();else if(act==='chstart')chStart(false);else if(act==='chstarth')chStart(true);else if(act==='home')showHome();
-  else if(act==='start'){goFS();startDay();refitBurst();let seen=false;try{seen=localStorage.getItem('izakaya-iostip')==='1'}catch(e){}if(IOS&&!STANDALONE&&!seen)setTimeout(()=>{if(R&&!TUT)iosTip()},400)}
+  else if(act==='start'){goFS();startDay();playReset();refitBurst();let seen=false;try{seen=localStorage.getItem('izakaya-iostip')==='1'}catch(e){}if(IOS&&!STANDALONE&&!seen)setTimeout(()=>{if(R&&!TUT)iosTip()},400)}
   else if(act==='iostipok'){closeModal();if(R&&IOSTIPR)R.paused=false;IOSTIPR=false;try{localStorage.setItem('izakaya-iostip','1')}catch(e){}}
   else if(act==='next'||act==='back'){if(SHOPHOME){SHOPHOME=false;showHome()}else advance()}
   else if(act==='retry'){ST.pendingNext=false;save();showDayIntro()}
@@ -4045,6 +4046,9 @@ function refitBurst(){[0,100,300,700,1400,2500].forEach(t=>setTimeout(fit,t))}
 /* 手機橫向時，瀏覽器的網址列／底部工具列一滑出一收起，可見高度就會跟著變，遊戲會整個跟著縮放（甚至重排）。
    這裡在同一個方向內只記「看過的最小可見高度」：工具列收起時不動，只有第一次真的變小時才調整一次，之後就釘住。
    打字（鍵盤彈出）或拖曳中不記錄，免得鍵盤把尺寸永遠縮小。方向改變（旋轉）時重新記。 */
+/* 營業中鎖定畫面大小：進店後前 3 秒讓尺寸量穩，之後同一個方向內舞台只會縮、不會再放大。
+   以前網址列／系統導覽列一出一收，舞台就跟著放大、縮小來回跳，玩家看了頭暈、也容易點錯。回主頁或轉方向時才重新量。 */
+let PLAYT=0;function playLocked(){return !HOME&&PLAYT&&Date.now()-PLAYT>3000}
 let STAB={o:'',h:0},STABGROW=false,STABJ=false;
 function stableVisH(){
   const o=innerWidth>innerHeight?'l':'p',v=visH();
@@ -4052,13 +4056,14 @@ function stableVisH(){
   /* 同一方向內突然跳超過 120px（例如導覽列或網址列瞬間滑出、或 Android 還沒量完的中間值）：先不採用，
      等它持續 0.7 秒才接受。以前會立刻重設，結果遊戲在「放大」和「縮小」兩個尺寸之間來回跳，客人點錯菜。 */
   if(Math.abs(v-STAB.h)>120){
-    if(!STABJ){STABJ=true;setTimeout(()=>{STABJ=false;const v2=visH();if(Math.abs(v2-v)<30&&Math.abs(v2-STAB.h)>120&&(innerWidth>innerHeight?'l':'p')===STAB.o){STAB={o:STAB.o,h:v2};fit()}},700)}
+    if(v>STAB.h&&playLocked())return STAB.h;
+    if(!STABJ){STABJ=true;setTimeout(()=>{STABJ=false;const v2=visH();if(Math.abs(v2-v)<30&&Math.abs(v2-STAB.h)>120&&!(v2>STAB.h&&playLocked())&&(innerWidth>innerHeight?'l':'p')===STAB.o){STAB={o:STAB.o,h:v2};fit()}},700)}
     return STAB.h;
   }
   const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');
   if(!PTR&&!typing&&v<STAB.h)STAB.h=v;
   /* 工具列收起後可見高度變大：等它穩定約 0.9 秒，沒有拖曳、沒有打字時才把舞台放大到填滿，避免手機橫向底部留白 */
-  if(!PTR&&!typing&&v>STAB.h&&!STABGROW){STABGROW=true;setTimeout(()=>{STABGROW=false;const v2=visH();if(!PTR&&v2>STAB.h&&Math.abs(v2-v)<4){STAB.h=v2;fit()}},900)}
+  if(!PTR&&!typing&&v>STAB.h&&!STABGROW&&!playLocked()){STABGROW=true;setTimeout(()=>{STABGROW=false;const v2=visH();if(!PTR&&v2>STAB.h&&Math.abs(v2-v)<4&&!playLocked()){STAB.h=v2;fit()}},900)}
   return STAB.h;
 }
 /* 同樣的道理套用在寬度：手機橫向時右側（或左側）系統導覽列滑出，可見寬度會變窄，同一個方向內只記最小寬度。 */
@@ -4067,11 +4072,16 @@ function stableVisH(){
 let STABW={o:'',w:0},STABWGROW=false;
 /* 手機／平板橫向時，寬度直接用視窗寬，不用釘住的 wrap 寬度（那個值可能是直向或摺疊時留下來的舊值，會把遊戲縮成一小塊置中）。 */
 function landT(){return TOUCH&&innerWidth>innerHeight}
+/* 橫向的視窗寬：營業中鎖定後只記最小值（側邊導覽列滑出滑入不會讓舞台忽大忽小）；寬度大變（摺疊／展開、分割視窗）立即重記。 */
+let LANDW={o:'',w:0};
+function landW(){const o=innerWidth>innerHeight?'l':'p',v=window.innerWidth;
+  if(LANDW.o!==o||!LANDW.w||Math.abs(v-LANDW.w)>120||!playLocked()){LANDW={o,w:v};return v}
+  if(v<LANDW.w)LANDW.w=v;return LANDW.w}
 function stableWrapW(){
   const o=innerWidth>innerHeight?'l':'p',v=$('wrap').clientWidth;
   if(STABW.o!==o||!STABW.w||Math.abs(v-STABW.w)>120){STABW={o,w:v};return v}
   if(!PTR&&v<STABW.w)STABW.w=v;
-  if(!PTR&&v>STABW.w&&!STABWGROW){STABWGROW=true;setTimeout(()=>{STABWGROW=false;const v2=$('wrap').clientWidth;if(!PTR&&v2>STABW.w&&Math.abs(v2-v)<4){STABW.w=v2;fit()}},900)}
+  if(!PTR&&v>STABW.w&&!STABWGROW&&!playLocked()){STABWGROW=true;setTimeout(()=>{STABWGROW=false;const v2=$('wrap').clientWidth;if(!PTR&&v2>STABW.w&&Math.abs(v2-v)<4&&!playLocked()){STABW.w=v2;fit()}},900)}
   return STABW.w;
 }
 let PTR=false,PENDFIT=false;document.addEventListener('pointerdown',()=>{PTR=true},true);['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,()=>{PTR=false;if(PENDFIT){PENDFIT=false;setTimeout(fit,50)}},true));
@@ -4083,7 +4093,7 @@ function fit(){
   if(PTR){PENDFIT=true;return}
   document.body.classList.toggle('ovl',TOUCH&&innerWidth>innerHeight&&Math.min(screen.width,screen.height)<560&&!HOME);
   chooseLayout();
-  const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?window.innerWidth:(TOUCH?(landT()?window.innerWidth:stableWrapW()):$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)+(TOUCH?safeBottom():0)));
+  const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?landW():(TOUCH?(landT()?landW():stableWrapW()):$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)+(TOUCH?safeBottom():0)));
   /* 保險上限：iOS 更新後偶爾量到過大的寬高（例如讀到還沒排好的版面），遊戲會被放大到超出螢幕，只剩左上角看得到。
      不管量到什麼，遊戲的可用寬高都不會超過實際視窗的寬高。 */
   const s=Math.min(Math.min(w,Math.max(200,window.innerWidth))/W,Math.min(maxH,Math.max(200,window.innerHeight))/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
