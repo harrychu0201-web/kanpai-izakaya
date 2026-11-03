@@ -5210,7 +5210,7 @@ setTimeout(()=>{for(const u of new Set(JSON.stringify([SPR,ROBSPR]).match(/img\/
    ('act', txt = "g<rid>|<cmd>") and renders the snapshots the host writes to rooms/<code>/st.
    All time fields in S are host-clock milliseconds; the guest corrects with CO.off. */
 const CO={open:false,S:null,off:0,rid:0,closedRid:0,seen:{},tickT:null,paintT:null,snapT:null,lastTick:0,fxSeen:0,leaveAt:0,lastShout:0,lastHtml:''};
-const CO_DUR=150000,CO_HEARTS=5,CO_SEATS=4,CO_GRILL=4,CO_FRY=3,CO_WARM=6,CO_WARM_LIFE=35000,CO_SAKE_MAX=4,CO_SAKE_CD=8000,CO_EAT=4000,CO_LEAD=4000;
+const CO_DUR=150000,CO_HEARTS=3,CO_SEATS=4,CO_GRILL=4,CO_FRY=3,CO_WARM=6,CO_WARM_LIFE=35000,CO_SAKE_MAX=4,CO_SAKE_CD=8000,CO_EAT=4000,CO_LEAD=4000;
 const CO_FOOD={neg:{n:'蔥雞肉串',st:'g',cook:6000,burn:14000,pr:210,art:'negima',sk:1,ik:'negima',raw:'蔥雞肉串'},tsu:{n:'雞肉丸串',st:'g',cook:7000,burn:14000,pr:250,art:'tsukune',sk:1,ik:'tsukune',raw:'雞肉丸串'},kara:{n:'唐揚',st:'f',cook:7000,burn:14000,pr:230,art:'karaage',ik:'karaage',raw:'生雞肉（唐揚）'},
   buta:{n:'薑燒肉',st:'t',cook:7000,burn:14000,pr:280,ik:'buta',raw:'生豬肉'},ika:{n:'烤魷魚',st:'t',cook:8000,burn:14000,pr:300,ik:'ika',raw:'生魷魚'},
   ebi:{n:'炸蝦',st:'p',cook:6000,burn:13000,pr:320,ik:'ebiten',raw:'生蝦'},kaki:{n:'炸牡蠣',st:'p',cook:8000,burn:13000,pr:340,ik:'kakifry',raw:'生牡蠣'},
@@ -5246,8 +5246,8 @@ function coApply(role,cmd){const S=CO.S;if(!S||S.over)return;const now=Date.now(
       arr[j]={k:h.k,t:typeof h.t==='number'?h.t:now};H.k=null}
     else if(a==='tr'){H.k=null}
     else if(a==='wm'){const h=H.k;if(!h)return;
-      if(h.s==='raw'){S.hearts-=2;coFx('*','💥 生食進了保溫台！愛心 -2')}
-      else if(h.s==='burnt'){S.hearts-=1;coFx('*','🔥 焦掉的進了保溫台！愛心 -1')}
+      if(h.s==='raw'){S.hearts-=2;coFx('*','💥 生食進了保溫台！命 -2')}
+      else if(h.s==='burnt'){S.hearts-=1;coFx('*','🔥 焦掉的進了保溫台！命 -1')}
       else{const j=S.wm.findIndex(v=>!v);if(j<0){coFx('k','保溫台滿了');return}S.wm[j]={k:h.k,t:now}}
       H.k=null}
     else if(a==='sk'){if(now-S.skc<CO_SAKE_CD){coFx('k','酒還在準備');return}if(S.sk>=CO_SAKE_MAX){coFx('k','外場的酒還是滿的');return}S.skc=now;S.sk=CO_SAKE_MAX;coFx('f','🍶 清酒補滿了')}
@@ -5279,14 +5279,13 @@ function coTick(){const S=CO.S;if(!S||S.over||!coHost())return;const now=Date.no
   if(away||dt>2000){coShift(S,away?dt:dt-250);coDirty();coPaint();return}
   if(now<S.t0){coPaint();return}
   let ch=false;
-  if(now-S.t0>=S.dur){coEnd('time');return}
   S.cu.forEach((c,i)=>{if(!c||c.dirty)return;
     if(c.e){if(now-c.e>=CO_EAT){S.cu[i]={dirty:1};ch=true}return}
-    if(now>c.d){S.cu[i]=null;S.hearts--;coFx('*','😡 客人氣跑了！愛心 -1');ch=true}});
+    if(now>c.d){S.cu[i]=null;S.hearts--;coFx('*','😡 客人氣跑了！命 -1');ch=true}});
   if(now>=S.nx){const prog=Math.min(1,(now-S.t0)/S.dur);if(coSpawn(S,now)){S.nx=now+Math.round((13000-4000*prog)*(.8+Math.random()*.4));ch=true}else S.nx=now+1500}
   if(S.hearts<=0){coEnd('hearts');return}
   if(ch)coDirty();coPaint()}
-function coEnd(why){const S=CO.S;if(!S||S.over)return;S.over=1;S.why=why;clearInterval(CO.tickT);CO.tickT=null;coPush();coPaint()}
+function coEnd(why){const S=CO.S;if(!S||S.over)return;S.over=1;S.why=why;S.endAt=Date.now();clearInterval(CO.tickT);CO.tickT=null;coPush();coPaint()}
 function coDirty(){if(!coHost()||CO.snapT)return;CO.snapT=setTimeout(()=>{CO.snapT=null;coPush()},90)}
 function coPush(){const S=CO.S;if(!S||!coHost()||!COOP.code||!CL.api||!CL.api.coopStSet)return;clearTimeout(CO.snapT);CO.snapT=null;S.now=Date.now();
   COOP.w++;CL.api.coopStSet(COOP.code,JSON.stringify(S)).catch(e=>console.warn('co push',e))}
@@ -5526,10 +5525,11 @@ function coFloor(S,now,lay){const L=CF_LAY[lay||'L'],r=(a)=>`left:${a[0]}px;top:
    ${hand}
    <button class="cxs cfbox cf-tr" data-co="tr" style="${r(L.trash)}"><span>🗑️</span><em>丟掉</em></button>
    ${L.hint?`<p class="cfhint" style="left:${L.hint[0]}px;top:${L.hint[1]}px;width:${L.hint[2]}px">點客人送上手上的餐點　·　你看不到烤台，要什麼就喊給廚房聽！</p>`:''}</div>`}
-function coResult(S){const me=coRole(),other=me==='k'?'f':'k',win=S.why==='time',rd=S.rd||{h:0,g:0},a=coHost()?'h':'g',b=coHost()?'g':'h';
-  const title=!win?'店面開不下去了…':S.hearts>=5?'完美默契！':S.hearts>=3?'配合得不錯':'驚險過關';
-  return `<div class="cores"><h2>${win?'營業結束':'提早打烊'}</h2><h3>${title}</h3>
-   <p>接待客人：<b>${S.sv}</b> 位　剩餘愛心：<b>${'❤'.repeat(Math.max(0,S.hearts))||'0'}</b></p>
+function coResult(S){const me=coRole(),other=me==='k'?'f':'k',rd=S.rd||{h:0,g:0},a=coHost()?'h':'g',b=coHost()?'g':'h';
+  const el=Math.max(0,(S.endAt||Date.now())-S.t0),em=Math.floor(el/60000),es=String(Math.floor(el%60000/1000)).padStart(2,'0');
+  const title=S.sv>=30?'完美默契！':S.sv>=15?'配合得不錯':S.sv>=5?'還要再練練':'下次會更好';
+  return `<div class="cores"><h2>${S.why==='partner'?'對方離開了':'三條命用完了'}</h2><h3>${title}</h3>
+   <p>撐了：<b>${em}:${es}</b>　接待客人：<b>${S.sv}</b> 位</p>
    <p>我的錢包：<b>¥${Math.round(S.w[me])}</b>　對方：<b>¥${Math.round(S.w[other])}</b></p>
    <p class="cohint">這局的錢只在本局有效，不會進存檔或排行榜。</p>
    <p>我：${rd[a]?'✅ 已準備':'⏳ 未準備'}　對方：${rd[b]?'✅ 已準備':'⏳ 未準備'}</p>
@@ -5555,7 +5555,7 @@ function coGraceBar(ov){let g=document.getElementById('cograce');if(!g){g=docume
   const left=COOP.graceWho?Math.max(0,Math.ceil((COOP.graceEnd-Date.now())/1000)):0;
   if(left>0){g.textContent=`📡 對方斷線了，遊戲暫停，等他回來…（${left} 秒）`;g.style.display=''}else g.style.display='none'}
 function coPaint(){const S=CO.S,ov=document.getElementById('cogame');if(!S||!ov)return;coGraceBar(ov);const now=coNow(),me=coRole();
-  const left=Math.max(0,S.t0+S.dur-now),mm=String(Math.floor(left/60000)).padStart(2,'0'),ss=String(Math.floor(left%60000/1000)).padStart(2,'0');
+  const left=Math.max(0,(S.over&&S.endAt?S.endAt:now)-S.t0),mm=String(Math.floor(left/60000)).padStart(2,'0'),ss=String(Math.floor(left%60000/1000)).padStart(2,'0');
   const ct=document.getElementById('cotop'),cth=`<span>${'❤'.repeat(Math.max(0,S.hearts))||'💔'}</span><span>⏱ ${mm}:${ss}</span><span>接客 ${S.sv}</span>${voGameBtns()}<span class="cosp"></span><span>${me==='k'?'🍳 廚房':'🧾 外場'}</span><span>我的錢包 ¥${Math.round(S.w[me])}</span><button class="cob" data-co="leave" style="min-height:26px;min-width:40px;padding:0 8px">✕</button>`;if(ct.dataset.h!==cth){ct.dataset.h=cth;ct.innerHTML=cth}
   const sh=document.getElementById('cosh');if(sh&&!sh.dataset.r||sh&&sh.dataset.r!==me){sh.dataset.r=me;const hh=Math.ceil(CO_SH[me].length/2);sh.innerHTML=CO_SH[me].map((t,i)=>`<button class="cob" data-co="sh:${i}" style="grid-row:${i<hh?1:2};grid-column:${i%hh+1};min-height:30px;min-width:0;padding:2px 8px;font-size:12px">${esc(t)}</button>`).join('')}
   let html;
