@@ -3459,6 +3459,9 @@ document.addEventListener('click',e=>{
   else if(act==='lang')showLang();
   else if(act==='update')doUpdate();
   else if(act==='lb'){LB.ch=0;showLB()}
+  else if(act==='lbman')showLbMan();
+  else if(act==='lbmansave')saveLbMan();
+  else if(act==='lbmandel')delLbMan(a.dataset.id);
   else if(act==='chlb'){LB.ch=1;LB.tab=a.dataset.id==='chalh'?'chalh':'chal';delete LB.cache[LB.tab];showLB()}
   else if(act==='chback'){LB.ch=0;if(CHEND&&R&&R.over)modal(CHEND);else closeModal()}
   else if(act==='frhome'){LB.tab='fr';showLB()}
@@ -4322,6 +4325,8 @@ async function cloudInit(){
         const all=[].concat(...pages.reverse()).filter(x=>typeof x[f]==='number'&&(!asc||x[f]>0));
         return all.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f])},
       putLb:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lb/'+uid),d)),
+      lbMan:()=>rt((rd,r)=>rd.get(rd.ref(r,'notice/lbman')).then(s=>s.val()||{})),
+      setLbMan:(k,d)=>rt((rd,r)=>rd.set(rd.ref(r,'notice/lbman/'+k),d)),
       // friends: a public shop snapshot (lbx), friend codes, friend lists, daily gifts
       putLbx:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lbx/'+uid),d)),
       onlineBeat:(uid,off)=>rt((rd,r)=>rd.set(rd.ref(r,'online/'+uid),off?{t:rd.serverTimestamp(),off:true}:{t:rd.serverTimestamp()})),
@@ -4557,6 +4562,38 @@ async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=nu
   LB.last=u.uid+k;LB.cache={}}
 const lbVal=(t,v)=>t==='chal'||t==='chalh'?chTime(v):t==='dex'?T('{0} 種',v):t==='days'?T('{0} 天',v):yen(v);
 const lbHead=tb=>`<h2>${T('排行榜')}</h2><div class="lbtabs">${LBT.filter(x=>!(LB.ch&&x[0]==='fr')).map(([k,n])=>`<button class="stab ${LB.tab===k?'on':''}" data-act="lbtab" data-id="${k}">${T(n)}</button>`).join('')}</div><p class="lbdesc">${T(tb[3])}</p>`;
+/* ===== manual scores (owner only): for a player whose own upload keeps failing. Stored in notice/lbman/<name>, merged into the board;
+   hidden again once the player's own upload under the same name (with or without 管理員) reaches that score ===== */
+const lmNm=x=>String(x||'').replace(/管理[員员]/g,'').trim();
+async function lbWithMan(f,dir){const asc=dir==='asc';let rows=await CL.api.all(f,dir);let man={};try{if(CL.api.lbMan)man=await CL.api.lbMan()}catch(e){}
+  Object.keys(man||{}).forEach(k=>{const m=man[k];if(!m||!m.name||typeof m[f]!=='number'||!(m[f]>0))return;
+    const real=rows.find(r=>lmNm(r.name)===lmNm(m.name));if(real&&(asc?real[f]<=m[f]:real[f]>=m[f]))return;
+    if(real)rows=rows.filter(r=>r!==real);
+    rows.push({uid:'man:'+k,name:m.name,[f]:m[f]})});
+  return rows.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f])}
+const LBMAN_F=[['chal','無限挑戰',1],['chalh','極限挑戰',1],['best','單日淨利',0],['earned','累計營收',0],['days','最長營業',0],['dex','扭蛋圖鑑',0]];
+async function showLbMan(){if(!isAdmin())return;modal(`<h2>手動登錄成績</h2><p>載入中…</p>`);let man={};
+  try{man=await CL.api.lbMan()}catch(e){modal(`<h2>手動登錄成績</h2><p>讀取失敗：${esc(String((e&&(e.code||e.message))||e))}</p><div class="btns"><button class="btn" data-act="lb">返回排行榜</button></div>`);return}
+  const list=Object.keys(man).map(k=>{const m=man[k]||{};const v=LBMAN_F.filter(x=>typeof m[x[0]]==='number').map(x=>x[1]+' '+lbVal(x[0],m[x[0]])).join('、');
+    return `<div class="lbrow"><span>${esc(m.name||'?')}<br><small>${esc(v)}</small></span><em><button class="btn alt" data-act="lbmandel" data-id="${esc(k)}">刪除</button></em></div>`}).join('')||'<p>還沒有手動登錄的成績。</p>';
+  modal(`<h2>手動登錄成績</h2><p style="font-size:14px">只有你看得到這個工具，不會動到任何玩家的存檔或其他人的成績。登錄後會直接出現在排行榜上；之後玩家自己上傳的成績追上時，會自動改顯示他自己的那筆。</p>
+  <div class="lblist">${list}</div>
+  <p><input class="nickin" id="lmname" maxlength="24" placeholder="玩家暱稱" autocomplete="off"></p>
+  <p><select id="lmf" style="font-size:16px;padding:6px">${LBMAN_F.map(x=>`<option value="${x[0]}" ${x[0]===LB.tab?'selected':''}>${x[1]}</option>`).join('')}</select></p>
+  <p id="lmtime"><input id="lmm" type="number" min="0" inputmode="numeric" style="width:90px;font-size:16px"> 分 <input id="lms" type="number" min="0" max="59" inputmode="numeric" style="width:90px;font-size:16px"> 秒</p>
+  <p id="lmnum" hidden><input id="lmv" type="number" min="0" inputmode="numeric" style="width:200px;font-size:16px"> <span id="lmunit"></span></p>
+  <p id="lmerr" style="color:#e0412c;font-size:14px" hidden></p>
+  <div class="btns"><button class="btn" data-act="lbmansave">儲存</button><button class="btn alt" data-act="lb">返回排行榜</button></div>`);
+  const sel=$('lmf');if(!sel)return;const upd=()=>{const t=LBMAN_F.find(x=>x[0]===sel.value);$('lmtime').hidden=!t[2];$('lmnum').hidden=!!t[2];$('lmunit').textContent=sel.value==='days'?'天':sel.value==='dex'?'種':'円'};sel.onchange=upd;upd()}
+async function saveLbMan(){if(!isAdmin())return;const err=x=>{const e=$('lmerr');if(e){e.textContent=x;e.hidden=false}};
+  const name=(($('lmname')||{}).value||'').replace(/[<>\u0000-\u001f]/g,'').trim().slice(0,24),f=($('lmf')||{}).value,t=LBMAN_F.find(x=>x[0]===f);
+  if(!name)return err('請輸入玩家暱稱');if(!t)return err('請選擇排行榜');let v;
+  if(t[2]){const m=+$('lmm').value||0,sc=+$('lms').value||0;if(m<0||sc<0||sc>59)return err('秒數要在 0～59 之間');v=Math.round(m*60+sc)}else v=Math.round(+$('lmv').value||0);
+  if(!(v>0))return err('成績要大於 0');
+  const k=name.replace(/[.#$\[\]\/]/g,'_');
+  try{const man=await CL.api.lbMan();await CL.api.setLbMan(k,Object.assign({},man[k]||{},{name,[f]:v,at:Date.now()}));LB.cache={};toast('已登錄：'+name+' '+t[1]+' '+lbVal(f,v));showLbMan()}
+  catch(e){err('儲存失敗：'+String((e&&(e.code||e.message))||e))}}
+async function delLbMan(k){if(!isAdmin()||!k)return;try{await CL.api.setLbMan(k,null);LB.cache={};toast('已刪除');showLbMan()}catch(e){toast('刪除失敗')}}
 async function showLB(){if(LB.tab==='fr')return showFriends();
   const tb=LBT.find(x=>x[0]===LB.tab),me=CL.user,mine=lbEntry();
   const chs=(()=>{try{const g=JSON.parse(lsGet(KEY)||'null');return !!(g&&g.cheat)}catch(e){return false}})(); /* save touched by test tools: never uploaded */
@@ -4577,11 +4614,11 @@ async function showLB(){if(LB.tab==='fr')return showFriends();
   const rkTxt=x=>!x?'':x.total<2?T('目前只有你一位上榜。'):x.all?T('第 {0} 名（共 {1} 人），超過全部其他玩家！',x.rank,x.total):T('第 {0} 名（共 {1} 人），超過 {2}% 的玩家',x.rank,x.total,x.pct);
   const mineRk=()=>{const x=LB.cache[f]&&rk(LB.cache[f].rows,LB.cache[f].rows.length);return x};
   const foot0=foot;
-  const btns=`<div class="btns"><button class="btn" data-act="${LB.ch?'chback':'closem'}">${T('返回')}</button></div>`;
+  const btns=`<div class="btns"><button class="btn" data-act="${LB.ch?'chback':'closem'}">${T('返回')}</button>${isAdmin()&&!LB.ch?'<button class="btn alt" data-act="lbman">✏️ 手動登錄成績</button>':''}</div>`;
   const draw=body=>{if((HOME||LB.ch)&&LB.tab===f){const x=mineRk();const ft=x&&mine&&!chs&&!LB.err?foot0.replace('</span>',`<br><small>${rkTxt(x)}</small></span>`):foot0;modal(head+`<div class="lblist">${body}</div>`+ft+btns)}};
   const c=LB.cache[f];
   if(!c||Date.now()-c.t>60000){draw(`<p>${T('載入中…')}</p>`);
-    try{if(!CL.api)throw 0;LB.cache[f]={t:Date.now(),rows:await CL.api.all(f,tb[2])}}catch(e){console.warn('lb',e);draw(`<p>${T('排行榜載入失敗，請稍後再試。')}</p><p style="font-size:12px;color:#8a5a34;word-break:break-all">${esc(String((e&&(e.code||e.message))||e))}</p>`);return}}
+    try{if(!CL.api)throw 0;LB.cache[f]={t:Date.now(),rows:await lbWithMan(f,tb[2])}}catch(e){console.warn('lb',e);draw(`<p>${T('排行榜載入失敗，請稍後再試。')}</p><p style="font-size:12px;color:#8a5a34;word-break:break-all">${esc(String((e&&(e.code||e.message))||e))}</p>`);return}}
   const all=LB.cache[f].rows,rows=all.slice(0,50);
   let body=rows.length?rows.map((r,i)=>`<div class="lbrow ${me&&r.uid===me.uid?'me':''}"><b>${i<3?['🥇','🥈','🥉'][i]:i+1}</b><span>${esc(r.name||'?')}</span><em>${lbVal(f,r[f])}</em></div>`).join(''):`<p>${T('還沒有人上榜，快來搶第一！')}</p>`;
   const x=mineRk();
