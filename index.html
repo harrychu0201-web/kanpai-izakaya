@@ -236,6 +236,7 @@ details:not([open]) > .howsum::before{content:'▸ ';}
 .htitle .sub{display:table;margin:4px auto 0;padding:0 10px;font-family:'BiauKai','DFKai-SB','標楷體','Kaiti TC','TW-Kai','STKaiti','KaiTi','LXGW WenKai TC',serif;font-weight:700;font-size:clamp(18px,2.6vw,38px);letter-spacing:.1em;color:#6a160b;text-shadow:2px 0px 0 #fff1cf,-2px 0px 0 #fff1cf,0px 2px 0 #fff1cf,0px -2px 0 #fff1cf,2px 2px 0 #fff1cf,-2px 2px 0 #fff1cf,2px -2px 0 #fff1cf,-2px -2px 0 #fff1cf,4px 0px 0 #3b170c,-4px 0px 0 #3b170c,0px 4px 0 #3b170c,0px -4px 0 #3b170c,3px 3px 0 #3b170c,-3px 3px 0 #3b170c,3px -3px 0 #3b170c,-3px -3px 0 #3b170c,0px 6px 0 #3b170c;background:none;border:0}
 .home .menu{position:absolute;left:0;right:0;bottom:5vh;display:flex;justify-content:center;gap:16px;flex-wrap:wrap;padding:0 20px}
 .plq{position:relative;display:flex;align-items:center;font-size:clamp(16px,1.8vw,26px);min-width:8.6em;height:2.75em;padding:0 .9em 0 2.3em;background:linear-gradient(180deg,#f6e7c8 0%,#e8cf9f 100%);border:3px solid #5a3a24;border-radius:8px;box-shadow:0 5px 0 #3a2418,0 8px 16px rgba(0,0,0,.45),inset 0 2px 0 #fff8e6;cursor:pointer;transition:transform .1s,filter .15s}
+.plq.sm{font-size:clamp(13px,1.4vw,20px);min-width:7.4em}.plq.sm .plan{transform:scale(.85)}.plnew{position:absolute;top:-13px;right:-8px;background:#e0412c;color:#fff;font-weight:800;font-size:.62em;line-height:1;font-style:normal;padding:.35em .6em;border-radius:999px;border:2px solid #fff3dc;box-shadow:0 2px 6px #0007;pointer-events:none;white-space:nowrap;animation:plnew 1.4s ease-in-out infinite}@keyframes plnew{50%{transform:scale(1.1)}}.home.port .plq.mp{grid-column:1/-1}
 .plq:hover{filter:brightness(1.06)}.plq:active{transform:translateY(4px);box-shadow:0 1px 0 #3a2418,0 3px 8px rgba(0,0,0,.4),inset 0 2px 0 #fff8e6}
 .plq.pri{background:linear-gradient(180deg,#fff2d2 0%,#f0c878 100%)}
 .home:not(.port) .plq.pri{font-size:clamp(20px,2.4vw,34px);min-width:9em;align-self:flex-end;box-shadow:0 6px 0 #3a2418,0 0 22px rgba(255,190,90,.55),0 10px 18px rgba(0,0,0,.45),inset 0 2px 0 #fff8e6}
@@ -2880,7 +2881,7 @@ function placeChat(){const h=document.querySelector('.home'),c=document.querySel
   if(rw&&rec){const rr=rec.getBoundingClientRect();rw.style.left=(rr.left-hr.left-rw.offsetWidth-10)+'px';rw.style.bottom='auto';rw.style.top=((rr.top+rr.bottom)/2-hr.top-rw.offsetHeight/2)+'px';if(fr){fr.style.left=rw.style.left;fr.style.bottom='auto';fr.style.top=(parseFloat(rw.style.top)+rw.offsetHeight+8)+'px'}}
 }
 function sideBtn(act,label){const [a,b,ic]=SIDEI[act];return `<button class="sideb" data-act="${act}"><svg viewBox="0 0 64 64"><defs><linearGradient id="sg-${act}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><circle cx="32" cy="32" r="29" fill="url(#sg-${act})" stroke="#3a1a10" stroke-width="3.5"/><circle cx="32" cy="32" r="25.5" fill="none" stroke="#c9963e" stroke-width="2.5"/><ellipse cx="32" cy="16" rx="17" ry="6" fill="#fff" opacity=".1"/>${ic}</svg>${homeDotOn(act)?'<i class="rdot"></i>':''}<span>${T(label)}</span></button>`}
-function plaque(act,label,sub,primary){return `<button class="plq ${primary?'pri':''}" data-act="${act}"><span class="plan">${sv(lanternG(''),'0 0 60 84')}</span><span class="plt">${T(label)}${sub?`<small>${sub}</small>`:''}</span></button>`}
+function plaque(act,label,sub,primary,cls,badge){return `<button class="plq ${primary?'pri':''} ${cls||''}" data-act="${act}"><span class="plan">${sv(lanternG(''),'0 0 60 84')}</span><span class="plt">${T(label)}${sub?`<small>${sub}</small>`:''}</span>${badge?`<i class="plnew">${T(badge)}</i>`:''}</button>`}
 let SHOPHOME=false,TYPING=0;
 document.addEventListener('pointerdown',e=>{const a=document.activeElement;TYPING=a&&/^(INPUT|TEXTAREA)$/.test(a.tagName)&&a.closest('.modal')&&e.target.classList.contains('modal')?performance.now():0},true);
 document.addEventListener('click',e=>{if(!HOME)return;const m=e.target.closest('.modal');if(!m||e.target!==m)return;if(TYPING&&performance.now()-TYPING<1500){TYPING=0;const a=document.activeElement;if(a&&a.blur)a.blur();return}{const t=$('fbtext'),c=$('fbcontact');if(t){FB.text=t.value;FB.contact=c?c.value:FB.contact}}if(SHOPHOME)showHome();else closeModal()});
@@ -2894,7 +2895,7 @@ function showHome(){if(CHG)chQuit();LB.ch=0;CHEND='';if(RP.on)abandonReplay();
   const nbtn=NOTICE?`<button class="langbtn noticefab" data-act="notice" aria-label="${T('公告')}">📢 ${T('公告')}${noticeDue()?'<i class="rdot"></i>':''}</button>`:'';
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
   <div class="htitle"><h1 class="logo"><img src="img/logo-9e60dada.webp" alt="${T('乾杯！居酒屋')}" draggable="false">${nbtn&&LAY!=='port'?nbtn:''}</h1><div class="sub">${T('～ 巷子裡的小居酒屋 ～')}</div></div>
-  <div class="menu"><div class="mhrow"></div>${'<div class="pricol"><button class="chbtn" data-act="chopen">♾️ '+T('無限挑戰')+'</button>'+(saved?plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1):plaque('newgame','開始營業','',1))+'</div>'}${saved?plaque('asknew','新的一局')+plaque('rwfr','獎勵 & 好友'):plaque('rwfr','獎勵 & 好友')}</div><div class="side">${sideBtn('ach','成就')}${saved?sideBtn('arcade','遊戲廳')+(FB_CONFIG?'':sideBtn('replay','選日重玩')):''}${FB_CONFIG?sideBtn('lb','排行榜'):''}${sideBtn('social','分享')}</div><div class="side-rw"><div class="side side-r">${sideBtn('records','個人資料')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','設定')}${FB_CONFIG?sideBtn('fb','意見反映'):''}</div></div><div class="topl">${nbtn&&LAY==='port'?nbtn:''}</div><div class="topr"><span id="tstslot">${tstBtn()}</span>${acctBtn()}</div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}${FB_CONFIG&&saved?`<div class="replayfab">${sideBtn('replay','選日重玩')}</div>`:''}<div id="homeModal"></div></div>`;
+  <div class="menu"><div class="mhrow"></div>${'<div class="pricol"><button class="chbtn" data-act="chopen">♾️ '+T('無限挑戰')+'</button>'+(saved?plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1):plaque('newgame','開始營業','',1))+'</div>'}${(saved?plaque('asknew','新的一局',0,0,'sm'):'')+plaque('rwfr','獎勵 & 好友',0,0,'sm')+(FB_CONFIG?plaque('mp','多人模式',0,0,'sm mp','新推出！'):'')}</div><div class="side">${sideBtn('ach','成就')}${saved?sideBtn('arcade','遊戲廳')+(FB_CONFIG?'':sideBtn('replay','選日重玩')):''}${FB_CONFIG?sideBtn('lb','排行榜'):''}${sideBtn('social','分享')}</div><div class="side-rw"><div class="side side-r">${sideBtn('records','個人資料')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','設定')}${FB_CONFIG?sideBtn('fb','意見反映'):''}</div></div><div class="topl">${nbtn&&LAY==='port'?nbtn:''}</div><div class="topr"><span id="tstslot">${tstBtn()}</span>${acctBtn()}</div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}${FB_CONFIG&&saved?`<div class="replayfab">${sideBtn('replay','選日重玩')}</div>`:''}<div id="homeModal"></div></div>`;
   placeChat();requestAnimationFrame(placeChat);setTimeout(placeChat,300);syncRewardDot();achSoon();
   if(noticeDue()){if(NOTICE_LOADED||!FB_CONFIG)setTimeout(()=>{if(HOME&&!document.querySelector('#homeModal .modal')){NAUTOREQ=true;showNotice()}},400);else setTimeout(noticePop,3500)}else if(CL.pick)setTimeout(cloudAsk,0);
 }
@@ -3437,6 +3438,7 @@ document.addEventListener('click',e=>{
   else if(act==='cont'){goFS();closeHome();ST=load();advance()}
   else if(act==='branch')branchPick();
   else if(act==='reload')doUpdate();
+  else if(act==='mp'){if(!FB_CONFIG){modal(`<h2>${T('多人模式')}</h2><div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`)}else if(!CL.user)coopPanel();else coopAct('open','')}
   else if(act==='rwfr'){const fr=!!(FB_CONFIG&&load());modal(`<h2>${T('獎勵 & 好友')}</h2><p class="hint">${T('每日簽到、成就與道具，還有跟朋友一起比排行。')}</p><div class="pickrow"><button class="btn" data-act="rewards">🎁 ${T('獎勵中心')}</button><button class="btn" data-act="achopen" style="position:relative">🏆 ${T('成就')}${achStat(loadRec()).due?'<i class="rdot" style="top:-6px;right:-6px"></i>':''}</button>${fr?`<button class="btn alt" data-act="frhome">👥 ${T('好友')}</button>`:''}</div><div class="btns"><button class="btn alt" data-act="closem">${T('關閉')}</button></div>`)}
   else if(act==='pickbranch'){const o=load();if(!o)return;const id=a.dataset.id==='rm'&&o.rm?'rm':a.dataset.id==='sushi'&&o.sushi?'sushi':'iz';o.where=id;try{localStorage.setItem(KEY,JSON.stringify(o));touchLocal()}catch(e){}closeModal();toast(T('下次營業在{0}開店',T(id==='rm'?'深夜拉麵屋台':id==='sushi'?'海風壽司':'居酒屋本店')))}
   else if(act==='asknew')modal(`<h2>${T('開一家新店？')}</h2><p>${T('目前的存檔會被清除，從第 1 天重新開始。')}</p><div class="btns"><button class="btn" data-act="newgame">${T('確定重來')}</button><button class="btn alt" data-act="closem">${T('取消')}</button></div>`);
@@ -4148,14 +4150,17 @@ function mergeRec(a,b){const pj=s=>{try{return s?JSON.parse(s)||{}:{}}catch(e){r
   if(x.dxs||y.dxs)o.dxs=Object.assign({},x.dxs||{},y.dxs||{});
   {const ci=[x.ci,y.ci].filter(Boolean).sort((p,q)=>String(q.last||'').localeCompare(String(p.last||'')));if(ci[0])o.ci=ci[0]}
   return JSON.stringify(o)}
-/* ===== co-op (milestone 1, author-only): room + invite + presence + event channel + 30s reconnect grace ===== */
+Object.assign(I18N["zh-Hans"],{"多人模式":"多人模式","新推出！":"新推出！","離線":"离线","邀請":"邀请","邀請在線上的好友一起開店，對方會收到邀請通知。":"邀请在线的好友一起开店，对方会收到邀请通知。","還沒有好友，先去加好友吧！":"还没有好友，先去加好友吧！","{0} 位好友在線上":"{0} 位好友在线上","登入後才能玩多人模式。":"登录后才能玩多人模式。","🧪 連線測試":"多人模式"});
+Object.assign(I18N["en"],{"多人模式":"Multiplayer","新推出！":"NEW!","離線":"Offline","邀請":"Invite","邀請在線上的好友一起開店，對方會收到邀請通知。":"Invite an online friend to run the shop together. They'll get a notification.","還沒有好友，先去加好友吧！":"No friends yet — add some first!","{0} 位好友在線上":"{0} friends online","登入後才能玩多人模式。":"Sign in to play multiplayer."});
+Object.assign(I18N["ja"],{"多人模式":"マルチプレイ","新推出！":"NEW！","離線":"オフライン","邀請":"招待","邀請在線上的好友一起開店，對方會收到邀請通知。":"オンラインの友だちを招待して一緒にお店を開こう。相手に通知が届きます。","還沒有好友，先去加好友吧！":"まだ友だちがいません。先に追加しましょう！","{0} 位好友在線上":"{0} 人がオンライン","登入後才能玩多人模式。":"ログインするとマルチプレイで遊べます。"});
+Object.assign(I18N["ko"],{"多人模式":"멀티플레이","新推出！":"NEW!","離線":"오프라인","邀請":"초대","邀請在線上的好友一起開店，對方會收到邀請通知。":"온라인 친구를 초대해 함께 가게를 열어요. 상대에게 알림이 갑니다.","還沒有好友，先去加好友吧！":"아직 친구가 없어요. 먼저 추가해 보세요!","{0} 位好友在線上":"친구 {0}명 온라인","登入後才能玩多人模式。":"로그인하면 멀티플레이를 즐길 수 있어요."});
+Object.assign(I18N["id"],{"多人模式":"Multipemain","新推出！":"BARU!","離線":"Offline","邀請":"Undang","邀請在線上的好友一起開店，對方會收到邀請通知。":"Undang teman yang online untuk membuka kedai bersama. Mereka akan menerima notifikasi.","還沒有好友，先去加好友吧！":"Belum ada teman — tambahkan dulu!","{0} 位好友在線上":"{0} teman online","登入後才能玩多人模式。":"Masuk untuk bermain multipemain."});
+/* ===== co-op (多人模式，開放給所有登入玩家): room + invite + presence + event channel + 30s reconnect grace ===== */
 const COOP={hostRole:'k',err:'',invOn:false,invOff:null,invSeen:{},on:false,w:0,code:null,role:null,room:null,p:{},ev:[],unsub:null,presOff:null,inv:{},graceWho:null,graceEnd:0,tick:null,lastOn:{},open:false};
 const COOP_GRACE=30000;
-/* co-op test list: the author plus the listed test accounts (emails are public in this repo) */
-const COOP_TESTERS=['harrychu0201@gmail.com','liyuanhaofat@gmail.com'];
 function coopNote(m){let d=document.getElementById('coopnote');if(!d){d=document.createElement('div');d.id='coopnote';d.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9000;max-width:90vw;background:#3b2314;color:#f3dfb4;border:2px solid #ffb36b;border-radius:10px;padding:8px 14px;font-size:15px;pointer-events:none;transition:opacity .25s;opacity:0';document.body.appendChild(d)}
   d.textContent=T(m);d.style.opacity=1;clearTimeout(coopNote.t);coopNote.t=setTimeout(()=>{d.style.opacity=0},2600)}
-function coopDev(){const e=CL.user&&CL.user.email;return !!e&&(COOP_TESTERS.indexOf(e.toLowerCase())>=0||CL.isStaff===true)} /* 測試名單 + admins/ 管理員 */
+function coopDev(){return !!(CL.user&&FB_CONFIG)} /* 多人模式：所有登入的玩家 */
 function coopCode(){const A='23456789ABCDEFGHJKMNPQRSTUVWXYZ';let s='';for(let i=0;i<6;i++)s+=A[Math.floor(Math.random()*A.length)];return s}
 function coopOther(){const r=COOP.room,me=CL.user&&CL.user.uid;if(!r||!me)return null;return r.host===me?r.guest:r.host}
 /* 在連線房間裡、但面板被關掉時（按到返回或點到空白處），畫面上方一直顯示「回到連線房間」 */
@@ -4177,10 +4182,18 @@ function coopMsgsFill(){const b=document.getElementById('coopmsgs');if(!b)return
     if(x.type==='ping')return `<div class="cpm sys">${mine?T('我'):T('對方')} · ping${x.lat!=null?` · ${x.lat}ms`:''}</div>`;
     return `<div class="cpm ${mine?'me':''}"><b>${mine?T('我'):T('對方')}</b>：${esc(x.txt||'')}</div>`}).join('')||`<div class="cpm sys">${T('還沒有訊息，打個招呼吧')}</div>`;
   if(near)b.scrollTop=b.scrollHeight}
+function coopFriendsBlock(){const head=`<p class="lbdesc">${T('邀請在線上的好友一起開店，對方會收到邀請通知。')}</p>`,D=typeof FR!=='undefined'&&FR.data;
+  if(!lbEntry())return head+`<div class="lbme"><span>${T('取個暱稱，好友才看得到你。')}</span><button class="btn" data-act="nick">${T('取暱稱')}</button></div>`;
+  if(!D)return head+`<p>${T('載入中…')}</p>`;
+  const on=D.on||{},ids=Object.keys(D.fl).sort((a,b)=>(onIs(on[b])?1:0)-(onIs(on[a])?1:0));
+  if(!ids.length)return head+`<p class="lbdesc">${T('還沒有好友，先去加好友吧！')}</p><div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="frhome">👥 ${T('好友')}</button></div>`;
+  const n=ids.filter(k=>onIs(on[k])).length;
+  return head+`<div class="lbme"><span>🟢 ${T('{0} 位好友在線上',n)}</span><button class="btn alt" data-act="cooprefresh">🔄 ${T('重新整理')}</button></div><div class="lblist">`
+   +ids.map(k=>{const o=onIs(on[k]);return `<div style="display:flex;align-items:center;gap:10px;padding:5px 10px;margin:4px 0;background:#0000000d;border-radius:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px">${esc((D.lbs[k]||{}).name||T('玩家'))}${onTag(on[k])}</span>${o?`<button class="btn" data-act="coopmake" data-id="${esc(k)}" style="flex:none;min-width:92px;margin:0">${T('邀請')}</button>`:`<button class="btn alt" disabled style="flex:none;min-width:92px;margin:0">${T('離線')}</button>`}</div>`}).join('')+`</div>`}
 function coopDyn(){const me=CL.user.uid,r=COOP.room;
   const inv=Object.keys(COOP.inv).map(c=>{const v=COOP.inv[c]||{};return `<div class="lbme"><span>📨 ${esc(v.name||T('玩家'))} ${T('邀請你一起開店')} <small>${esc(c)}</small></span><button class="btn" data-act="coopaccept" data-id="${esc(c)}">${T('接受')}</button><button class="btn alt" data-act="coopdecline" data-id="${esc(c)}">${T('拒絕')}</button></div>`}).join('');
   let body;
-  if(!COOP.code)body=(COOP.byeMsg?`<p style="color:#e0412c">${T(COOP.byeMsg)}</p>`:'')+`<p class="lbdesc">${T('還沒有連線。從好友列表按「一起開店」邀請朋友，或接受下面的邀請。')}</p>`;
+  if(!COOP.code)body=(COOP.byeMsg?`<p style="color:#e0412c">${T(COOP.byeMsg)}</p>`:'')+coopFriendsBlock();
   else{const o=coopOther(),pr=u=>{const p=COOP.p[u];return p&&p.on?'🟢 '+T('在線'):'⚪ '+T('離線')};
     const left=COOP.graceWho?Math.max(0,Math.ceil((COOP.graceEnd-Date.now())/1000)):0;
     const st=r?r.state:T('已結束');
@@ -4190,9 +4203,9 @@ function coopDyn(){const me=CL.user.uid,r=COOP.room;
      +(r&&r.state==='lobby'&&typeof coLobbyBlock==='function'?coLobbyBlock():'')
      +`<div class="btns" style="justify-content:flex-start">${r&&r.state==='lobby'&&typeof coLobbyBtns==='function'?coLobbyBtns():''}<button class="btn alt" data-act="coopping" ${r&&r.state!=='ended'?'':'disabled'}>${T('測延遲')}</button><button class="btn alt" data-act="coopleave">${T('離開')}</button></div>`}
   return (COOP.err?`<p style="color:#e0412c">${T(COOP.err)}</p>`:'')+inv+body}
-function coopPanel(){if(!coopDev()||!CL.user){modal(`<h2>${T('連線測試')}</h2><p>${T('需要登入且在測試名單內。')}</p><div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`);return}
+function coopPanel(){if(!coopDev()||!CL.user){modal(`<h2>${T('多人模式')}</h2><p>${T('登入後才能玩多人模式。')}</p><div class="btns">${FB_CONFIG?`<button class="btn" data-act="login">${T('用 Google 登入')}</button>`:''}<button class="btn alt" data-act="closem">${T('返回')}</button></div>`);return}
   const chat=COOP.code?`<div id="coopmsgs" style="font-size:16px;line-height:1.4;height:200px;overflow:auto;margin:8px 0;padding:6px 8px;background:#0000000d;border-radius:8px"></div><div class="lbme" style="gap:6px"><input class="nickin" id="coopin" maxlength="100" placeholder="${T('輸入訊息')}" autocomplete="off" style="flex:1;min-width:0;font-size:16px;padding:6px 10px"><button class="btn" data-act="coopsendmsg">${T('送出')}</button></div>`:'';
-  modal(`<i id="coopmark" data-code="${esc(COOP.code||'')}"></i><h2>${T('連線測試')}</h2><div id="coopdyn">${coopDyn()}</div>${chat}<div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`);coopMsgsFill();const m=document.getElementById('coopmsgs');if(m)m.scrollTop=m.scrollHeight}
+  modal(`<i id="coopmark" data-code="${esc(COOP.code||'')}"></i><h2>${T('多人模式')}</h2><div id="coopdyn">${coopDyn()}</div>${chat}<div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`);coopMsgsFill();const m=document.getElementById('coopmsgs');if(m)m.scrollTop=m.scrollHeight}
 /* live invite notice: a banner with 接受 / 拒絕 whenever a friend invites you (test accounts only) */
 const COOP_INV_TTL=10*60*1000;
 function coopBannerHide(){const b=document.getElementById('coopbanner');if(b)b.remove()}
@@ -4217,7 +4230,9 @@ function coopInvStart(){if(COOP.invOn||!CL.api||!CL.api.coopInvWatch||!coopDev()
 function coopInvStop(){if(COOP.invOff)COOP.invOff();COOP.invOff=null;COOP.invOn=false;COOP.invSeen={};coopBannerHide()}
 async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid;COOP.err='';
   try{if(!CL.api)throw new Error('no api');
-    if(k==='open'){coopPanel();try{COOP.inv=await CL.api.coopInvList(me)}catch(e){console.warn('coop inv',e);COOP.inv={};COOP.err='讀不到邀請（規則還沒更新？）'}coopPanel();return}
+    if(k==='open'){coopPanel();try{COOP.inv=await CL.api.coopInvList(me)}catch(e){console.warn('coop inv',e);COOP.inv={};COOP.err='讀不到邀請（規則還沒更新？）'}coopPanel();
+      if(!COOP.code&&lbEntry()&&(!FR.data||Date.now()-FR.t>20000)){try{await frLoad()}catch(e){console.warn('coop friends',e)}coopRender()}return}
+    if(k==='refresh'){try{await frLoad()}catch(e){console.warn('coop friends',e)}coopRender();return}
     if(k==='make'){if(COOP.code){coopNote('已經在連線中');coopPanel();return}
       const code=coopCode(),nm=(lbEntry()||{}).name||'';
       await CL.api.coopMake(code,me,id,nm);COOP.code=code;COOP.role='host';COOP.byeMsg='';coopAttach(code);coopNote('已邀請，等朋友加入');coopPanel();return}
@@ -4705,7 +4720,7 @@ function frDraw(){FR.view='list';if(!HOME||LB.tab!=='fr')return;
    <p id="frerr" style="color:#e0412c;font-size:14px;margin:2px 0" hidden></p>
    ${ids.length?'':`<p class="lbdesc">${T('還沒有好友，把你的好友碼傳給朋友，或輸入朋友的好友碼吧！')}</p>`}
    <div class="lbtabs" style="border-bottom:0;margin:4px 0">${[['best','單日淨利'],['earned','累計營收']].map(([k,n])=>`<button class="stab ${FR.sort===k?'on':''}" data-act="frsort" data-id="${k}">${T(n)}</button>`).join('')}<span style="margin-left:auto;font-size:13px;opacity:.7;align-self:center">${(()=>{const n=ids.filter(k=>onIs((D.on||{})[k])).length;return n?'🟢 '+T('{0} 位在線上',n)+'　':''})()}${T('好友 {0}/{1}',ids.length,FR_MAX)}</span></div>
-   ${coopDev()?`<div class="lbme"><span>🧪 ${T('連線測試')}</span><button class="btn alt" data-act="coopopen">${T('開啟')}</button></div>`:''}
+   ${coopDev()?`<div class="lbme"><span>🤝 ${T('多人模式')}</span><button class="btn alt" data-act="coopopen">${T('開啟')}</button></div>`:''}
    <div class="lblist">${list}</div><div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`)}
 function frErr(m){const e=$('frerr');if(e){e.textContent=T(m);e.hidden=false}}
 async function frAdd(){const me=CL.user,i=$('frin');if(!me||!i||!FR.data)return;
