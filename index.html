@@ -2845,6 +2845,7 @@ function closeHome(){HOME=false;homeLayer().innerHTML='';STAB={o:'',h:0};STABW={
 const SIDEI={
  ach:['#5a3420','#2e170c',`<path d="M20 15h24v11q0 10-12 12q-12-2-12-12z" fill="#f3dfb4" stroke="#7a3a12" stroke-width="2.5" stroke-linejoin="round"/><path d="M20 19h-6q0 11 8 13M44 19h6q0 11-8 13" fill="none" stroke="#f3dfb4" stroke-width="3" stroke-linecap="round"/><path d="M32 38v8M23 49h18" stroke="#f3dfb4" stroke-width="4" stroke-linecap="round"/>`],
  share:['#5a3420','#2e170c',`<circle cx="20" cy="32" r="6.5" fill="#f3dfb4"/><circle cx="44" cy="20" r="6.5" fill="#f3dfb4"/><circle cx="44" cy="44" r="6.5" fill="#f3dfb4"/><path d="M20 32L44 20M20 32L44 44" stroke="#f3dfb4" stroke-width="3.5" stroke-linecap="round"/>`],
+ social:['#5a3420','#2e170c',`<circle cx="20" cy="32" r="6.5" fill="#f3dfb4"/><circle cx="44" cy="20" r="6.5" fill="#f3dfb4"/><circle cx="44" cy="44" r="6.5" fill="#f3dfb4"/><path d="M20 32L44 20M20 32L44 44" stroke="#f3dfb4" stroke-width="3.5" stroke-linecap="round"/>`],
  dc:['#4a4f9a','#252858',`<path d="M16 22q10-4 16-4q6 0 16 4l4 22q-8 6-20 6q-12 0-20-6z" fill="#f3dfb4" stroke="#7a3a12" stroke-width="2.5" stroke-linejoin="round"/><circle cx="26" cy="36" r="3.5" fill="#8a2a1a"/><circle cx="38" cy="36" r="3.5" fill="#8a2a1a"/>`],
  notice:['#5a3420','#2e170c',`<path d="M14 26h8l18-10v28l-18-10h-8z" fill="#f3dfb4" stroke="#7a3a12" stroke-width="2.5" stroke-linejoin="round"/><path d="M22 36l3 9h5l-2.5-9" fill="none" stroke="#7a3a12" stroke-width="2.5" stroke-linejoin="round"/>`],
  replay:['#2f4a5a','#15252e',`<path d="M32 22L19 32L32 42Z" fill="#f3dfb4"/><path d="M46 22L33 32L46 42Z" fill="#f3dfb4"/>`],
@@ -2891,7 +2892,7 @@ function showHome(){if(CHG)chQuit();LB.ch=0;CHEND='';if(RP.on)abandonReplay();
   const saved=load();
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
   <div class="htitle"><h1 class="logo"><img src="img/logo-9e60dada.webp" alt="${T('乾杯！居酒屋')}" draggable="false"></h1><div class="sub">${T('～ 巷子裡的小居酒屋 ～')}</div></div>
-  <div class="menu"><div class="mhrow">${sideBtn('ach','成就')}${sideBtn('share','分享')}${sideBtn('dc','Discord')}${NOTICE?sideBtn('notice','公告'):''}</div>${'<div class="pricol"><button class="chbtn" data-act="chopen">♾️ '+T('無限挑戰')+'</button>'+(saved?plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1):plaque('newgame','開始營業','',1))+'</div>'}${saved?plaque('asknew','新的一局')+plaque('rwfr','獎勵 & 好友'):plaque('rwfr','獎勵 & 好友')}</div><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','遊戲廳')+(FB_CONFIG?'':sideBtn('replay','選日重玩')):''}${FB_CONFIG?sideBtn('lb','排行榜'):''}</div><div class="side-rw"><div class="side side-r">${sideBtn('records','個人資料')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','設定')}${FB_CONFIG?sideBtn('fb','意見反映'):''}</div></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${acctBtn()}</div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}${FB_CONFIG&&saved?`<div class="replayfab">${sideBtn('replay','選日重玩')}</div>`:''}<div id="homeModal"></div></div>`;
+  <div class="menu"><div class="mhrow">${sideBtn('ach','成就')}</div>${'<div class="pricol"><button class="chbtn" data-act="chopen">♾️ '+T('無限挑戰')+'</button>'+(saved?plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1):plaque('newgame','開始營業','',1))+'</div>'}${saved?plaque('asknew','新的一局')+plaque('rwfr','獎勵 & 好友'):plaque('rwfr','獎勵 & 好友')}</div><div class="side">${saved?sideBtn('homeshop','商店')+sideBtn('arcade','遊戲廳')+(FB_CONFIG?'':sideBtn('replay','選日重玩')):''}${FB_CONFIG?sideBtn('lb','排行榜'):''}${sideBtn('social','分享')}</div><div class="side-rw"><div class="side side-r">${sideBtn('records','個人資料')}${sideBtn('dex','常客圖鑑')}${sideBtn('snd','設定')}${FB_CONFIG?sideBtn('fb','意見反映'):''}</div></div><div class="topr"><span id="tstslot">${tstBtn()}</span>${acctBtn()}</div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}${FB_CONFIG&&saved?`<div class="replayfab">${sideBtn('replay','選日重玩')}</div>`:''}<div id="homeModal"></div></div>`;
   placeChat();requestAnimationFrame(placeChat);setTimeout(placeChat,300);syncRewardDot();achSoon();
   if(noticeDue()){if(NOTICE_LOADED||!FB_CONFIG)setTimeout(()=>{if(HOME&&!document.querySelector('#homeModal .modal')){NAUTOREQ=true;showNotice()}},400);else setTimeout(noticePop,3500)}else if(CL.pick)setTimeout(cloudAsk,0);
 }
@@ -2945,6 +2946,7 @@ function homeDotOn(act){try{
   if(act==='ach')return achStat(loadRec()).due>0;
   if(act==='dex')return dxsNew('').length>0;
   if(act==='notice')return !!noticeDue();
+  if(act==='social')return !!NOTICE&&!!noticeDue();
 }catch(e){}return false}
 function homeDots(){if(!HOME)return;document.querySelectorAll('.sideb[data-act]').forEach(b=>{const on=homeDotOn(b.dataset.act),d=b.querySelector(':scope>.rdot');if(on&&!d)b.insertAdjacentHTML('afterbegin','<i class="rdot"></i>');else if(!on&&d)d.remove()});try{syncRewardDot()}catch(e){}}
 function showDex(){const met=metSet(),n=CHARS.filter(c=>met[c.spr]).length,nwC=dxsNew('c:'),nwM=dxsNew('m:').length,nwH=dxsNew('h:').length;
@@ -3499,6 +3501,7 @@ document.addEventListener('click',e=>{
   else if(act==='fbsend')sendFb();
   else if(act==='dc')window.open('https://discord.gg/KfSnuMQtj','_blank','noopener');
   else if(act==='notice')showNotice(true);
+  else if(act==='social')modal(`<h2>${T('分享')}</h2><div class="btns" style="flex-direction:column;align-items:stretch"><button class="btn" data-act="share">📤 ${T('分享')}</button><button class="btn alt" data-act="dc">💬 Discord</button>${NOTICE?`<button class="btn alt" data-act="notice" style="position:relative">📢 ${T('公告')}${noticeDue()?'<i class="rdot" style="top:-6px;right:-6px"></i>':''}</button>`:''}<button class="btn alt" data-act="closem">${T('返回')}</button></div>`)
   else if(act==='noticeold')showNotice(true,a.dataset.id);
   else if(act==='noticelist')noticeList();
   else if(act==='noticenew')inboxNotice();
