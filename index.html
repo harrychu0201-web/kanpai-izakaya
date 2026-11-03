@@ -2393,6 +2393,13 @@ function fastCook(){let n=0;const go=(arr,kf)=>arr.forEach(g=>{if(!g)return;cons
   go(R.grill,g=>g.kind);go(R.fryer,()=>'karaage');go(R.teppan,g=>g.kind);go(R.tempura,g=>g.kind);go(R.rmpan,g=>g.kind);go(R.rfry,g=>g.kind);
   go(R.mpot,g=>g.kind);go(R.tyaki,g=>g.kind);go(R.tako,g=>g.kind);go(R.tama,g=>g.kind);go(R.onig,g=>g.kind);return n}
 /* ===== 成就系統：資料。rec.ach[id]=1 代表已領取；rec.ul[id]=1 代表已解鎖並通知過；rec.ax 是累計統計（雲端合併取最大）；rec.eg 是彩蛋旗標 ===== */
+/* 店面成就看「現在存檔裡擁有多少」：已經買過的人不用重買、也不用等打烊就能解鎖 */
+let OWNC={raw:null,v:{dc:0,br:0}};
+function ownCnt(){try{let k=KEY;if(RP.on)k=REAL_KEY;const raw=localStorage.getItem(k);if(raw===OWNC.raw)return OWNC.v;const g=raw?JSON.parse(raw):null;
+  const n=o=>{let c=0;for(const x in(o||{}))if(o[x])c++;return c};let v={dc:0,br:0};
+  if(g){let dc=n(g.dec)+n(g.inter);if(g.up&&g.up.decor&&!(g.dec&&g.dec.noren))dc++;if(g.rm)dc+=n(g.rm.dec);if(g.sushi)dc+=n(g.sushi.dec);v={dc,br:g.rm?1:0}}
+  OWNC={raw,v};return v}catch(e){return {dc:0,br:0}}}
+const AXO=(r,k)=>Math.max(AXG(r,k),ownCnt()[k]||0);
 const AXG=(r,k)=>(r.ax&&r.ax[k])||0,EGG=(r,k)=>(r.eg&&r.eg[k])?1:0,AM=x=>typeof x==='function'?x():x;
 const _A=(id,cat,n,d,cur,max,rw,o)=>Object.assign({id,cat,n,d,cur,max,rw,c:r=>cur(r)>=AM(max)},o||{});
 const _EGG=(id,key,n,d,rw)=>_A(id,'egg',n,d,r=>EGG(r,key),1,rw,{hid:true});
@@ -2427,9 +2434,9 @@ const ACHS=[
   _A('pd1','shop','完美的一天','一整天沒有任何客人生氣走掉（至少服務 10 位客人）。',r=>AXG(r,'pd'),1,{pt:1}),
   _A('pd10','shop','完美營業 10 天','累計 10 天沒有任何客人生氣走掉。',r=>AXG(r,'pd'),10,{nb:2}),
   _A('pd50','shop','完美營業 50 天','累計 50 天沒有任何客人生氣走掉。',r=>AXG(r,'pd'),50,{pt:3,ext:2,tip:2}),
-  _A('br1','shop','屋台開張','買下店面之後，再開一家屋台拉麵。',r=>AXG(r,'br'),1,{ext:2,fast:1}),
-  _A('dc5','shop','店裡有模有樣','買下 5 項裝潢或布置。',r=>AXG(r,'dc'),5,{pt:1}),
-  _A('dc12','shop','裝潢達人','買下 12 項裝潢或布置。',r=>AXG(r,'dc'),12,{nb:2,tip:1}),
+  _A('br1','shop','屋台開張','買下店面之後，再開一家屋台拉麵。',r=>AXO(r,'br'),1,{ext:2,fast:1}),
+  _A('dc5','shop','店裡有模有樣','買下 5 項裝潢或布置。',r=>AXO(r,'dc'),5,{pt:1}),
+  _A('dc12','shop','裝潢達人','買下 12 項裝潢或布置。',r=>AXO(r,'dc'),12,{nb:2,tip:1}),
   _A('bk1','shop','摔了一跤','破產一次。跌倒了，再站起來就好。',r=>r.bankrupt||0,1,{nb:1}),
   _A('ln1','shop','週轉一下','用「緊急借款」向銀行借過一次錢。',r=>AXG(r,'lo'),1,{pt:1}),
   /* 客人 */
@@ -2482,10 +2489,11 @@ function achNext(){const it=ACHQ.shift();if(!it){ACHNOW=0;return}ACHNOW=1;const 
 function achSoon(){clearTimeout(ACHT);ACHT=setTimeout(achCheck,250)}
 /* 檢查有沒有新解鎖的成就；第一次執行（舊存檔升級）時，把已經達成的成就靜靜標成已解鎖，不一次跳出一大串通知 */
 function achCheck(){if(DEMO||TEST||RP.on||TUT)return;try{
-  const r=loadRec();r.ul=r.ul||{};const first=!r.achV,fresh=[];
+  const r=loadRec();r.ul=r.ul||{};const first=!r.achV,fresh=[];let chg=false;
+  {const o=ownCnt(),x=r.ax=r.ax||{};if(o.dc>(x.dc||0)){x.dc=o.dc;chg=true}if(o.br&&!x.br){x.br=1;chg=true}}
   for(const a of ACHS){if(!r.ul[a.id]&&a.c(r)){r.ul[a.id]=1;fresh.push(a)}}
   if(first)r.achV=1;
-  if(!fresh.length&&!first)return;
+  if(!fresh.length&&!first){if(chg)saveRec(r);return}
   saveRec(r);
   if(!first){if(fresh.length>3)achNotify(null,fresh.length);else fresh.forEach(a=>achNotify(a))}
   syncRewardDot();achDot()}catch(e){}}
@@ -3582,17 +3590,17 @@ document.addEventListener('click',e=>{
   else if(act==='dil'){keepScroll();ST.dil=ST.dil||{};ST.dil[a.dataset.id]=+a.dataset.v;save();showShop()}
   else if(act==='staffup'){const id=a.dataset.id,S=STAFFLV[id],l=staffLv(id),nx=S.lv[l];if(nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.up[id+'Lv']=l+1;ST.up[S.flag]=true;save();drawBg();showShop();renderHUD()}}
   else if(act==='stab'){SHOPTAB=a.dataset.id;SHOPJUMP=true;showShop()}
-  else if(act==='buyin'){const d=INTER.find(x=>x.id===a.dataset.id);if(d&&!hasIn(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.inter=ST.inter||{};ST.inter[d.id]=true;save();drawBg();showShop();renderHUD()}}
+  else if(act==='buyin'){const d=INTER.find(x=>x.id===a.dataset.id);if(d&&!hasIn(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.inter=ST.inter||{};ST.inter[d.id]=true;save();drawBg();showShop();renderHUD();achSoon()}}
   else if(act==='buyth'){const t=THEMES[a.dataset.cat].list.find(x=>x.id===a.dataset.id);if(t&&!ownTh(t.id)&&ST.coins>=t.cost){keepScroll();ST.coins-=t.cost;ST.thOwn=ST.thOwn||{};ST.thOwn[t.id]=true;ST.th=ST.th||{};ST.th[a.dataset.cat]=t.id;save();drawBg();showShop();renderHUD();toast(t.zh+' 已換上（回到遊戲畫面看變化）')}}
   else if(act==='useth'){keepScroll();ST.th=ST.th||{};ST.th[a.dataset.cat]=a.dataset.id;save();drawBg();showShop();toast('已換上（回到遊戲畫面看變化）')}
   else if(act==='buymenu'){const k=a.dataset.id,it=ITEMS[k];if(it&&!has(k)&&UDAY()>=7&&ST.coins>=it.buy){keepScroll();ST.coins-=it.buy;ST.menu=ST.menu||{};ST.menu[k]=true;ST.fresh=(ST.fresh||[]).concat(k);save();drawBg();showShop();renderHUD()}}
   else if(act==='lvup'){const b=a.dataset.id,c=upCost(b);if(c&&ST.coins>=c){keepScroll();ST.coins-=c;ST.lv=ST.lv||{};ST.lv[b]=lvOf(b)+1;save();showShop();renderHUD()}}
   else if(act==='buyshop'){if(!ST.owned&&ST.coins>=GOAL){ST.coins-=GOAL;ST.owned=true;save();drawBg();renderHUD();showOwned()}}
-  else if(act==='buydec'){const d=DECOR.find(x=>x.id===a.dataset.id);if(d&&!hasDec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.dec=ST.dec||{};ST.dec[d.id]=true;save();drawBg();showShop();renderHUD()}}
+  else if(act==='buydec'){const d=DECOR.find(x=>x.id===a.dataset.id);if(d&&!hasDec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.dec=ST.dec||{};ST.dec[d.id]=true;save();drawBg();showShop();renderHUD();achSoon()}}
   else if(act==='buygun'){const i=+a.dataset.id,g=GUNS[i];if(g&&ST.coins<g.cost){sfx('nope');a.classList.remove('shakeb');void a.offsetWidth;a.classList.add('shakeb');const m=$('needg'+i);if(m){m.classList.remove('flash');void m.offsetWidth;m.classList.add('flash')}}else if(g&&(ST.weapon||0)<i+1&&ST.coins>=g.cost){keepScroll();ST.coins-=g.cost;ST.weapon=i+1;save();showShop();renderHUD()}}
   else if(act==='gun'&&R)toggleGun();
   else if(act==='buysushi'){if(!sushiDev())return;const home=!ST;if(home)ST=load();if(ST&&!ST.sushi&&ST.coins>=SUSHI_PRICE){keepScroll();ST.coins-=SUSHI_PRICE;ST.sushi={up:{},seen:false};ST.menu=ST.menu||{};ST.menu.tamagonigiri=1;save();toast(T('海風壽司開張了！'))}if(ST&&ST.sushi){if(home)ST=null;if(!home)renderHUD();sushiHome();return}if(home)ST=null;if(!home)renderHUD();sushiHome()}
-  else if(act==='buyrm'){if(ST.owned&&!ST.rm&&ST.coins>=RM_PRICE){keepScroll();ST.coins-=RM_PRICE;ST.rm={up:{},dec:{},seen:false};ST.where='rm';save();showShop();renderHUD();toast(T('屋台開張了！下一天開店前可以選要開哪一家'))}}
+  else if(act==='buyrm'){if(ST.owned&&!ST.rm&&ST.coins>=RM_PRICE){keepScroll();ST.coins-=RM_PRICE;ST.rm={up:{},dec:{},seen:false};ST.where='rm';save();showShop();renderHUD();achSoon();toast(T('屋台開張了！下一天開店前可以選要開哪一家'))}}
   else if(act==='buyk2'){if(ST.rm&&!rmK2()&&ST.coins>=K2_PRICE){keepScroll();ST.coins-=K2_PRICE;ST.rm.k2=1;ST.menu=ST.menu||{};ST.menu.koro=true;ST.fresh=(ST.fresh||[]).concat('koro');save();drawBg();showShop();renderHUD();toast(T('二號廚房擴建好了！開店時點吧台右邊的按鈕切換廚房'))}}
   else if(act==='offtog'){const k=a.dataset.id;if(ST&&ITEMS[k]){const sush=ITEMS[k].shop==='sushi';const pool=(sush?Object.keys(ITEMS).filter(x=>ITEMS[x].shop==='sushi'&&has(x)):unlocked(ST.day)).filter(x=>x!=='beer'&&!isOff(x));if(!isOff(k)&&pool.length<=3){toast(T('至少要留 3 道菜在賣'));return}keepScroll();ST.soff=ST.soff||{};if(ST.soff[k])delete ST.soff[k];else ST.soff[k]=1;save();drawBg();if(sush)sushiHome();else showShop()}}
   else if(act==='gomatog'){if(ST.rm&&has('goma')){keepScroll();ST.rm.off=ST.rm.off||{};ST.rm.off.goma=!ST.rm.off.goma;save();drawBg();showShop()}}
@@ -3601,7 +3609,7 @@ document.addEventListener('click',e=>{
   else if(act==='rmstaff3'){const l=rmFryStaffLv(),nx=RSTAFF3.lv[l];if(ST.rm&&nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.rm.up.staff3=l+1;save();drawBg();showShop();renderHUD()}}
   else if(act==='rmstaff2'){const l=rmStaff2Lv(),nx=RSTAFF2.lv[l];if(ST.rm&&nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.rm.up.staff2=l+1;save();drawBg();showShop();renderHUD()}}
   else if(act==='rmup'){const u=RUPS.find(x=>x.id===a.dataset.id);if(u&&ST.rm&&u.ok()&&ST.coins>=u.cost){keepScroll();ST.coins-=u.cost;u.go();save();showShop();renderHUD()}}
-  else if(act==='rmdec'){const d=RDECOR.find(x=>x.id===a.dataset.id);if(d&&ST.rm&&!rmDec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.rm.dec[d.id]=true;save();drawBg();showShop();renderHUD()}}
+  else if(act==='rmdec'){const d=RDECOR.find(x=>x.id===a.dataset.id);if(d&&ST.rm&&!rmDec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.rm.dec[d.id]=true;save();drawBg();showShop();renderHUD();achSoon()}}
   else if(act==='salepick'){const t=ST.today;if(t&&t.day===ST.day&&t.ev==='sale'&&saleCands().includes(a.dataset.id)){t.sale=a.dataset.id;save();showDayIntro()}}
   else if(act==='where'){ST.where=a.dataset.id==='rm'&&ST.rm?'rm':a.dataset.id==='sushi'&&ST.sushi?'sushi':'iz';setCur(ST.where);if(ST.today&&ST.today.ev==='sale'){const c=unlocked(ST.day).filter(k=>ITEMS[k].cost&&k!=='beer');ST.today.sale=pick(c.length?c:['beer'])}save();showDayIntro()}
   else if(act==='buy'){const u=UPS.find(x=>x.id===a.dataset.id);if(u&&u.ok()&&ST.coins>=u.cost){keepScroll();ST.coins-=u.cost;u.go();save();drawBg();showShop();renderHUD()}}
@@ -3612,7 +3620,7 @@ document.addEventListener('click',e=>{
   else if(act==='sugopen')startSushiLesson(!!(ST&&!R&&!HOME));
   else if(act==='susopen'){closeHome();ST=load();if(!ST||!ST.sushi){ST=null;showHome();return}ST.where='sushi';setCur('sushi');save();advance()}
   else if(act==='susbuy'){const k=a.dataset.id;const home=!ST;if(home)ST=load();if(ST&&ITEMS[k]&&ITEMS[k].shop==='sushi'&&!has(k)&&ST.coins>=ITEMS[k].buy){keepScroll();ST.coins-=ITEMS[k].buy;ST.menu=ST.menu||{};ST.menu[k]=1;save()}if(home)ST=null;else renderHUD();sushiHome()}
-  else if(act==='sudec'){const d=SDECOR.find(x=>x.id===a.dataset.id);const home=!ST;if(home)ST=load();if(ST&&ST.sushi&&d&&!sdec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.sushi.dec=ST.sushi.dec||{};ST.sushi.dec[d.id]=true;save();if(!home){drawBg();renderHUD()}}if(home)ST=null;sushiHome()}
+  else if(act==='sudec'){const d=SDECOR.find(x=>x.id===a.dataset.id);const home=!ST;if(home)ST=load();if(ST&&ST.sushi&&d&&!sdec(d.id)&&ST.coins>=d.cost){keepScroll();ST.coins-=d.cost;ST.sushi.dec=ST.sushi.dec||{};ST.sushi.dec[d.id]=true;save();achSoon();if(!home){drawBg();renderHUD()}}if(home)ST=null;sushiHome()}
   else if(act==='sudil'){keepScroll();const home=!ST;if(home)ST=load();if(ST&&ST.sushi){ST.dil=ST.dil||{};ST.dil.sushistaff=+a.dataset.v;save()}if(home)ST=null;sushiHome()}
   else if(act==='sushishop')sushiHome();
   else if(act==='sumaki'){const home=!ST;if(home)ST=load();let bought=false;if(ST&&ST.sushi&&!suUp('maki',0)&&ST.coins>=SU_MAKI5_COST){keepScroll();ST.coins-=SU_MAKI5_COST;ST.sushi.up.maki=1;save();bought=true}if(home)ST=null;else{renderHUD();if(bought&&R)chooseLayout(true)}sushiHome()}
