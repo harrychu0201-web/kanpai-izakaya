@@ -4956,7 +4956,7 @@ const PVKEY='izakaya-pview';
 function pview(){try{return localStorage.getItem(PVKEY)==='1'}catch(e){return false}}
 const canView=()=>!!(CL.user&&(CL.user.email===ADMIN_EMAIL||CL.isStaff===true));
 function isAdmin(){return !!(CL.user&&CL.user.email===ADMIN_EMAIL)&&!pview()}
-function isTester(){return !pview()&&(isAdmin()||CL.isStaff===true)} /* 測試面板：作者與 admins/ 管理員（玩家視角下關閉） */
+function isTester(){return !pview()&&isAdmin()} /* 測試面板：只有作者（admins/ 管理員不再有測試面板；玩家視角下關閉） */
 /* announcement posters: the owner adds their uid under posters/<uid> in Realtime Database; they can post, edit and delete announcements (not feedback, bans or vote stats) */
 /* staff, posters and the owner can add, edit and delete announcements */
 const canPost=()=>!pview()&&(isAdmin()||CL.isPoster===true||CL.isStaff===true);
