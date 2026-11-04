@@ -5184,7 +5184,7 @@ function chatClean(t){t=String(t).replace(/[\u0000-\u001f<>]/g,'').replace(/\s+/
 function chatColor(uid){let h=0;for(const c of uid||'')h=(h*31+c.charCodeAt(0))%360;return `hsl(${h} 55% 36%)`}
 function chatTime(t){const d=new Date(t),n=new Date();return (d.toDateString()===n.toDateString()?'':`${d.getMonth()+1}/${d.getDate()} `)+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 /* chat stickers: sent as the token [[s:NN]] in the normal text field, so the RTDB rules don't change */
-const STK_N=30,STK_RE=/^\[\[s:(\d{2})\]\]$/;
+const STK_N=60,STK_RE=/^\[\[s:(\d{2})\]\]$/;
 function chatStk(t){const m=STK_RE.exec(String(t||'').trim());if(!m)return 0;const n=+m[1];return n>=1&&n<=STK_N?n:0}
 const stkSrc=n=>`img/stk/stk-${String(n).padStart(2,'0')}.webp`;
 function chatPlain(t){return chatStk(t)?T('[貼圖]'):chatClean(t)}
