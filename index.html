@@ -3236,7 +3236,7 @@ function showTitle(){
   <div class="btns">${saved?`<button class="btn" data-act="cont">繼續第 ${saved.day+(saved.pendingNext?1:0)} 天</button><button class="btn alt" data-act="newgame">從頭開始</button>`:`<button class="btn" data-act="newgame">開店</button>`}</div>`);
 }
 function showDayIntro(){
-  R=null;setCur(ST.where);renderHUD();drawBg();$('custLayer').innerHTML='';$('stations').innerHTML='';
+  R=null;setCur(ST.where);renderHUD();pickToday();drawBg();$('custLayer').innerHTML='';$('stations').innerHTML='';
   const news=Object.keys(ITEMS).filter(k=>ITEMS[k].day===ST.day),show=CUR==='sushi'?SUKEYS.filter(has):CUR==='rm'?(ST.rm&&!ST.rm.seen?['ramen','gyoza','lsour']:(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop==='rm')):(ST.day===1?['beer','edamame','negima']:news.concat(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop!=='rm'&&ITEMS[k].shop!=='sushi'));
   const due=(ST.dues||[]).filter(d=>d.left===1).reduce((s,d)=>s+d.amt,0);pickToday();const TD=evNow();
   const HI=TD.hol?holInfo(TD.hol):null;
@@ -3965,6 +3965,111 @@ stHTML=function(name){let h=_stHTML(name);if(!artOn())return h;
   return h};
 grillHTML=function(){const h=_grillHTML();if(!artFoodOn())return h;return h.replace(_svgRe,`<svg viewBox="0 0 250 182" style="position:absolute;inset:0">${AIMG('grill',0,6,250,176)}</svg>`)};
 fryerHTML=function(){const h=_fryerHTML();if(!artFoodOn())return h;return h.replace(_svgRe,`<svg viewBox="0 0 136 122" style="position:absolute;inset:0">${AIMG('fryer',0,4,136,118)}</svg>`)};
+/* ---- holiday decorations: drawn on top of the art kitchen background, in the background picture's own 1900x918 space ---- */
+function holDeco(h){
+  const AN=!(document.body&&document.body.classList.contains('lite'));
+  const OL='#3a1a10',F='font-family="\'Noto Serif TC\',\'Noto Serif CJK TC\',\'Yu Mincho\',\'PMingLiU\',serif"';
+  const f1=n=>Math.round(n*10)/10;
+  const qb=(a,b,c,t)=>[(1-t)*(1-t)*a[0]+2*(1-t)*t*b[0]+t*t*c[0],(1-t)*(1-t)*a[1]+2*(1-t)*t*b[1]+t*t*c[1]];
+  const sway=(x,y,a,dur,inner,begin)=>AN?`<g><animateTransform attributeName="transform" type="rotate" values="${-a} ${x} ${y};${a} ${x} ${y};${-a} ${x} ${y}" dur="${dur}s" begin="${begin||0}s" repeatCount="indefinite" calcMode="spline" keyTimes="0;.5;1" keySplines=".45 0 .55 1;.45 0 .55 1"/>${inner}</g>`:`<g>${inner}</g>`;
+  const bob=(dy,dur,inner,begin)=>AN?`<g><animateTransform attributeName="transform" type="translate" values="0 0;0 ${-dy};0 0" dur="${dur}s" begin="${begin||0}s" repeatCount="indefinite" calcMode="spline" keyTimes="0;.5;1" keySplines=".45 0 .55 1;.45 0 .55 1"/>${inner}</g>`:`<g>${inner}</g>`;
+  const heart=(x,y,s,c,r)=>`<use href="#hd-heart" transform="translate(${f1(x)} ${f1(y)}) rotate(${r||0}) scale(${s})" fill="${c}" stroke="${OL}" stroke-width="${f1(2/s)}" stroke-linejoin="round"/>`;
+  const twinkle=(inner,dur,begin)=>AN?`<g><animate attributeName="opacity" values="1;.25;1" dur="${dur}s" begin="${begin}s" repeatCount="indefinite"/>${inner}</g>`:`<g>${inner}</g>`;
+  const star=(x,y,R,c)=>{let p='';for(let i=0;i<10;i++){const r=i%2?R*.45:R,a=-Math.PI/2+i*Math.PI/5;p+=(i?'L':'M')+f1(x+r*Math.cos(a))+' '+f1(y+r*Math.sin(a))}return `<path d="${p}Z" fill="${c}" stroke="${OL}" stroke-width="2.5" stroke-linejoin="round"/>`};
+  let d='',s='';
+
+  if(h==='valentine'){
+    d=`<path id="hd-heart" d="M0 9 C-16 -2 -13 -13 -6.5 -13 C-3 -13 0 -10 0 -7 C0 -10 3 -13 6.5 -13 C13 -13 16 -2 0 9Z"/>`;
+    const C=['#ff6f9c','#e63958','#ff9ec0','#c81e45'];
+    /* hanging hearts on strings */
+    [[72,62,1.5,0],[300,95,1.5,1],[560,185,2.3,2],[800,120,1.7,3],[1065,170,2.2,0],[1160,92,1.4,1],[1385,140,1.9,2],[1565,200,2.4,3],[1770,128,1.8,0],[1855,86,1.4,1]].forEach(([x,len,sc,ci],i)=>{
+      s+=sway(x,0,i%2?3.2:-3.2,3.4+i*.23,`<path d="M${x} 0V${len}" stroke="#5a3a2a" stroke-width="2.2"/>${heart(x,len+10*sc,sc,C[ci])}<path d="M${x-sc*5} ${len+10*sc-sc*8}q${sc*2} ${-sc*3} ${sc*5} ${-sc*2}" stroke="#fff" stroke-width="${f1(sc*1.2)}" fill="none" opacity=".7" stroke-linecap="round"/>`,i*.4)});
+    /* garland along the beam: swags of hearts and roses */
+    [[240,720],[720,1230],[1230,1760]].forEach(([x0,x1],k)=>{
+      const a=[x0,104],b=[(x0+x1)/2,104+150],c=[x1,104];
+      s+=`<path d="M${x0} 104Q${f1(b[0])} ${b[1]} ${x1} 104" stroke="#6a3a2a" stroke-width="3" fill="none"/>`;
+      for(let i=1;i<9;i++){const t=i/9,p=qb(a,b,c,t);
+        if(i%2)s+=heart(p[0],p[1]+10,1.05,C[(i+k)%4],(t-.5)*30);
+        else s+=`<circle cx="${f1(p[0])}" cy="${f1(p[1]+4)}" r="9" fill="#e0345a" stroke="${OL}" stroke-width="2"/><path d="M${f1(p[0]-5)} ${f1(p[1]+5)}q3-8 9-2q-3 6-7 3" stroke="#7a0f2a" stroke-width="1.6" fill="none"/><ellipse cx="${f1(p[0]+11)}" cy="${f1(p[1]+10)}" rx="7" ry="3.5" fill="#3f9a4d" stroke="${OL}" stroke-width="1.5" transform="rotate(35 ${f1(p[0]+11)} ${f1(p[1]+10)})"/>`}
+      s+=heart(x0,104,1.2,C[0]);if(k===2)s+=heart(x1,104,1.2,C[2])});
+    /* lanterns say 愛 */
+    [1253,1478,1653].forEach((x,i)=>{const y=i===1?139:134;
+      s+=`<g><rect x="${x-3}" y="40" width="6" height="${y-40}" fill="#5a2a1a" opacity=".0"/><rect x="${x-24}" y="${y}" width="48" height="10" rx="3" fill="#3a1a10"/>
+      <path d="M${x-26} ${y+9}C${x-48} ${y+30} ${x-48} ${y+74} ${x-26} ${y+93}H${x+26}C${x+48} ${y+74} ${x+48} ${y+30} ${x+26} ${y+9}Z" fill="url(#hd-lant)" stroke="#7a1a10" stroke-width="2.5"/>
+      <path d="M${x-40} ${y+30}Q${x} ${y+40} ${x+40} ${y+30}M${x-44} ${y+52}Q${x} ${y+62} ${x+44} ${y+52}M${x-40} ${y+74}Q${x} ${y+84} ${x+40} ${y+74}" stroke="#a82a1c" stroke-width="1.8" fill="none" opacity=".8"/>
+      <rect x="${x-24}" y="${y+91}" width="48" height="10" rx="3" fill="#3a1a10"/>
+      <text x="${x}" y="${y+66}" text-anchor="middle" font-size="46" font-weight="900" fill="#3a0f0a" ${F}>愛</text></g>`});
+    d+=`<radialGradient id="hd-lant" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#ff8a5a"/><stop offset="1" stop-color="#d8402c"/></radialGradient>`;
+    /* rose vases on the counter */
+    const rose=(x,y,r,c)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="${OL}" stroke-width="2"/><path d="M${f1(x-r*.55)} ${f1(y+r*.1)}Q${f1(x-r*.1)} ${f1(y-r*.7)} ${f1(x+r*.5)} ${f1(y-r*.1)}Q${f1(x+r*.1)} ${f1(y+r*.5)} ${f1(x-r*.2)} ${f1(y+r*.1)}" fill="none" stroke="#7a0f2a" stroke-width="1.8"/>`;
+    const vase=(x,y,sc)=>`<g transform="translate(${x} ${y}) scale(${sc})"><path d="M-9 -34L-17 -78M0 -34V-96M9 -34L19 -74" stroke="#2f7d3a" stroke-width="4.5" fill="none"/><ellipse cx="-17" cy="-52" rx="11" ry="5" fill="#3f9a4d" stroke="${OL}" stroke-width="1.8" transform="rotate(-30 -17 -52)"/><ellipse cx="17" cy="-50" rx="11" ry="5" fill="#3f9a4d" stroke="${OL}" stroke-width="1.8" transform="rotate(30 17 -50)"/>${rose(-18,-84,14,'#e6406a')}${rose(0,-104,16,'#c81e45')}${rose(20,-80,13,'#ff7fa5')}<circle cx="-30" cy="-100" r="3" fill="#fff"/><circle cx="28" cy="-98" r="3" fill="#fff"/><circle cx="-8" cy="-124" r="3" fill="#fff"/><path d="M-22 0C-27 -14 -19 -26 -15 -36H15C19 -26 27 -14 22 0Z" fill="#bfe3f0" fill-opacity=".6" stroke="${OL}" stroke-width="2.5"/><path d="M-14 -8C-17 -16 -11 -24 -9 -30" stroke="#fff" stroke-width="2.5" fill="none" opacity=".7" stroke-linecap="round"/></g>`;
+    s+=vase(500,466,1.25)+vase(1405,466,1.1);
+    /* heart chocolate box and a bouquet-ribbon on the right of the counter */
+    s+=`<g transform="translate(1790 466) scale(.78)"><path d="M0 -6C-70 -50 -62 -112 -30 -112C-12 -112 0 -98 0 -86C0 -98 12 -112 30 -112C62 -112 70 -50 0 -6Z" fill="#c81e45" stroke="${OL}" stroke-width="3"/><path d="M0 -20C-52 -52 -46 -96 -26 -96C-12 -96 0 -86 0 -74C0 -86 12 -96 26 -96C46 -96 52 -52 0 -20Z" fill="#6b2a1a" stroke="${OL}" stroke-width="2"/><circle cx="-22" cy="-78" r="8" fill="#a8683a"/><circle cx="2" cy="-62" r="8" fill="#e8c48e"/><circle cx="22" cy="-80" r="8" fill="#a8683a"/><circle cx="-8" cy="-46" r="7" fill="#e8c48e"/><circle cx="14" cy="-44" r="7" fill="#a8683a"/><path d="M-40 -62L40 -62" stroke="#ffb3c8" stroke-width="7" opacity=".9" stroke-linecap="round"/></g>`;
+    /* little hearts drifting up through the room */
+    if(AN)[[620,430,0],[870,470,1.7],[1190,440,3.1],[1480,460,.9],[430,300,2.4],[1330,320,4.2]].forEach(([x,y,b],i)=>{s+=`<g opacity="0"><animateTransform attributeName="transform" type="translate" values="0 0;${i%2?18:-18} -170" dur="${6+i*.5}s" begin="${b}s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.85;.85;0" dur="${6+i*.5}s" begin="${b}s" repeatCount="indefinite"/>${heart(x,y,.9,'#ff8ab0')}</g>`});
+  }
+
+  else if(h==='halloween'){
+    d=`<radialGradient id="hd-pk" cx=".4" cy=".3" r=".8"><stop offset="0" stop-color="#ffb347"/><stop offset=".6" stop-color="#f07a12"/><stop offset="1" stop-color="#c4560a"/></radialGradient><radialGradient id="hd-gh" cx=".5" cy=".5" r=".5"><stop offset=".45" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient><radialGradient id="hd-pg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffb030" stop-opacity=".55"/><stop offset="1" stop-color="#ffb030" stop-opacity="0"/></radialGradient>`;
+    const pump=(x,y,sc,face)=>{const eye=`<path d="M-33 -44L-13 -44L-23 -26Z" fill="#ffe36a" stroke="${OL}" stroke-width="2.6" stroke-linejoin="round"/><path d="M13 -44L33 -44L23 -26Z" fill="#ffe36a" stroke="${OL}" stroke-width="2.6" stroke-linejoin="round"/>`,
+        mouth=face===1?`<path d="M-34 -22Q0 -2 34 -22Q30 -6 0 -4Q-30 -6 -34 -22Z" fill="#ffe36a" stroke="${OL}" stroke-width="2.6" stroke-linejoin="round"/>`:`<path d="M-32 -20L-20 -12L-10 -20L0 -11L10 -20L20 -12L32 -20L26 -4L-26 -4Z" fill="#ffe36a" stroke="${OL}" stroke-width="2.6" stroke-linejoin="round"/>`;
+      return `<g transform="translate(${x} ${y}) scale(${sc})"><circle cx="0" cy="-32" r="95" fill="url(#hd-pg)"/><path d="M0 -64C-32 -68 -66 -52 -66 -30C-66 -8 -36 1 0 1C36 1 66 -8 66 -30C66 -52 32 -68 0 -64Z" fill="url(#hd-pk)" stroke="${OL}" stroke-width="3.2"/><path d="M-24 -62C-44 -44 -44 -12 -24 0M24 -62C44 -44 44 -12 24 0" stroke="#b44a00" stroke-width="3" fill="none" opacity=".55"/><path d="M-5 -63C-5 -76 3 -82 9 -86L16 -81C11 -77 9 -71 9 -63Z" fill="#6a8a2a" stroke="${OL}" stroke-width="2.6" stroke-linejoin="round"/>${eye}${mouth}</g>`};
+    [[360,1.25,0],[480,.8,1],[930,1,1],[1085,.72,0],[1262,1.05,0],[1495,1.35,1],[1625,.85,0],[1800,1.15,1]].forEach(([x,sc,fc])=>{s+=pump(x,466,sc,fc)});
+    /* ghosts */
+    const ghost=(x,y,sc,dur,b)=>`<g transform="translate(${x} ${y}) scale(${sc})">${bob(14,dur,`<circle cx="0" cy="-8" r="66" fill="url(#hd-gh)"/><path d="M-32 44L-32 -10C-32 -46 -15 -60 0 -60C15 -60 32 -46 32 -10L32 44L21 33L10 46L0 33L-10 46L-21 33Z" fill="#f4f6ff" fill-opacity=".93" stroke="#8a90b8" stroke-width="3" stroke-linejoin="round"/><ellipse cx="-11" cy="-22" rx="4.5" ry="7" fill="#262a40"/><ellipse cx="11" cy="-22" rx="4.5" ry="7" fill="#262a40"/><ellipse cx="0" cy="-4" rx="5" ry="8" fill="#262a40"/><path d="M-32 0Q-46 -8 -50 -22M32 0Q46 -8 50 -22" stroke="#8a90b8" stroke-width="3" fill="none" stroke-linecap="round"/>`,b)}</g>`;
+    s+=ghost(790,230,1.05,3.6,0)+ghost(1010,300,.8,4.2,1.2)+ghost(1140,215,1,3.9,2.1);
+    /* bats */
+    const bat=(x,y,sc,r)=>`<g transform="translate(${x} ${y}) rotate(${r}) scale(${sc})"><path d="M0 2C-6 -8-14 -15-30 -13C-24 -6-24 3-17 9C-12 3-6 5-3 13C-2 7 2 7 3 13C6 5 12 3 17 9C24 3 24 -6 30 -13C14 -15 6 -8 0 2Z" fill="#5a2a8a" stroke="#2a1040" stroke-width="2.4" stroke-linejoin="round"/><circle cx="0" cy="-3" r="6.5" fill="#4a1f78" stroke="#2a1040" stroke-width="2"/><path d="M-5 -8L-6 -15L-1 -9M5 -8L6 -15L1 -9" fill="#4a1f78" stroke="#2a1040" stroke-width="1.8" stroke-linejoin="round"/><circle cx="-2.4" cy="-3.5" r="1.3" fill="#ffe36a"/><circle cx="2.4" cy="-3.5" r="1.3" fill="#ffe36a"/></g>`;
+    [[470,150,1.5,-8],[640,235,1,10],[920,128,1.25,6],[1380,120,1.4,-6],[1730,300,1.2,8]].forEach(([x,y,sc,r],i)=>{s+=bob(10,2.6+i*.4,bat(x,y,sc,r),i*.5)});
+    /* cobwebs in the corners and hanging spiders */
+    const web=(R)=>{let p='';const N=7;for(let i=0;i<=N;i++){const a=i*Math.PI/2/N;p+=`M0 0L${f1(R*Math.cos(a))} ${f1(R*Math.sin(a))}`}
+      for(let k=1;k<=5;k++){const r=R*k/5;for(let i=0;i<N;i++){const a0=i*Math.PI/2/N,a1=(i+1)*Math.PI/2/N,am=(a0+a1)/2;p+=`M${f1(r*Math.cos(a0))} ${f1(r*Math.sin(a0))}Q${f1(r*.9*Math.cos(am))} ${f1(r*.9*Math.sin(am))} ${f1(r*Math.cos(a1))} ${f1(r*Math.sin(a1))}`}}
+      return `<path d="${p}" stroke="#f2f2ff" stroke-width="1.8" fill="none" opacity=".6" stroke-linecap="round"/>`};
+    s+=`<g transform="translate(30 28)">${web(190)}</g><g transform="translate(1888 24) scale(-1 1)">${web(170)}</g>`;
+    const spider=(x,y,len,sc)=>sway(x,y-len,5,3.2,`<path d="M${x} ${y-len}V${y}" stroke="#e8e8f4" stroke-width="1.6" opacity=".8"/><g transform="translate(${x} ${y}) scale(${sc})"><path d="M-8 -2L-22 -12L-28 2M-8 2L-24 6L-24 20M-8 5L-16 18L-14 28M8 -2L22 -12L28 2M8 2L24 6L24 20M8 5L16 18L14 28" stroke="#1a1020" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="0" cy="4" rx="10" ry="12" fill="#2a1a38" stroke="#0e0816" stroke-width="2"/><circle cx="0" cy="-9" r="6.5" fill="#2a1a38" stroke="#0e0816" stroke-width="2"/><circle cx="-2.4" cy="-10" r="1.5" fill="#ff6a6a"/><circle cx="2.4" cy="-10" r="1.5" fill="#ff6a6a"/></g>`);
+    s+=spider(1818,150,100,1)+spider(205,210,150,.9)+spider(1030,128,70,.8);
+  }
+
+  else if(h==='xmas'){
+    d=`<linearGradient id="hd-tree" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#46a354"/><stop offset="1" stop-color="#1f6a34"/></linearGradient><linearGradient id="hd-snow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#d6e4f4"/></linearGradient>`;
+    const LC=['#ff4d4d','#ffd24a','#5ad06a','#5aa8ff','#ff8ad0'];
+    /* tree */
+    const tier=(w,top,bot)=>`<path d="M${-w} ${bot}L0 ${top}L${w} ${bot}Q${w/2} ${bot+16} 0 ${bot+7}Q${-w/2} ${bot+16} ${-w} ${bot}Z" fill="url(#hd-tree)" stroke="${OL}" stroke-width="3.2" stroke-linejoin="round"/>`;
+    const bauble=(x,y,r,c)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="${OL}" stroke-width="2"/><circle cx="${x-r*.35}" cy="${y-r*.35}" r="${f1(r*.28)}" fill="#fff" opacity=".8"/>`;
+    let t=`<rect x="-10" y="-44" width="20" height="14" fill="#6a3a1a" stroke="${OL}" stroke-width="2.5"/>`+tier(104,-176,-38)+tier(82,-256,-134)+tier(58,-326,-220);
+    t+=`<path d="M-84 -76Q-40 -56 0 -70Q40 -84 84 -64M-66 -168Q-30 -150 0 -162Q30 -174 66 -156M-46 -250Q-20 -236 0 -246Q20 -256 44 -242" stroke="#ffd24a" stroke-width="4" fill="none" stroke-dasharray="1 9" stroke-linecap="round"/>`;
+    [[-62,-68,9,'#e63946'],[-20,-60,8,'#ffd24a'],[34,-72,9,'#4a8aff'],[70,-62,8,'#e63946'],[-44,-150,8,'#4a8aff'],[2,-142,9,'#e63946'],[46,-160,8,'#ffd24a'],[-24,-236,8,'#ffd24a'],[22,-224,8,'#e63946'],[0,-292,7,'#4a8aff']].forEach(([x,y,r,c])=>{t+=bauble(x,y,r,c)});
+    [[-76,-100],[-10,-92],[56,-104],[-34,-186],[28,-196],[-8,-268],[12,-300]].forEach(([x,y],i)=>{t+=twinkle(`<circle cx="${x}" cy="${y}" r="9" fill="${LC[i%5]}" opacity=".35"/><circle cx="${x}" cy="${y}" r="4.2" fill="${LC[i%5]}" stroke="${OL}" stroke-width="1.2"/>`,1.4+i*.17,i*.3)});
+    t+=star(0,-340,24,'#ffd24a');
+    t+=`<path d="M-42 -32H42L35 0H-35Z" fill="#b32d2d" stroke="${OL}" stroke-width="3" stroke-linejoin="round"/><rect x="-46" y="-40" width="92" height="12" rx="4" fill="#d94040" stroke="${OL}" stroke-width="3"/>`;
+    s+=`<g transform="translate(335 468)">${t}</g>`;
+    /* gifts */
+    const gift=(x,y,w,hh,c1,c2)=>`<g transform="translate(${x} ${y})"><rect x="${-w/2}" y="${-hh}" width="${w}" height="${hh}" rx="3" fill="${c1}" stroke="${OL}" stroke-width="2.6"/><rect x="-5" y="${-hh}" width="10" height="${hh}" fill="${c2}"/><rect x="${-w/2}" y="${-hh*.55-4}" width="${w}" height="9" fill="${c2}"/><path d="M0 ${-hh}C-16 ${-hh-16} -22 ${-hh-4} -4 ${-hh}C22 ${-hh-4} 16 ${-hh-16} 0 ${-hh}Z" fill="${c2}" stroke="${OL}" stroke-width="2" stroke-linejoin="round"/></g>`;
+    s+=gift(480,466,62,54,'#d94040','#ffd24a')+gift(548,466,44,38,'#3f8fd0','#fff')+gift(205,466,50,44,'#2f9a4a','#ff8ad0');
+    /* wreath on the window */
+    let wr='';const WX=1008,WY=282,WR=50;
+    wr+=`<circle cx="${WX}" cy="${WY}" r="${WR}" fill="none" stroke="#1f5a2c" stroke-width="22"/><circle cx="${WX}" cy="${WY}" r="${WR}" fill="none" stroke="#3f9a4d" stroke-width="16" stroke-dasharray="9 5"/><circle cx="${WX}" cy="${WY}" r="${WR}" fill="none" stroke="${OL}" stroke-width="2" opacity=".5"/>`;
+    for(let i=0;i<9;i++){const a=i*Math.PI*2/9+.3;wr+=`<circle cx="${f1(WX+WR*Math.cos(a))}" cy="${f1(WY+WR*Math.sin(a))}" r="4.6" fill="#e63946" stroke="${OL}" stroke-width="1.6"/>`}
+    wr+=`<g transform="translate(${WX} ${WY+WR-2})"><path d="M0 0C-24 -22 -34 -4 -26 8C-20 16 -6 8 0 0Z" fill="#d94040" stroke="${OL}" stroke-width="2.4" stroke-linejoin="round"/><path d="M0 0C24 -22 34 -4 26 8C20 16 6 8 0 0Z" fill="#d94040" stroke="${OL}" stroke-width="2.4" stroke-linejoin="round"/><path d="M-4 6L-16 34L-6 30L-2 38ZM4 6L16 34L6 30L2 38Z" fill="#b32d2d" stroke="${OL}" stroke-width="2" stroke-linejoin="round"/><circle cx="0" cy="2" r="6.5" fill="#e63946" stroke="${OL}" stroke-width="2.2"/></g>`;
+    s+=wr;
+    /* snow: window top, lantern caps, shelf and counter ends */
+    const snow=(x0,x1,y,hh)=>{let p=`M${x0} ${y}`;const n=Math.max(2,Math.round((x1-x0)/36)),w=(x1-x0)/n;for(let i=0;i<n;i++){const hv=hh*(.7+((i*37)%7)/10);p+=`q${f1(w*.25)} ${f1(-hv)} ${f1(w*.5)} ${f1(-hv*.55)}q${f1(w*.25)} ${f1(hv*.45)} ${f1(w*.5)} ${f1(hv*.55)}`}
+      p+=`v${f1(hh*.5)}`;for(let i=0;i<n;i++){p+=`q${f1(-w*.25)} ${f1(hh*.9)} ${f1(-w*.5)} 0q${f1(-w*.25)} ${f1(-hh*.5)} ${f1(-w*.5)} 0`}
+      return `<path d="${p}Z" fill="url(#hd-snow)" stroke="#a9bdd8" stroke-width="1.8" stroke-linejoin="round"/>`};
+    s+=snow(636,1378,150,12)+snow(1584,1892,292,9)+snow(1584,1892,422,8);
+    [1253,1478,1653].forEach((x,i)=>{s+=snow(x-26,x+26,(i===1?141:136),8)});
+    /* fairy lights along the beam */
+    [[690,1240],[1240,1860]].forEach(([x0,x1],k)=>{const a=[x0,98],b=[(x0+x1)/2,98+60],c=[x1,98];
+      s+=`<path d="M${x0} 98Q${f1(b[0])} ${b[1]} ${x1} 98" stroke="#2a3a2a" stroke-width="2.6" fill="none"/>`;
+      for(let i=1;i<14;i++){const p=qb(a,b,c,i/14),col=LC[(i+k*2)%5];
+        s+=twinkle(`<circle cx="${f1(p[0])}" cy="${f1(p[1]+8)}" r="14" fill="${col}" opacity=".3"/><ellipse cx="${f1(p[0])}" cy="${f1(p[1]+7)}" rx="5" ry="7" fill="${col}" stroke="${OL}" stroke-width="1.6"/>`,1.8+((i*7)%5)*.25,(i%4)*.45)}});
+    /* a few snowflakes outside the window */
+    if(AN){d+=`<clipPath id="hd-win"><rect x="656" y="160" width="700" height="240"/></clipPath>`;
+      for(let i=0;i<12;i++){const x=690+((i*59)%640),dur=7+(i%4)*1.6;s+=`<g clip-path="url(#hd-win)"><circle cx="${x}" cy="150" r="${2.6+(i%3)}" fill="#fff" opacity=".9"><animateTransform attributeName="transform" type="translate" values="0 0;${i%2?14:-14} 240" dur="${dur}s" begin="${-i*.9}s" repeatCount="indefinite"/></circle></g>`}}
+  }
+  return `<defs>${d}</defs>${s}`;
+}
 drawBg=function(){_drawBg();if(!artOn()||CUR==='sushi'||(CUR==='rm'&&ST&&ST.rm))return;
   const bg=$('bg');if(!bg)return;const ch=[...bg.children];
   let ti=ch.findIndex(e=>e.tagName==='g'&&e.firstElementChild&&e.firstElementChild.getAttribute('width')==='22'&&e.firstElementChild.getAttribute('height')==='52');if(ti<0)ti=ch.length;
@@ -3972,7 +4077,8 @@ drawBg=function(){_drawBg();if(!artOn()||CUR==='sushi'||(CUR==='rm'&&ST&&ST.rm))
   const ih=Math.max(H,(H-KY)/.415),oy=H-ih,NS='http://www.w3.org/2000/svg';
   const mk=()=>{const im=document.createElementNS(NS,'image');im.setAttribute('href',ARTIMG.kitchen);im.setAttribute('x',0);im.setAttribute('y',oy);im.setAttribute('width',W);im.setAttribute('height',ih);im.setAttribute('preserveAspectRatio','xMidYMid slice');return im};
   /* the art room has its own lit window, so the time of day is drawn on top of it: window sky tint, moon and a light room dim (see sky()) */
-  const mkBg=()=>{const s=document.createElementNS(NS,'svg');s.setAttribute('x',0);s.setAttribute('y',oy);s.setAttribute('width',W);s.setAttribute('height',ih);s.setAttribute('viewBox','0 0 1900 918');s.setAttribute('preserveAspectRatio','xMidYMid slice');s.innerHTML=`<image href="${ARTIMG.kitchen}" x="0" y="0" width="1900" height="918" preserveAspectRatio="none"/><rect id="artsky" x="652" y="158" width="716" height="248" fill="#ffb04a" opacity=".25" style="pointer-events:none"/><g id="artmoon" opacity="0" style="pointer-events:none"><circle cx="700" cy="196" r="22" fill="#fff6d6"/></g><rect id="artdim" x="0" y="0" width="1900" height="918" fill="#070b1c" opacity="0" style="pointer-events:none"/>`;return s};
+  const mkBg=()=>{const s=document.createElementNS(NS,'svg');s.setAttribute('x',0);s.setAttribute('y',oy);s.setAttribute('width',W);s.setAttribute('height',ih);s.setAttribute('viewBox','0 0 1900 918');s.setAttribute('preserveAspectRatio','xMidYMid slice');const HD=(()=>{try{const hh=ST&&evNow().hol;return hh?holDeco(hh):''}catch(e){return ''}})();
+    s.innerHTML=`<image href="${ARTIMG.kitchen}" x="0" y="0" width="1900" height="918" preserveAspectRatio="none"/>${HD}<rect id="artsky" x="652" y="158" width="716" height="248" fill="#ffb04a" opacity=".25" style="pointer-events:none"/><g id="artmoon" opacity="0" style="pointer-events:none"><circle cx="700" cy="196" r="22" fill="#fff6d6"/></g><rect id="artdim" x="0" y="0" width="1900" height="918" fill="#070b1c" opacity="0" style="pointer-events:none"/>`;return s};
   bg.insertBefore(mkBg(),bg.firstChild);
   const ct=$('counter'),g=ct.firstElementChild;if(g)[...g.children].forEach(e=>{if(e.tagName==='rect'||e.tagName==='path')e.style.display='none'});
   const cy=Math.round(oy+ih*.507)-1,cp=document.createElementNS(NS,'clipPath');cp.setAttribute('id','artclip');const cr=document.createElementNS(NS,'rect');cr.setAttribute('x',0);cr.setAttribute('y',cy);cr.setAttribute('width',W);cr.setAttribute('height',H-cy);cp.appendChild(cr);
