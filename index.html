@@ -2898,7 +2898,7 @@ document.addEventListener('click',e=>{if(!HOME)return;const m=e.target.closest('
 
 function branchPick(){const o=load()||{},cur=o.where==='sushi'&&o.sushi?'sushi':o.where==='rm'&&o.rm?'rm':'iz';
   const btn=(id,name,sub,ok)=>`<button class="btn ${cur===id?'':'alt'}" data-act="pickbranch" data-id="${id}" ${ok?'':'disabled'}>${T(name)}${cur===id?` · ${T('目前')}`:''}<small>${T(sub)}</small></button>`;
-  modal(`<h2>${T('分店')}</h2><p class="hint">${T('選一家店，下次營業就在那裡開門。')}</p><div class="pickrow">${btn('iz','🏮 居酒屋本店','',true)}${o.rm||!o.owned?btn('rm','🍜 深夜拉麵屋台',o.rm?'':'買下整棟店面後開放',!!o.rm):`<button class="btn alt" data-act="rmhome">🍜 ${T('深夜拉麵屋台')}<small>${T('花錢解鎖')}</small></button>`}${sushiDev()?(o.sushi?btn('sushi','🍣 海風壽司','',true):`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖')}</small></button>`):''}</div><div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
+  modal(`<h2>${T('分店')}</h2><p class="hint">${T('選一家店，下次營業就在那裡開門。')}</p><div class="pickrow">${btn('iz','🏮 居酒屋本店','',true)}${o.rm?btn('rm','🍜 深夜拉麵屋台','',true):`<button class="btn alt" data-act="rmhome">🍜 ${T('深夜拉麵屋台')}<small>${T('花錢解鎖')}</small></button>`}${sushiDev()?(o.sushi?btn('sushi','🍣 海風壽司','',true):`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖')}</small></button>`):''}</div><div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
 function showHome(){if(CHG)chQuit();LB.ch=0;CHEND='';if(RP.on)abandonReplay();
   if(CUR!=='iz'){CUR='iz';chooseLayout(true)}SHOPHOME=false;DEMO=false;if(TUT){TUT=null;tutLayer().innerHTML=''}const wasPlay=!HOME;HOME=true;R=null;ST=null;closeModal();if(wasPlay){PLAYT=0;STAB={o:'',h:0};STABW={o:'',w:0};LANDW={o:'',w:0};refitBurst()}setTimeout(fit,0);renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
   const saved=load();
@@ -3243,7 +3243,7 @@ function showDayIntro(){
   modal(`<h2>${T('第 {0} 天',ST.day)} <span style="font-size:16px;color:#7a4a2a">${dateStr(ST.day)}</span></h2>
   ${HI?`<div class="evbox"><span class="ei">${HI.ic}</span><div><b>${T('今天是{0}！',T(HI.zh))}</b><br>${T('會有特別的客人上門，每位都能登記進節日客圖鑑。')}</div></div>`:''}
   ${ST.day===365?`<p class="hint">${T('你撐過了一整年！日曆上的每個節日都解鎖了，可以到「📅 日曆」看看。')}</p>`:''}
-  ${ST.rm||ST.sushi||sushiDev()?`<div class="pickrow"><button class="btn ${CUR==='iz'?'':'alt'}" data-act="where" data-id="iz">🏮 ${T('居酒屋本店')}</button>${ST.rm?`<button class="btn ${CUR==='rm'?'':'alt'}" data-act="where" data-id="rm">🍜 ${T('深夜拉麵屋台')}</button>`:ST.owned?`<button class="btn alt" data-act="rmhome">🍜 ${T('深夜拉麵屋台')}<small>${T('花錢解鎖')}</small></button>`:''}${ST.sushi?`<button class="btn ${CUR==='sushi'?'':'alt'}" data-act="where" data-id="sushi">🍣 ${T('海風壽司')}</button>`:sushiDev()?`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖')}</small></button>`:''}</div>`:''}
+  ${ST.rm||ST.sushi||sushiDev()?`<div class="pickrow"><button class="btn ${CUR==='iz'?'':'alt'}" data-act="where" data-id="iz">🏮 ${T('居酒屋本店')}</button>${ST.rm?`<button class="btn ${CUR==='rm'?'':'alt'}" data-act="where" data-id="rm">🍜 ${T('深夜拉麵屋台')}</button>`:`<button class="btn alt" data-act="rmhome">🍜 ${T('深夜拉麵屋台')}<small>${T('花錢解鎖')}</small></button>`}${ST.sushi?`<button class="btn ${CUR==='sushi'?'':'alt'}" data-act="where" data-id="sushi">🍣 ${T('海風壽司')}</button>`:sushiDev()?`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖')}</small></button>`:''}</div>`:''}
   ${due?`<div class="bank"><b>${T('今天是還款日！')}</b>${T('打烊時會從錢包還銀行 {0}，記得多賺一點，不然還完錢包見底又要再借。',yen(due))}</div>`:''}
   ${!ST.owned&&ST.coins>=GOAL?`<div class="goalcard"><div><b>🏠 ${T('你已經存夠 {0} 了！',yen(GOAL))}</b><p>${T('現在就能買下整棟店面，之後再也不用付房租。')}</p></div><button class="btn" data-act="buyshop">${T('買下店面 {0}',yen(GOAL))}</button></div>`:''}
   ${TD.ev?`<div class="evbox"><span class="ei">${EVS[TD.ev][0]}</span><div><b>${T('今日事件：{0}',T(EVS[TD.ev][1]))}</b><br>${evDesc(TD)}${TD.ev==='sale'?`<div class="salepick"><small>${T('想讓哪道菜特價？點一下就能換：')}</small><div>${saleCands().map(k=>`<button class="btn ${TD.sale===k?'':'alt'}" data-act="salepick" data-id="${k}">${dishTitle(k)} ¥${Math.round(ITEMS[k].cost*(1+.25*lvOf(k))*.5/10)*10}</button>`).join('')}</div></div>`:''}</div></div>`:''}
@@ -3332,7 +3332,6 @@ function showOwned(){
   modal(`<h2>${T('恭喜！整棟店面是你的了')}</h2><div class="stars"><span class="on">★</span><span class="on">★</span><span class="on">★</span></div>
   <p>${T('從第 1 天的小吧台，到第 {0} 天把整棟店面買下來。「乾杯！居酒屋」正式成為這條巷子的老字號，門口也掛上了金色的招牌。',ST.day)}</p>
   <p>${T('遊戲可以繼續玩下去，之後賺的錢可以拿去把菜色升滿。')}</p>
-  <p><b>${T('每天開店前選店家的地方多了「🍜 深夜拉麵屋台」，可以花錢開第二家店！')}</b></p>
   <div class="btns"><button class="btn" data-act="shop">${T('回到商店')}</button><button class="btn alt" data-act="back">${ST.pendingNext?T('前往第 {0} 天',ST.day+1):T('返回')}</button></div>`);
 }
 function shopMenu(un){return `  <h3 class="sh">${T('新菜單・花錢解鎖')}${UDAY()<7?T('（第 7 天開放）'):''}</h3>
@@ -3355,8 +3354,7 @@ function sushiDev(){return true} /* 海風壽司：2026-11-01 開放給所有玩
 /* red dot on a shop tab = something in it is affordable right now (guns are left out on purpose) */
 function tabDot(k){try{const c=ST.coins;
   if(RMTABS.includes(k)){
-    if(!ST.owned)return false;
-    if(!ST.rm)return k==='rmenu'&&c>=RM_PRICE;
+    if(!ST.rm)return false;
     if(k==='rmenu'){const un=unlocked(ST.day,'rm').filter(x=>x!=='beer');
       return (!rmK2()&&c>=K2_PRICE)||RNEW.some(r=>(!r.k2||rmK2())&&!has(r.id)&&(!r.need||r.need())&&c>=r.cost)||un.some(b=>{const u=upCost(b);return lvOf(b)<3&&u&&c>=u})}
     if(k==='rkit')return RUPS.some(u=>(!u.k2||rmK2())&&(!u.vis||u.vis())&&!u.done()&&u.ok()&&c>=u.cost)||[[RSTAFF,rmStaffLv()],[RSTAFF2,rmStaff2Lv()],[RSTAFF3,rmFryStaffLv()]].some(([D,l])=>{const nx=D.lv[l];return nx&&c>=nx.cost});
@@ -3411,21 +3409,20 @@ function startSushiLesson(fromDay){
   startDay();startTut(true,suLessonSteps());
 }
 function rmHome(){const S=ST||load();if(!S)return;const day=ST&&!R&&!HOME;
-  modal(`<h2>🍜 ${T('深夜拉麵屋台')}</h2>${S.owned?`<div class="goalcard"><div><b>🍜 ${T('開一家深夜拉麵屋台')}</b><p>${T('在巷口擺一台拉麵屋台，賣拉麵、煎餃、檸檬沙瓦。屋台有自己的菜單、升級和布置，每天開店前可以選要開哪一家。')}</p></div><button class="btn" data-act="buyrm" ${S.coins<RM_PRICE?'disabled':''}>${T('開店 {0}',yen(RM_PRICE))}</button></div><p class="hint">${T('錢包')} ${yen(S.coins)}</p>`:`<p class="hint">${T('買下整棟店面後開放')}</p>`}<div class="btns"><button class="btn alt" data-act="${day?'back':'closem'}">${T(day?'回到今天':'關閉')}</button></div>`)}
+  modal(`<h2>🍜 ${T('深夜拉麵屋台')}</h2>${`<div class="goalcard"><div><b>🍜 ${T('開一家深夜拉麵屋台')}</b><p>${T('在巷口擺一台拉麵屋台，賣拉麵、煎餃、檸檬沙瓦。屋台有自己的菜單、升級和布置，每天開店前可以選要開哪一家。')}</p></div><button class="btn" data-act="buyrm" ${S.coins<RM_PRICE?'disabled':''}>${T('開店 {0}',yen(RM_PRICE))}</button></div><p class="hint">${T('錢包')} ${yen(S.coins)}</p>`}<div class="btns"><button class="btn alt" data-act="${day?'back':'closem'}">${T(day?'回到今天':'關閉')}</button></div>`)}
 function sushiHome(){const kp=shopKeep,sy=shopScroll;modal(`<h2>🍣 ${T('海風壽司')}</h2>${shopSushi()}<div class="btns"><button class="btn" data-act="${ST&&!R&&!HOME?'back':'closem'}">${T(ST&&!R&&!HOME?'回到今天':'關閉')}</button></div>`);{const c=document.querySelector('.card');if(c&&kp)c.scrollTop=sy;shopKeep=false}} /* 從「今天」畫面打開的商店，關掉要回到今天，不然只剩空白廚房 */
 function showShop(){
   if(SHOPTAB==='rm')SHOPTAB='rmenu';
   if(RMTABS.includes(SHOPTAB)&&!ST.rm)SHOPTAB='menu';
   const un=unlocked(ST.day,'iz'),TB=SHOPTAB,side=RMTABS.includes(TB)?'rm':'iz';
-  const dotI=['menu','deco','kit'].some(tabDot),dotR=ST.owned&&RMTABS.some(tabDot);
+  const dotI=['menu','deco','kit'].some(tabDot),dotR=!!ST.rm&&RMTABS.some(tabDot);
   const dot=on=>on?'<i class="dot"></i>':'';
   const tabs=side==='rm'?(ST.rm?[['rmenu','菜單'],['rkit','設備・店員'],['rdeco','布置']]:[]):[['menu','菜單'],['deco','布置'],['kit','設備・店員'],['gun','🔫 武器']];
   const body=side==='rm'?shopRm(TB==='rkit'?'kit':TB==='rdeco'?'deco':'menu'):TB==='menu'?shopMenu(un):TB==='deco'?shopDeco():TB==='gun'?shopGuns():shopKit();
   modal(`<div class="shopnav"><div class="shoptop"><h2>${T('商店')}</h2><button class="xbtn" data-act="back" aria-label="${T('關閉')}">×</button></div><div class="goalrow"><span>${T('錢包')} ${yen(ST.coins)}</span><span>${T('客人耐心 +{0}%',Math.round((patMult()-1)*100))}</span><span>${T('小費 +{0}%',Math.round(tipBonus()*100))}</span></div>
-  <div class="pickrow shopsw"><button class="btn ${side==='iz'?'':'alt'}" data-act="stab" data-id="menu">🏮 ${T('居酒屋本店')}${side==='rm'?dot(dotI):''}</button>${ST.rm?`<button class="btn ${side==='rm'?'':'alt'}" data-act="stab" data-id="rmenu">🍜 ${T('深夜拉麵屋台')}${side==='iz'?dot(dotR):''}</button>`:''}<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}</button></div>
+  <div class="pickrow shopsw"><button class="btn ${side==='iz'?'':'alt'}" data-act="stab" data-id="menu">🏮 ${T('居酒屋本店')}${side==='rm'?dot(dotI):''}</button>${ST.rm?`<button class="btn ${side==='rm'?'':'alt'}" data-act="stab" data-id="rmenu">🍜 ${T('深夜拉麵屋台')}${side==='iz'?dot(dotR):''}</button>`:`<button class="btn alt" data-act="rmhome">🍜 ${T('深夜拉麵屋台')}</button>`}<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}</button></div>
   ${tabs.length?`<div class="stabs">${tabs.map(([k,n])=>`<button class="stab ${TB===k?'on':''}" data-act="stab" data-id="${k}">${T(n)}${dot(tabDot(k))}</button>`).join('')}</div>`:''}
   </div>
-  ${ST.rm?'':`<p class="hint">${T(ST.owned?'第二家店「🍜 深夜拉麵屋台」要在每天開店前選店家的地方購買。':'買下整棟店面後，每天開店前選店家的地方會開放第二家店：深夜拉麵屋台。')}</p>`}
   <div class="tipcard"><b>${T('💡 理財小提醒')}</b><p>${T('別把錢一次花光！營業時每用一份食材都要從錢包付錢，錢包見底就買不了食材、做不了菜。買東西前先想想，記得留一筆週轉金。')}</p></div>
   <div class="goalcard"><div><b>${T(ST.owned?'整棟店面已經是你的了':'終極目標：買下整棟店面')}</b><p>${ST.owned?T('恭喜！之後賺的錢可以繼續拿來升級菜色。'):T('房東說只要 {0}，這間店就整棟賣給你。',yen(GOAL))}</p>
     <i class="gbar"><i style="width:${ST.owned?100:Math.min(100,ST.coins/GOAL*100)}%"></i></i></div>${ST.owned?'':`<button class="btn" data-act="buyshop" ${ST.coins<GOAL?'disabled':''}>${T('買下店面 {0}',yen(GOAL))}</button>`}</div>
@@ -3604,7 +3601,7 @@ document.addEventListener('click',e=>{
   else if(act==='buygun'){const i=+a.dataset.id,g=GUNS[i];if(g&&ST.coins<g.cost){sfx('nope');a.classList.remove('shakeb');void a.offsetWidth;a.classList.add('shakeb');const m=$('needg'+i);if(m){m.classList.remove('flash');void m.offsetWidth;m.classList.add('flash')}}else if(g&&(ST.weapon||0)<i+1&&ST.coins>=g.cost){keepScroll();ST.coins-=g.cost;ST.weapon=i+1;save();showShop();renderHUD()}}
   else if(act==='gun'&&R)toggleGun();
   else if(act==='buysushi'){if(!sushiDev())return;const home=!ST;if(home)ST=load();if(ST&&!ST.sushi&&ST.coins>=SUSHI_PRICE){keepScroll();ST.coins-=SUSHI_PRICE;ST.sushi={up:{},seen:false};ST.menu=ST.menu||{};ST.menu.tamagonigiri=1;save();toast(T('海風壽司開張了！'))}if(ST&&ST.sushi){if(home)ST=null;if(!home)renderHUD();sushiHome();return}if(home)ST=null;if(!home)renderHUD();sushiHome()}
-  else if(act==='buyrm'){const home=!ST;if(home)ST=load();if(ST&&ST.owned&&!ST.rm&&ST.coins>=RM_PRICE){ST.coins-=RM_PRICE;ST.rm={up:{},dec:{},seen:false};ST.where='rm';save();toast(T('深夜拉麵屋台開張了！今天就能在屋台開店'));if(home){ST=null;branchPick();return}renderHUD();achSoon();showDayIntro()}else if(home){ST=null}}
+  else if(act==='buyrm'){const home=!ST;if(home)ST=load();if(ST&&!ST.rm&&ST.coins>=RM_PRICE){ST.coins-=RM_PRICE;ST.rm={up:{},dec:{},seen:false};ST.where='rm';save();toast(T('深夜拉麵屋台開張了！今天就能在屋台開店'));if(home){ST=null;branchPick();return}renderHUD();achSoon();showDayIntro()}else if(home){ST=null}}
   else if(act==='rmhome')rmHome();
   else if(act==='dayshop'){SHOPTAB=CUR==='rm'&&ST.rm?(RMTABS.includes(SHOPTAB)?SHOPTAB:'rmenu'):(RMTABS.includes(SHOPTAB)?'menu':SHOPTAB);showShop()}
   else if(act==='buyk2'){if(ST.rm&&!rmK2()&&ST.coins>=K2_PRICE){keepScroll();ST.coins-=K2_PRICE;ST.rm.k2=1;ST.menu=ST.menu||{};ST.menu.koro=true;ST.fresh=(ST.fresh||[]).concat('koro');save();drawBg();showShop();renderHUD();toast(T('二號廚房擴建好了！開店時點吧台右邊的按鈕切換廚房'))}}
