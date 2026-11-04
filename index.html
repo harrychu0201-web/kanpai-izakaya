@@ -5125,10 +5125,13 @@ try{const o=JSON.parse(localStorage.getItem('izakaya-chat')||'{}');CHT.hide=o.hi
 function chatSave(){try{localStorage.setItem('izakaya-chat',JSON.stringify({hide:CHT.hide,block:CHT.block}))}catch(e){}}
 /* 語言聊天室：每個語言一間，預設跟著遊戲語言，選過就記住 */
 const CROOMS=[['zh-Hant','繁中',''],['zh-Hans','简中','zhHans_'],['en','English','en_'],['ja','日本語','ja_'],['ko','한국어','ko_'],['id','Indonesia','id_']];
-CHT.room=(()=>{try{const v=localStorage.getItem('izakaya-chatroom');if(CROOMS.some(r=>r[0]===v))return v}catch(e){}return CROOMS.some(r=>r[0]===LANG)?LANG:'en'})();
+/* 預設房間 = 玩家的語言（遊戲語言，沒選過就是裝置語言）；手動切去別間只在同一個遊戲語言下記住，換了遊戲語言就自動回到新語言那間 */
+const chatHome=()=>CROOMS.some(r=>r[0]===LANG)?LANG:'en';
+function chatRoomPick(){try{const o=JSON.parse(localStorage.getItem('izakaya-chatroom2')||'null');if(o&&o.lang===LANG&&CROOMS.some(r=>r[0]===o.room))return o.room}catch(e){}return chatHome()}
+CHT.room=chatRoomPick();
 const chatPre=()=>(CROOMS.find(r=>r[0]===CHT.room)||CROOMS[0])[2];
 const chatSfx=()=>CHT.room==='zh-Hant'?'':':'+CHT.room; /* 繁中沿用舊的本機快取 */
-function chatRoom(k){if(k===CHT.room||!CROOMS.some(r=>r[0]===k))return;const d=$('cin')?$('cin').value:'';chatStop();CHT.room=k;try{localStorage.setItem('izakaya-chatroom',k)}catch(e){}
+function chatRoom(k){if(k===CHT.room||!CROOMS.some(r=>r[0]===k))return;const d=$('cin')?$('cin').value:'';chatStop();CHT.room=k;try{localStorage.setItem('izakaya-chatroom2',JSON.stringify({lang:LANG,room:k}))}catch(e){}
   CHT.msgs=[];CHT.open=null;CHT.replyTo=null;CHT.dirty=0;CHT.drawn=false;CHT.seenAt=chatSeenGet();const l=$('chatlist');if(l)l.innerHTML='';showChat();if(d&&$('cin'))$('cin').value=d}
 function chatRoomsHtml(){return `<div class="croom">${CROOMS.map(([k,n])=>`<button class="${k===CHT.room?'on':''}" data-act="croom" data-id="${k}">${n}</button>`).join('')}</div>`}
 const CHCACHE_KEY='izakaya-chatcache',CHSEEN_KEY='izakaya-chat-seen';
@@ -5167,6 +5170,7 @@ function chatFoot(){
   if(CHT.banned)return `<p class="chatwarn">${T('你已經被禁言，不能再發言。')}</p>`;
   return `<div class="cemo"><button class="cstkbtn" data-act="cstkt">${T('貼圖')}</button>${CEMO.map(e=>`<button data-act="cemo" data-id="${e}">${e}</button>`).join('')}</div>${chatStkPanel()}<div class="crp" id="crp" ${CHT.replyTo?'':'style="display:none"'}>${chatReplyHtml()}</div><div class="cin"><input id="cin" maxlength="100" autocomplete="off" enterkeyhint="send" placeholder="${T('說點什麼…（最多 100 字）')}"><button class="btn" data-act="csend">${T('送出')}</button></div><p class="fbsmall" id="cmsg"></p>`}
 function showChat(){
+  const fresh0=!$('chatlist');if(fresh0){const want=chatRoomPick();if(want!==CHT.room){chatStop();CHT.room=want;CHT.msgs=[];CHT.open=null;CHT.replyTo=null;CHT.dirty=0;CHT.drawn=false}}
   const n=Object.keys(CHT.block).length,fresh=!$('chatlist');if(fresh)CHT.seenAt=chatSeenGet();
   modal(`<h2>💬 ${T('聊天室')}<span class="chon" id="chon">${chatOnTxt()}</span></h2>${chatRoomsHtml()}<p class="chatwarn">${T('請友善發言。不要公開電話、地址、學校、LINE 等個人資料。點一則訊息可以隱藏、封鎖或檢舉。')}</p>
   <div class="chat"><div class="chatlist" id="chatlist"><p style="font-size:14px">${T('載入中…')}</p></div>${chatFoot()}</div>
