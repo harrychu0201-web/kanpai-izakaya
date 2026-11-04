@@ -1,4 +1,4 @@
-const CACHE='izakaya-v562';
+const CACHE='izakaya-v563';
 // character art lives in img/ with the content hash in each file name, so a file never changes once published:
 // keep it in its own cache that survives version bumps (an update then only re-downloads the small page, not 2.4MB of art)
 const IMGCACHE='izakaya-img';
@@ -19,6 +19,9 @@ self.addEventListener('fetch',e=>{
     //  - sw.js: the page's "new version?" check (verCheck) reads it and must always see the live file
     //  - bgm.mp3 / any Range request: audio asks for byte ranges; a cached full response makes iPhone audio fail
     if(url.pathname.endsWith('/sw.js')||url.pathname.endsWith('.mp3')||req.headers.has('range'))return;
+    // other pages on the site (privacy.html …) are plain pages: let the browser load them, never answer them with the game
+    if(req.mode==='navigate'&&!/\/(index\.html)?$/.test(url.pathname))return;
+    if(url.pathname.endsWith('/privacy.html'))return;
     if(url.pathname.includes('/img/')){
       e.respondWith(caches.open(IMGCACHE).then(x=>x.match(req).then(hit=>hit||fetch(req).then(res=>{if(res.ok&&res.status===200)x.put(req,res.clone());return res}))));
       return;
