@@ -5729,8 +5729,11 @@ function cxParts(S,now,L,pg){pg=pg||1;const tw=L.warm[2],n=CO_WARM,sw=(tw-8)/n,i
   const cd=Math.max(0,Math.ceil((CO_SAKE_CD-(now-S.skc))/1000));
   return {wm,gr,fr,tb,hd,sk:'送清酒'+(cd>0&&S.skc?`（${cd}s）`:'')}}
 const CX_LAY={L:{W:784,H:268,warm:[150,4,480,54],grill:[104,70],rawN:[366,70,82,86],rawT:[366,166,82,86],fry:[458,70],rawC:[454,200,144,56],tab:[608,70,170,40],hand:[608,118,170,68],sake:[8,72,88,92],trash:[608,196,170,58],hint:[6,170,96]},
+  M:{W:640,H:362,warm:[8,4,624,54],grill:[8,70],rawN:[266,70,82,86],rawT:[266,166,82,86],fry:[358,70],rawC:[354,200,144,56],tab:[504,70,128,40],hand:[504,118,128,68],sake:[8,256,88,92],trash:[504,196,128,58],hint:[108,290,520]},
   P:{W:400,H:560,warm:[8,4,384,54],grill:[8,80],rawN:[272,78,120,92],rawT:[272,180,120,92],fry:[8,290],rawC:[150,292,140,62],tab:[150,372,242,40],hand:[150,418,242,60],sake:[300,282,92,84],trash:[8,430,136,56],hint:[8,496,384]}};
-function coKitchenPaint(mn,S,now){const lay=mn.clientWidth>=mn.clientHeight*1.1?'L':'P',L=CX_LAY[lay],pg=CO.kp||1;
+/* 依畫面比例挑放得最大的廚房版型（寬螢幕用 L、一般橫向用 M、直向用 P），下方不會空一大塊 */
+function cxPickLay(mn){const aw=mn.clientWidth-16,ah=mn.clientHeight-12;if(!(aw>0&&ah>0))return 'L';let best='L',bz=0;for(const k of ['L','M','P']){const L=CX_LAY[k],z=Math.min(aw/(L.W+6),ah/(L.H+6));if(z>bz*1.04){bz=z;best=k}}return best}
+function coKitchenPaint(mn,S,now){const lay=cxPickLay(mn),L=CX_LAY[lay],pg=CO.kp||1;
   if(CO.kLay!==lay||CO.kPg!==pg||CO.lastHtml!=='#k'||!mn.querySelector('.cxk')){mn.innerHTML='<div class="cofit">'+cxSkel(L,pg)+'</div>';CO.kLay=lay;CO.kPg=pg;CO.kParts={};CO.lastHtml='#k'}
   const p=cxParts(S,now,L,pg);for(const id in p)if(CO.kParts[id]!==p[id]){CO.kParts[id]=p[id];const el=document.getElementById('cxp-'+id);if(el)coPatch(el,p[id])}}
 /* 外場：跟單人模式一樣的店內櫃台畫面（客人坐在櫃台後、頭上冒對話框點餐），下方是保溫台、飲料、手上、丟掉 */
@@ -5814,12 +5817,12 @@ function cxSync(a,b){const an=a.childNodes,bn=b.childNodes;
     cxSync(x,y)}}
 function coPatch(el,html){const t=document.createElement('template');t.innerHTML=html;cxSync(el,t.content)}
 function coFit(){const m=document.getElementById('comain'),w=m&&m.querySelector('.cofit');if(!w)return;const aw=m.clientWidth,ah=m.clientHeight;if(!aw||!ah)return;
-  const k=w.querySelector('.cxk'),land=aw>=ah*1.2||!!k,mode=land?'fit':'flow';if(m.dataset.m!==mode)m.dataset.m=mode;{const ai=k?'flex-start':'';if(m.style.alignItems!==ai)m.style.alignItems=ai}
+  const k=w.querySelector('.cxk'),land=aw>=ah*1.2||!!k,mode=land?'fit':'flow';if(m.dataset.m!==mode)m.dataset.m=mode;{const ai='';if(m.style.alignItems!==ai)m.style.alignItems=ai}
   if(!land){if(w.style.zoom)w.style.zoom='';return}
   const key=aw+'x'+ah+'|'+(k?k.style.width+k.style.height:'f'),t=Date.now();
   if(w.dataset.fk===key&&w.style.zoom&&(k||t-(+w.dataset.ft||0)<1500))return;
   let nw,nh;if(k){nw=parseFloat(k.style.width)+6;nh=parseFloat(k.style.height)+6}else{w.style.zoom='1';nw=w.offsetWidth;nh=w.offsetHeight}
-  if(!nw||!nh)return;const z=String(Math.max(.3,Math.min((aw-16)/nw,(ah-12)/nh,k?2:1.6)).toFixed(3));if(w.style.zoom!==z)w.style.zoom=z;w.dataset.fk=key;w.dataset.ft=t}
+  if(!nw||!nh)return;const z=String(Math.max(.3,Math.min((aw-16)/nw,(ah-12)/nh,k?2.6:1.6)).toFixed(3));if(w.style.zoom!==z)w.style.zoom=z;w.dataset.fk=key;w.dataset.ft=t}
 function coGraceBar(ov){let g=document.getElementById('cograce');if(!g){g=document.createElement('div');g.id='cograce';g.style.cssText='position:absolute;left:50%;top:44px;transform:translateX(-50%);z-index:5;background:#7a1f12;color:#fff;border:2px solid #ffb36b;border-radius:10px;padding:6px 14px;font-size:14px;font-weight:700;pointer-events:none;white-space:nowrap;box-shadow:0 4px 14px #0008';ov.appendChild(g)}
   const left=COOP.graceWho?Math.max(0,Math.ceil((COOP.graceEnd-Date.now())/1000)):0;
   if(left>0){g.textContent=`📡 對方斷線了，遊戲暫停，等他回來…（${left} 秒）`;g.style.display=''}else g.style.display='none'}
