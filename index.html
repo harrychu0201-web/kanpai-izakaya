@@ -539,7 +539,7 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 .mdx-c p{font-size:13.5px!important;margin:3px 0 0!important;line-height:1.5}.mdx-c .q{color:var(--lacquer);font-weight:900!important}
 .mdx-c.lock b{color:#8a7658}
 .onl{display:inline-block;margin-left:6px;font-size:11px;font-weight:700;color:#2f8a2a;white-space:nowrap;vertical-align:middle}.onl::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#3fbf3a;margin-right:3px;vertical-align:1px}.onl.off{color:#9a8a78;font-weight:400}.onl.off::before{background:#bdb3a6}
-.ondot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3fbf3a;margin-left:4px;vertical-align:1px;box-shadow:0 0 0 1.5px #fff}.chon{font-size:13px;font-weight:600;margin-left:10px;color:#2f8a2a;vertical-align:middle}
+.ondot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3fbf3a;margin-left:4px;vertical-align:1px;box-shadow:0 0 0 1.5px #fff}.croom{display:flex;gap:6px;overflow-x:auto;touch-action:pan-x;overscroll-behavior:contain;margin:2px 0 6px;padding-bottom:2px;scrollbar-width:none}.croom::-webkit-scrollbar{display:none}.croom button{flex:0 0 auto;font:inherit;font-size:14px;font-weight:700;padding:4px 12px;border-radius:999px;border:2px solid #b08a5a;background:#fff8ec;color:#6b4a2b;cursor:pointer}.croom button.on{background:#c0392b;border-color:#c0392b;color:#fff}.chon{font-size:13px;font-weight:600;margin-left:10px;color:#2f8a2a;vertical-align:middle}
 
 /* ===== 成就：上方通知列、成就介面 ===== */
 #achBar{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 6px);transform:translate(-50%,-170%);z-index:99999;pointer-events:none;transition:transform .45s cubic-bezier(.2,1.1,.3,1);width:max-content;max-width:min(92vw,440px)}
@@ -3477,6 +3477,7 @@ document.addEventListener('click',e=>{
   else if(act==='chback'){LB.ch=0;if(CHEND&&R&&R.over)modal(CHEND);else closeModal()}
   else if(act==='frhome'){LB.tab='fr';showLB()}
   else if(act==='chat')showChat();
+  else if(act==='croom')chatRoom(a.dataset.id);
   else if(act==='csend')chatSend();
   else if(act==='cstkt'){CHT.stkOpen=!CHT.stkOpen;const p=$('cstkp');if(p){if(CHT.stkOpen&&!p.innerHTML)p.innerHTML=stkGrid();p.style.display=CHT.stkOpen?'grid':'none'}}
   else if(act==='cstk'){const n=+a.dataset.id;if(n>=1&&n<=STK_N)chatSend(n)}
@@ -4554,10 +4555,11 @@ async function cloudInit1(){
         return rd.update(rd.ref(r),u)})),
       chatOff:async()=>rtIdle(),
       idle:()=>rtIdle(),
-      chatSub:(cb,err)=>{let off=null,dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
-        off=rd.onValue(rd.query(rd.ref(r,'chat'),rd.orderByChild('t'),rd.limitToLast(100)),snap=>{const a=[];snap.forEach(c=>{const x=c.val()||{};a.push({id:c.key,uid:x.uid,name:x.name,text:x.text,adm:x.adm===true,t:typeof x.t==='number'?x.t:Date.now(),likes:x.likes||{},rp:x.rp||null})});cb(a.reverse())},err)}).catch(err);
+      chatSub:(cb,err,pre)=>{let off=null,dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
+        const lo=pre||'-'; /* 每個語言聊天室 = chat 底下 key 的前綴（繁中沿用原本的 push id，開頭都是 '-'），用 orderByKey 範圍查詢，不用改 Firebase 規則 */
+        off=rd.onValue(rd.query(rd.ref(r,'chat'),rd.orderByKey(),rd.startAt(lo),rd.endAt(lo+'\uf8ff'),rd.limitToLast(100)),snap=>{const a=[];snap.forEach(c=>{const x=c.val()||{};a.push({id:c.key,uid:x.uid,name:x.name,text:x.text,adm:x.adm===true,t:typeof x.t==='number'?x.t:Date.now(),likes:x.likes||{},rp:x.rp||null})});cb(a.reverse())},err)}).catch(err);
         return ()=>{dead=true;if(off)off()}},
-      chatSend:(uid,name,text,adm,rp)=>rt((rd,r)=>{const id=rd.push(rd.ref(r,'chat')).key;
+      chatSend:(uid,name,text,adm,rp,pre)=>rt((rd,r)=>{const id=(pre||'')+rd.push(rd.ref(r,'chat')).key;
         const m={uid,name,text,t:rd.serverTimestamp()};if(adm)m.adm=true;if(rp)m.rp=rp; /* rp: snapshot of the message being replied to */ /* adm: the rules only accept it from the author's verified Google account, so players can't fake the 👑 mark */
         return rd.update(rd.ref(r),{['chat/'+id]:m,['chatlast/'+uid]:rd.serverTimestamp()})}),
       chatDel:id=>rt((rd,r)=>rd.remove(rd.ref(r,'chat/'+id))),
@@ -5119,11 +5121,19 @@ function onTag(v){return onIs(v)?`<span class="onl">${T('在線上')}</span>`:v&
 const CHT={msgs:[],unsub:null,open:null,last:0,hide:{},block:{},me:null,banned:false,back:false,seenAt:0,live:false,err:false};
 try{const o=JSON.parse(localStorage.getItem('izakaya-chat')||'{}');CHT.hide=o.hide||{};CHT.block=o.block||{}}catch(e){}
 function chatSave(){try{localStorage.setItem('izakaya-chat',JSON.stringify({hide:CHT.hide,block:CHT.block}))}catch(e){}}
+/* 語言聊天室：每個語言一間，預設跟著遊戲語言，選過就記住 */
+const CROOMS=[['zh-Hant','繁中',''],['zh-Hans','简中','zhHans_'],['en','English','en_'],['ja','日本語','ja_'],['ko','한국어','ko_'],['id','Indonesia','id_']];
+CHT.room=(()=>{try{const v=localStorage.getItem('izakaya-chatroom');if(CROOMS.some(r=>r[0]===v))return v}catch(e){}return CROOMS.some(r=>r[0]===LANG)?LANG:'en'})();
+const chatPre=()=>(CROOMS.find(r=>r[0]===CHT.room)||CROOMS[0])[2];
+const chatSfx=()=>CHT.room==='zh-Hant'?'':':'+CHT.room; /* 繁中沿用舊的本機快取 */
+function chatRoom(k){if(k===CHT.room||!CROOMS.some(r=>r[0]===k))return;const d=$('cin')?$('cin').value:'';chatStop();CHT.room=k;try{localStorage.setItem('izakaya-chatroom',k)}catch(e){}
+  CHT.msgs=[];CHT.open=null;CHT.replyTo=null;CHT.dirty=0;CHT.drawn=false;CHT.seenAt=chatSeenGet();const l=$('chatlist');if(l)l.innerHTML='';showChat();if(d&&$('cin'))$('cin').value=d}
+function chatRoomsHtml(){return `<div class="croom">${CROOMS.map(([k,n])=>`<button class="${k===CHT.room?'on':''}" data-act="croom" data-id="${k}">${n}</button>`).join('')}</div>`}
 const CHCACHE_KEY='izakaya-chatcache',CHSEEN_KEY='izakaya-chat-seen';
-function chatCacheLoad(){try{const a=JSON.parse(localStorage.getItem(CHCACHE_KEY)||'[]');return Array.isArray(a)?a:[]}catch(e){return []}}
-function chatCacheSave(a){try{localStorage.setItem(CHCACHE_KEY,JSON.stringify(a.slice(-100).map(m=>({id:m.id,uid:m.uid,name:m.name,text:m.text,adm:m.adm,t:m.t,likes:m.likes||{},rp:m.rp||null}))))}catch(e){}}
-function chatSeenGet(){return +localStorage.getItem(CHSEEN_KEY)||0}
-function chatSeenSet(t){try{localStorage.setItem(CHSEEN_KEY,String(t))}catch(e){}}
+function chatCacheLoad(){try{const a=JSON.parse(localStorage.getItem(CHCACHE_KEY+chatSfx())||'[]');return Array.isArray(a)?a:[]}catch(e){return []}}
+function chatCacheSave(a){try{localStorage.setItem(CHCACHE_KEY+chatSfx(),JSON.stringify(a.slice(-100).map(m=>({id:m.id,uid:m.uid,name:m.name,text:m.text,adm:m.adm,t:m.t,likes:m.likes||{},rp:m.rp||null}))))}catch(e){}}
+function chatSeenGet(){return +localStorage.getItem(CHSEEN_KEY+chatSfx())||0}
+function chatSeenSet(t){try{localStorage.setItem(CHSEEN_KEY+chatSfx(),String(t))}catch(e){}}
 function chatPersist(){chatCacheSave(CHT.msgs);const mx=CHT.msgs.length?CHT.msgs[CHT.msgs.length-1].t:0;if(mx>0)chatSeenSet(mx)}
 function copyTxt(txt,msg){const done=()=>toast(msg);const old=()=>{try{const t=document.createElement('textarea');t.value=txt;t.style.cssText='position:fixed;opacity:0;left:-999px';document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();done()}catch(e){prompt(T('複製這段文字'),txt)}};
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,old);else old()}
@@ -5156,7 +5166,7 @@ function chatFoot(){
   return `<div class="cemo"><button class="cstkbtn" data-act="cstkt">${T('貼圖')}</button>${CEMO.map(e=>`<button data-act="cemo" data-id="${e}">${e}</button>`).join('')}</div>${chatStkPanel()}<div class="crp" id="crp" ${CHT.replyTo?'':'style="display:none"'}>${chatReplyHtml()}</div><div class="cin"><input id="cin" maxlength="100" autocomplete="off" enterkeyhint="send" placeholder="${T('說點什麼…（最多 100 字）')}"><button class="btn" data-act="csend">${T('送出')}</button></div><p class="fbsmall" id="cmsg"></p>`}
 function showChat(){
   const n=Object.keys(CHT.block).length,fresh=!$('chatlist');if(fresh)CHT.seenAt=chatSeenGet();
-  modal(`<h2>💬 ${T('聊天室')}<span class="chon" id="chon">${chatOnTxt()}</span></h2><p class="chatwarn">${T('請友善發言。不要公開電話、地址、學校、LINE 等個人資料。點一則訊息可以隱藏、封鎖或檢舉。')}</p>
+  modal(`<h2>💬 ${T('聊天室')}<span class="chon" id="chon">${chatOnTxt()}</span></h2>${chatRoomsHtml()}<p class="chatwarn">${T('請友善發言。不要公開電話、地址、學校、LINE 等個人資料。點一則訊息可以隱藏、封鎖或檢舉。')}</p>
   <div class="chat"><div class="chatlist" id="chatlist"><p style="font-size:14px">${T('載入中…')}</p></div>${chatFoot()}</div>
   <div class="btns"><button class="btn alt" data-act="closem">${T('返回')}</button>${n?`<button class="btn alt" data-act="cblocks">${T('封鎖名單（{0}）',n)}</button>`:''}</div>`);
   if(CL.user&&CL.api)CL.api.banned(CL.user.uid).then(b=>{if(b!==CHT.banned){CHT.banned=b;if($('chatlist'))showChat()}}).catch(()=>{});
@@ -5166,7 +5176,7 @@ function chatOnline(){if(!CL.user||!CL.api||!CL.api.onlineNow||!$('chatlist'))re
   CL.api.onlineNow().then(o=>{CHT.on=o;const h=$('chon');if(h)h.textContent=chatOnTxt();if(!$('chatlist'))return;if(chatPressed())CHT.dirty=1;else chatDraw()}).catch(()=>{})}
 setInterval(()=>{if($('chatlist')&&!document.hidden)chatOnline()},60000);
 function chatListen(){if(!CHT.msgs.length)CHT.msgs=chatCacheLoad();if(CHT.unsub||!CL.api)return;CHT.live=false;
-  CHT.unsub=CL.api.chatSub(m=>{if(!$('chatlist')){chatStop();return}CHT.msgs=m.reverse();CHT.live=true;CHT.err=false;chatPersist();if(chatPressed()){CHT.dirty=1;return}chatDraw(true)},e=>{console.warn('chat',e);CHT.err=true;const l=$('chatlist');if(l){if(CHT.msgs.length)chatDraw();else l.innerHTML=`<p style="font-size:14px">${T('聊天室載入失敗，請稍後再試。')}</p>`}chatStop()})}
+  const room=CHT.room;CHT.unsub=CL.api.chatSub(m=>{if(!$('chatlist')){chatStop();return}if(room!==CHT.room)return;CHT.msgs=m.reverse();CHT.live=true;CHT.err=false;chatPersist();if(chatPressed()){CHT.dirty=1;return}chatDraw(true)},e=>{console.warn('chat',e);CHT.err=true;const l=$('chatlist');if(l){if(CHT.msgs.length)chatDraw();else l.innerHTML=`<p style="font-size:14px">${T('聊天室載入失敗，請稍後再試。')}</p>`}chatStop()},chatPre())}
 function chatStop(){if(CHT.unsub){try{CHT.unsub()}catch(e){}CHT.unsub=null}if(CL.api&&CL.api.chatOff)CL.api.chatOff().catch(()=>{})}
 setInterval(()=>{if(CHT.unsub&&!$('chatlist'))chatStop()},2000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)chatStop();else if($('chatlist'))chatListen()});
@@ -5205,7 +5215,7 @@ async function chatSend(stk){const i=$('cin'),m=$('cmsg');if(!i||!CL.user||!CL.a
   if(nickBad(name)){showNick();CHT.back=true;toast(T('你的暱稱「{0}」含有保留字（作者、官方、admin 等），無法上榜或聊天，請改個名字。',name));return}
   const w=5600-(Date.now()-CHT.last);if(w>0){say(T('慢一點～ {0} 秒後才能再發',Math.ceil(w/1000)));return}
   const prev=CHT.last,draft=i.value;CHT.last=Date.now();if(!stk)i.value='';say('');const rp=CHT.replyTo?{id:CHT.replyTo.id,uid:CHT.replyTo.uid,name:CHT.replyTo.name,text:CHT.replyTo.text}:null;
-  try{const sendAs=n=>CL.api.chatSend(CL.user.uid,n,text,isAdmin(),rp);let sent=sendAs(name);if(/管理[員员]/.test(name))sent=sent.catch(e=>{if(/permission/i.test(String(e&&e.code||'')))return sendAs(name.replace(/管理[員员]/g,'').trim()||'玩家');throw e});if(await Promise.race([sent.then(()=>1),new Promise(r=>setTimeout(r,8000,0))])===0){sent.catch(()=>{});say(T('送出失敗，請稍後再試'));return}CHT.replyTo=null;chatReplyDraw();const l=$('chatlist');if(l)l.scrollTop=l.scrollHeight}
+  try{const sendAs=n=>CL.api.chatSend(CL.user.uid,n,text,isAdmin(),rp,chatPre());let sent=sendAs(name);if(/管理[員员]/.test(name))sent=sent.catch(e=>{if(/permission/i.test(String(e&&e.code||'')))return sendAs(name.replace(/管理[員员]/g,'').trim()||'玩家');throw e});if(await Promise.race([sent.then(()=>1),new Promise(r=>setTimeout(r,8000,0))])===0){sent.catch(()=>{});say(T('送出失敗，請稍後再試'));return}CHT.replyTo=null;chatReplyDraw();const l=$('chatlist');if(l)l.scrollTop=l.scrollHeight}
   catch(e){console.warn('chat send',e);i.value=stk?draft:text;CHT.last=0;const c=String(e&&e.code||'');
     if(/permission/i.test(c)){const b=await CL.api.banned(CL.user.uid).catch(()=>false);if(b){CHT.banned=true;showChat();return}say(prev&&Date.now()-prev<8000?T('發太快了，等幾秒再試'):T('伺服器規則拒絕了這則訊息（不是你發太快），請回報作者'))}else say(T('送出失敗，請稍後再試'))}}
 function chatBlocks(){const ks=Object.keys(CHT.block);
