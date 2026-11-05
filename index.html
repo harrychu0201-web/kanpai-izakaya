@@ -4158,6 +4158,32 @@ function compVV(){
 function visH(){let d=document.getElementById('dvhProbe');if(!d){d=document.createElement('div');d.id='dvhProbe';d.style.cssText='position:fixed;left:0;top:0;width:1px;height:100vh;height:100dvh;visibility:hidden;pointer-events:none';document.body.appendChild(d)}const a=window.innerHeight,b=window.visualViewport?visualViewport.height:a;return Math.max(200,Math.min(a,b))}
 /* fit() only ran on resize events; on Android the fullscreen / rotation animation reports a stale height first, so the board stayed too tall until the next HUD change (end of day). Re-run it a few times while the viewport settles. */
 function refitBurst(){[0,100,300,700,1400,2500].forEach(t=>setTimeout(fit,t))}
+/* ===== 臨時診斷（只有作者帳號看得到）：找出主畫面圖示全螢幕時，系統列一直藏起來／跑出來的原因。查完會移除。 ===== */
+const SZD={t0:performance.now(),log:[],last:''};
+function szdT(){return ((performance.now()-SZD.t0)/1000).toFixed(2)}
+function szdDM(){const m=['fullscreen','standalone','minimal-ui','browser'].find(x=>{try{return matchMedia(`(display-mode: ${x})`).matches}catch(e){return false}});return m||'?'}
+function szdIns(){let p=document.getElementById('szdIns');if(!p){p=document.createElement('div');p.id='szdIns';p.style.cssText='position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)';document.body.appendChild(p)}const c=getComputedStyle(p);return [c.paddingTop,c.paddingRight,c.paddingBottom,c.paddingLeft].map(v=>Math.round(parseFloat(v)||0)).join('/')}
+function szdState(){const vv=window.visualViewport;let ang='?';try{ang=screen.orientation?screen.orientation.angle:window.orientation}catch(e){}
+  return `in ${innerWidth}x${innerHeight} vv ${vv?Math.round(vv.width)+'x'+Math.round(vv.height)+'@'+Math.round(vv.offsetLeft)+','+Math.round(vv.offsetTop):'-'} scr ${screen.width}x${screen.height} av ${screen.availWidth}x${screen.availHeight} dm ${szdDM()} fs ${(document.fullscreenElement||document.webkitFullscreenElement)?1:0} ang ${ang} ins ${szdIns()} dpr ${devicePixelRatio.toFixed(2)} vis ${document.visibilityState[0]} foc ${document.hasFocus()?1:0}`}
+function szd(ev){try{const st=szdState();SZD.log.push(`${szdT()} ${ev}${st!==SZD.last?' | '+st:''}`);SZD.last=st;if(SZD.log.length>16)SZD.log.shift();szdDraw()}catch(e){}}
+function szdOn(){return !!(typeof CL!=='undefined'&&CL.user&&CL.user.email===ADMIN_EMAIL)}
+function szdDraw(){let b=document.getElementById('szdbar');if(!szdOn()){if(b)b.remove();return}
+  if(!b){b=document.createElement('div');b.id='szdbar';b.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);max-width:94vw;z-index:2147483647;font:10px/1.25 monospace;color:#7dff7d;background:rgba(0,0,0,.78);padding:4px 6px;border-radius:6px;pointer-events:none;white-space:pre-wrap;word-break:break-all';document.documentElement.appendChild(b)}
+  b.textContent='診斷 v578（只有作者看得到）\nNOW '+szdState()+'\n'+SZD.log.join('\n')}
+(function(){
+  for(const k of ['requestFullscreen','webkitRequestFullscreen']){const f=Element.prototype[k];if(f)Element.prototype[k]=function(...a){szd('REQ-FS '+k);const r=f.apply(this,a);if(r&&r.then)r.then(()=>szd('REQ-FS ok'),e=>szd('REQ-FS fail '+(e&&e.name||'')));return r}}
+  for(const k of ['exitFullscreen','webkitExitFullscreen']){const f=document[k];if(f)document[k]=function(...a){szd('EXIT-FS called '+k);return f.apply(this,a)}}
+  try{if(screen.orientation&&screen.orientation.lock){const f=screen.orientation.lock.bind(screen.orientation);screen.orientation.lock=function(o){szd('LOCK '+o);return f(o).then(()=>szd('LOCK ok'),e=>{szd('LOCK fail '+(e&&e.name||''));throw e})}}}catch(e){}
+  addEventListener('resize',()=>szd('resize'));
+  if(window.visualViewport)visualViewport.addEventListener('resize',()=>szd('vv-resize'));
+  ['fullscreenchange','webkitfullscreenchange','visibilitychange'].forEach(e=>document.addEventListener(e,()=>szd(e)));
+  ['focus','blur','orientationchange','pageshow'].forEach(e=>addEventListener(e,()=>szd(e)));
+  try{screen.orientation.addEventListener('change',()=>szd('scr-orient'))}catch(e){}
+  ['fullscreen','standalone'].forEach(m=>{try{matchMedia(`(display-mode: ${m})`).addEventListener('change',q=>szd(`dm-${m}=${q.matches?1:0}`))}catch(e){}});
+  document.addEventListener('pointerdown',e=>szd(`tap ${Math.round(e.clientX)},${Math.round(e.clientY)} scrOff ${Math.round(e.screenX-e.clientX)},${Math.round(e.screenY-e.clientY)}`),true);
+  szd('load');setInterval(szdDraw,1000);
+})();
+
 /* 手機橫向時，瀏覽器的網址列／底部工具列一滑出一收起，可見高度就會跟著變，遊戲會整個跟著縮放（甚至重排）。
    這裡在同一個方向內只記「看過的最小可見高度」：工具列收起時不動，只有第一次真的變小時才調整一次，之後就釘住。
    打字（鍵盤彈出）或拖曳中不記錄，免得鍵盤把尺寸永遠縮小。方向改變（旋轉）時重新記。 */
