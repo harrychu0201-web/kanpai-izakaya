@@ -4131,7 +4131,7 @@ function loop(now){
   stmT+=dt;if(stmT>(TOUCH?.3:.1)){stmT=0;steamTick()}
 }
 const TOUCH=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;
-function goFS(){if(!TOUCH||IOS||document.fullscreenElement||document.webkitFullscreenElement)return;
+function goFS(why){if(!TOUCH||IOS||document.fullscreenElement||document.webkitFullscreenElement){try{szd('goFS skip '+(why||''))}catch(x){}return}if(Date.now()-(goFS.t||0)<600)return;goFS.t=Date.now();try{szd('goFS '+(why||''))}catch(x){}
   /* 主畫面圖示（manifest 全螢幕）開的時候也要用網頁全螢幕：Chrome 的 App 全螢幕每點一下螢幕就把狀態列/導覽列叫出來、視窗縮小，3 秒後再藏起來，
      遊戲一直點，畫面就一直忽大忽小（作者診斷 v578 實測：每次點擊後 0.1 秒視窗 770x360→722x320，3 秒後再變回來）。
      網頁全螢幕只有從邊緣滑才會叫出系統列，點擊不會，跟瀏覽器分頁開一樣穩。 */
@@ -4141,7 +4141,10 @@ function iosTip(){const w=$('modalLayer');const was=R&&R.paused;if(R)R.paused=tr
 let IOSTIPR=false;
 const INSTALLED=(()=>{try{return matchMedia('(display-mode: fullscreen)').matches||STANDALONE}catch(x){return false}})();
 /* 主畫面圖示開的 App：離開全螢幕（切出去再回來、系統收回）後，下一次點擊就再進全螢幕；瀏覽器分頁維持只試前兩下 */
-if(TOUCH&&!IOS){let fsTry=0;document.addEventListener('pointerup',function f(){goFS();if(INSTALLED)return;if(document.fullscreenElement||document.webkitFullscreenElement||++fsTry>=2)document.removeEventListener('pointerup',f)})}
+/* 主畫面 App 裡，點擊時系統列跑出來常會讓這次觸控變成「取消」（pointercancel），收不到 pointerup。
+   所以 App 裡用 capture 階段同時聽 pointerup / touchend / click，哪個先到就用哪個（都算使用者手勢，可以要求全螢幕）。 */
+if(TOUCH&&!IOS){if(INSTALLED){['pointerup','touchend','click'].forEach(ev=>document.addEventListener(ev,()=>goFS(ev),{capture:true,passive:true}))}
+  else{let fsTry=0;document.addEventListener('pointerup',function f(){goFS('pointerup');if(document.fullscreenElement||document.webkitFullscreenElement||++fsTry>=2)document.removeEventListener('pointerup',f)})}}
 if(TOUCH)document.body.classList.add('lite');
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>refitBurst()));window.addEventListener('orientationchange',()=>refitBurst());
 if(window.visualViewport){visualViewport.addEventListener('resize',()=>{fit();compVV()});visualViewport.addEventListener('scroll',compVV)}
@@ -4172,7 +4175,7 @@ function szd(ev){try{const st=szdState();SZD.log.push(`${szdT()} ${ev}${st!==SZD
 function szdOn(){return !!(typeof CL!=='undefined'&&CL.user&&CL.user.email===ADMIN_EMAIL)}
 function szdDraw(){let b=document.getElementById('szdbar');if(!szdOn()){if(b)b.remove();return}
   if(!b){b=document.createElement('div');b.id='szdbar';b.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);max-width:94vw;z-index:2147483647;font:10px/1.25 monospace;color:#7dff7d;background:rgba(0,0,0,.78);padding:4px 6px;border-radius:6px;pointer-events:none;white-space:pre-wrap;word-break:break-all';document.documentElement.appendChild(b)}
-  b.textContent='診斷 v579（只有作者看得到）\nNOW '+szdState()+'\n'+SZD.log.join('\n')}
+  b.textContent='診斷 v580（只有作者看得到）\nNOW '+szdState()+'\n'+SZD.log.join('\n')}
 (function(){
   for(const k of ['requestFullscreen','webkitRequestFullscreen']){const f=Element.prototype[k];if(f)Element.prototype[k]=function(...a){szd('REQ-FS '+k);const r=f.apply(this,a);if(r&&r.then)r.then(()=>szd('REQ-FS ok'),e=>szd('REQ-FS fail '+(e&&e.name||'')));return r}}
   for(const k of ['exitFullscreen','webkitExitFullscreen']){const f=document[k];if(f)document[k]=function(...a){szd('EXIT-FS called '+k);return f.apply(this,a)}}
@@ -4183,6 +4186,7 @@ function szdDraw(){let b=document.getElementById('szdbar');if(!szdOn()){if(b)b.r
   ['focus','blur','orientationchange','pageshow'].forEach(e=>addEventListener(e,()=>szd(e)));
   try{screen.orientation.addEventListener('change',()=>szd('scr-orient'))}catch(e){}
   ['fullscreen','standalone'].forEach(m=>{try{matchMedia(`(display-mode: ${m})`).addEventListener('change',q=>szd(`dm-${m}=${q.matches?1:0}`))}catch(e){}});
+  ['pointerup','pointercancel','touchend','touchcancel','click'].forEach(ev=>document.addEventListener(ev,()=>szd(ev+(navigator.userActivation?' act'+(navigator.userActivation.isActive?1:0):'')),true));
   document.addEventListener('pointerdown',e=>szd(`tap ${Math.round(e.clientX)},${Math.round(e.clientY)} scrOff ${Math.round(e.screenX-e.clientX)},${Math.round(e.screenY-e.clientY)}`),true);
   szd('load');setInterval(szdDraw,1000);
 })();
