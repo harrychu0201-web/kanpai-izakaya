@@ -4131,20 +4131,14 @@ function loop(now){
   stmT+=dt;if(stmT>(TOUCH?.3:.1)){stmT=0;steamTick()}
 }
 const TOUCH=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;
-function goFS(why){if(!TOUCH||IOS||document.fullscreenElement||document.webkitFullscreenElement)return;if(Date.now()-(goFS.t||0)<600)return;goFS.t=Date.now();
-  /* 主畫面圖示（manifest 全螢幕）開的時候也要用網頁全螢幕：Chrome 的 App 全螢幕每點一下螢幕就把狀態列/導覽列叫出來、視窗縮小，3 秒後再藏起來，
-     遊戲一直點，畫面就一直忽大忽小（作者診斷 v578 實測：每次點擊後 0.1 秒視窗 770x360→722x320，3 秒後再變回來）。
-     網頁全螢幕只有從邊緣滑才會叫出系統列，點擊不會，跟瀏覽器分頁開一樣穩。 */
+function goFS(){if(!TOUCH||IOS||document.fullscreenElement||document.webkitFullscreenElement)return;
+  /* installed app whose manifest is already display:fullscreen: the window is immersive from launch, so asking the page to go fullscreen again only flashes the "now full screen" toast and re-lays-out the screen (the blink right after opening) */
+  try{if(matchMedia('(display-mode: fullscreen)').matches)return}catch(x){}
   const e=document.documentElement,f=e.requestFullscreen||e.webkitRequestFullscreen;if(!f)return;try{const p=f.call(e,{navigationUI:'hide'});if(p&&p.then)p.then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(x){}}).catch(()=>{})}catch(x){}}
 const IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),STANDALONE=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 function iosTip(){const w=$('modalLayer');const was=R&&R.paused;if(R)R.paused=true;modal(`<h2>${T('iPhone 要這樣全螢幕')}</h2><p>${T('iPhone 的 Safari 不支援網頁全螢幕，但可以把遊戲加到主畫面，之後從桌面圖示打開就會是全螢幕，跟 App 一樣。')}</p><div class="how"><div class="how-row"><div><b>1.</b> ${T('點 Safari 下方（或上方）的<b>分享</b>按鈕（方框加向上箭頭）')}</div></div><div class="how-row"><div><b>2.</b> ${T('往下滑，選<b>「加入主畫面」</b>')}</div></div><div class="how-row"><div><b>3.</b> ${T('回到手機桌面，點「乾杯！居酒屋」圖示開始玩')}</div></div></div><div class="btns"><button class="btn" data-act="iostipok">${T('知道了')}</button></div>`);IOSTIPR=!was}
 let IOSTIPR=false;
-const INSTALLED=(()=>{try{return matchMedia('(display-mode: fullscreen)').matches||STANDALONE}catch(x){return false}})();
-/* 主畫面圖示開的 App：離開全螢幕（切出去再回來、系統收回）後，下一次點擊就再進全螢幕；瀏覽器分頁維持只試前兩下 */
-/* 主畫面 App 裡，點擊時系統列跑出來常會讓這次觸控變成「取消」（pointercancel），收不到 pointerup。
-   所以 App 裡用 capture 階段同時聽 pointerup / touchend / click，哪個先到就用哪個（都算使用者手勢，可以要求全螢幕）。 */
-if(TOUCH&&!IOS){if(INSTALLED){['pointerup','touchend','click'].forEach(ev=>document.addEventListener(ev,()=>goFS(ev),{capture:true,passive:true}))}
-  else{let fsTry=0;document.addEventListener('pointerup',function f(){goFS('pointerup');if(document.fullscreenElement||document.webkitFullscreenElement||++fsTry>=2)document.removeEventListener('pointerup',f)})}}
+if(TOUCH&&!IOS){let fsTry=0;document.addEventListener('pointerup',function f(){goFS();if(document.fullscreenElement||document.webkitFullscreenElement||++fsTry>=2)document.removeEventListener('pointerup',f)})}
 if(TOUCH)document.body.classList.add('lite');
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>refitBurst()));window.addEventListener('orientationchange',()=>refitBurst());
 if(window.visualViewport){visualViewport.addEventListener('resize',()=>{fit();compVV()});visualViewport.addEventListener('scroll',compVV)}
@@ -4164,7 +4158,6 @@ function compVV(){
 function visH(){let d=document.getElementById('dvhProbe');if(!d){d=document.createElement('div');d.id='dvhProbe';d.style.cssText='position:fixed;left:0;top:0;width:1px;height:100vh;height:100dvh;visibility:hidden;pointer-events:none';document.body.appendChild(d)}const a=window.innerHeight,b=window.visualViewport?visualViewport.height:a;return Math.max(200,Math.min(a,b))}
 /* fit() only ran on resize events; on Android the fullscreen / rotation animation reports a stale height first, so the board stayed too tall until the next HUD change (end of day). Re-run it a few times while the viewport settles. */
 function refitBurst(){[0,100,300,700,1400,2500].forEach(t=>setTimeout(fit,t))}
-
 /* 手機橫向時，瀏覽器的網址列／底部工具列一滑出一收起，可見高度就會跟著變，遊戲會整個跟著縮放（甚至重排）。
    這裡在同一個方向內只記「看過的最小可見高度」：工具列收起時不動，只有第一次真的變小時才調整一次，之後就釘住。
    打字（鍵盤彈出）或拖曳中不記錄，免得鍵盤把尺寸永遠縮小。方向改變（旋轉）時重新記。 */
