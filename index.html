@@ -1797,10 +1797,12 @@ function chooseLayout(force){
   const holdH=!force&&!!R&&LAY==='land'&&want==='land'&&nw===W&&H&&Math.abs(nh0-H)<90;
   const nh=holdH?H:nh0;
   if(want===LAY&&nw===W&&nh===H&&!force)return;
-  LAY=want;W=nw;H=nh;
+  const LAY0=LAY;LAY=want;W=nw;H=nh;
   if(want==='port'){makiN();L=CUR==='rm'?PORT_R:CUR==='sushi'?SU_PORT:PORT;KY=400;KK=1}else{L=spreadLand(W)}
   const g=$('game');g.style.width=W+'px';g.style.height=H+'px';g.classList.toggle('port',LAY==='port');g.classList.toggle('wide',KY<400);
-  drawBg();if(HOME)showHome();
+  drawBg();if(HOME){const hm=$('homeModal'),keep=!force&&want===LAY0&&hm&&hm.firstElementChild,fa=keep&&document.activeElement&&keep.contains(document.activeElement)?document.activeElement:null;
+    showHome();
+    if(keep&&$('homeModal')){$('homeModal').appendChild(keep);try{homeDots()}catch(e){}if(fa)try{fa.focus({preventScroll:true})}catch(e){}}}
   if(R){buildStations();renderStations();R.seats.forEach(c=>{if(c&&c.st!=='bye'){c.el.style.transition='none';c.el.style.left=(seatX(c.seat,seatsN())-80)+'px';void c.el.offsetWidth;c.el.style.transition=''}});seatClasses();renderCust()}
 }
 const ING=[
@@ -2898,6 +2900,7 @@ function placeChat(){const h=document.querySelector('.home'),c=document.querySel
 function sideBtn(act,label){const [a,b,ic]=SIDEI[act];return `<button class="sideb" data-act="${act}"><svg viewBox="0 0 64 64"><defs><linearGradient id="sg-${act}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><circle cx="32" cy="32" r="29" fill="url(#sg-${act})" stroke="#3a1a10" stroke-width="3.5"/><circle cx="32" cy="32" r="25.5" fill="none" stroke="#c9963e" stroke-width="2.5"/><ellipse cx="32" cy="16" rx="17" ry="6" fill="#fff" opacity=".1"/>${ic}</svg>${homeDotOn(act)?'<i class="rdot"></i>':''}<span>${T(label)}</span></button>`}
 function plaque(act,label,sub,primary,cls,badge){return `<button class="plq ${primary?'pri':''} ${cls||''}" data-act="${act}"><span class="plan">${sv(lanternG(''),'0 0 60 84')}</span><span class="plt">${T(label)}${sub?`<small>${sub}</small>`:''}</span>${badge?`<i class="plnew">${T(badge)}</i>`:''}</button>`}
 let SHOPHOME=false,TYPING=0;
+document.addEventListener('mousedown',e=>{const a=document.activeElement;if(a&&a.id==='cin'&&e.target.closest&&e.target.closest('.cin [data-act=csend],.cemo button'))e.preventDefault()},true);
 document.addEventListener('pointerdown',e=>{const a=document.activeElement;TYPING=a&&/^(INPUT|TEXTAREA)$/.test(a.tagName)&&a.closest('.modal')&&e.target.classList.contains('modal')?performance.now():0},true);
 document.addEventListener('click',e=>{if(!HOME)return;const m=e.target.closest('.modal');if(!m||e.target!==m)return;if(TYPING&&performance.now()-TYPING<1500){TYPING=0;const a=document.activeElement;if(a&&a.blur)a.blur();return}{const t=$('fbtext'),c=$('fbcontact');if(t){FB.text=t.value;FB.contact=c?c.value:FB.contact}}if(SHOPHOME)showHome();else closeModal()});
 
@@ -4179,7 +4182,7 @@ function stableVisH(){
      等它持續 0.7 秒才接受。以前會立刻重設，結果遊戲在「放大」和「縮小」兩個尺寸之間來回跳，客人點錯菜。 */
   if(Math.abs(v-STAB.h)>120){
     if(v>STAB.h&&playLocked())return STAB.h;
-    if(!STABJ){STABJ=true;setTimeout(()=>{STABJ=false;const v2=visH();if(Math.abs(v2-v)<30&&Math.abs(v2-STAB.h)>120&&!(v2>STAB.h&&playLocked())&&(innerWidth>innerHeight?'l':'p')===STAB.o){STAB={o:STAB.o,h:v2};fit()}},700)}
+    if(!STABJ){STABJ=true;setTimeout(()=>{STABJ=false;const v2=visH();if(/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''))return; /* keyboard is up: its height is not the screen height */ if(Math.abs(v2-v)<30&&Math.abs(v2-STAB.h)>120&&!(v2>STAB.h&&playLocked())&&(innerWidth>innerHeight?'l':'p')===STAB.o){STAB={o:STAB.o,h:v2};fit()}},700)}
     return STAB.h;
   }
   const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');
