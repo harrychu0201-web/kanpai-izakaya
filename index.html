@@ -4132,13 +4132,16 @@ function loop(now){
 }
 const TOUCH=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;
 function goFS(){if(!TOUCH||IOS||document.fullscreenElement||document.webkitFullscreenElement)return;
-  /* installed app whose manifest is already display:fullscreen: the window is immersive from launch, so asking the page to go fullscreen again only flashes the "now full screen" toast and re-lays-out the screen (the blink right after opening) */
-  try{if(matchMedia('(display-mode: fullscreen)').matches)return}catch(x){}
+  /* 主畫面圖示（manifest 全螢幕）開的時候也要用網頁全螢幕：Chrome 的 App 全螢幕每點一下螢幕就把狀態列/導覽列叫出來、視窗縮小，3 秒後再藏起來，
+     遊戲一直點，畫面就一直忽大忽小（作者診斷 v578 實測：每次點擊後 0.1 秒視窗 770x360→722x320，3 秒後再變回來）。
+     網頁全螢幕只有從邊緣滑才會叫出系統列，點擊不會，跟瀏覽器分頁開一樣穩。 */
   const e=document.documentElement,f=e.requestFullscreen||e.webkitRequestFullscreen;if(!f)return;try{const p=f.call(e,{navigationUI:'hide'});if(p&&p.then)p.then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(x){}}).catch(()=>{})}catch(x){}}
 const IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),STANDALONE=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 function iosTip(){const w=$('modalLayer');const was=R&&R.paused;if(R)R.paused=true;modal(`<h2>${T('iPhone 要這樣全螢幕')}</h2><p>${T('iPhone 的 Safari 不支援網頁全螢幕，但可以把遊戲加到主畫面，之後從桌面圖示打開就會是全螢幕，跟 App 一樣。')}</p><div class="how"><div class="how-row"><div><b>1.</b> ${T('點 Safari 下方（或上方）的<b>分享</b>按鈕（方框加向上箭頭）')}</div></div><div class="how-row"><div><b>2.</b> ${T('往下滑，選<b>「加入主畫面」</b>')}</div></div><div class="how-row"><div><b>3.</b> ${T('回到手機桌面，點「乾杯！居酒屋」圖示開始玩')}</div></div></div><div class="btns"><button class="btn" data-act="iostipok">${T('知道了')}</button></div>`);IOSTIPR=!was}
 let IOSTIPR=false;
-if(TOUCH&&!IOS){let fsTry=0;document.addEventListener('pointerup',function f(){goFS();if(document.fullscreenElement||document.webkitFullscreenElement||++fsTry>=2)document.removeEventListener('pointerup',f)})}
+const INSTALLED=(()=>{try{return matchMedia('(display-mode: fullscreen)').matches||STANDALONE}catch(x){return false}})();
+/* 主畫面圖示開的 App：離開全螢幕（切出去再回來、系統收回）後，下一次點擊就再進全螢幕；瀏覽器分頁維持只試前兩下 */
+if(TOUCH&&!IOS){let fsTry=0;document.addEventListener('pointerup',function f(){goFS();if(INSTALLED)return;if(document.fullscreenElement||document.webkitFullscreenElement||++fsTry>=2)document.removeEventListener('pointerup',f)})}
 if(TOUCH)document.body.classList.add('lite');
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>refitBurst()));window.addEventListener('orientationchange',()=>refitBurst());
 if(window.visualViewport){visualViewport.addEventListener('resize',()=>{fit();compVV()});visualViewport.addEventListener('scroll',compVV)}
@@ -4169,7 +4172,7 @@ function szd(ev){try{const st=szdState();SZD.log.push(`${szdT()} ${ev}${st!==SZD
 function szdOn(){return !!(typeof CL!=='undefined'&&CL.user&&CL.user.email===ADMIN_EMAIL)}
 function szdDraw(){let b=document.getElementById('szdbar');if(!szdOn()){if(b)b.remove();return}
   if(!b){b=document.createElement('div');b.id='szdbar';b.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);max-width:94vw;z-index:2147483647;font:10px/1.25 monospace;color:#7dff7d;background:rgba(0,0,0,.78);padding:4px 6px;border-radius:6px;pointer-events:none;white-space:pre-wrap;word-break:break-all';document.documentElement.appendChild(b)}
-  b.textContent='診斷 v578（只有作者看得到）\nNOW '+szdState()+'\n'+SZD.log.join('\n')}
+  b.textContent='診斷 v579（只有作者看得到）\nNOW '+szdState()+'\n'+SZD.log.join('\n')}
 (function(){
   for(const k of ['requestFullscreen','webkitRequestFullscreen']){const f=Element.prototype[k];if(f)Element.prototype[k]=function(...a){szd('REQ-FS '+k);const r=f.apply(this,a);if(r&&r.then)r.then(()=>szd('REQ-FS ok'),e=>szd('REQ-FS fail '+(e&&e.name||'')));return r}}
   for(const k of ['exitFullscreen','webkitExitFullscreen']){const f=document[k];if(f)document[k]=function(...a){szd('EXIT-FS called '+k);return f.apply(this,a)}}
