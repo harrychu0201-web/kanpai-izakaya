@@ -232,6 +232,8 @@ details:not([open]) > .howsum::before{content:'▸ ';}
 .htitle h1.logo{-webkit-text-stroke:0;color:transparent;display:block}.htitle h1.logo::before,.htitle h1.logo::after{content:none}
 .htitle h1.logo img{display:block;margin:0 auto;width:min(64vw,880px);height:auto;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45))}
 .home.port .htitle h1.logo img{width:94vw}
+.home.port .htitle h1.logo .lt{padding-top:.5em}
+.htitle h1.logo .lt{display:inline-block;white-space:normal;font-family:'Dela Gothic One','Noto Sans JP','Noto Sans KR',sans-serif;font-weight:400;line-height:1.08;letter-spacing:.02em;color:#fff1cf;-webkit-text-stroke:.12em #3b170c;paint-order:stroke fill;text-shadow:0 6px 0 #1e0a04,0 0 26px rgba(255,170,80,.9);filter:drop-shadow(0 6px 10px rgba(0,0,0,.45))}
 .htitle h1::after{content:attr(data-t);position:absolute;left:0;top:0;color:#6a160b;-webkit-text-stroke:.025em #6a160b}
 .htitle .sub{display:table;margin:4px auto 0;padding:0 10px;font-family:'BiauKai','DFKai-SB','標楷體','Kaiti TC','TW-Kai','STKaiti','KaiTi','LXGW WenKai TC',serif;font-weight:700;font-size:clamp(18px,2.6vw,38px);letter-spacing:.1em;color:#6a160b;text-shadow:2px 0px 0 #fff1cf,-2px 0px 0 #fff1cf,0px 2px 0 #fff1cf,0px -2px 0 #fff1cf,2px 2px 0 #fff1cf,-2px 2px 0 #fff1cf,2px -2px 0 #fff1cf,-2px -2px 0 #fff1cf,4px 0px 0 #3b170c,-4px 0px 0 #3b170c,0px 4px 0 #3b170c,0px -4px 0 #3b170c,3px 3px 0 #3b170c,-3px 3px 0 #3b170c,3px -3px 0 #3b170c,-3px -3px 0 #3b170c,0px 6px 0 #3b170c;background:none;border:0}
 .home .menu{position:absolute;left:0;right:0;bottom:5vh;display:flex;justify-content:center;gap:16px;flex-wrap:wrap;padding:0 20px}
@@ -2709,7 +2711,7 @@ function achDay(){try{if(DEMO||TEST||RP.on||CHG)return;const d=new Date(),m=d.ge
 /* 首頁彩蛋：連點店名招牌 7 下、在空白處亂點 30 下（招牌本身不接收點擊，所以用位置判斷） */
 const ACHTAP={logo:0,t:0,bg:0};
 document.addEventListener('click',e=>{if(!HOME)return;const t=e.target;if(!t||!t.closest||t.closest('.modal,button,[data-act],a,input,select,textarea,#homeModal'))return;
-  const img=document.querySelector('.home .logo img');
+  const img=document.querySelector('.home .logo img,.home .logo .lt');
   if(img){const b=img.getBoundingClientRect();if(e.clientX>=b.left&&e.clientX<=b.right&&e.clientY>=b.top&&e.clientY<=b.bottom){const n=performance.now();ACHTAP.logo=n-ACHTAP.t<900?ACHTAP.logo+1:1;ACHTAP.t=n;if(ACHTAP.logo>=7){ACHTAP.logo=0;achEgg('logo')}return}}
   if(++ACHTAP.bg>=30){ACHTAP.bg=0;achEgg('tap')}});
 function claimAch(id){const r=loadRec(),a=ACHS.find(x=>x.id===id);if(!a||!a.c(r)||(r.ach&&r.ach[id]))return;r.ach=r.ach||{};r.ach[id]=1;saveRec(r);invAdd(a.rw);toast(T('領取成功：{0}',rwText(a.rw)));showAch()}
@@ -3106,7 +3108,7 @@ function showHome(){if(CHG)chQuit();LB.ch=0;CHEND='';if(RP.on)abandonReplay();
   const saved=load();
   const nbtn=NOTICE?`<button class="langbtn noticefab" data-act="notice" aria-label="${T('公告')}">📢 ${T('公告')}${noticeDue()?'<i class="rdot"></i>':''}</button>`:'';
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
-  <div class="htitle"><h1 class="logo"><img src="img/logo-9e60dada.webp" alt="${T('乾杯！居酒屋')}" draggable="false">${nbtn&&LAY!=='port'?nbtn:''}</h1><div class="sub">${T('～ 巷子裡的小居酒屋 ～')}</div></div>
+  <div class="htitle"><h1 class="logo">${CJK()?`<img src="img/logo-9e60dada.webp" alt="${T('乾杯！居酒屋')}" draggable="false">`:`<span class="lt" role="img" aria-label="${T('乾杯！居酒屋')}">${T('乾杯！居酒屋').replace(' ','<br>')}</span>`}${nbtn&&LAY!=='port'?nbtn:''}</h1><div class="sub">${T('～ 巷子裡的小居酒屋 ～')}</div></div>
   <div class="menu"><div class="mhrow"></div>${'<div class="pricol"><button class="chbtn" data-act="chopen">♾️ '+T('無限挑戰')+'</button>'+(saved?plaque('cont','繼續營業',T('第 {0} 天',saved.day+(saved.pendingNext?1:0))+`・${yen(saved.coins)}`,1):plaque('newgame','開始營業','',1))+'</div>'}${(saved?plaque('asknew','新的一局',0,0,'sm'):'')+plaque('rwfr','獎勵 & 好友',0,0,'sm')+(FB_CONFIG?plaque('mp','多人模式',0,0,'sm mp','新推出！'):'')}</div><div class="side">${sideBtn('ach','成就')}${saved?sideBtn('arcade','遊戲廳')+(FB_CONFIG?'':sideBtn('replay','選日重玩')):''}${FB_CONFIG?sideBtn('lb','排行榜'):''}${sideBtn('social','分享')}</div><div class="side-rw"><div class="side side-r">${sideBtn('records','個人資料')}${sideBtn('dex','圖鑑')}${sideBtn('snd','設定')}${FB_CONFIG?sideBtn('fb','意見反映'):''}</div></div><div class="topl">${nbtn&&LAY==='port'?nbtn:''}</div><div class="topr"><span id="tstslot">${tstBtn()}</span>${acctBtn()}</div>${NEWVER?updBar():''}${FB_CONFIG?`<button class="chatfab" data-act="chat"><b>💬</b>${T('聊天室')}</button>`:''}${FB_CONFIG&&saved?`<div class="replayfab">${sideBtn('replay','選日重玩')}</div>`:''}<a class="privlink" href="privacy.html">隱私權政策 · Privacy</a><div id="homeModal"></div></div>`;
   placeChat();requestAnimationFrame(placeChat);setTimeout(placeChat,300);syncRewardDot();achSoon();
   if(noticeDue()){if(NOTICE_LOADED||!FB_CONFIG)setTimeout(()=>{if(HOME&&!document.querySelector('#homeModal .modal')){NAUTOREQ=true;showNotice()}},400);else setTimeout(noticePop,3500)}else if(CL.pick)setTimeout(cloudAsk,0);
