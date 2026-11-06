@@ -146,7 +146,7 @@ body.ovl .hud .icon-btn.bagbtn{width:auto;min-width:40px;height:36px;padding:0 9
 .hand svg{width:34px;height:34px}
 
 /* modal */
-.modal{position:absolute;inset:0;background:#1a0e08b8;display:grid;place-items:center;z-index:10}
+.modal{position:absolute;inset:0;background:#1a0e08b8;display:grid;grid-template-columns:minmax(0,1fr);place-items:center;z-index:10}
 .card{width:620px;max-width:92%;max-height:560px;overflow:auto;background:var(--paper);color:var(--soot);border:4px solid var(--soot);border-radius:20px;padding:22px 28px;box-shadow:0 10px 0 #00000055;display:flex;flex-direction:column;gap:14px}
 .card h1{font-family:var(--f-ui);font-weight:700;font-size:50px;margin:0;line-height:1.1;color:var(--lacquer)}
 .card h2{font-family:var(--f-ui);font-weight:700;font-size:34px;margin:0;color:var(--lacquer)}
@@ -3727,6 +3727,10 @@ document.addEventListener('click',e=>{
   else if(act==='nick')showNick();
   else if(act==='nickok')saveNick();
   else if(act==='login'){closeModal();cloudLogin()}
+  else if(act==='loginforce'){closeModal();cloudLogin(true)}
+  else if(act==='iabcopy'){const u=location.origin+location.pathname;const ok=()=>toast('已複製網址，貼到 Safari 或 Chrome 打開');const show=()=>{modal(`<h2>${T('複製這個網址')}</h2><input class="nickin" id="iaburl" readonly value="${esc(u)}" style="width:100%;font-size:15px"><p>${T('長按上面的網址複製，貼到 Safari 或 Chrome 打開。')}</p><div class="btns"><button class="btn" data-act="closem">${T('知道了')}</button></div>`);setTimeout(()=>{const i=$('iaburl');if(i){i.focus();i.select()}},50)};try{navigator.clipboard.writeText(u).then(ok,show)}catch(e){show()}}
+  else if(act==='iabline'){location.href=location.origin+location.pathname+'?openExternalBrowser=1'}
+  else if(act==='iabchrome'){location.href='intent://'+location.host+location.pathname+'#Intent;scheme=https;package=com.android.chrome;end'}
   else if(act==='reloadpg'){location.reload()}
   else if(act==='addacct'){try{window.open('https://accounts.google.com/AddSession','_blank','noopener,noreferrer')}catch(e){}}
   else if(act==='acct')showAcct();
@@ -4907,9 +4911,25 @@ async function cloudInit1(){
     setTimeout(()=>{if(!CL.ready){CL.ready=true;acctRefresh()}},8000);
   }catch(e){console.warn('cloud init failed',e);CL.api=null;CL.initFail=true;CL.poisoned=true;acctRefresh()}
 }
-function cloudErr(e){const c=(e&&(e.code||e.message))||String(e);if(/popup-closed|cancelled-popup|no-auth-event/.test(c))return;CL.status='err';acctRefresh();if(HOME)modal(`<h2>${T('帳號')}</h2><p>${T('登入失敗：{0}',c)}</p><div class="btns"><button class="btn" data-act="closem">${T('知道了')}</button></div>`)}
+/* Google refuses to sign in inside app browsers (Threads / IG / FB / LINE / WeChat): the popup is blocked or Google shows "403 disallowed_useragent".
+   Tell the player before they try, and give one-tap ways out to their real browser. */
+const IAB=/Barcelona|Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger/i.test(navigator.userAgent||'');
+function iabHelp(code){if(!HOME)return;const url=location.origin+location.pathname,isLine=/Line\//i.test(navigator.userAgent||''),andr=/Android/i.test(navigator.userAgent||'');
+  modal(`<h2>${T('請用瀏覽器開啟再登入')}</h2><p>${T('Threads／IG／LINE 裡面不能用 Google 登入，所以會一直失敗。')}${IOS?T('點「⋯」或分享鈕，選「用 Safari 開啟」再登入。'):T('點右上角「⋮」，選「用瀏覽器開啟」再登入。')}</p>
+  <div class="btns">${isLine?`<button class="btn" data-act="iabline">${T('用瀏覽器開啟')}</button>`:andr?`<button class="btn" data-act="iabchrome">${T('用 Chrome 開啟')}</button>`:''}<button class="btn${isLine||andr?' alt':''}" data-act="iabcopy">${T('複製網址')}</button><button class="btn alt" data-act="loginforce">${T('還是試試看')}</button><button class="btn alt" data-act="closem">${T('知道了')}</button></div>
+  <p style="font-size:13px;opacity:.7">${T('這裡的存檔不會跟過去；新玩家直接在瀏覽器開始就好。')}${code?` <span style="opacity:.8">（${esc(code)}）</span>`:''}</p>`)}
+function loginTip(c){
+  if(/network-request-failed|timeout/.test(c))return T('網路連不上 Google，請確認網路（或換 Wi-Fi／行動網路）後再試一次。');
+  if(/too-many-requests/.test(c))return T('短時間內試太多次了，等幾分鐘再試。');
+  if(/web-storage-unsupported|missing-initial-state|internal-error|storage/.test(c))return T('瀏覽器擋住了登入需要的資料，常見原因是無痕模式或關閉了 Cookie。請用一般模式的 Chrome 或 Safari 再試一次。');
+  if(/user-disabled/.test(c))return T('這個 Google 帳號已被停用，請換一個帳號。');
+  if(/unauthorized-domain|operation-not-allowed/.test(c))return T('是遊戲這邊的設定問題，請把下面的錯誤代碼回報給作者。');
+  return T('請改用 Chrome 或 Safari 開啟遊戲再試一次；還是不行的話，把下面的錯誤代碼回報給作者。')}
+function cloudErr(e){const c=(e&&(e.code||e.message))||String(e);if(/popup-closed|cancelled-popup|no-auth-event/.test(c))return;CL.status='err';acctRefresh();if(!HOME)return;
+  if(IAB)return iabHelp(c);
+  modal(`<h2>${T('登入失敗')}</h2><p>${loginTip(c)}</p><p style="font-size:12px;opacity:.6">${T('錯誤代碼')}：${esc(c)}</p><div class="btns"><button class="btn" data-act="login">${T('再試一次')}</button><button class="btn alt" data-act="closem">${T('知道了')}</button></div>`)}
 function cloudDown(){if(HOME)modal(`<h2>${T('連不上登入服務')}</h2><p>${T('登入用的 Google 服務沒有載入成功，通常是網路不穩。')}</p><p>${T('確認網路後按「重新載入」再試一次，你的存檔不會不見。')}</p><div class="btns"><button class="btn alt" data-act="closem">${T('返回')}</button><button class="btn" data-act="reloadpg">${T('重新載入')}</button></div>`)}
-async function cloudLogin(){if(!CL.api){if(HOME)modal(`<h2>${T('帳號')}</h2><p>${T('連線中…')}</p>`);await cloudInit();if(!CL.api)return cloudDown();closeModal()}try{if(await CL.api.signIn()==='closed'&&!CL.user)loginHelp()}catch(e){cloudErr(e)}}
+async function cloudLogin(force){if(IAB&&!force&&!CL.iabTried){iabHelp('');return}if(force)CL.iabTried=true;if(!CL.api){if(HOME)modal(`<h2>${T('帳號')}</h2><p>${T('連線中…')}</p>`);await cloudInit();if(!CL.api)return cloudDown();closeModal()}try{if(await CL.api.signIn()==='closed'&&!CL.user)loginHelp()}catch(e){cloudErr(e)}}
 // Chrome severs the sign-in popup when the player picks "Use another account", so the popup seems to close by itself.
 // Workaround: add that account to the browser first, then it shows up in the account list and can be picked directly.
 function loginHelp(){if(!HOME)return;modal(`<h2>${T('登入視窗關掉了')}</h2><p>${T('如果你剛剛是按「使用其他帳戶」，Chrome 會把登入視窗切斷。')}</p><p>${T('先按「新增 Google 帳號」，在新分頁登入你要用的帳號，登好後回到遊戲再按一次登入，那個帳號就會直接出現在清單裡，點它就好。')}</p><div class="btns"><button class="btn" data-act="addacct">${T('新增 Google 帳號')}</button><button class="btn" data-act="login">${T('再試一次')}</button><button class="btn" data-act="closem">${T('知道了')}</button></div>`)}
