@@ -5159,12 +5159,14 @@ function shopRate(g){const ks=Object.keys(g.stars||{}).map(Number).sort((a,b)=>a
 const rtTag=rt=>{const t=RT.find(x=>x[1]===rt);return t?` <small class="rtag r${rt}">${TX(t[2],'rate')}</small>`:''};
 const rtFull=rt=>{const t=RT.find(x=>x[1]===rt);return t?`${TX(t[2],'rate')}<br><small>${T(t[3])}${t[4]?` <b>${T(t[4])}</b>`:''}</small>`:T('還沒評價（至少營業 3 天）')};
 function lbxEntry(){const d=lbEntry();if(!d)return null;let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(!g)return null;
-  delete d.days;d.day=Math.max(1,(g.day||1)+(g.pendingNext?1:0));d.ya=g.rm?1:0;d.k2=g.rm&&g.rm.k2?1:0;let c=0;for(const k in(g.dec||{}))if(g.dec[k])c++;if(g.rm&&g.rm.dec)for(const k in g.rm.dec)if(g.rm.dec[k])c++;d.dc=c;const sr=shopRate(g);if(sr)d.rt=sr.rt;return d}
+  delete d.days;delete d.dex;delete d.chal;delete d.chalh; /* lbx rules reject any other key ($other:false): dex/chal/chalh made every snapshot write fail, so friends saw no name */
+  d.day=Math.max(1,(g.day||1)+(g.pendingNext?1:0));d.ya=g.rm?1:0;d.k2=g.rm&&g.rm.k2?1:0;let c=0;for(const k in(g.dec||{}))if(g.dec[k])c++;if(g.rm&&g.rm.dec)for(const k in g.rm.dec)if(g.rm.dec[k])c++;d.dc=c;const sr=shopRate(g);if(sr)d.rt=sr.rt;return d}
 async function lbxPush(u){try{if(!CL.api.putLbx)return;let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return;const d=lbxEntry();if(!d)return;
   const k=JSON.stringify(d);if(LB.lastx===u.uid+k)return;try{await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d))}catch(e){if(d.name&&/管理[員员]/.test(d.name)){await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d,{name:d.name.replace(/管理[員员]/g,'').trim()||'玩家'}))}else{if(!d.rt)throw e;const d2=Object.assign({},d);delete d2.rt;await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d2))}} /* rules not updated yet: keep the rest of the snapshot */
   LB.lastx=u.uid+k}catch(e){console.warn('lbx',e)}}
 async function frLoad(){const me=CL.user,a=CL.api,uid=me.uid;
   if(FR.reg!==uid){await a.regCode(uid,fcodeOf(uid));FR.reg=uid}
+  lbxPush(me); /* refresh my own public snapshot so friends see my name even if earlier uploads failed */
   const [fl,rq]=await Promise.all([a.frList(uid),a.frReq(uid)]);const rm=loadRec().frRm||{};
   const add=Object.keys(rq).filter(k=>k!==uid&&!fl[k]&&!rm[k]).slice(0,Math.max(0,FR_MAX-Object.keys(fl).length));
   if(add.length){await a.frAcc(uid,add);add.forEach(k=>{fl[k]=1})}
