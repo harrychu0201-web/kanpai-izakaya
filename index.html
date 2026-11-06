@@ -1639,11 +1639,13 @@ function suAct(l){
       if(c.extra&&c.extra.ok&&!c.extra.done){const h=src.find(x=>x.key===c.extra.key);if(h&&giveTo(c,'x',h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}}}
   const d=suDemand(),inProg=k=>R.maki.some(g=>g&&g.kind==='asm'&&SU_REC[k].length>g.parts.length&&g.parts.every((p,j)=>SU_REC[k][j]===p));
   /* 有半成品在進行中的菜也要列入，否則需求被半成品扣成 0 後就沒人去接著做（手捲卡住） */
-  const ks=SUKEYS.filter(k=>has(k)&&((d[k]||0)>0||inProg(k))).sort((a,b)=>earliestNeed(a)-earliestNeed(b)||(d[b]||0)-(d[a]||0));
+  /* 還有等餐的客人真的要這道菜（沒被半成品扣掉的原始需求），半成品才會被接續；沒人點的半成品不再硬做完 */
+  const wants=k=>R.seats.some(c=>c&&c.st==='wait'&&(c.order.some((x,j)=>x===k&&!c.filled[j])||(c.extra&&c.extra.ok&&!c.extra.done&&c.extra.key===k)));
+  const ks=SUKEYS.filter(k=>has(k)&&((d[k]||0)>0||(inProg(k)&&wants(k)))).sort((a,b)=>earliestNeed(a)-earliestNeed(b)||(d[b]||0)-(d[a]||0));
   for(const k of ks){const r=SU_REC[k];let i=-1,best=-1;
     R.maki.forEach((g,j)=>{if(g&&g.kind==='asm'&&g.parts.length<r.length&&g.parts.every((p,x)=>r[x]===p)&&g.parts.length>best&&!(R.held&&R.held.src==='maki'&&R.held.i===j)&&suIdle(g)){best=g.parts.length;i=j}});
-    /* 有訂單才動手：先接續玩家已經開始做的壽司；沒有可接的，就從空格開新的一份（只針對還在等的訂單） */
-    if(i<0){const e=R.maki.findIndex((g,j)=>!g&&j<makiN());if(e<0)continue;i=e}
+    /* 有訂單才動手：先接續玩家已經開始做的壽司；沒有可接的，就從空格開新的一份（只針對還沒被其他份覆蓋的訂單，d[k]<=0 代表已經有人在做或沒人點） */
+    if(i<0){if((d[k]||0)<=0)continue;const e=R.maki.findIndex((g,j)=>!g&&j<makiN());if(e<0)continue;i=e}
     const base=R.maki[i]?R.maki[i].parts:[];
     /* 只有做到這個訂單要的那一種才算完成：鮪魚手捲的前兩步（飯＋鮪魚）會被判成鮪魚握，若直接完成就會不停重做握壽司 */
     /* 只有組成的順序完全等於這道菜的配方才算完成；中途剛好等於別道菜（如飯＋鮭魚＝鮭魚握）不算，繼續等海苔 */
