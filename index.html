@@ -663,6 +663,9 @@ const ITEMS={
   katsu:{tag:'とんかつ',tz:'炸豬排',jp:'とんかつ',zh:'炸豬排',price:1100,cost:330,w:2,shop:'rm',buy:85000,st:'油鍋'},
   goma:{tag:'胡麻',tz:'時蔬',jp:'ごま和え',zh:'胡麻時蔬',price:280,cost:60,w:3,shop:'rm',buy:25000,st:'小菜'},
   taiyaki:{tag:'鯛焼',tz:'鯛魚燒',jp:'たい焼き',zh:'鯛魚燒',price:600,cost:120,w:2,shop:'rm',buy:120000,st:'甜點'},
+  /* ramen-stall kitchen 3: 拉麵台 (miso ramen, chashu rice) */
+  miso:{tag:'味噌',tz:'味噌拉麵',jp:'味噌ラーメン',zh:'味噌拉麵',price:900,cost:260,w:3,shop:'rm',buy:1,st:'拉麵台'},
+  chashurice:{tag:'叉焼飯',tz:'叉燒飯',jp:'チャーシュー飯',zh:'叉燒飯',price:600,cost:180,w:3,shop:'rm',buy:1,st:'拉麵台'},
   /* izakaya kitchen 3: takoyaki pan (flip once) */
   takoyaki:{tag:'たこ焼',tz:'章魚燒',jp:'たこ焼き',zh:'章魚燒',price:750,cost:210,w:2,buy:26000,st:'章魚燒盤'},
   /* kitchen 3 expansion: three things you just grab (tsukemono, umeshu, reishu), a rolled-egg pan and an onigiri grill */
@@ -699,7 +702,7 @@ const ITEMS={
 };
 const FISH={maguro:'鮪魚',salmon:'鮭魚',tai:'鯛魚'};
 const ING_COST={bowl:0,boat:0,rice:60,tsalmon:80,tume:60,tea:30,maguro:200,salmon:200,tai:200};
-const COOK={negima:5,tsukune:6,karaage:6,buta:6,gyu:7,ika:6,hotate:5,ebiten:5,kakifry:6,gyoza:6,friedrice:5,noodle:5,koro:4,tori:6,katsu:9,taiyaki:7,takoyaki:9,tamagoyaki:8,yakionigiri:9,tamagonigiri:0,salmonnigiri:0,tunanigiri:0,ikanigiri:0,tainigiri:0,ebinigiri:0,negitorogunkan:0,ikuragunkan:0,unigunkan:0,kappamaki:0,tekkamaki:0,salmonmaki:0,salmontemaki:0,tunatemaki:0,ikuratemaki:0,tpgarlic:7,tpcabbage:5,tpchicken:8,tpokono:8,tpshrimp:6,tpscallop:5,tpwagyu:7,tplobster:9,asm:1e9,rice:1e9};
+const COOK={miso:6,chashurice:5,negima:5,tsukune:6,karaage:6,buta:6,gyu:7,ika:6,hotate:5,ebiten:5,kakifry:6,gyoza:6,friedrice:5,noodle:5,koro:4,tori:6,katsu:9,taiyaki:7,takoyaki:9,tamagoyaki:8,yakionigiri:9,tamagonigiri:0,salmonnigiri:0,tunanigiri:0,ikanigiri:0,tainigiri:0,ebinigiri:0,negitorogunkan:0,ikuragunkan:0,unigunkan:0,kappamaki:0,tekkamaki:0,salmonmaki:0,salmontemaki:0,tunatemaki:0,ikuratemaki:0,tpgarlic:7,tpcabbage:5,tpchicken:8,tpokono:8,tpshrimp:6,tpscallop:5,tpwagyu:7,tplobster:9,asm:1e9,rice:1e9};
 const NEWD=['hiyayakko','highball','buta','ika','ebiten','hotate','kakifry','gyu'],NEWD3=['tsukemono','umeshu','takoyaki','tamagoyaki','reishu','yakionigiri'];
 /* stepped dishes (kitchen 3): cooking pauses at each step until you tap, like the takoyaki flip. t = cooking seconds at which each step is asked,
    grace = seconds you get to tap before the dish is ruined, lbl = red badge text, ok = toast after the tap */
@@ -709,14 +712,14 @@ function stepDef(g){return g&&STEPS[g.kind]}
 function needStep(g){const d=stepDef(g);return !!d&&(g.s||0)<d.t.length&&g.t>=d.t[g.s||0]&&cookState(g.t,g.kind)==='raw'}
 function stepLbl(g){return STEPS[g.kind].lbl[g.s||0]}
 const TKFLIP=4,TKGRACE=7,TKW=86,TKAUTO=2.5; // TKAUTO: 阿健 (Lv2+) flips a takoyaki this many seconds after it asks, if you haven't // takoyaki: must be flipped once after TKFLIP s of cooking, within TKGRACE s, or one side burns
-const STN={buta:'teppan',gyu:'teppan',ika:'teppan',hotate:'teppan',ebiten:'tempura',kakifry:'tempura',gyoza:'rmpan',friedrice:'rmpan',koro:'rfry',tori:'rfry',katsu:'rfry',taiyaki:'tyaki',takoyaki:'tako',tamagoyaki:'tama',yakionigiri:'onig',tamagonigiri:'maki',salmonnigiri:'maki',tunanigiri:'maki',ikanigiri:'maki',tainigiri:'maki',ebinigiri:'maki',negitorogunkan:'maki',ikuragunkan:'maki',unigunkan:'maki',kappamaki:'maki',tekkamaki:'maki',salmonmaki:'maki',salmontemaki:'maki',tunatemaki:'maki',ikuratemaki:'maki'};
-const RAWMAP={rawButa:'buta',rawGyu:'gyu',rawIka:'ika',rawHotate:'hotate',rawEbi:'ebiten',rawKaki:'kakifry',rawGyoza:'gyoza',rawRice:'friedrice',rawKoro:'koro',rawTori:'tori',rawKatsu:'katsu',rawTai:'taiyaki',rawTako:'takoyaki',rawTama:'tamagoyaki',rawOnig:'yakionigiri'};
+const STN={buta:'teppan',gyu:'teppan',ika:'teppan',hotate:'teppan',ebiten:'tempura',kakifry:'tempura',gyoza:'rmpan',friedrice:'rmpan',koro:'rfry',tori:'rfry',katsu:'rfry',taiyaki:'tyaki',miso:'lamen',chashurice:'lamen',takoyaki:'tako',tamagoyaki:'tama',yakionigiri:'onig',tamagonigiri:'maki',salmonnigiri:'maki',tunanigiri:'maki',ikanigiri:'maki',tainigiri:'maki',ebinigiri:'maki',negitorogunkan:'maki',ikuragunkan:'maki',unigunkan:'maki',kappamaki:'maki',tekkamaki:'maki',salmonmaki:'maki',salmontemaki:'maki',tunatemaki:'maki',ikuratemaki:'maki'};
+const RAWMAP={rawButa:'buta',rawGyu:'gyu',rawIka:'ika',rawHotate:'hotate',rawEbi:'ebiten',rawKaki:'kakifry',rawGyoza:'gyoza',rawRice:'friedrice',rawKoro:'koro',rawTori:'tori',rawKatsu:'katsu',rawTai:'taiyaki',rawTako:'takoyaki',rawTama:'tamagoyaki',rawOnig:'yakionigiri',rawMiso:'miso',rawChashu:'chashurice'};
 const INSTANT=['sake','edamame','highball','hiyayakko','lsour','ramune','goma','tsukemono','umeshu','reishu'];
 function has(k){return !!(ST&&ST.menu&&ST.menu[k])}
 function teppanOn(){return ['buta','gyu','ika','hotate'].some(has)}
 function tempuraOn(){return ['ebiten','kakifry'].some(has)}
 function page2On(){return CUR==='sushi'||CUR==='tep'?false:CUR==='rm'?rmK2():NEWD.some(has)}
-function page3On(){return CUR!=='rm'&&CUR!=='sushi'&&CUR!=='tep'&&NEWD3.some(has)}
+function page3On(){if(CUR==='rm')return lamenOn();return CUR!=='sushi'&&CUR!=='tep'&&NEWD3.some(has)}
 function pages(){const a=[1];if(page2On())a.push(2);if(page3On())a.push(3);return a}
 function nextPage(){const a=pages();return a[(a.indexOf(KP)+1)%a.length]}
 /* bonus add-on order (加碼點單): some customers also want ONE extra dish from the menu, whether or not you own it yet.
@@ -740,7 +743,7 @@ let CUR='iz';
 function rmOwned(){return !!(ST&&ST.rm)}
 function rmUp(k,d){return (ST&&ST.rm&&ST.rm.up&&ST.rm.up[k])||d}
 function seatsN(){return R?R.seats.length:(CUR==='tep'?4:CUR==='sushi'?3:CUR==='rm'&&rmOwned()?rmUp('seats',3):ST.up.seats)}
-function rmK2(){return !!(ST&&ST.rm&&ST.rm.k2)}function rfryN(){return rmUp('fry',3)}function tyakiN(){return rmUp('tai',2)}function gomaOff(){return !!(ST&&ST.rm&&ST.rm.off&&ST.rm.off.goma)}
+function rmK2(){return !!(ST&&ST.rm&&ST.rm.k2)}function lamenOn(){return !!(ST&&ST.rm&&ST.rm.lamen)}function rfryN(){return rmUp('fry',3)}function tyakiN(){return rmUp('tai',2)}function gomaOff(){return !!(ST&&ST.rm&&ST.rm.off&&ST.rm.off.goma)}
 /* 暫時下架：下架的菜不會再出現在客人點單、加碼、特價、牆上菜單，重新上架即可 */
 function isOff(k){return !!(ST&&ST.soff&&ST.soff[k])||(k==='goma'&&gomaOff())}
 function offBtn(k){if(k==='goma'||k==='beer'||!ST)return '';const off=isOff(k);return `<div class="row" style="margin-top:6px"><span>${T(off?'下架中，客人不會點':'上架中')}</span><button class="btn alt" data-act="offtog" data-id="${k}">${T(off?'重新上架':'暫時下架')}</button></div>`}
@@ -1000,7 +1003,7 @@ function sashimiG(fish){
     if(fish[0])s+=slices(fish[0],20,58);if(fish[1])s+=slices(fish[1],58,60)}
   return s;
 }
-const NC={buta:{raw:'#f4b2a6',done:'#b8692e',burnt:'#2a1b14'},gyu:{raw:'#c8424a',done:'#7a3a1e',burnt:'#1f1410'},ika:{raw:'#f6e6dc',done:'#d98a3a',burnt:'#2b1d14'},
+const NC={miso:{raw:'#efe2c0',done:'#c9662b',burnt:'#2a1b14'},chashurice:{raw:'#f6eedb',done:'#b8702e',burnt:'#2a1b14'},buta:{raw:'#f4b2a6',done:'#b8692e',burnt:'#2a1b14'},gyu:{raw:'#c8424a',done:'#7a3a1e',burnt:'#1f1410'},ika:{raw:'#f6e6dc',done:'#d98a3a',burnt:'#2b1d14'},
   hotate:{raw:'#f8f0e2',done:'#f0c070',burnt:'#3a2a1c'},ebiten:{raw:'#f0a090',done:'#f2c35a',burnt:'#3a2614'},kakifry:{raw:'#a8a4a0',done:'#e0a040',burnt:'#30200f'},
   koro:{raw:'#f3dfb0',done:'#d9922e',burnt:'#2e1e12'},tori:{raw:'#f1bcaa',done:'#b8621e',burnt:'#2a1a10'},katsu:{raw:'#f2c8b8',done:'#c9852e',burnt:'#2a1b12'},taiyaki:{raw:'#f6e4b4',done:'#d8953a',burnt:'#2a1a10'},takoyaki:{raw:'#f7e8b2',mid:'#e6b45e',done:'#c98a3a',burnt:'#2a1b12'}};
 /* takoyaki: 2x2 balls. fl=false: batter just poured (pale, octopus piece showing); fl=true & raw: flipped, round golden ball; done: sauce, mayo, aonori, bonito */
@@ -1037,7 +1040,13 @@ function onigArt(st,s){
   if(s>=2||st==='done')o+=`<path d="M44 28q4-6 9-3" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".7"/><path d="M30 54q20 5 40 0" stroke="#fff" stroke-width="2.5" fill="none" opacity=".4"/>`;
   if(st==='done')o+=[[46,44],[56,50],[40,54],[62,58],[50,36]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="2" ry="1.2" fill="#fffaf0"/>`).join('');
   return o}
-function pieceArt(k,st){if(k==='tamagoyaki')return eggArt(st,3,false);if(k==='yakionigiri')return onigArt(st,2);const c=NC[k][st],dn=st==='done';let s='';
+function lamenArt(k,st){
+  const dn=st==='done',bu=st==='burnt';
+  if(k==='miso'){const brothC=bu?'#2a1b14':dn?'#b5652a':'#d9c8a0',noodC=bu?'#3a2a1c':dn?'#f6d77a':'#efe4cc';
+    return `<path d="M8 46h84q-4 36-42 36q-38 0-42-36z" fill="#f4efe4" stroke="${O}" stroke-width="4"/><ellipse cx="50" cy="46" rx="40" ry="8" fill="${brothC}" stroke="${O}" stroke-width="2.5"/><path d="M26 44q6-7 12 0t12 0t12 0" stroke="${noodC}" stroke-width="2.5" fill="none"/>${dn?`<rect x="56" y="34" width="16" height="10" rx="3" fill="#d9825a" stroke="${O}" stroke-width="2"/><circle cx="34" cy="38" r="4" fill="#f6e08a" stroke="${O}" stroke-width="1.5"/>`:''}`}
+  const riceC=bu?'#4a3220':dn?'#fbf6ea':'#f7f3e8',chashC=bu?'#2a1b14':dn?'#b8582e':'#f0b8a8';
+  return `${plateG()}<path d="M16 60q0-30 34-30q34 0 34 30z" fill="${riceC}" stroke="${O}" stroke-width="3.5"/><path d="M34 46q16-12 32 0q-2 10-16 10q-14 0-16-10z" fill="${chashC}" stroke="${O}" stroke-width="2.5"/>`}
+function pieceArt(k,st){if(k==='miso'||k==='chashurice')return lamenArt(k,st);if(k==='tamagoyaki')return eggArt(st,3,false);if(k==='yakionigiri')return onigArt(st,2);const c=NC[k][st],dn=st==='done';let s='';
   if(k==='buta')[30,48,66].forEach(y=>{s+=`<path d="M14 ${y}q12-9 24 0t24 0t24 0l0 11q-12 9-24 0t-24 0t-24 0z" fill="${c}" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`;if(st==='raw')s+=`<path d="M20 ${y+5}q10-6 20 0t20 0" stroke="#fff" stroke-width="3" fill="none" opacity=".7"/>`;if(dn)s+=`<path d="M22 ${y+3}q8-5 16 0M52 ${y+3}q8-5 16 0" stroke="#ffd59a" stroke-width="2.5" fill="none"/>`});
   if(k==='gyu')[[20,28],[52,24],[28,56],[58,54]].forEach(([x,y])=>{s+=`<rect x="${x}" y="${y}" width="24" height="24" rx="5" fill="${c}" stroke="${O}" stroke-width="3"/><path d="M${x+4} ${y+5}h16" stroke="#fff" stroke-width="3" opacity="${st==='raw'?.5:.25}"/>`;if(dn)s+=`<path d="M${x+5} ${y+19}l8-8M${x+11} ${y+21}l8-8" stroke="#3a1a0a" stroke-width="2.5"/>`});
   if(k==='ika'){s+=`<path d="M30 24q20-16 40 0l-3 44q-17 10-34 0z" fill="${c}" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M31 26l-10-10l15 3zM69 26l10-10l-15 3z" fill="${c}" stroke="${O}" stroke-width="2.5" stroke-linejoin="round"/>`+[38,46,54,62].map(x=>`<path d="M${x} 72q-3 10 1 18" stroke="${O}" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M${x} 72q-3 10 1 18" stroke="${c}" stroke-width="3" fill="none" stroke-linecap="round"/>`).join('');if(st!=='raw')s+=`<path d="M37 36l26 9M37 47l26 9M38 58l23 7" stroke="${st==='burnt'?'#000':'#8a3a10'}" stroke-width="2.5"/>`}
@@ -1274,7 +1283,7 @@ function drawBg(){
 /* ================= yatai (2nd shop): data, art, stations ================= */
 const RM_PRICE=200000,RPW=48,MPW=31;
 const RNEW=[{id:'ramune',cost:20000},{id:'friedrice',cost:40000},{id:'oden',cost:60000},{id:'tamago',cost:30000,zh:'溏心蛋',d:'拉麵多一種配料，客人會點溏心蛋拉麵。'},{id:'corn',cost:45000,zh:'奶油玉米',d:'拉麵再多一種配料，客人會點奶油玉米拉麵。'},
-  {id:'tori',cost:45000,k2:1},{id:'katsu',cost:85000,k2:1},{id:'goma',cost:25000,k2:1},{id:'taiyaki',cost:120000,k2:1,need:()=>((ST.rm&&ST.rm.fried)||0)>=TAI_NEED}];
+  {id:'tori',cost:45000,k2:1},{id:'katsu',cost:85000,k2:1},{id:'goma',cost:25000,k2:1},{id:'miso',cost:30000,k2:1,need:()=>lamenOn()},{id:'chashurice',cost:20000,k2:1,need:()=>lamenOn()},{id:'taiyaki',cost:120000,k2:1,need:()=>((ST.rm&&ST.rm.fried)||0)>=TAI_NEED}];
 const RTOPS=['chashu','egg','corn'],TOPN={chashu:'叉燒',egg:'溏心蛋',corn:'奶油玉米'},TOPR={chashu:'叉燒拉麵',egg:'溏心蛋拉麵',corn:'奶油玉米拉麵'};
 function topOn(t){return t==='chashu'||(t==='egg'&&has('tamago'))||(t==='corn'&&has('corn'))}
 const RUPS=[
@@ -1294,6 +1303,7 @@ const RUPS=[
   {id:'riron',zh:'鑄鐵煎台',d:'煎台受熱更均勻，煎餃和炒飯晚 5 秒才會焦。',cost:28000,ok:()=>!rmUp('iron',0),go:()=>ST.rm.up.iron=1,done:()=>!!rmUp('iron',0)},
   {id:'rodenf',zh:'炭火關東煮爐',d:'關東煮燉好的時間 8 秒 → 5 秒。',cost:24000,ok:()=>!rmUp('odenf',0),go:()=>ST.rm.up.odenf=1,done:()=>!!rmUp('odenf',0)},
   {id:'rtanuki',zh:'信樂燒狸貓',d:'吧台上擺一隻招財狸貓，屋台的小費 +30%。',cost:60000,ok:()=>!rmUp('tanuki',0),go:()=>ST.rm.up.tanuki=1,done:()=>!!rmUp('tanuki',0)},
+  {id:'lamen',k2:1,zh:'拉麵台',d:'第三廚房：可以做味噌拉麵和叉燒飯。',cost:35000,ok:()=>rmK2(),go:()=>ST.rm.lamen=1,done:()=>lamenOn(),need:'先擴建二號廚房'},
   {id:'rfry4',k2:1,zh:'第四個炸籃',d:'二號廚房的油鍋 3 → 4 籃。',cost:45000,ok:()=>rmK2()&&rfryN()===3,go:()=>ST.rm.up.fry=4,done:()=>rfryN()>=4},
   {id:'rfry5',k2:1,zh:'第五個炸籃',d:'油鍋 4 → 5 籃，尖峰時段也炸得過來。',cost:95000,ok:()=>rmK2()&&rfryN()===4,go:()=>ST.rm.up.fry=5,done:()=>rfryN()>=5,need:'先買第四個炸籃'},
   {id:'roil',k2:1,zh:'濾油機',d:'油一直保持乾淨，可樂餅、唐揚雞、炸豬排晚 5 秒才會焦。',cost:55000,ok:()=>rmK2()&&!rmUp('oil',0),go:()=>ST.rm.up.oil=1,done:()=>!!rmUp('oil',0)},
@@ -1379,6 +1389,13 @@ function rfryHTML(){
     else inner=`<div style="opacity:.22;width:100%;height:100%">${sv(`<rect x="14" y="20" width="72" height="60" rx="6" fill="none" stroke="#5a3a10" stroke-width="5"/><path d="M14 40h72M14 60h72M38 20v60M62 20v60" stroke="#5a3a10" stroke-width="3"/>`)}</div>`;
     s+=`<div class="st slot" data-rf="${i}" style="left:${x}px;top:20px;width:${FW-4}px;height:144px;${st==='done'?'box-shadow:0 0 0 3px #fff4a8 inset;background:#fff4a822':''}"><div style="position:absolute;left:-3px;right:-3px;top:38px;height:${FW+2}px">${inner}</div>${bar}</div>`}
   return s+`<span class="lbl">${T('油鍋')}</span>`}
+function lamenHTML(){
+  let s=`<svg viewBox="0 0 170 182" style="position:absolute;inset:0"><rect x="2" y="8" width="166" height="166" rx="12" fill="#1e1f22" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="150" height="150" rx="6" fill="#3d4147"/><path d="M85 22v140" stroke="#fff" stroke-width="3" opacity=".08"/></svg>`;
+  for(let i=0;i<2;i++){const x=10+i*85;
+    const g=R.lamen[i];let inner='',bar='',st='';
+    if(g){st=cookState(g.t,g.kind);inner=sv(pieceArt(g.kind,st));bar=cookBar(g.t,g.kind,st)}
+    s+=`<div class="st slot" data-lm="${i}" style="left:${x}px;top:18px;width:83px;height:146px;${st==='done'?'box-shadow:0 0 0 3px #ffc65a inset;background:#ffc65a22':''}"><div style="position:absolute;left:-4px;right:-4px;top:40px;height:91px">${inner}</div>${bar}</div>`}
+  return s+`<span class="lbl">${T('拉麵台')}</span>`}
 function tyakiHTML(){
   let s=`<svg viewBox="0 0 170 182" style="position:absolute;inset:0"><rect x="2" y="8" width="166" height="166" rx="12" fill="#1e1f22" stroke="${O}" stroke-width="4"/><rect x="8" y="16" width="154" height="150" rx="6" fill="#3a3d42"/></svg>`;
   if(!has('taiyaki'))return s+`<span class="lbl">？？？</span><div class="locked" style="font-size:22px">？？？</div>`;
@@ -1919,7 +1936,7 @@ const LAND_R={tap:{x:10,y:406,w:100,h:122},ramune:{x:10,y:534,w:100,h:58},lsour:
   rmpan:{x:206,y:410,w:210,h:182},rawGyoza:{x:422,y:406,w:72,h:90},rawRice:{x:422,y:502,w:72,h:90},rawMen:{x:500,y:406,w:72,h:90},odenRaw:{x:500,y:502,w:72,h:90},
   mpot:{x:578,y:410,w:170,h:182},bowls:{x:754,y:406,w:110,h:128},trash:{x:754,y:540,w:110,h:52},rmtop:{x:870,y:406,w:84,h:186},warmT:{x:262,y:346,w:440,h:54},
   rfry:{x:10,y:410,w:300,h:182,pg:2},rawKoro:{x:316,y:406,w:72,h:90,pg:2},rawTori:{x:316,y:502,w:72,h:90,pg:2},rawKatsu:{x:394,y:406,w:72,h:90,pg:2},goma:{x:394,y:502,w:72,h:90,pg:2},
-  tyaki:{x:472,y:410,w:170,h:182,pg:2},rawTai:{x:648,y:406,w:84,h:90,pg:2},trash2:{x:648,y:540,w:84,h:52,pg:2},pgbtn:{x:786,y:354,w:166,h:44,pg:0}};
+  tyaki:{x:472,y:410,w:170,h:182,pg:2},rawTai:{x:648,y:406,w:84,h:90,pg:2},trash2:{x:648,y:540,w:84,h:52,pg:2},pgbtn:{x:786,y:354,w:166,h:44,pg:0},lamen:{x:10,y:410,w:170,h:182,pg:3},rawMiso:{x:190,y:406,w:72,h:90,pg:3},rawChashu:{x:190,y:502,w:72,h:90,pg:3}};
 /* 海風壽司 layouts (phase 1: tap + 捲壽司台 + 4 raw trays; warmT kept only because buildStations expects it) */
 const SU_LAND={tap:{x:10,y:406,w:100,h:186},maki:{x:122,y:410,w:290,h:182},trash2:{x:790,y:346,w:72,h:54},
   rawSRice:{x:486,y:406,w:64,h:90},rawSNori:{x:552,y:406,w:64,h:90},rawNTama:{x:618,y:406,w:64,h:90},rawNSal:{x:684,y:406,w:64,h:90},rawNTuna:{x:750,y:406,w:64,h:90},rawNIka:{x:816,y:406,w:64,h:90},
@@ -1933,7 +1950,7 @@ const PORT_R={tap:{x:10,y:418,w:96,h:122,k:1.12},ramune:{x:10,y:561.4,w:96,h:58,
   rawGyoza:{x:466,y:418,w:72,h:90,k:1.12},rawRice:{x:466,y:525.5,w:72,h:90,k:1.12},rawMen:{x:11,y:636,w:72,h:90,k:1.3},odenRaw:{x:11,y:760,w:72,h:90,k:1.3},
   mpot:{x:112,y:636,w:170,h:182,k:1.3},bowls:{x:342,y:636,w:110,h:128,k:1.3},trash:{x:342,y:812,w:110,h:52,k:1.3},rmtop:{x:494,y:636,w:84,h:186,k:1.25},warmT:{x:8,y:340,w:360,h:54,k:1.12},
   rfry:{x:10,y:418,w:300,h:182,k:1.12,pg:2},rawKoro:{x:362,y:418,w:72,h:90,k:1.12,pg:2},rawTori:{x:362,y:525.5,w:72,h:90,k:1.12,pg:2},rawKatsu:{x:458,y:418,w:72,h:90,k:1.12,pg:2},goma:{x:458,y:525.5,w:72,h:90,k:1.12,pg:2},
-  tyaki:{x:11,y:636,w:170,h:182,k:1.3,pg:2},rawTai:{x:262,y:636,w:84,h:90,k:1.3,pg:2},trash2:{x:262,y:812,w:84,h:52,k:1.3,pg:2},pgbtn:{x:418,y:350,w:174,h:46,pg:0}};
+  tyaki:{x:11,y:636,w:170,h:182,k:1.3,pg:2},rawTai:{x:262,y:636,w:84,h:90,k:1.3,pg:2},trash2:{x:262,y:812,w:84,h:52,k:1.3,pg:2},pgbtn:{x:418,y:350,w:174,h:46,pg:0},lamen:{x:11,y:636,w:170,h:182,k:1.3,pg:3},rawMiso:{x:200,y:636,w:84,h:100,k:1.3,pg:3},rawChashu:{x:200,y:752,w:84,h:100,k:1.3,pg:3}};
 let LAY='land',W=960,H=600,L=LAND,KY=400,KK=1;
 function spreadLand(W){makiN();const LAND=CUR==='tep'?TP_LAND:CUR==='sushi'?SU_LAND:CUR==='rm'?LAND_R:LAND_IZ;KY=W>=1240?350:400;/* 廚房跟著舞台一起放大：寬度夠就按寬放大，高度夠就按高放大（站位最底到 H 為止），取較小值，不超出舞台；最少 1、最多 1.5 */KK=Math.max(1,Math.min(1.5,(W-40)/1000,(H-KY-8)/186));const ex=W-960,out={};
   for(const k in LAND)out[k]=Object.assign({},LAND[k],{x:LAND[k].x+ex/2});
@@ -2004,15 +2021,15 @@ function stHTML(name){
   if(name==='rawC')return sv(`<path d="M10 10h116q-4 40-58 40q-54 0-58-40z" fill="#c9ced4" stroke="${O}" stroke-width="3"/><g transform="translate(10 -28)">${karaagePieces('raw',8,0)}</g><g transform="translate(44 -30)">${karaagePieces('raw',8,0)}</g>`,'0 0 136 58')+`<span class="lbl">${T('生雞肉')} ¥200</span>`+lockDiv(ITEMS.karaage.day);
   if(RAWMAP[name]){const k=RAWMAP[name],big=name==='rawEbi'||name==='rawKaki';
     return (big?sv(`<path d="M6 6h91q-4 42-45 42q-42 0-46-42z" fill="#c9ced4" stroke="${O}" stroke-width="3"/><g transform="translate(8 -10) scale(.48)">${pieceArt(k,'raw')}</g><g transform="translate(48 -8) scale(.48)">${pieceArt(k,'raw')}</g>`,'0 0 103 58')
-      :sv(`<rect x="4" y="10" width="64" height="72" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/><g transform="translate(4 14) scale(.64)">${pieceArt(k,'raw')}</g>`,'0 0 72 90'))+`<span class="lbl">${T({buta:'豬肉',gyu:'和牛',ika:'魷魚',hotate:'扇貝',ebiten:'鮮蝦',kakifry:'牡蠣',koro:'生可樂餅',tori:'雞腿肉',katsu:'豬里肌',takoyaki:'章魚麵糊',tamagoyaki:'蛋液',yakionigiri:'生飯糰'}[k])} ¥${costOf(k)}</span>`+(has(k)?'':`<div class="locked">${T('商店<br>解鎖')}</div>`)}
+      :sv(`<rect x="4" y="10" width="64" height="72" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/><g transform="translate(4 14) scale(.64)">${pieceArt(k,'raw')}</g>`,'0 0 72 90'))+`<span class="lbl">${T({buta:'豬肉',gyu:'和牛',ika:'魷魚',hotate:'扇貝',ebiten:'鮮蝦',kakifry:'牡蠣',koro:'生可樂餅',tori:'雞腿肉',katsu:'豬里肌',takoyaki:'章魚麵糊',miso:'味噌麵',chashurice:'白飯',tamagoyaki:'蛋液',yakionigiri:'生飯糰'}[k])} ¥${costOf(k)}</span>`+(has(k)?'':`<div class="locked">${T('商店<br>解鎖')}</div>`)}
   if(name==='tsukemono'||name==='umeshu'||name==='reishu')return sv(`<g transform="translate(20 -5) scale(.64)">${newIcon(name)}</g>`,'0 0 100 58')+`<span class="lbl">${JP(name)}</span>`+(has(name)?'':`<div class="locked" style="font-size:12px">${T('商店<br>解鎖')}</div>`);
   if(name==='rawTama')return sv(`<rect x="4" y="12" width="64" height="66" rx="8" fill="#b97d45" stroke="${O}" stroke-width="3"/><rect x="10" y="18" width="52" height="54" rx="5" fill="#f7ecd3" stroke="${O}" stroke-width="2"/><path d="M12 40h48q-2 24-24 26q-22-2-24-26z" fill="#f3efe6" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><ellipse cx="36" cy="40" rx="24" ry="7" fill="#f6c21e" stroke="${O}" stroke-width="2.5"/><path d="M26 39q8-3 16 0" stroke="#fff" stroke-width="2.5" fill="none" opacity=".7"/><path d="M46 28L63 17M50 32L66 26" stroke="${O}" stroke-width="3" stroke-linecap="round"/>`,'0 0 72 90')+`<span class="lbl">${T('蛋液')} ¥${costOf('tamagoyaki')}</span>`+(has('tamagoyaki')?'':`<div class="locked">${T('商店<br>解鎖')}</div>`);
   if(name==='rawOnig')return sv(`<rect x="4" y="12" width="64" height="66" rx="8" fill="#b97d45" stroke="${O}" stroke-width="3"/><rect x="10" y="18" width="52" height="54" rx="5" fill="#f7ecd3" stroke="${O}" stroke-width="2"/><g transform="translate(9 14) scale(.62)">${onigArt('raw',0)}</g><ellipse cx="54" cy="64" rx="9" ry="6" fill="#f3efe6" stroke="${O}" stroke-width="2"/>`,'0 0 72 90')+`<span class="lbl">${T('生飯糰')} ¥${costOf('yakionigiri')}</span>`+(has('yakionigiri')?'':`<div class="locked">${T('商店<br>解鎖')}</div>`);
   if(name==='highball'||name==='hiyayakko')return sv(`<g transform="translate(6 -4) scale(.88)">${newIcon(name)}</g>`,'0 0 100 90')+`<span class="lbl">${JP(name)}</span>`+(has(name)?'':`<div class="locked">${T('商店<br>解鎖')}</div>`);
   if(name==='deco2')return sv(`<rect x="6" y="70" width="88" height="10" fill="#3f2416"/><rect x="12" y="20" width="18" height="50" rx="5" fill="#2a1a12" stroke="${O}" stroke-width="2.5"/><rect x="14" y="36" width="14" height="16" fill="#f3e6c8"/><rect x="38" y="28" width="20" height="42" rx="6" fill="#c98a2a" stroke="${O}" stroke-width="2.5"/><rect x="66" y="40" width="20" height="30" rx="5" fill="#f4f4f4" stroke="${O}" stroke-width="2.5"/><circle cx="76" cy="38" r="8" fill="#d8d8d8" stroke="${O}" stroke-width="2.5"/><path d="M14 100h72" stroke="#5a3a24" stroke-width="6"/>`,'0 0 100 128')+`<span class="lbl">${T('調味料')}</span>`;
-  if(name==='trash2'&&!(R.held&&['grill','fryer','board','tap','warm','teppan','tempura','rmpan','maki','bowl','oden','rfry','tyaki','tako','tama','onig','tpn'].includes(R.held.src)))return sv(`<rect x="4" y="6" width="120" height="40" rx="10" fill="#5a5f66" stroke="${O}" stroke-width="3"/><path d="M48 16h32M58 16v-4h12v4M52 16l3 24h18l3-24" fill="#8a9098" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`,'0 0 128 52')+`<span class="lbl">${T('垃圾桶')}</span>`;
+  if(name==='trash2'&&!(R.held&&['grill','fryer','board','tap','warm','teppan','tempura','rmpan','maki','bowl','oden','rfry','tyaki','lamen','tako','tama','onig','tpn'].includes(R.held.src)))return sv(`<rect x="4" y="6" width="120" height="40" rx="10" fill="#5a5f66" stroke="${O}" stroke-width="3"/><path d="M48 16h32M58 16v-4h12v4M52 16l3 24h18l3-24" fill="#8a9098" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`,'0 0 128 52')+`<span class="lbl">${T('垃圾桶')}</span>`;
   if(name==='trash2')name='trash';
-  if(name==='trash')return sv(`<rect x="4" y="6" width="120" height="40" rx="10" fill="#5a5f66" stroke="${O}" stroke-width="3"/><path d="M48 16h32M58 16v-4h12v4M52 16l3 24h18l3-24" fill="#8a9098" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`,'0 0 128 52')+`<span class="lbl">${R.held&&['grill','fryer','board','tap','warm','rmpan','maki','bowl','oden','teppan','tempura','rfry','tyaki','tako','tama','onig','tpn'].includes(R.held.src)?T('丟掉手上的'):T(CUR==='rm'?'清空拉麵碗':'清空砧板')}</span>`;
+  if(name==='trash')return sv(`<rect x="4" y="6" width="120" height="40" rx="10" fill="#5a5f66" stroke="${O}" stroke-width="3"/><path d="M48 16h32M58 16v-4h12v4M52 16l3 24h18l3-24" fill="#8a9098" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`,'0 0 128 52')+`<span class="lbl">${R.held&&['grill','fryer','board','tap','warm','rmpan','maki','bowl','oden','teppan','tempura','rfry','tyaki','lamen','tako','tama','onig','tpn'].includes(R.held.src)?T('丟掉手上的'):T(CUR==='rm'?'清空拉麵碗':'清空砧板')}</span>`;
   if(name==='board'){const n=boardsN();
     return `<div style="display:flex;flex-direction:column;gap:3px;width:100%;height:100%">${R.boards.slice(0,n).map((b,i)=>{let art='';
       if(b.base==='bowl')art=chazukeG({bowl:1,rice:b.rice,top:b.top,tea:b.tea});else if(b.base==='boat')art=sashimiG(b.fish);
@@ -2178,9 +2195,9 @@ function buildStations(){
   /* 海風壽司：順序提示做成檯面上的按鈕，放在槍的左邊（沒有槍時，也留出槍的位置再往左放），手指比較好按 */
   delete L.suord;if(CUR==='sushi'){const sk=L.warmT.k||1,ow=84,bx=(L.gunT?L.gunT.x:L.warmT.x-GUNW*sk-64)-ow-8;if(bx>=8)L.suord={x:bx,y:L.warmT.y,w:ow,h:54,k:sk}}
   const host=$('stations');host.innerHTML='';cache.clear();
-  for(const k in L){const r=L[k],el=document.createElement('div');el.className=k==='pgbtn'?'pgbtn':'st'+(['grill','fryer','ing','warmT','tap','board','teppan','tempura','deco2','rmpan','maki','mpot','bowls','rmtop','rfry','tyaki','tako','tama','onig','tpn'].includes(k)?' host':'');el.id='st-'+k;if(k!=='pgbtn')el.dataset.st=k;
+  for(const k in L){const r=L[k],el=document.createElement('div');el.className=k==='pgbtn'?'pgbtn':'st'+(['grill','fryer','ing','warmT','tap','board','teppan','tempura','deco2','rmpan','maki','mpot','bowls','rmtop','rfry','tyaki','lamen','tako','tama','onig','tpn'].includes(k)?' host':'');el.id='st-'+k;if(k!=='pgbtn')el.dataset.st=k;
     Object.assign(el.style,{left:r.x+'px',top:r.y+'px',width:r.w+'px',height:r.h+'px'});el.style.setProperty('--k',r.k||1);
-    if(['grill','fryer','ing','warmT','tap','board','teppan','tempura','deco2','rmpan','maki','mpot','bowls','rmtop','rfry','tyaki','tako','tama','onig','tpn'].includes(k)){el.style.cursor='default'}
+    if(['grill','fryer','ing','warmT','tap','board','teppan','tempura','deco2','rmpan','maki','mpot','bowls','rmtop','rfry','tyaki','lamen','tako','tama','onig','tpn'].includes(k)){el.style.cursor='default'}
     host.appendChild(el)}
   $('fx').innerHTML='<div class="hand" id="hand" hidden></div><div class="toast" id="toastEl"></div>';
   setPage(KP);
@@ -2189,7 +2206,7 @@ function setHTML(el,h){if(cache.get(el)!==h){el.innerHTML=h;cache.set(el,h)}}
 function renderStations(){
   for(const k in L){const el=$('st-'+k);if(!el)continue;
     if(el.hidden&&k!=='pgbtn')continue;
-    setHTML(el,k==='gunT'?gunStandHTML():k==='grill'?grillHTML():k==='fryer'?fryerHTML():k==='warmT'?warmHTML():k==='teppan'?teppanHTML():k==='tempura'?tempuraHTML():k==='maki'?makiHTML():k==='tpn'?tpnHTML():k==='rmpan'?rmpanHTML():k==='rfry'?rfryHTML():k==='tyaki'?tyakiHTML():k==='tako'?takoHTML():k==='tama'?stepHTML('tama'):k==='onig'?stepHTML('onig'):k==='mpot'?mpotHTML():k==='pgbtn'?pgHTML():k==='suord'?suOrdHTML():stHTML(k));
+    setHTML(el,k==='gunT'?gunStandHTML():k==='grill'?grillHTML():k==='fryer'?fryerHTML():k==='warmT'?warmHTML():k==='teppan'?teppanHTML():k==='tempura'?tempuraHTML():k==='maki'?makiHTML():k==='tpn'?tpnHTML():k==='rmpan'?rmpanHTML():k==='rfry'?rfryHTML():k==='tyaki'?tyakiHTML():k==='tako'?takoHTML():k==='lamen'?lamenHTML():k==='tama'?stepHTML('tama'):k==='onig'?stepHTML('onig'):k==='mpot'?mpotHTML():k==='pgbtn'?pgHTML():k==='suord'?suOrdHTML():stHTML(k));
     el.classList.toggle('held',!!R.held&&R.held.src===k&&R.held.i==null);
     if(k==='gunT')el.classList.toggle('alert',gunAlert());}
   document.querySelectorAll('[data-grill]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='grill'&&R.held.i==+e.dataset.grill));
@@ -2208,7 +2225,7 @@ function renderStations(){
   document.querySelectorAll('[data-og]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='onig'&&R.held.i==+e.dataset.og));
   document.querySelectorAll('[data-tpn]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='tpn'&&R.held.i==+e.dataset.tpn));
   /* warning on the stations of the kitchen you are in: a slot that is about to burn (or a takoyaki waiting for its flip) flashes red; "about to burn" also gets a 快焦！ tag */
-  [['data-grill',R.grill,g=>g.kind],['data-fry',R.fryer,()=>'karaage'],['data-tep',R.teppan,g=>g.kind],['data-tem',R.tempura,g=>g.kind],['data-mk',R.maki,g=>g.kind],['data-rp',R.rmpan,g=>g.kind],['data-rf',R.rfry,g=>g.kind],['data-ty',R.tyaki,()=>'taiyaki'],['data-mp',R.mpot,()=>'noodle'],['data-tk',R.tako,()=>'takoyaki'],['data-tm',R.tama,g=>g.kind],['data-og',R.onig,g=>g.kind],['data-tpn',R.tpn||[],g=>g.kind]].forEach(([at,arr,kf])=>
+  [['data-grill',R.grill,g=>g.kind],['data-fry',R.fryer,()=>'karaage'],['data-tep',R.teppan,g=>g.kind],['data-tem',R.tempura,g=>g.kind],['data-mk',R.maki,g=>g.kind],['data-rp',R.rmpan,g=>g.kind],['data-rf',R.rfry,g=>g.kind],['data-ty',R.tyaki,()=>'taiyaki'],['data-lm',R.lamen,g=>g.kind],['data-mp',R.mpot,()=>'noodle'],['data-tk',R.tako,()=>'takoyaki'],['data-tm',R.tama,g=>g.kind],['data-og',R.onig,g=>g.kind],['data-tpn',R.tpn||[],g=>g.kind]].forEach(([at,arr,kf])=>
     document.querySelectorAll('['+at+']').forEach(e=>{const g=arr[+e.getAttribute(at)],flip=(at==='data-tk'&&needFlip(g))||((at==='data-tm'||at==='data-og')&&needStep(g))||(at==='data-tpn'&&needTp(g)),burn=!!g&&!flip&&soonBurn(g,kf(g));
       e.classList.toggle('soon',flip||burn);e.classList.toggle('soonb',(flip||burn)&&Math.floor(R.t*5)%2===1);
       let tg=e.querySelector(':scope>.soontag');if(burn&&!tg){tg=document.createElement('span');tg.className='soontag';tg.textContent=T('快焦！');e.appendChild(tg)}else if(!burn&&tg)tg.remove();
@@ -2282,7 +2299,7 @@ function startDay(){pastSave();achDay();DAYLEN=159;setTimeout(()=>sfx('open'),80
   const un=unlocked(ST.day),avg=un.reduce((s,k)=>s+ITEMS[k].price*ITEMS[k].w,0)/un.reduce((s,k)=>s+ITEMS[k].w,0);
   const P=quota*avg*(ST.day>=3?1.85:1.55)*1.15*.68;
   R={t:0,quota,closed:false,spawned:0,lost:0,served:0,earned:0,seats:new Array(seatsN()).fill(null),cool:.8,held:null,
-     taps:[{st:'empty',t:0},{st:'empty',t:0}],grill:new Array(5).fill(null),fryer:new Array(3).fill(null),warm:new Array(12).fill(null),teppan:new Array(4).fill(null),tempura:new Array(3).fill(null),boards:[emptyBoard(),emptyBoard()],lastBoard:0,rmpan:new Array(rpanN()).fill(null),rfry:new Array(5).fill(null),tyaki:new Array(3).fill(null),tako:new Array(3).fill(null),tama:new Array(2).fill(null),onig:new Array(2).fill(null),tpn:new Array(tpnN()).fill(null),tpc:0,maki:new Array(makiN()).fill(null),mpot:new Array(mpotN()).fill(null),bowls:new Array(bowlsN()).fill(null),lastBowl:0,oden:{n:0,cook:[]},where:CUR,wage:CUR==='rm'?rmWages():CUR==='sushi'?suWages():CUR==='tep'?tpWages():wages(),rent:rentOf(),staffT:1,helpT:1,
+     taps:[{st:'empty',t:0},{st:'empty',t:0}],grill:new Array(5).fill(null),fryer:new Array(3).fill(null),warm:new Array(12).fill(null),teppan:new Array(4).fill(null),tempura:new Array(3).fill(null),boards:[emptyBoard(),emptyBoard()],lastBoard:0,rmpan:new Array(rpanN()).fill(null),rfry:new Array(5).fill(null),tyaki:new Array(3).fill(null),lamen:new Array(2).fill(null),tako:new Array(3).fill(null),tama:new Array(2).fill(null),onig:new Array(2).fill(null),tpn:new Array(tpnN()).fill(null),tpc:0,maki:new Array(makiN()).fill(null),mpot:new Array(mpotN()).fill(null),bowls:new Array(bowlsN()).fill(null),lastBowl:0,oden:{n:0,cook:[]},where:CUR,wage:CUR==='rm'?rmWages():CUR==='sushi'?suWages():CUR==='tep'?tpWages():wages(),rent:rentOf(),staffT:1,helpT:1,
      goals:[Math.round(P*.42/100)*100,Math.round(P*.65/100)*100,Math.round(P*.85/100)*100],cost:0,stolen:0,fines:0,aim:false,rob:null,ev:evNow(),paused:false,over:false};
   const pre=ST.pre&&ST.pre.day===ST.day?ST.pre:null;if(pre){if(pre.ext){R.extH=pre.ext;DAYLEN+=pre.ext*159/8.5}if(pre.nb)R.fxNb=1;if(pre.fast)R.fxFast=1;if(pre.tip)R.fxTip=1;if(pre.pt)R.ptHeld=pre.pt;ST.pre=null}
   KP=1;ST.fresh=(ST.fresh||[]).filter(k=>ITEMS[k]&&(ITEMS[k].shop||'iz')!==CUR&&ITEMS[k].shop!=='both');save();
@@ -2332,7 +2349,7 @@ function step(dt){
   if(CUR==='sushi')suStaffStep(dt);else if(CUR==='tep')tpStaffStep(dt);else if(CUR!=='rm')staffStep(dt);else{rmStaffStep(dt);rmCookStep(dt);rmFryStep(dt)}
   if(R.fxFast&&fastCook())renderStations();
   if(R.ptHeld>0&&R.seats.some(c=>c&&c.st==='wait'&&c.pat<c.max*.3)){R.ptHeld--;R.seats.forEach(c=>{if(c&&c.st==='wait')c.pat=c.max});renderHUD();toast(T('備妥的耐心回復自動生效！'))}
-  const cdt=dt*cookMul();R.rmpan.forEach(g=>{if(g)g.t+=dt});R.maki.forEach(g=>{if(g)g.t+=dt});R.rfry.forEach(g=>{if(g)g.t+=dt});R.tyaki.forEach(g=>{if(g)g.t+=dt});R.mpot.forEach(g=>{if(g)g.t+=dt*(rmUp('fast',0)?1.4:1)});
+  const cdt=dt*cookMul();R.rmpan.forEach(g=>{if(g)g.t+=dt});R.maki.forEach(g=>{if(g)g.t+=dt});R.rfry.forEach(g=>{if(g)g.t+=dt});R.tyaki.forEach(g=>{if(g)g.t+=dt});R.lamen.forEach(g=>{if(g)g.t+=dt});R.mpot.forEach(g=>{if(g)g.t+=dt*(rmUp('fast',0)?1.4:1)});
   R.oden.cook.forEach(b=>b.t+=dt);{const ot=odenT(),dn=R.oden.cook.filter(b=>b.t>=ot).reduce((s,b)=>s+(b.n||2),0);if(dn){R.oden.n+=dn;R.oden.cook=R.oden.cook.filter(b=>b.t<ot);sfx('done')}}
   R.grill.forEach(g=>{if(g)g.t+=cdt});R.fryer.forEach(f=>{if(f)f.t+=cdt});R.teppan.forEach(g=>{if(g)g.t+=cdt});R.tempura.forEach(g=>{if(g)g.t+=cdt});
   R.tako.forEach((g,i)=>{if(!g)return;if(!g.fl&&g.t>=TKFLIP){g.t=TKFLIP;g.w=(g.w||0)+cdt;if(staffLv('helper')>=2&&g.w>=TKAUTO){g.fl=1;g.w=0;sfx('pick');if(KP===3){const c=srcCenter({src:'tako',i});popup(c.x,c.y-60,T('阿健翻面'))}renderStations();return}if(g.w>TKGRACE){if(R.fxNb){g.fl=1;g.w=0}else g.t=burnAt('takoyaki')+.1}}else g.t+=cdt}); // waits for the flip (you, or 阿健 at Lv2+), burns if missed
@@ -2782,6 +2799,7 @@ function srcCenter(h){
   if(h.src==='rmpan')return at(L.rmpan,10+h.i*RPW+RPW/2,90);
   if(h.src==='rfry')return at(L.rfry,7+h.i*FW+FW/2,90);
   if(h.src==='tyaki')return at(L.tyaki,7+h.i*TYW+TYW/2,90);
+  if(h.src==='lamen')return at(L.lamen,10+h.i*85+42,90);
   if(h.src==='tako')return at(L.tako,7+h.i*TKW+TKW/2,90);
   if(h.src==='tama')return at(L.tama,7+h.i*TMW+TMW/2,90);
   if(h.src==='onig')return at(L.onig,7+h.i*ONW+ONW/2,90);
@@ -2797,7 +2815,7 @@ function heldValid(){const h=R.held;if(!h)return false;
   if(h.src==='fryer'){const f=R.fryer[h.i];return !!f&&cookState(f.t,'karaage')==='done'}
   if(h.src==='board')return boardDone(h.i);
   if(h.src==='warm')return !!R.warm[h.i];
-  if(['teppan','tempura','rmpan','maki','rfry','tyaki','tako','tama','onig','tpn'].includes(h.src)){const g=R[h.src][h.i];return !!g&&cookState(g.t,g.kind)==='done'}
+  if(['teppan','tempura','rmpan','maki','rfry','tyaki','lamen','tako','tama','onig','tpn'].includes(h.src)){const g=R[h.src][h.i];return !!g&&cookState(g.t,g.kind)==='done'}
   if(h.src==='bowl')return bowlDone(h.i);
   if(h.src==='oden')return R.oden.n>0;
   return true}
@@ -2807,7 +2825,7 @@ function consume(h){
   if(h.src==='fryer')R.fryer[h.i]=null;
   if(h.src==='board')R.boards[h.i]=emptyBoard();
   if(h.src==='warm')R.warm[h.i]=null;
-  if(['teppan','tempura','rmpan','maki','rfry','tyaki','tako','tama','onig','tpn'].includes(h.src))R[h.src][h.i]=null;
+  if(['teppan','tempura','rmpan','maki','rfry','tyaki','lamen','tako','tama','onig','tpn'].includes(h.src))R[h.src][h.i]=null;
   if(h.src==='bowl')R.bowls[h.i]=null;
   if(h.src==='oden')R.oden.n=Math.max(0,R.oden.n-1);
 }
@@ -2823,6 +2841,7 @@ function onTap(e){
   const rpn=t.closest('[data-rp]');if(rpn){clickPan('rmpan',+rpn.dataset.rp,rpn);return}
   const rfn=t.closest('[data-rf]');if(rfn){clickPan('rfry',+rfn.dataset.rf,rfn);return}
   const tyn=t.closest('[data-ty]');if(tyn){clickPan('tyaki',+tyn.dataset.ty,tyn);return}
+  const lmn=t.closest('[data-lm]');if(lmn){clickPan('lamen',+lmn.dataset.lm,lmn);return}
   const tkn=t.closest('[data-tk]');if(tkn){clickTako(+tkn.dataset.tk,tkn);return}
   const tmn2=t.closest('[data-tm]');if(tmn2){clickStep('tama',+tmn2.dataset.tm,tmn2);return}
   const ogn=t.closest('[data-og]');if(ogn){clickStep('onig',+ogn.dataset.og,ogn);return}
@@ -2842,10 +2861,10 @@ function onTap(e){
   else if(k==='odenRaw'){if(!has('oden'))return;const c1=costOf('oden'),k0=odenCap()-R.oden.n-R.oden.cook.reduce((s,b)=>s+(b.n||2),0);if(k0<=0){nope(st);toast('關東煮鍋滿了')}else{if(live()<c1)canPay(c1);else{R.oden.cook.push({t:0,n:1});const c=srcCenter({src:'oden'});charge(c1,c.x,c.y-50)}}}
   else if(k==='odenPot'){if(!has('oden'))return;if(R.oden.n>0)R.held={src:'oden',key:'oden'};else{nope(st);toast(R.oden.cook.length?'關東煮還在燉…':'先把關東煮料下鍋')}}
   else if(SU_TRAY[k]){suAdd(SU_TRAY[k],st)}
-  else if(RAWMAP[k]){const d=RAWMAP[k],pn=STN[d],arr=R[pn],i=arr.findIndex((x,j)=>!x&&j<panCap(pn));if(['rmpan','rfry','tyaki','tako','tama','onig','maki','tpn'].includes(pn)&&!has(d)&&ITEMS[d].buy)return;if(i<0){nope(st);toast(pn==='teppan'||pn==='tpn'?'鐵板滿了':pn==='rmpan'?'煎台滿了':pn==='maki'?'捲壽司台滿了':pn==='rfry'?'油鍋滿了':pn==='tako'?'章魚燒盤滿了':pn==='tama'?'玉子燒鍋滿了':pn==='onig'?'烤網滿了':pn==='tyaki'?'烤模都在用':'炸鍋滿了')}else if(canPay(costOf(d))){arr[i]={kind:d,t:0};const c=srcCenter({src:STN[d],i});charge(costOf(d),c.x,c.y-50)}}
+  else if(RAWMAP[k]){const d=RAWMAP[k],pn=STN[d],arr=R[pn],i=arr.findIndex((x,j)=>!x&&j<panCap(pn));if(['rmpan','rfry','tyaki','lamen','tako','tama','onig','maki','tpn'].includes(pn)&&!has(d)&&ITEMS[d].buy)return;if(i<0){nope(st);toast(pn==='teppan'||pn==='tpn'?'鐵板滿了':pn==='rmpan'?'煎台滿了':pn==='maki'?'捲壽司台滿了':pn==='rfry'?'油鍋滿了':pn==='tako'?'章魚燒盤滿了':pn==='tama'?'玉子燒鍋滿了':pn==='onig'?'烤網滿了':pn==='tyaki'?'烤模都在用':'炸鍋滿了')}else if(canPay(costOf(d))){arr[i]={kind:d,t:0};const c=srcCenter({src:STN[d],i});charge(costOf(d),c.x,c.y-50)}}
   else if(k==='rawN'||k==='rawT'){const kind=k==='rawN'?'negima':'tsukune',i=R.grill.findIndex((g,j)=>!g&&j<ST.up.grill);if(i<0){nope(st);toast('燒烤台滿了')}else if(canPay(costOf(kind))){R.grill[i]={kind,t:0};charge(costOf(kind),L.grill.x+10+i*GW+22,L.grill.y+40)}}
   else if(k==='rawC'){const i=R.fryer.findIndex((f,j)=>!f&&j<ST.up.fryer);if(i<0){nope(st);toast('炸籃都在用')}else if(canPay(costOf('karaage'))){R.fryer[i]={t:0};charge(costOf('karaage'),L.fryer.x+12+i*38+18,L.fryer.y+30)}}
-  else if(k==='trash'||k==='trash2'||k==='trash3'){if(R.held&&['grill','fryer','board','tap','warm','teppan','tempura','rmpan','maki','bowl','oden','rfry','tyaki','tako','tama','onig','tpn'].includes(R.held.src)){consume(R.held);R.held=null;toast('丟掉了')}else if(R.held)R.held=null;else if(CUR==='rm'){if(k==='trash2'||k==='trash3')return renderStations();const i=R.bowls[R.lastBowl]?R.lastBowl:R.bowls.findIndex(Boolean);if(i>=0){R.bowls[i]=null;toast('拉麵碗清空了')}}else if(CUR!=='sushi'&&CUR!=='tep'){const i=R.boards[R.lastBoard]&&R.boards[R.lastBoard].base?R.lastBoard:R.boards.findIndex(b=>b.base);if(i>=0){R.boards[i]=emptyBoard();toast('砧板清空了')}}}
+  else if(k==='trash'||k==='trash2'||k==='trash3'){if(R.held&&['grill','fryer','board','tap','warm','teppan','tempura','rmpan','maki','bowl','oden','rfry','tyaki','lamen','tako','tama','onig','tpn'].includes(R.held.src)){consume(R.held);R.held=null;toast('丟掉了')}else if(R.held)R.held=null;else if(CUR==='rm'){if(k==='trash2'||k==='trash3')return renderStations();const i=R.bowls[R.lastBowl]?R.lastBowl:R.bowls.findIndex(Boolean);if(i>=0){R.bowls[i]=null;toast('拉麵碗清空了')}}else if(CUR!=='sushi'&&CUR!=='tep'){const i=R.boards[R.lastBoard]&&R.boards[R.lastBoard].base?R.lastBoard:R.boards.findIndex(b=>b.base);if(i>=0){R.boards[i]=emptyBoard();toast('砧板清空了')}}}
   renderStations();
 }
 function clickPan(pn,i,el){const g=R[pn][i];if(!g)return;if(g.kind==='rice'||g.kind==='asm'){R[pn][i]=null;toast('清掉了');renderStations();return}const s=cookState(g.t,g.kind);
@@ -2875,7 +2894,7 @@ function clickFry(i,el){const f=R.fryer[i];if(!f)return;const s=cookState(f.t,'k
   renderStations()}
 function clickWarm(i,el){
   const h=R.held;
-  if(h&&['grill','fryer','board','teppan','tempura','rmpan','maki','bowl','oden','rfry','tyaki','tako','tama','onig','tpn'].includes(h.src)&&heldValid()){
+  if(h&&['grill','fryer','board','teppan','tempura','rmpan','maki','bowl','oden','rfry','tyaki','lamen','tako','tama','onig','tpn'].includes(h.src)&&heldValid()){
     let j=R.warm[i]?R.warm.findIndex((w,k)=>!w&&k<warmN()):i;
     if(j<0){nope(el);toast('保溫台滿了')}else{R.warm[j]={key:h.key};consume(h);R.held=null}
   }else if(R.warm[i])R.held={src:'warm',i,key:R.warm[i].key};
