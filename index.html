@@ -1063,6 +1063,8 @@ function lamenArt(k,st){
     const strands=[[18,40,-6],[16,50,0],[18,60,6]].map(([x,y])=>`<path d="M${x} ${y}q8-14 16 0t16 0t16 0t16 0" fill="none" stroke="${O}" stroke-width="7" stroke-linecap="round"/><path d="M${x} ${y}q8-14 16 0t16 0t16 0t16 0" fill="none" stroke="#2b5fb0" stroke-width="4" stroke-linecap="round"/>`).join('');
     return `<ellipse cx="50" cy="72" rx="40" ry="8" fill="#000" opacity=".18"/><path d="M12 44q4-20 38-20t38 20q2 22-8 28q-30 8-60 0q-10-6-8-28z" fill="#f3cf55" stroke="${O}" stroke-width="3.5" stroke-linejoin="round"/>${strands}<path d="M20 36q10-8 26-8" stroke="#fff6c0" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/><rect x="44" y="22" width="12" height="52" rx="3" fill="#d8402c" stroke="${O}" stroke-width="3"/><path d="M47 30v36" stroke="#ff9a7a" stroke-width="2" opacity=".8"/>`}
   if(k==='dandan')return dandanArt(st);
+  if((k==='miso'||k==='dandan')&&st!=='raw'){/* 2026-11-08 烹調中／成品的味噌、擔擔改用客人點單同款碗（藍碗黃麵、綠碗紅醬）；焦掉變深色 */
+    const g=k==='miso'?misoIconG():dandanIconG();return bu?g.replace(/#2b3b6e|#2f6b4a/g,'#2a1b14').replace(/#d9822b|#c8381e/g,'#3a2a1c'):g}
   if(k==='miso'){const brothC=bu?'#2a1b14':dn?'#b5652a':'#d9c8a0',noodC=bu?'#3a2a1c':dn?'#f6d77a':'#efe4cc';
     return `<path d="M8 46h84q-4 36-42 36q-38 0-42-36z" fill="#f4efe4" stroke="${O}" stroke-width="4"/><ellipse cx="50" cy="46" rx="40" ry="8" fill="${brothC}" stroke="${O}" stroke-width="2.5"/><path d="M26 44q6-7 12 0t12 0t12 0" stroke="${noodC}" stroke-width="2.5" fill="none"/>${dn?`<rect x="56" y="34" width="16" height="10" rx="3" fill="#d9825a" stroke="${O}" stroke-width="2"/><circle cx="34" cy="38" r="4" fill="#f6e08a" stroke="${O}" stroke-width="1.5"/>`:''}`}
   if(k==='chashurice'){/* 2026-11-08 烹調中／成品的叉燒飯改用客人點單的同款圖（白碗＋兩片叉燒），焦掉則變深色 */
@@ -2191,12 +2193,13 @@ function dilMul(k){return dilOf(k)/100}
 function dilHTML(k){const v=dilOf(k);return `<div class="row" style="flex-wrap:wrap;gap:4px;margin-top:6px"><span style="font-size:13px">${T('認真度')}</span>${DIL_OPTS.map(o=>`<button class="btn ${o.v===v?'':'alt'}" style="font-size:12px;padding:3px 8px" data-act="dil" data-id="${k}" data-v="${o.v}">${T(o.n)}</button>`).join('')}</div><p class="hint" style="font-size:12px">${T(v?'下次開店生效。認真度越高，動作越快，薪水也依比例變高。':'休假中：這位店員不會上班，也不領薪水。下次開店生效。')}</p>`}
 const emptyBoard=()=>({base:null,rice:0,top:null,tea:0,fish:[]});
 function warmShown(){return warmN()}
+const WARM_NAME={miso:'味噌',dandan:'擔擔',chashurice:'叉燒飯',tsukemen:'沾麵',tamagoyaki:'玉子燒',yakionigiri:'飯糰',takoyaki:'章魚燒'};
 function warmHTML(){
   const n=warmN(),m=n,tw=L.warmT.w,sw=(tw-8)/n,ic=Math.min(54,sw-6);
   let s=`<svg viewBox="0 0 ${tw} 54" style="position:absolute;inset:0"><rect x="2" y="6" width="${tw-4}" height="46" rx="10" fill="#d7dce2" stroke="${O}" stroke-width="3"/><rect x="8" y="12" width="${tw-16}" height="34" rx="6" fill="#ffd9a0" opacity=".55"/><path d="M8 44h${tw-16}" stroke="#ff8a3a" stroke-width="3" opacity=".6"/></svg>`;
   for(let i=0;i<m;i++){const x=4+i*sw;
     const w=R.warm[i];
-    s+=`<div class="st slot" data-warm="${i}" style="left:${x+3}px;top:2px;width:${sw-6}px;height:50px">${w?`<div style="position:absolute;left:50%;top:${-6+(54-ic)/2}px;width:${ic}px;height:${ic}px;transform:translateX(-50%)">${icon(w.key)}</div>`:''}</div>`}
+    s+=`<div class="st slot" data-warm="${i}" style="left:${x+3}px;top:2px;width:${sw-6}px;height:50px">${w?`<div style="position:absolute;left:50%;top:${-8+(54-ic+8)/2}px;width:${ic}px;height:${ic-8}px;transform:translateX(-50%)">${icon(w.key)}</div><span style="position:absolute;left:0;right:0;bottom:-1px;text-align:center;font-size:9px;line-height:11px;font-weight:700;color:#fff;background:rgba(40,28,20,.78);border-radius:4px;white-space:nowrap;overflow:hidden">${T(WARM_NAME[w.key]||(ITEMS[w.key]&&ITEMS[w.key].zh)||'')}</span>`:''}</div>`}
   const used=R.warm.slice(0,m).filter(Boolean).length;
   return s+`<span class="lbl" style="bottom:-10px">${T(CUR!=='sushi'&&n>=5?'保溫台（不會焦）':'保溫台')} ${used}/${m}</span>`;
 }
