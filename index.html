@@ -1093,6 +1093,7 @@ function icon(key){
   if(TPKEYS.includes(b))return sv(tpIcon(b));
   if(b==='ramen')return sv(ramenG({men:1,top:v||'chashu'}));if(b==='gyoza')return sv(plateG()+gyozaPieces('done'));if(b==='friedrice')return sv(plateG()+riceMound('done'));if(b==='oden')return sv(odenG(3));if(b==='lsour')return sv(lsourG());if(b==='ramune')return sv(ramuneG());
   if(NEWD.includes(b)||NEWD3.includes(b)||RFK.includes(b)||b==='goma'||b==='taiyaki'||b==='takoyaki')return sv(newIcon(b));
+  if(b==='miso'||b==='chashurice')return sv(lamenArt(b,'done'));
   if(b==='beer')return sv(beerG(1));
   if(b==='sake')return sv(sakeG());
   if(b==='edamame')return sv(edamameG());
