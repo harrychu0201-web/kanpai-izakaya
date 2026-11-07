@@ -3964,19 +3964,29 @@ function sndInit(){if(SND.ctx)return;const C=window.AudioContext||window.webkitA
   rv.buffer=b;const wet=x.createGain();wet.gain.value=.25;let out=x.destination;try{const lim=x.createDynamicsCompressor();lim.threshold.value=-10;lim.knee.value=8;lim.ratio.value=12;lim.attack.value=.002;lim.release.value=.15;lim.connect(x.destination);out=lim}catch(e){}SND.out=out;m.connect(out);m.connect(rv);rv.connect(wet);wet.connect(out);f.connect(out);
   m.gain.value=SND.bgmOn?.26*bgmK():0;f.gain.value=SND.sfxOn?.5*sfxK():0;SND.ctx=x;SND.mus=m;SND.sfx=f;SND.next=x.currentTime+.1;
   SND.timer=setInterval(sndTick,120);bgmRoute()}
-let SNDUNLK=false,SNDUA=null;function sndWake(){if(!SNDUNLK){try{if(!SNDUA){SNDUA=new Audio(SILENT);SNDUA.loop=true;SNDUA.volume=0.01}if(SNDUA.paused)SNDUA.play().then(()=>{SNDUNLK=true}).catch(()=>{})}catch(e){}}sndInit();if(SND.ctx&&SND.ctx.state!=='running')SND.ctx.resume();bgmPlay()}
+let SNDUNLK=false,SNDUA=null;
+// the game makes no sound unless the player turned some on: until then there is no AudioContext, keep-alive loop or media
+// focus, because an active web audio page pauses the player's own music app (e.g. Spotify) even at zero volume
+const sndNeed=()=>!!(SND.bgmOn||SND.sfxOn);
+// 'ambient' = mix with other apps' audio instead of taking over (Safari / Chrome audio session API, where supported)
+function sndAmbient(){try{if(navigator.audioSession)navigator.audioSession.type='ambient'}catch(e){}}
+function sndIdle(){if(SND.ctx&&SND.ctx.state==='running')SND.ctx.suspend().catch(()=>{});if(SNDUA)SNDUA.pause();if(SND.bgm)SND.bgm.pause()}
+function sndWake(){if(!sndNeed())return;sndAmbient();try{if(!SNDUA){SNDUA=new Audio(SILENT);SNDUA.loop=true;SNDUA.volume=0.01}if(SNDUA.paused)SNDUA.play().then(()=>{SNDUNLK=true}).catch(()=>{})}catch(e){}sndInit();if(SND.ctx&&SND.ctx.state!=='running')SND.ctx.resume();bgmPlay()}
+function sndApply(){if(sndNeed())sndWake();else sndIdle()}
 // pointerdown alone isn't a user gesture for touch on Chrome/Safari — the release (pointerup/touchend/click) is
 ['pointerdown','pointerup','touchend','click','keydown'].forEach(ev=>document.addEventListener(ev,sndWake,{passive:true,capture:true}));
-document.addEventListener('visibilitychange',()=>{if(!SND.ctx)return;if(document.hidden){SND.ctx.suspend();if(SND.bgm)SND.bgm.pause()}else{SND.ctx.resume();bgmPlay()}});
+document.addEventListener('visibilitychange',()=>{if(!SND.ctx)return;if(document.hidden){SND.ctx.suspend();if(SNDUA)SNDUA.pause();if(SND.bgm)SND.bgm.pause()}else if(sndNeed())sndWake()});
 function bgmSet(on){
   SND.bgmOn=!!on;try{localStorage.setItem('izakaya-bgm',on?'1':'0')}catch(e){}
   if(SND.ctx){const t=SND.ctx.currentTime;SND.mus.gain.setTargetAtTime(on?.26*bgmK():0,t,.1);if(SND.bgmG)SND.bgmG.gain.setTargetAtTime(on?BGM_VOL*bgmK():0,t,.1)}
   if(SND.bgm&&!SND.bgmG)SND.bgm.volume=on?Math.min(1,BGM_VOL*bgmK()):0
   if(SND.bgm){if(on&&!SND.synthTurn)bgmPlay();else SND.bgm.pause()}
+  sndApply();
 }
 function sfxSet(on){
   SND.sfxOn=!!on;SND.on=SND.sfxOn;try{localStorage.setItem('izakaya-sfx',on?'1':'0');localStorage.setItem('izakaya-snd',on?'1':'0')}catch(e){}
   if(SND.ctx){const t=SND.ctx.currentTime;SND.sfx.gain.setTargetAtTime(on?.5*sfxK():0,t,.05)}
+  sndApply();
 }
 function bgmVol(v){SND.bgmV=Math.max(0,Math.min(100,+v||0));try{localStorage.setItem('izakaya-bgmv',String(SND.bgmV))}catch(e){}
   if(SND.bgmV>0&&!SND.bgmOn)bgmSet(true);else bgmSet(SND.bgmOn)}
