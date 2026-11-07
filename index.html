@@ -5215,7 +5215,7 @@ async function saveUnflag(){if(!isAdmin())return;const name=(($('ufname')||{}).v
   try{await CL.api.setUnflag(lmNm(name).replace(/[.#$\[\]\/]/g,'_')||'_',{name,t:Date.now()});toast('已送出：'+name+' 下次打開遊戲就會恢復');const i=$('ufname');if(i)i.value=''}
   catch(e){err('送出失敗：'+String((e&&(e.code||e.message))||e))}}
 async function delLbMan(k){if(!isAdmin()||!k)return;try{await CL.api.setLbMan(k,null);LB.cache={};toast('已刪除');showLbMan()}catch(e){toast('刪除失敗')}}
-const LB_TOP=200; /* 名次超過這個數字就顯示「未上榜」 */
+const LB_TOP=100; /* 第 100 名以後不上榜（列表只寫「未上榜」），但自己還是看得到實際名次和百分比 */
 async function showLB(){if(!LBT.some(x=>x[0]===LB.tab))LB.tab='best';if(!CL.api&&FB_CONFIG){await cloudInit();if(!CL.api)return cloudDown()}if(LB.tab==='fr')return showFriends();
   const tb=LBT.find(x=>x[0]===LB.tab),me=CL.user,mine=lbEntry();
   const chs=(()=>{try{const g=JSON.parse(lsGet(KEY)||'null');return !!(g&&g.cheat)}catch(e){return false}})(); /* save touched by test tools: never uploaded */
@@ -5233,7 +5233,7 @@ async function showLB(){if(!LBT.some(x=>x[0]===LB.tab))LB.tab='best';if(!CL.api&
     const better=all.filter(r=>asc?r[f]<mv:r[f]>mv).length,worse=all.filter(r=>asc?r[f]>mv:r[f]<mv).length;
     const total=mRow?N:N+1,others=total-1;
     return {rank:better+1,total,pct:others>0?Math.floor(worse/others*1000)/10:null,all:worse===others,out:better+1>LB_TOP}};
-  const rkTxt=x=>!x?'':x.out?T('未上榜'):x.total<2?T('目前只有你一位上榜。'):x.all?T('第 {0} 名（共 {1} 人），超過全部其他玩家！',x.rank,x.total):T('第 {0} 名（共 {1} 人），超過 {2}% 的玩家',x.rank,x.total,x.pct);
+  const rkTxt=x=>!x?'':x.total<2?T('目前只有你一位上榜。'):x.all?T('第 {0} 名（共 {1} 人），超過全部其他玩家！',x.rank,x.total):T('第 {0} 名（共 {1} 人），超過 {2}% 的玩家',x.rank,x.total,x.pct);
   const mineRk=()=>{const x=LB.cache[f]&&rk(LB.cache[f].rows,LB.cache[f].rows.length);return x};
   const foot0=foot;
   const btns=`<div class="btns"><button class="btn" data-act="${LB.ch?'chback':'closem'}">${T('返回')}</button>${isAdmin()&&!LB.ch?'<button class="btn alt" data-act="lbman">✏️ 手動登錄成績</button>':''}</div>`;
