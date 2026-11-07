@@ -4749,7 +4749,7 @@ async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid
       if(!COOP.code&&lbEntry()&&(!FR.data||Date.now()-FR.t>20000)){try{await frLoad()}catch(e){console.warn('coop friends',e)}coopRender()}return}
     if(k==='bot'){coBotStart(id==='f'?'f':'k');return}
     if((k==='make'||k==='accept'||k==='mm')&&CO.bot){if(CO.open)coClose(false);coBotOff()}
-    if(k==='hideon'){const v=!hideOnIs();hideOnSet(v);ONB.hid=false;if(v){if(MM.on)mmStop(true);onHideApply()}else onBeat(true);coopPanel();return}
+    if(k==='hide'){const v=!hideOnIs();hideOnSet(v);ONB.hid=false;if(v){if(MM.on)mmStop(true);onHideApply()}else onBeat(true);coopPanel();return}
     if(k==='mm'){await mmStart();return}
     if(k==='mmstop'){mmStop(true);return}
     if(k==='refresh'){try{await frLoad()}catch(e){console.warn('coop friends',e)}coopRender();return}
@@ -5596,7 +5596,7 @@ function onOff(){if(hideOnIs()||!ONB.t||!CL.user||!CL.api||!CL.api.onlineBeat||O
 function hideOnIs(){try{return localStorage.getItem('izakaya-hideon')==='1'}catch(e){return false}}
 function hideOnSet(v){try{localStorage.setItem('izakaya-hideon',v?'1':'0')}catch(e){}}
 function onHideApply(){ONB.hid=true;ONB.t=0;if(!CL.user||!CL.api||!CL.api.onlineHide)return;CL.api.onlineHide(CL.user.uid).catch(e=>console.warn('hide',e))}
-function hideOnRow(){const h=hideOnIs();return `<div class="lbme" style="flex-wrap:wrap;gap:8px"><span style="flex:1 1 100%">👻 <b>${T('隱藏上線狀態')}</b>：${T(h?'目前已隱藏':'目前顯示在線上')}<br><small>${T(h?'朋友看不到你在線上，也不能邀請你；隨機配對也會關閉。想一起玩時再關掉就好。':'開啟後朋友看不到你在線上，就不會被邀請，適合想自己玩的時候。')}</small></span><button class="btn${h?'':' alt'}" data-act="hideon">${T(h?'取消隱藏':'隱藏')}</button></div>`}
+function hideOnRow(){const h=hideOnIs();return `<div class="lbme" style="flex-wrap:wrap;gap:8px"><span style="flex:1 1 100%">👻 <b>${T('隱藏上線狀態')}</b>：${T(h?'目前已隱藏':'目前顯示在線上')}<br><small>${T(h?'朋友看不到你在線上，也不能邀請你；隨機配對也會關閉。想一起玩時再關掉就好。':'開啟後朋友看不到你在線上，就不會被邀請，適合想自己玩的時候。')}</small></span><button class="btn${h?'':' alt'}" data-act="coophide">${T(h?'取消隱藏':'隱藏')}</button></div>`}
 setInterval(()=>onBeat(),30000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)onOff();else onBeat(true)});
 addEventListener('pagehide',onOff);
