@@ -1060,7 +1060,7 @@ function onigArt(st,s){
 function lamenArt(k,st){
   const dn=st==='done',bu=st==='burnt';
   if(st==='raw'&&k==='miso'){/* 2026-11-07 生味噌麵：玩家看不出是麵 → 畫成一捆黃色捲曲麵條＋紅色束帶 */
-    const strands=[[18,40,-6],[16,50,0],[18,60,6]].map(([x,y])=>`<path d="M${x} ${y}q8-14 16 0t16 0t16 0t16 0" fill="none" stroke="${O}" stroke-width="7" stroke-linecap="round"/><path d="M${x} ${y}q8-14 16 0t16 0t16 0t16 0" fill="none" stroke="#f6d45a" stroke-width="4" stroke-linecap="round"/>`).join('');
+    const strands=[[18,40,-6],[16,50,0],[18,60,6]].map(([x,y])=>`<path d="M${x} ${y}q8-14 16 0t16 0t16 0t16 0" fill="none" stroke="${O}" stroke-width="7" stroke-linecap="round"/><path d="M${x} ${y}q8-14 16 0t16 0t16 0t16 0" fill="none" stroke="#2b5fb0" stroke-width="4" stroke-linecap="round"/>`).join('');
     return `<ellipse cx="50" cy="72" rx="40" ry="8" fill="#000" opacity=".18"/><path d="M12 44q4-20 38-20t38 20q2 22-8 28q-30 8-60 0q-10-6-8-28z" fill="#f3cf55" stroke="${O}" stroke-width="3.5" stroke-linejoin="round"/>${strands}<path d="M20 36q10-8 26-8" stroke="#fff6c0" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/><rect x="44" y="22" width="12" height="52" rx="3" fill="#d8402c" stroke="${O}" stroke-width="3"/><path d="M47 30v36" stroke="#ff9a7a" stroke-width="2" opacity=".8"/>`}
   if(k==='dandan')return dandanArt(st);
   if(k==='miso'){const brothC=bu?'#2a1b14':dn?'#b5652a':'#d9c8a0',noodC=bu?'#3a2a1c':dn?'#f6d77a':'#efe4cc';
