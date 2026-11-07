@@ -864,7 +864,7 @@ function theme(cat){const id=(ST&&ST.th&&ST.th[cat])||THEMES[cat].list[0].id;ret
 function ownTh(id){return THEMES.wall.list.concat(THEMES.counter.list,THEMES.light.list).find(x=>x.id===id).cost===0||!!(ST&&ST.thOwn&&ST.thOwn[id])}
 let SHOPTAB='menu',shopScroll=0,shopKeep=false,SHOPJUMP=false;
 function keepScroll(){const c=document.querySelector('.card');shopScroll=c?c.scrollTop:0;shopKeep=true}
-function hasDec(id){return id==='noren'?!!(ST&&(ST.up.decor||(ST.dec&&ST.dec.noren))):!!(ST&&ST.dec&&ST.dec[id])}
+function hasDec(id){return id==='noren'?!!(ST&&((ST.up&&ST.up.decor)||(ST.dec&&ST.dec.noren))):!!(ST&&ST.dec&&ST.dec[id])}
 function patMult(){if(CUR==='tep')return 1;if(CUR==='sushi')return 1+SDECOR.reduce((s,d)=>s+(sdec(d.id)?d.b:0),0);if(CUR==='rm')return 1+RDECOR.reduce((s,d)=>s+(rmDec(d.id)?d.b:0),0);return 1+DECOR.reduce((s,d)=>s+(hasDec(d.id)?d.b:0),0)}
 let DAYLEN=159,RUSH=[1.9,1.3,.75,.62,1.0,.72,1.1,1.8];
 const PERIOD=h=>chOn()?T(h<2?'續攤尖峰':h<5?'深夜':h<7?'清晨':h<11?'早上':h<14?'午餐尖峰':h<16?'下午':h<18?'傍晚':h<20?'晚餐尖峰':h<21?'飯後':h<22.5?'續攤尖峰':'深夜'):T(h<18?'傍晚':h<20?'晚餐尖峰':h<21?'飯後':h<22.5?'續攤尖峰':h<lastHr()?'深夜':'打烊前');
@@ -920,7 +920,7 @@ function save(){if(DEMO||chOn())return;try{localStorage.setItem(KEY,JSON.stringi
 let RKEY='izakaya-rec-v1';
 function loadRec(){try{return JSON.parse(localStorage.getItem(RKEY))||{}}catch(e){return {}}}
 function saveRec(r){try{const old=localStorage.getItem(RKEY);if(old){try{JSON.parse(old)}catch(e){localStorage.setItem(RKEY+'-bad',old)}}localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}touchLocal()}
-function load(){try{const v=localStorage.getItem(KEY);const o=v?JSON.parse(v):null;if(o&&o.inter&&o.inter.neon){delete o.inter.neon;o.coins=(o.coins||0)+20000;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}if(o&&o.thOwn&&!o.thRefund){let r=0;Object.keys(o.thOwn).forEach(id=>{Object.values(THEMES).forEach(g=>g.list.forEach(t=>{if(t.id===id)r+=t.cost||0}))});o.coins=(o.coins||0)+r;delete o.thOwn;o.th={};o.thRefund=true;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}return o}catch(e){return null}}
+function load(){try{const v=localStorage.getItem(KEY);const o=v?JSON.parse(v):null;if(o&&!o.up)o.up=fresh().up;if(o&&o.inter&&o.inter.neon){delete o.inter.neon;o.coins=(o.coins||0)+20000;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}if(o&&o.thOwn&&!o.thRefund){let r=0;Object.keys(o.thOwn).forEach(id=>{Object.values(THEMES).forEach(g=>g.list.forEach(t=>{if(t.id===id)r+=t.cost||0}))});o.coins=(o.coins||0)+r;delete o.thOwn;o.th={};o.thRefund=true;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}return o}catch(e){return null}}
 const UDAY=()=>RP.on?RP.mainDay:(CHG&&CHG.on)?999:(ST?ST.day:1); /* endless challenge: every day-locked station is open from the start */ /* unlock/shop state follows the main save even while replaying an earlier day */
 const unlocked=(d,sh)=>{sh=sh||CUR;if(RP.on)d=Math.max(d,RP.mainDay);if(CHG&&CHG.on)d=999;return Object.keys(ITEMS).filter(k=>{const it=ITEMS[k],s0=it.shop||'iz';if(s0!=='both'&&s0!==sh)return false;return it.buy?has(k)&&!(k==='goma'&&gomaOff()):(s0==='rm'||it.day<=d)})};
 /* ===== daily events (from day 4) + robbery (from day 5); picked once per day in showDayIntro ===== */
