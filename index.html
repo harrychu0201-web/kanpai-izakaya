@@ -3398,6 +3398,11 @@ function arcDrop(){
 }
 function showLang(){modal(`<h2>${LANG==='en'?'Language':T('語言')+' / Language'}</h2><div class="langlist">${LANGS.map(([k,n])=>`<button class="btn ${k===LANG?'':'alt'}" data-act="setlang" data-id="${k}" lang="${k}">${n}</button>`).join('')}</div>
   <div class="btns"><button class="btn alt" data-act="closem">${T('返回')}</button></div>`)}
+/* new players (no save yet, no language chosen): ask for the language right after the boot screen */
+function firstLangAsk(){let v=null,sv=null;try{v=localStorage.getItem('izakaya-lang');sv=localStorage.getItem('izakaya-cook-v1')}catch(e){}
+  if(v||sv||!HOME)return;
+  const pick=LANGS.map(([k,n])=>`<button class="btn ${k===LANG?'':'alt'}" data-act="setlang" data-id="${k}" lang="${k}">${n}</button>`).join('');
+  modal(`<h2>🌐 Language / 語言</h2><p style="font-size:14px;line-height:1.6">Choose your language · 請選擇語言 · 请选择语言 · 言語を選んでください · 언어를 선택하세요 · Pilih bahasa</p><div class="langlist">${pick}</div>`)}
 let SNDFROMR=false,SETBACK=false;
 function showSndModal(fromGame){
   if(fromGame!==undefined)SNDFROMR=!!fromGame;
@@ -5762,7 +5767,7 @@ applyLang();chooseLayout(true);fit();showHome();requestAnimationFrame(loop);
 /* art is in separate files now: keep the loading screen up until the title art has arrived (at most 5s), then fetch
    every character sprite in the background so customers never walk in as blank boxes */
 {const b=document.getElementById('boot');if(b){const im=[...document.querySelectorAll('.homeimg,.logo img')];
-  Promise.race([Promise.all(im.map(i=>i.complete?0:new Promise(r=>{i.addEventListener('load',r,{once:true});i.addEventListener('error',r,{once:true})}))),new Promise(r=>setTimeout(r,5000))]).then(()=>b.remove())}}
+  Promise.race([Promise.all(im.map(i=>i.complete?0:new Promise(r=>{i.addEventListener('load',r,{once:true});i.addEventListener('error',r,{once:true})}))),new Promise(r=>setTimeout(r,5000))]).then(()=>{b.remove();firstLangAsk()})}else firstLangAsk()}
 setTimeout(()=>{for(const u of new Set(JSON.stringify([SPR,ROBSPR]).match(/img\/[\w-]+\.webp/g)||[])){const i=new Image();i.decoding='async';i.src=u}},600);
 </script>
 
