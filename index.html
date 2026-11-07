@@ -2588,7 +2588,10 @@ const FXFLAG={nb:'fxNb',fast:'fxFast',tip:'fxTip'};
 function fastCook(){let n=0;const go=(arr,kf)=>arr.forEach(g=>{if(!g)return;const k=kf(g);if(!(k in COOK)||cookState(g.t,k)!=='raw')return;
   if(STEPS[k])g.s=STEPS[k].t.length;if(TPS[k])g.s=TPS[k].length;if(k==='takoyaki')g.fl=1;g.t=Math.max(g.t,COOK[k]);n++});
   go(R.grill,g=>g.kind);go(R.fryer,()=>'karaage');go(R.teppan,g=>g.kind);go(R.tempura,g=>g.kind);go(R.rmpan,g=>g.kind);go(R.rfry,g=>g.kind);
-  go(R.mpot,g=>g.kind);go(R.tyaki,g=>g.kind);go(R.tako,g=>g.kind);go(R.tama,g=>g.kind);go(R.onig,g=>g.kind);go(R.tpn||[],g=>g.kind);return n}
+  go(R.mpot,g=>g.kind);go(R.tyaki,g=>g.kind);go(R.tako,g=>g.kind);go(R.tama,g=>g.kind);go(R.onig,g=>g.kind);go(R.tpn||[],g=>g.kind);go(R.lamen||[],g=>g.kind);
+  /* 關東煮：燉鍋是以時間計的批次（R.oden.cook），速熟符直接把還在燉的批次推到燉好 */
+  if(R.oden&&R.oden.cook){const ot=odenT();R.oden.cook.forEach(b=>{if(b.t<ot){b.t=ot;n++}})}
+  return n}
 /* ===== 成就系統：資料。rec.ach[id]=1 代表已領取；rec.ul[id]=1 代表已解鎖並通知過；rec.ax 是累計統計（雲端合併取最大）；rec.eg 是彩蛋旗標 ===== */
 /* 店面成就看「現在存檔裡擁有多少」：已經買過的人不用重買、也不用等打烊就能解鎖 */
 let OWNC={raw:null,v:{dc:0,br:0}};
