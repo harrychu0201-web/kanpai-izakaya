@@ -661,6 +661,8 @@ const ITEMS={
   ramune:{tag:'ラムネ',tz:'彈珠汽水',jp:'ラムネ',zh:'彈珠汽水',price:350,cost:80,w:2,shop:'rm',buy:20000,st:'飲料'},
   oolong:{tag:'ウーロン茶',tz:'烏龍茶',jp:'ウーロン茶',zh:'烏龍茶',price:300,cost:60,w:2,shop:'rm',buy:12000,st:'飲料'},
   cola:{tag:'コーラ',tz:'可樂',jp:'コーラ',zh:'可樂',price:350,cost:80,w:2,shop:'rm',buy:15000,st:'飲料'},
+  menma:{tag:'メンマ',tz:'筍乾',jp:'メンマ',zh:'筍乾',price:250,cost:50,w:2,shop:'rm',buy:10000,st:'小菜'},
+  kyuri:{tag:'きゅうり',tz:'小黃瓜',jp:'きゅうり',zh:'小黃瓜',price:250,cost:40,w:2,shop:'rm',buy:8000,st:'小菜'},
   /* ramen-stall expansion: 2nd kitchen with a shared fryer (koro/tori/katsu), a cheap cold side (goma) and a hidden dessert (taiyaki) */
   koro:{tag:'コロッケ',tz:'可樂餅',jp:'コロッケ',zh:'可樂餅',price:450,cost:100,w:3,shop:'rm',buy:1,st:'油鍋'},
   tori:{tag:'唐揚',tz:'炸雞',jp:'鶏の唐揚げ',zh:'唐揚雞',price:700,cost:200,w:3,shop:'rm',buy:45000,st:'油鍋'},
@@ -718,7 +720,7 @@ function stepLbl(g){return STEPS[g.kind].lbl[g.s||0]}
 const TKFLIP=4,TKGRACE=7,TKW=86,TKAUTO=2.5; // TKAUTO: 阿健 (Lv2+) flips a takoyaki this many seconds after it asks, if you haven't // takoyaki: must be flipped once after TKFLIP s of cooking, within TKGRACE s, or one side burns
 const STN={buta:'teppan',gyu:'teppan',ika:'teppan',hotate:'teppan',ebiten:'tempura',kakifry:'tempura',gyoza:'rmpan',friedrice:'rmpan',koro:'rfry',tori:'rfry',katsu:'rfry',taiyaki:'tyaki',miso:'lamen',chashurice:'lamen',takoyaki:'tako',tamagoyaki:'tama',yakionigiri:'onig',tamagonigiri:'maki',salmonnigiri:'maki',tunanigiri:'maki',ikanigiri:'maki',tainigiri:'maki',ebinigiri:'maki',negitorogunkan:'maki',ikuragunkan:'maki',unigunkan:'maki',kappamaki:'maki',tekkamaki:'maki',salmonmaki:'maki',salmontemaki:'maki',tunatemaki:'maki',ikuratemaki:'maki'};
 const RAWMAP={rawButa:'buta',rawGyu:'gyu',rawIka:'ika',rawHotate:'hotate',rawEbi:'ebiten',rawKaki:'kakifry',rawGyoza:'gyoza',rawRice:'friedrice',rawKoro:'koro',rawTori:'tori',rawKatsu:'katsu',rawTai:'taiyaki',rawTako:'takoyaki',rawTama:'tamagoyaki',rawOnig:'yakionigiri',rawMiso:'miso',rawChashu:'chashurice'};
-const INSTANT=['sake','edamame','highball','hiyayakko','lsour','ramune','oolong','cola','goma','tsukemono','umeshu','reishu'];
+const INSTANT=['sake','edamame','highball','hiyayakko','lsour','ramune','oolong','cola','menma','kyuri','goma','tsukemono','umeshu','reishu'];
 function has(k){return !!(ST&&ST.menu&&ST.menu[k])}
 function teppanOn(){return ['buta','gyu','ika','hotate'].some(has)}
 function tempuraOn(){return ['ebiten','kakifry'].some(has)}
@@ -794,6 +796,8 @@ const HOW={
   ramune:'點<b>彈珠汽水</b>拿一瓶，直接送給客人。',
   oolong:'點<b>烏龍茶</b>拿一瓶，直接送給客人。',
   cola:'點<b>可樂</b>拿一瓶，直接送給客人。',
+  menma:'點<b>筍乾</b>拿一小盤，直接送給客人。',
+  kyuri:'點<b>小黃瓜</b>拿一小盤，直接送給客人。',
   oden:'每點一次<b>關東煮料</b>就加一份進鍋，鍋子升級後能同時燉更多份，慢慢燉不會焦。燉好之後點<b>關東煮鍋</b>拿一份。',
   koro:'在<b>二號廚房</b>點<b>生可樂餅</b>丟進<b>油鍋</b>，炸到金黃就撈起來送。吧台右邊的 1、2、3 按鈕（或空白鍵）可以切換廚房。油鍋是所有炸物共用的，可樂餅熟得最快。',
   tori:'在<b>二號廚房</b>點<b>雞腿肉</b>丟進<b>油鍋</b>，炸好撈起來送。跟可樂餅、炸豬排共用同一個油鍋。',
@@ -1104,7 +1108,7 @@ function icon(key){
   const [b,v]=key.split(':');
   if(SUKEYS.includes(b))return sv(suG(b,'done'));
   if(TPKEYS.includes(b))return sv(tpIcon(b));
-  if(b==='ramen')return sv(ramenG({men:1,top:v||'chashu'}));if(b==='gyoza')return sv(plateG()+gyozaPieces('done'));if(b==='friedrice')return sv(plateG()+riceMound('done'));if(b==='oden')return sv(odenG(3));if(b==='lsour')return sv(lsourG());if(b==='ramune')return sv(ramuneG());if(b==='oolong')return sv(oolongG());if(b==='cola')return sv(colaG());
+  if(b==='ramen')return sv(ramenG({men:1,top:v||'chashu'}));if(b==='gyoza')return sv(plateG()+gyozaPieces('done'));if(b==='friedrice')return sv(plateG()+riceMound('done'));if(b==='oden')return sv(odenG(3));if(b==='lsour')return sv(lsourG());if(b==='ramune')return sv(ramuneG());if(b==='oolong')return sv(oolongG());if(b==='cola')return sv(colaG());if(b==='menma')return sv(menmaG());if(b==='kyuri')return sv(kyuriG());
   if(NEWD.includes(b)||NEWD3.includes(b)||RFK.includes(b)||b==='goma'||b==='taiyaki'||b==='takoyaki')return sv(newIcon(b));
   if(b==='miso')return sv(misoIconG());
   if(b==='chashurice')return sv(chashuIconG());
@@ -1299,7 +1303,7 @@ function drawBg(){
 
 /* ================= yatai (2nd shop): data, art, stations ================= */
 const RM_PRICE=200000,RPW=48,MPW=31;
-const RNEW=[{id:'ramune',cost:20000},{id:'oolong',cost:12000},{id:'cola',cost:15000},{id:'friedrice',cost:40000},{id:'oden',cost:60000},{id:'tamago',cost:30000,zh:'溏心蛋',d:'拉麵多一種配料，客人會點溏心蛋拉麵。'},{id:'corn',cost:45000,zh:'奶油玉米',d:'拉麵再多一種配料，客人會點奶油玉米拉麵。'},
+const RNEW=[{id:'ramune',cost:20000},{id:'oolong',cost:12000},{id:'cola',cost:15000},{id:'menma',cost:10000},{id:'kyuri',cost:8000},{id:'friedrice',cost:40000},{id:'oden',cost:60000},{id:'tamago',cost:30000,zh:'溏心蛋',d:'拉麵多一種配料，客人會點溏心蛋拉麵。'},{id:'corn',cost:45000,zh:'奶油玉米',d:'拉麵再多一種配料，客人會點奶油玉米拉麵。'},
   {id:'tori',cost:45000,k2:1},{id:'katsu',cost:85000,k2:1},{id:'goma',cost:25000,k2:1},{id:'miso',cost:30000,k2:1,need:()=>lamenOn()},{id:'chashurice',cost:20000,k2:1,need:()=>lamenOn()},{id:'taiyaki',cost:120000,k2:1,need:()=>((ST.rm&&ST.rm.fried)||0)>=TAI_NEED}];
 const RTOPS=['chashu','egg','corn'],TOPN={chashu:'叉燒',egg:'溏心蛋',corn:'奶油玉米'},TOPR={chashu:'叉燒拉麵',egg:'溏心蛋拉麵',corn:'奶油玉米拉麵'};
 function topOn(t){return t==='chashu'||(t==='egg'&&has('tamago'))||(t==='corn'&&has('corn'))}
@@ -1381,6 +1385,8 @@ function lsourG(){return `<rect x="30" y="16" width="40" height="78" rx="4" fill
   <rect x="30" y="16" width="40" height="78" rx="4" fill="none" stroke="${O}" stroke-width="4"/><path d="M36 42v44" stroke="#fff" stroke-width="3" opacity=".6"/>`}
 function oolongG(){return `<path d="M38 94h24q6 0 6-6V54q0-9-7-15l-3-3v-12h-16v12l-3 3q-7 6-7 15v34q0 6 6 6z" fill="#c98a3a" fill-opacity=".95" stroke="${O}" stroke-width="4" stroke-linejoin="round"/><rect x="36" y="66" width="28" height="16" fill="#f4efe4" stroke="${O}" stroke-width="2.5"/>`}
 function colaG(){return `<path d="M38 94h24q6 0 6-6V54q0-9-7-15l-3-3v-12h-16v12l-3 3q-7 6-7 15v34q0 6 6 6z" fill="#3a1e12" fill-opacity=".95" stroke="${O}" stroke-width="4" stroke-linejoin="round"/><rect x="36" y="66" width="28" height="16" fill="#c8302a" stroke="${O}" stroke-width="2.5"/>`}
+function menmaG(){return `<path d="M8 40h84q-4 40-42 40q-38 0-42-40z" fill="#f4efe4" stroke="${O}" stroke-width="3"/><path d="M24 46l4 26M40 46l3 30M56 46l-3 30M72 46l-4 26" stroke="#d9b86a" stroke-width="6" stroke-linecap="round"/>`}
+function kyuriG(){return `<path d="M8 40h84q-4 40-42 40q-38 0-42-40z" fill="#f4efe4" stroke="${O}" stroke-width="3"/><circle cx="30" cy="62" r="11" fill="#7fbf5a" stroke="${O}" stroke-width="2.5"/><circle cx="30" cy="62" r="4" fill="#e9f5d9"/><circle cx="60" cy="58" r="11" fill="#7fbf5a" stroke="${O}" stroke-width="2.5"/><circle cx="60" cy="58" r="4" fill="#e9f5d9"/>`}
 function ramuneG(){return `<path d="M38 94h24q6 0 6-6V54q0-9-7-15l-3-3v-12h-16v12l-3 3q-7 6-7 15v34q0 6 6 6z" fill="#8fe0e6" fill-opacity=".9" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
   <path d="M42 32h16" stroke="${O}" stroke-width="3"/><circle cx="50" cy="40" r="6.5" fill="#effdff" stroke="${O}" stroke-width="2"/><circle cx="48" cy="38" r="2" fill="#fff"/>
   <rect x="40" y="8" width="20" height="16" rx="4" fill="#3a8fd8" stroke="${O}" stroke-width="3"/><rect x="33" y="60" width="34" height="18" rx="3" fill="#fbf1dc" stroke="${O}" stroke-width="2"/><path d="M37 69q6-6 13 0t13 0" stroke="#3a8fd8" stroke-width="3" fill="none"/>
@@ -1455,6 +1461,8 @@ function rmStHTML(name){
   if(name==='oolong')return sv(`<g transform="translate(10 -8) scale(.7)">${oolongG()}</g><g transform="translate(44 -8) scale(.7)">${oolongG()}</g>`,'0 0 100 58')+`<span class="lbl">${JP('oolong')}</span>`+rmLock('oolong');
   if(name==='cola')return sv(`<g transform="translate(10 -8) scale(.7)">${colaG()}</g><g transform="translate(44 -8) scale(.7)">${colaG()}</g>`,'0 0 100 58')+`<span class="lbl">${JP('cola')}</span>`+rmLock('cola');
   if(name==='ramune')return sv(`<rect x="6" y="26" width="88" height="28" rx="4" fill="#3a6fb8" stroke="${O}" stroke-width="3"/><path d="M6 36h88" stroke="#24427a" stroke-width="2"/>${[14,38,62].map(x=>`<g transform="translate(${x} -6) scale(.42)">${ramuneG()}</g>`).join('')}`,'0 0 100 58')+`<span class="lbl">${JP('ramune')}</span>`+rmLock('ramune');
+  if(name==='menma')return sv(`<g transform="translate(20 -4) scale(.7)">${menmaG()}</g>`,'0 0 100 58')+`<span class="lbl">${JP('menma')}</span>`+rmLock('menma');
+  if(name==='kyuri')return sv(`<g transform="translate(20 -4) scale(.7)">${kyuriG()}</g>`,'0 0 100 58')+`<span class="lbl">${JP('kyuri')}</span>`+rmLock('kyuri');
   if(name==='rawGyoza')return sv(`<rect x="4" y="12" width="64" height="66" rx="8" fill="#b97d45" stroke="${O}" stroke-width="3"/><rect x="10" y="18" width="52" height="54" rx="5" fill="#f7ecd3" stroke="${O}" stroke-width="2"/><g transform="translate(-6 0) scale(.84)">${gyozaPieces('raw')}</g>`,'0 0 72 90')+`<span class="lbl">${T('生餃子')} ¥${costOf('gyoza')}</span>`;
   if(name==='rawRice')return sv(`<path d="M8 40h56q-3 30-28 32q-25-2-28-32z" fill="#f3efe6" stroke="${O}" stroke-width="3"/><g transform="translate(-2 -14) scale(.76)">${riceMound('raw')}</g><ellipse cx="54" cy="34" rx="9" ry="7" fill="#fff" stroke="${O}" stroke-width="2"/><circle cx="54" cy="34" r="4" fill="#f5b020"/>`,'0 0 72 90')+`<span class="lbl">${T('炒飯料')} ¥${costOf('friedrice')}</span>`+rmLock('friedrice');
   if(name==='rawMen')return sv(`<rect x="4" y="14" width="64" height="62" rx="8" fill="#c9a26a" stroke="${O}" stroke-width="3"/>${[[20,34],[44,34],[20,58],[44,58]].map(([x,y])=>`<g transform="translate(${x} ${y})">${[0,1,2].map(k=>`<ellipse cx="0" cy="0" rx="${11-k*3}" ry="${8-k*2}" fill="none" stroke="#f6e3a0" stroke-width="3"/>`).join('')}</g>`).join('')}`,'0 0 72 90')+`<span class="lbl">${T('生麵')} ¥${costOf('ramen')}</span>`;
@@ -1953,7 +1961,7 @@ const PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},sake:{x:123.5,y:418,w:84,h:90,k:1
   deco2:{x:463,y:636,w:100,h:128,k:1.3,pg:2},trash2:{x:463,y:820,w:100,h:52,k:1.3,pg:2},
   tako:{x:10,y:418,w:270,h:182,k:1.12,pg:3},rawTako:{x:330,y:418,w:84,h:90,k:1.12,pg:3},trash3:{x:330,y:525.5,w:84,h:52,k:1.12,pg:3},
   tama:{x:432,y:418,w:160,h:182,k:1.03,pg:3},onig:{x:11,y:636,w:160,h:182,k:1.4,pg:3},rawTama:{x:245,y:636,w:76,h:90,k:1.4,pg:3},rawOnig:{x:245,y:770,w:76,h:90,k:1.4,pg:3},tsukemono:{x:362,y:636,w:100,h:58,k:1.4,pg:3},umeshu:{x:362,y:725,w:100,h:58,k:1.4,pg:3},reishu:{x:362,y:814,w:100,h:58,k:1.4,pg:3},pgbtn:{x:418,y:350,w:174,h:46,pg:0}};
-const LAND_R={tap:{x:10,y:406,w:100,h:122},ramune:{x:10,y:534,w:100,h:58},oolong:{x:272,y:406,w:100,h:58,pg:3},cola:{x:382,y:406,w:100,h:58,pg:3},lsour:{x:116,y:406,w:84,h:90},odenPot:{x:116,y:502,w:84,h:90},
+const LAND_R={tap:{x:10,y:406,w:100,h:122},ramune:{x:10,y:534,w:100,h:58},oolong:{x:272,y:406,w:100,h:58,pg:3},cola:{x:382,y:406,w:100,h:58,pg:3},menma:{x:272,y:470,w:100,h:58,pg:3},kyuri:{x:382,y:470,w:100,h:58,pg:3},lsour:{x:116,y:406,w:84,h:90},odenPot:{x:116,y:502,w:84,h:90},
   rmpan:{x:206,y:410,w:210,h:182},rawGyoza:{x:422,y:406,w:72,h:90},rawRice:{x:422,y:502,w:72,h:90},rawMen:{x:500,y:406,w:72,h:90},odenRaw:{x:500,y:502,w:72,h:90},
   mpot:{x:578,y:410,w:170,h:182},bowls:{x:754,y:406,w:110,h:128},trash:{x:754,y:540,w:110,h:52},rmtop:{x:870,y:406,w:84,h:186},warmT:{x:262,y:346,w:440,h:54},
   rfry:{x:10,y:410,w:300,h:182,pg:2},rawKoro:{x:316,y:406,w:72,h:90,pg:2},rawTori:{x:316,y:502,w:72,h:90,pg:2},rawKatsu:{x:394,y:406,w:72,h:90,pg:2},goma:{x:394,y:502,w:72,h:90,pg:2},
@@ -1967,7 +1975,7 @@ const SU_PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},maki:{x:123.5,y:418,w:290,h:18
   rawSRice:{x:8,y:640,w:78,h:100,k:1.12},rawSNori:{x:100,y:640,w:78,h:100,k:1.12},rawNTama:{x:192,y:640,w:78,h:100,k:1.12},rawNSal:{x:284,y:640,w:78,h:100,k:1.12},rawNTuna:{x:376,y:640,w:78,h:100,k:1.12},rawNIka:{x:468,y:640,w:78,h:100,k:1.12},
   rawNTai:{x:8,y:762,w:78,h:100,k:1.12},rawNEbi:{x:100,y:762,w:78,h:100,k:1.12},rawNNegi:{x:192,y:762,w:78,h:100,k:1.12},rawNIkura:{x:284,y:762,w:78,h:100,k:1.12},rawNUni:{x:376,y:762,w:78,h:100,k:1.12},rawNKappa:{x:468,y:762,w:78,h:100,k:1.12},
   warmT:{x:8,y:340,w:360,h:54,k:1.12},pgbtn:{x:482,y:350,w:174,h:46,pg:0}};
-const PORT_R={tap:{x:10,y:418,w:96,h:122,k:1.12},ramune:{x:10,y:561.4,w:96,h:58,k:1.12},oolong:{x:300,y:636,w:96,h:58,k:1.3,pg:3},cola:{x:404,y:636,w:96,h:58,k:1.3,pg:3},lsour:{x:123.5,y:418,w:84,h:90,k:1.12},odenPot:{x:123.5,y:525.5,w:84,h:90,k:1.12},rmpan:{x:223.5,y:418,w:210,h:182,k:1.12},
+const PORT_R={tap:{x:10,y:418,w:96,h:122,k:1.12},ramune:{x:10,y:561.4,w:96,h:58,k:1.12},oolong:{x:300,y:636,w:96,h:58,k:1.3,pg:3},cola:{x:404,y:636,w:96,h:58,k:1.3,pg:3},menma:{x:300,y:700,w:96,h:58,k:1.3,pg:3},kyuri:{x:404,y:700,w:96,h:58,k:1.3,pg:3},lsour:{x:123.5,y:418,w:84,h:90,k:1.12},odenPot:{x:123.5,y:525.5,w:84,h:90,k:1.12},rmpan:{x:223.5,y:418,w:210,h:182,k:1.12},
   rawGyoza:{x:466,y:418,w:72,h:90,k:1.12},rawRice:{x:466,y:525.5,w:72,h:90,k:1.12},rawMen:{x:11,y:636,w:72,h:90,k:1.3},odenRaw:{x:11,y:760,w:72,h:90,k:1.3},
   mpot:{x:112,y:636,w:170,h:182,k:1.3},bowls:{x:342,y:636,w:110,h:128,k:1.3},trash:{x:342,y:812,w:110,h:52,k:1.3},rmtop:{x:494,y:636,w:84,h:186,k:1.25},warmT:{x:8,y:340,w:360,h:54,k:1.12},
   rfry:{x:10,y:418,w:300,h:182,k:1.12,pg:2},rawKoro:{x:362,y:418,w:72,h:90,k:1.12,pg:2},rawTori:{x:362,y:525.5,w:72,h:90,k:1.12,pg:2},rawKatsu:{x:458,y:418,w:72,h:90,k:1.12,pg:2},goma:{x:458,y:525.5,w:72,h:90,k:1.12,pg:2},
@@ -2042,7 +2050,7 @@ function stHTML(name){
   if(name==='rawC')return sv(`<path d="M10 10h116q-4 40-58 40q-54 0-58-40z" fill="#c9ced4" stroke="${O}" stroke-width="3"/><g transform="translate(10 -28)">${karaagePieces('raw',8,0)}</g><g transform="translate(44 -30)">${karaagePieces('raw',8,0)}</g>`,'0 0 136 58')+`<span class="lbl">${T('生雞肉')} ¥200</span>`+lockDiv(ITEMS.karaage.day);
   if(RAWMAP[name]){const k=RAWMAP[name],big=name==='rawEbi'||name==='rawKaki';
     return (big?sv(`<path d="M6 6h91q-4 42-45 42q-42 0-46-42z" fill="#c9ced4" stroke="${O}" stroke-width="3"/><g transform="translate(8 -10) scale(.48)">${pieceArt(k,'raw')}</g><g transform="translate(48 -8) scale(.48)">${pieceArt(k,'raw')}</g>`,'0 0 103 58')
-      :sv(`<rect x="4" y="10" width="64" height="72" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/><g transform="translate(4 14) scale(.64)">${pieceArt(k,'raw')}</g>`,'0 0 72 90'))+`<span class="lbl">${T({buta:'豬肉',gyu:'和牛',ika:'魷魚',hotate:'扇貝',ebiten:'鮮蝦',kakifry:'牡蠣',koro:'生可樂餅',tori:'雞腿肉',katsu:'豬里肌',takoyaki:'章魚麵糊',miso:'味噌麵',chashurice:'白飯',tamagoyaki:'蛋液',yakionigiri:'生飯糰'}[k])} ¥${costOf(k)}</span>`+(has(k)?'':`<div class="locked">${T('商店<br>解鎖')}</div>`)}
+      :sv(`<rect x="4" y="10" width="64" height="72" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/><g transform="translate(4 14) scale(.64)">${pieceArt(k,'raw')}</g>`,'0 0 72 90'))+`<span class="lbl">${T({buta:'豬肉',gyu:'和牛',ika:'魷魚',hotate:'扇貝',ebiten:'鮮蝦',kakifry:'牡蠣',koro:'生可樂餅',tori:'雞腿肉',katsu:'豬里肌',takoyaki:'章魚麵糊',miso:'味噌麵',chashurice:'叉燒飯生料',tamagoyaki:'蛋液',yakionigiri:'生飯糰'}[k])} ¥${costOf(k)}</span>`+(has(k)?'':`<div class="locked">${T('商店<br>解鎖')}</div>`)}
   if(name==='tsukemono'||name==='umeshu'||name==='reishu')return sv(`<g transform="translate(20 -5) scale(.64)">${newIcon(name)}</g>`,'0 0 100 58')+`<span class="lbl">${JP(name)}</span>`+(has(name)?'':`<div class="locked" style="font-size:12px">${T('商店<br>解鎖')}</div>`);
   if(name==='rawTama')return sv(`<rect x="4" y="12" width="64" height="66" rx="8" fill="#b97d45" stroke="${O}" stroke-width="3"/><rect x="10" y="18" width="52" height="54" rx="5" fill="#f7ecd3" stroke="${O}" stroke-width="2"/><path d="M12 40h48q-2 24-24 26q-22-2-24-26z" fill="#f3efe6" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><ellipse cx="36" cy="40" rx="24" ry="7" fill="#f6c21e" stroke="${O}" stroke-width="2.5"/><path d="M26 39q8-3 16 0" stroke="#fff" stroke-width="2.5" fill="none" opacity=".7"/><path d="M46 28L63 17M50 32L66 26" stroke="${O}" stroke-width="3" stroke-linecap="round"/>`,'0 0 72 90')+`<span class="lbl">${T('蛋液')} ¥${costOf('tamagoyaki')}</span>`+(has('tamagoyaki')?'':`<div class="locked">${T('商店<br>解鎖')}</div>`);
   if(name==='rawOnig')return sv(`<rect x="4" y="12" width="64" height="66" rx="8" fill="#b97d45" stroke="${O}" stroke-width="3"/><rect x="10" y="18" width="52" height="54" rx="5" fill="#f7ecd3" stroke="${O}" stroke-width="2"/><g transform="translate(9 14) scale(.62)">${onigArt('raw',0)}</g><ellipse cx="54" cy="64" rx="9" ry="6" fill="#f3efe6" stroke="${O}" stroke-width="2"/>`,'0 0 72 90')+`<span class="lbl">${T('生飯糰')} ¥${costOf('yakionigiri')}</span>`+(has('yakionigiri')?'':`<div class="locked">${T('商店<br>解鎖')}</div>`);
@@ -2495,6 +2503,8 @@ function rmServe(){
   if(has('ramune'))src.push({src:'ramune',key:'ramune',inf:1});
   if(has('oolong'))src.push({src:'oolong',key:'oolong',inf:1});
   if(has('cola'))src.push({src:'cola',key:'cola',inf:1});
+  if(has('menma'))src.push({src:'menma',key:'menma',inf:1});
+  if(has('kyuri'))src.push({src:'kyuri',key:'kyuri',inf:1});
   if(has('goma')&&!gomaOff())src.push({src:'goma',key:'goma',inf:1});
   for(const c of waiting()){for(let j=0;j<c.order.length;j++){if(c.filled[j])continue;const h=src.find(x=>x.key===c.order[j]);if(h&&giveTo(c,j,h,false)!==false){rmPop('小葵上菜');return true}}
     if(c.extra&&c.extra.ok&&!c.extra.done){const h=src.find(x=>x.key===c.extra.key);if(h&&giveTo(c,'x',h,false)!==false){rmPop('小葵上菜');return true}}}
@@ -2882,7 +2892,7 @@ function onTap(e){
   const tpe=t.closest('[data-tap]');if(tpe){const i=+tpe.dataset.tap;if(R.taps[i].st==='full')R.held={src:'tap',i,key:'beer'};else{nope(tpe);toast('還在裝…')}renderStations();return}
   const bde=t.closest('[data-board]');if(bde){const i=+bde.dataset.board;if(boardDone(i))R.held={src:'board',i,key:boardKey(i)};else{nope(bde);if(R.boards[i].base)toast('還沒做完喔');else toast('從右邊的食材開始做')}renderStations();return}
   const st=t.closest('[data-st]');if(!st)return;const k=st.dataset.st;
-  if(INSTANT.includes(k)){if(k==='ramune'&&!has('ramune'))return;if(k==='oolong'&&!has('oolong'))return;if(k==='cola'&&!has('cola'))return;if(k==='goma'&&(!has('goma')||gomaOff()))return;if(canPay(costOf(k)))R.held={src:k,key:k}}
+  if(INSTANT.includes(k)){if(k==='ramune'&&!has('ramune'))return;if(k==='oolong'&&!has('oolong'))return;if(k==='cola'&&!has('cola'))return;if(k==='menma'&&!has('menma'))return;if(k==='kyuri'&&!has('kyuri'))return;if(k==='goma'&&(!has('goma')||gomaOff()))return;if(canPay(costOf(k)))R.held={src:k,key:k}}
   else if(k==='rawMen'){const i=R.mpot.findIndex((x,j)=>!x&&j<mpotN());if(i<0){nope(st);toast('麵鍋滿了')}else if(canPay(costOf('ramen'))){R.mpot[i]={kind:'noodle',t:0};const c=srcCenter({src:'mpot',i});charge(costOf('ramen'),c.x,c.y-50)}}
   else if(k==='odenRaw'){if(!has('oden'))return;const c1=costOf('oden'),k0=odenCap()-R.oden.n-R.oden.cook.reduce((s,b)=>s+(b.n||2),0);if(k0<=0){nope(st);toast('關東煮鍋滿了')}else{if(live()<c1)canPay(c1);else{R.oden.cook.push({t:0,n:1});const c=srcCenter({src:'oden'});charge(c1,c.x,c.y-50)}}}
   else if(k==='odenPot'){if(!has('oden'))return;if(R.oden.n>0)R.held={src:'oden',key:'oden'};else{nope(st);toast(R.oden.cook.length?'關東煮還在燉…':'先把關東煮料下鍋')}}
@@ -6510,5 +6520,6 @@ function voLobbyBtns(){return `<button class="btn alt" data-act="coopmic">${VO.o
 </script>
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{}));</script>
 <script>/* 拉麵店新飲料：烏龍茶、可樂 */Object.assign(I18N["zh-Hans"],{"烏龍茶":"乌龙茶","可樂":"可乐","點<b>烏龍茶</b>拿一瓶，直接送給客人。":"点<b>乌龙茶</b>拿一瓶，直接送给客人。","點<b>可樂</b>拿一瓶，直接送給客人。":"点<b>可乐</b>拿一瓶，直接送给客人。"});Object.assign(I18N["en"],{"烏龍茶":"Oolong tea","可樂":"Cola","點<b>烏龍茶</b>拿一瓶，直接送給客人。":"Tap <b>Oolong tea</b> to grab a bottle and serve it right away.","點<b>可樂</b>拿一瓶，直接送給客人。":"Tap <b>Cola</b> to grab a bottle and serve it right away."});Object.assign(I18N["ja"],{"烏龍茶":"ウーロン茶","可樂":"コーラ","點<b>烏龍茶</b>拿一瓶，直接送給客人。":"<b>ウーロン茶</b>をタップして一本取り、そのままお客に出す。","點<b>可樂</b>拿一瓶，直接送給客人。":"<b>コーラ</b>をタップして一本取り、そのままお客に出す。"});Object.assign(I18N["ko"],{"烏龍茶":"우롱차","可樂":"콜라","點<b>烏龍茶</b>拿一瓶，直接送給客人。":"<b>우롱차</b>를 탭해서 한 병 꺼내 바로 손님께 드리세요.","點<b>可樂</b>拿一瓶，直接送給客人。":"<b>콜라</b>를 탭해서 한 병 꺼내 바로 손님께 드리세요."});Object.assign(I18N["id"],{"烏龍茶":"Teh oolong","可樂":"Cola","點<b>烏龍茶</b>拿一瓶，直接送給客人。":"Ketuk <b>Teh oolong</b> untuk ambil sebotol, langsung sajikan.","點<b>可樂</b>拿一瓶，直接送給客人。":"Ketuk <b>Cola</b> untuk ambil sebotol, langsung sajikan."});</script>
+<script>/* 拉麵店小菜、叉燒飯生料 */Object.assign(I18N["zh-Hans"],{"筍乾":"笋干","小黃瓜":"小黄瓜","叉燒飯生料":"叉烧饭生料","點<b>筍乾</b>拿一小盤，直接送給客人。":"点<b>笋干</b>拿一小盘，直接送给客人。","點<b>小黃瓜</b>拿一小盤，直接送給客人。":"点<b>小黄瓜</b>拿一小盘，直接送给客人。"});Object.assign(I18N["en"],{"筍乾":"Bamboo shoots","小黃瓜":"Cucumber pickles","叉燒飯生料":"Chashu rice mix","點<b>筍乾</b>拿一小盤，直接送給客人。":"Tap <b>Bamboo shoots</b> to grab a small plate and serve it right away.","點<b>小黃瓜</b>拿一小盤，直接送給客人。":"Tap <b>Cucumber pickles</b> to grab a small plate and serve it right away."});Object.assign(I18N["ja"],{"筍乾":"メンマ","小黃瓜":"きゅうり","叉燒飯生料":"チャーシューご飯の材料","點<b>筍乾</b>拿一小盤，直接送給客人。":"<b>メンマ</b>をタップして小皿を取り、そのままお客に出す。","點<b>小黃瓜</b>拿一小盤，直接送給客人。":"<b>きゅうり</b>をタップして小皿を取り、そのままお客に出す。"});Object.assign(I18N["ko"],{"筍乾":"죽순 절임","小黃瓜":"오이 절임","叉燒飯生料":"차슈 덮밥 재료","點<b>筍乾</b>拿一小盤，直接送給客人。":"<b>죽순 절임</b>을 탭해서 작은 접시를 꺼내 바로 손님께 드리세요.","點<b>小黃瓜</b>拿一小盤，直接送給客人。":"<b>오이 절임</b>을 탭해서 작은 접시를 꺼내 바로 손님께 드리세요."});Object.assign(I18N["id"],{"筍乾":"Rebung","小黃瓜":"Acar timun","叉燒飯生料":"Bahan nasi chashu","點<b>筍乾</b>拿一小盤，直接送給客人。":"Ketuk <b>Rebung</b> untuk ambil sepiring kecil, langsung sajikan.","點<b>小黃瓜</b>拿一小盤，直接送給客人。":"Ketuk <b>Acar timun</b> untuk ambil sepiring kecil, langsung sajikan."});</script>
 </body>
 </html>
