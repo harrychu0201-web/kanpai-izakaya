@@ -1,0 +1,41 @@
+name: Deploy to itch.io
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.BUTLER_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare build folder (game files only)
+        if: env.HAS_KEY == 'true'
+        run: |
+          mkdir -p build
+          rsync -a \
+            --exclude='.git' --exclude='.github' --exclude='build' \
+            --exclude='README.md' --exclude='database.rules.json' \
+            ./ build/
+
+      - name: Install butler
+        if: env.HAS_KEY == 'true'
+        run: |
+          curl -fL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -o butler.zip -d butler-bin
+          chmod +x butler-bin/butler
+          sudo mv butler-bin/butler /usr/local/bin/butler
+
+      - name: Push to itch.io
+        if: env.HAS_KEY == 'true'
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: butler push build kanpai-izakaya/kanpai-izakaya:html
+
+      - name: Skipped (no API key yet)
+        if: env.HAS_KEY != 'true'
+        run: echo "BUTLER_API_KEY secret not set; skipping itch deploy."
