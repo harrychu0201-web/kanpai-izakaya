@@ -5215,6 +5215,7 @@ async function saveUnflag(){if(!isAdmin())return;const name=(($('ufname')||{}).v
   try{await CL.api.setUnflag(lmNm(name).replace(/[.#$\[\]\/]/g,'_')||'_',{name,t:Date.now()});toast('已送出：'+name+' 下次打開遊戲就會恢復');const i=$('ufname');if(i)i.value=''}
   catch(e){err('送出失敗：'+String((e&&(e.code||e.message))||e))}}
 async function delLbMan(k){if(!isAdmin()||!k)return;try{await CL.api.setLbMan(k,null);LB.cache={};toast('已刪除');showLbMan()}catch(e){toast('刪除失敗')}}
+const LB_TOP=200; /* 名次超過這個數字就顯示「未上榜」 */
 async function showLB(){if(!LBT.some(x=>x[0]===LB.tab))LB.tab='best';if(!CL.api&&FB_CONFIG){await cloudInit();if(!CL.api)return cloudDown()}if(LB.tab==='fr')return showFriends();
   const tb=LBT.find(x=>x[0]===LB.tab),me=CL.user,mine=lbEntry();
   const chs=(()=>{try{const g=JSON.parse(lsGet(KEY)||'null');return !!(g&&g.cheat)}catch(e){return false}})(); /* save touched by test tools: never uploaded */
@@ -5231,8 +5232,8 @@ async function showLB(){if(!LBT.some(x=>x[0]===LB.tab))LB.tab='best';if(!CL.api&
     if(mv==null||(asc&&!(mv>0)))return null;
     const better=all.filter(r=>asc?r[f]<mv:r[f]>mv).length,worse=all.filter(r=>asc?r[f]>mv:r[f]<mv).length;
     const total=mRow?N:N+1,others=total-1;
-    return {rank:better+1,total,pct:others>0?Math.floor(worse/others*1000)/10:null,all:worse===others}};
-  const rkTxt=x=>!x?'':x.total<2?T('目前只有你一位上榜。'):x.all?T('第 {0} 名（共 {1} 人），超過全部其他玩家！',x.rank,x.total):T('第 {0} 名（共 {1} 人），超過 {2}% 的玩家',x.rank,x.total,x.pct);
+    return {rank:better+1,total,pct:others>0?Math.floor(worse/others*1000)/10:null,all:worse===others,out:better+1>LB_TOP}};
+  const rkTxt=x=>!x?'':x.out?T('未上榜'):x.total<2?T('目前只有你一位上榜。'):x.all?T('第 {0} 名（共 {1} 人），超過全部其他玩家！',x.rank,x.total):T('第 {0} 名（共 {1} 人），超過 {2}% 的玩家',x.rank,x.total,x.pct);
   const mineRk=()=>{const x=LB.cache[f]&&rk(LB.cache[f].rows,LB.cache[f].rows.length);return x};
   const foot0=foot;
   const btns=`<div class="btns"><button class="btn" data-act="${LB.ch?'chback':'closem'}">${T('返回')}</button>${isAdmin()&&!LB.ch?'<button class="btn alt" data-act="lbman">✏️ 手動登錄成績</button>':''}</div>`;
@@ -5243,7 +5244,7 @@ async function showLB(){if(!LBT.some(x=>x[0]===LB.tab))LB.tab='best';if(!CL.api&
   const all=LB.cache[f].rows,rows=all.slice(0,50);
   let body=rows.length?rows.map((r,i)=>`<div class="lbrow ${me&&r.uid===me.uid?'me':''}"><b>${i<3?['🥇','🥈','🥉'][i]:i+1}</b><span>${esc(r.name||'?')}</span><em>${lbVal(f,r[f])}</em></div>`).join(''):`<p>${T('還沒有人上榜，快來搶第一！')}</p>`;
   const x=mineRk();
-  if(me&&mine&&x&&!chs&&!LB.err&&!rows.some(r=>r.uid===me.uid))body+=`<div class="lbrow me"><b>${x.rank}</b><span>${esc(mine.name)}</span><em>${lbVal(f,mine[f])}</em></div>`;
+  if(me&&mine&&x&&!chs&&!LB.err&&!rows.some(r=>r.uid===me.uid))body+=`<div class="lbrow me"><b>${x.out?`<small>${T('未上榜')}</small>`:x.rank}</b><span>${esc(mine.name)}</span><em>${lbVal(f,mine[f])}</em></div>`;
   draw(body)}
 function showNick(){const r=loadRec();
   modal(`<h2>${T('取個暱稱')}</h2><p>${T('排行榜上會顯示這個名字，最多 12 個字。')}</p><input class="nickin" id="nickin" maxlength="12" value="${esc(r.nick||'')}" autocomplete="off">
@@ -5253,6 +5254,7 @@ async function saveNick(){const i=$('nickin');if(!i)return;const v=i.value.repla
   if(!v){const e=$('nickerr');e.textContent=T('暱稱不能空白');e.hidden=false;return}
   if(nickBad(v)){const e=$('nickerr');e.textContent=T('暱稱不能包含「作者」「官方」「admin」等保留字');e.hidden=false;return}
   const r=loadRec();r.nick=v;saveRec(r);LB.cache={};await cloudUpload(true);if(CHT.back){CHT.back=false;showChat()}else if(PF.back){PF.back=false;showProfile()}else showLB()}
+Object.assign(I18N['en'],{'未上榜':'Not ranked'});Object.assign(I18N['ja'],{'未上榜':'圏外'});Object.assign(I18N['ko'],{'未上榜':'순위 밖'});Object.assign(I18N['id'],{'未上榜':'Tidak masuk peringkat'});Object.assign(I18N['zh-Hans'],{'未上榜':'未上榜'});
 /* ===== friends: add by code, ranking among friends, visit a friend's shop, one gift per friend per day (all Realtime Database) =====
    fcode/<CODE>=uid · friends/<me>/<friend>=t · freq/<friend>/<me>=t (pending add, accepted when the friend opens this tab)
    gifts/<to>/<from>={t,a,d} · gclaim/<me>/<from>=d · lbx/<uid> = public snapshot of a player's shop (shown when visited) */
