@@ -3771,6 +3771,7 @@ document.addEventListener('click',e=>{
   else if(act==='inbold')inboxOld();
   else if(act==='inbdone'){INB.showDone=!INB.showDone;inboxDraw()}
   else if(act==='inbre'){INB.open=a.dataset.id||null;inboxDraw()}
+  else if(act==='inbwho'){INB.who=a.dataset.id||null;INB.open=null;inboxDraw()}
   else if(act==='inbsend')inboxSend();
   else if(act==='inbdel')inboxDel(a.dataset.id);
   else if(act==='inbclaim')inboxClaim(a.dataset.id,!!a.dataset.rel);
@@ -5532,16 +5533,18 @@ async function showInbox(reload){if(!canInbox())return;
     try{INB.rows=await CL.api.fbList(150);INB.claims=await CL.api.claimGet()}catch(e){INB.err=String(e&&e.code||e)}}
   inboxDraw()}
 function inboxDraw(){
-  const all=INB.rows.concat(INB.old),nDone=all.filter(f=>f.re).length,shown=INB.showDone?all:all.filter(f=>!f.re);
+  const all=INB.rows.concat(INB.old),nDone=all.filter(f=>f.re).length;let shown=INB.showDone?all:all.filter(f=>!f.re);
+  if(INB.who)shown=all.filter(f=>f.uid===INB.who).sort((a,b)=>(a.t||a.at||0)-(b.t||b.at||0));
   const item=f=>{const op=INB.open===f.id;
     return `<div class="inbit${f.re?' done':''}"><p class="inbh">${esc(FBCATN[f.cat]||f.cat||'')} · ${chatTime(f.t||f.at||0)} ${f.lang?' · '+esc(f.lang):''} · 第 ${+f.day||0} 天${f.old?' · 舊資料':''}</p>
     ${f.ctx?`<p class="inbh">回你說的：${esc(f.ctx)}</p>`:''}<p class="inbtx">${esc(f.text||'')}</p>${f.contact?`<p class="inbh">聯絡：${esc(f.contact)}</p>`:''}
     ${f.re?`<p class="inbre">✅ 已回覆：${esc(f.re)}</p>`:''}
     ${!op&&INB.drafts[f.id]?'<p class="inbh">📝 有未送出的草稿</p>':''}${op?`<textarea class="fbtext" id="inbtext" data-id="${esc(f.id)}" maxlength="1000" oninput="fbDraftSet(this.dataset.id,this.value)" placeholder="回覆給這位玩家…">${esc(INB.drafts[f.id]||'')}</textarea>
       <div class="btns" style="justify-content:flex-start"><button class="btn" data-act="inbsend">${INB.busy?'送出中…':'送出回覆'}</button><button class="btn alt" data-act="inbre" data-id="">取消</button></div>`
-    :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
+    :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.uid&&!INB.who?`<button class="btn alt" data-act="inbwho" data-id="${esc(f.uid)}">👤 看這位玩家全部</button>`:''}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
   modal(`<h2>📬 收件匣（${INB.rows.filter(f=>!f.re).length}）</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
   <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button>${nDone?`<button class="btn alt" data-act="inbdone">${INB.showDone?'🙈 隱藏已回覆':'👁 顯示已回覆（'+nDone+'）'}</button>`:''}<button class="btn alt" data-act="inbold">${INB.old.length?'已載入舊意見':'載入 Firestore 舊意見'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="fbpubsync">👀 同步到公開板</button><button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
+  ${INB.who?`<div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbwho" data-id="">← 返回全部意見</button><span class="inbh">這位玩家的全部意見，由舊到新</span></div>`:''}
   ${shown.length?shown.map(item).join(''):'<p style="font-size:14px">'+(nDone?'未回覆的意見都處理完了 🎉':'還沒有新的意見。')+'</p>'}
   <div class="btns"><button class="btn alt" data-act="fb">返回</button></div>`);
   const t=$('inbtext');if(t&&!('ontouchstart' in window))t.focus()}
