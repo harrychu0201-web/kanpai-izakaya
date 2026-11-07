@@ -3970,8 +3970,8 @@ const SND={bgmV:70,sfxV:70,trackI:0,want:0,tsrc:{},pend:false,ctx:null,mus:null,
 try{
   const leg=localStorage.getItem('izakaya-snd');
   const b=localStorage.getItem('izakaya-bgm'),s=localStorage.getItem('izakaya-sfx');
-  SND.bgmOn=b!=null?b!=='0':leg!=='0';
-  SND.sfxOn=s!=null?s!=='0':leg!=='0';
+  SND.bgmOn=b!=null?b!=='0':leg==='1';
+  SND.sfxOn=s!=null?s!=='0':leg==='1';
   SND.on=SND.sfxOn;
   // volume sliders 0-100; 70 = the loudness the game always had, so old players hear no change
   const bv=localStorage.getItem('izakaya-bgmv'),sv=localStorage.getItem('izakaya-sfxv');
