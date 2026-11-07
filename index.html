@@ -1065,6 +1065,8 @@ function lamenArt(k,st){
   if(k==='dandan')return dandanArt(st);
   if(k==='miso'){const brothC=bu?'#2a1b14':dn?'#b5652a':'#d9c8a0',noodC=bu?'#3a2a1c':dn?'#f6d77a':'#efe4cc';
     return `<path d="M8 46h84q-4 36-42 36q-38 0-42-36z" fill="#f4efe4" stroke="${O}" stroke-width="4"/><ellipse cx="50" cy="46" rx="40" ry="8" fill="${brothC}" stroke="${O}" stroke-width="2.5"/><path d="M26 44q6-7 12 0t12 0t12 0" stroke="${noodC}" stroke-width="2.5" fill="none"/>${dn?`<rect x="56" y="34" width="16" height="10" rx="3" fill="#d9825a" stroke="${O}" stroke-width="2"/><circle cx="34" cy="38" r="4" fill="#f6e08a" stroke="${O}" stroke-width="1.5"/>`:''}`}
+  if(k==='chashurice'){/* 2026-11-08 烹調中／成品的叉燒飯改用客人點單的同款圖（白碗＋兩片叉燒），焦掉則變深色 */
+    const g=chashuIconG();return bu?g.replace(/#f4efe4|#fffdf6/g,'#4a3220').replace(/#b8582e|#a04a22/g,'#2a1b14'):g}
   const riceC=bu?'#4a3220':dn?'#fbf6ea':'#f7f3e8',chashC=bu?'#2a1b14':dn?'#b8582e':'#f0b8a8';
   return `${plateG()}<path d="M16 60q0-30 34-30q34 0 34 30z" fill="${riceC}" stroke="${O}" stroke-width="3.5"/><path d="M34 46q16-12 32 0q-2 10-16 10q-14 0-16-10z" fill="${chashC}" stroke="${O}" stroke-width="2.5"/>`}
 /* 2026-11-07 叉燒飯拆成「白飯」「叉燒配料」兩張生料卡；兩樣放進同一格才開始煮。卡片用分開的圖，湊到一半的格子用 chashuPrepArt */
