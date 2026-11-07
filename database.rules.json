@@ -96,10 +96,7 @@
         "days",
         "dex",
         "chal",
-        "chalh",
-        "bdIz",
-        "bdRm",
-        "bdSu"
+        "chalh"
       ],
       "$uid": {
         ".write": "auth != null && auth.uid === $uid",
@@ -127,15 +124,6 @@
         },
         "chalh": {
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
-        },
-        "bdIz": {
-          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000000000"
-        },
-        "bdRm": {
-          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000000000"
-        },
-        "bdSu": {
-          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000000000"
         },
         "at": {
           ".validate": "newData.isNumber()"

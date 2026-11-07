@@ -3581,7 +3581,7 @@ function endDay(){if(CHG)return;sfx('end');$('game').classList.remove('aim');
   if(RP.on){replayEnd(e,stars);return}
   R.undo={st:JSON.stringify(ST),rec:JSON.stringify(loadRec()),dayLen:DAYLEN};
   R.settled=true;DAYLEN=159;ST.coins=ST.coins+e;ST.stars[ST.day]=Math.max(ST.stars[ST.day]||0,stars);
-  const rec=loadRec();rec.maxDay=Math.max(rec.maxDay||0,ST.day);rec.earned=(rec.earned||0)+R.earned;rec.bestDay=Math.max(rec.bestDay||0,Math.round(e));{const k=CUR==='rm'?'bdRm':CUR==='sushi'?'bdSu':CUR==='tep'?'':'bdIz';if(k)rec[k]=Math.max(rec[k]||0,Math.round(e))} /* per-shop best day, one board per shop */
+  const rec=loadRec();rec.maxDay=Math.max(rec.maxDay||0,ST.day);rec.earned=(rec.earned||0)+R.earned;rec.bestDay=Math.max(rec.bestDay||0,Math.round(e));
   let bank='';
   ST.dues=ST.dues||(ST.debt?[{amt:ST.debt,left:3}]:[]);
   const paid=ST.dues.filter(d=>--d.left<=0);
@@ -4600,7 +4600,7 @@ function touchLocal(){if(TEST||RP.on)return;try{localStorage.setItem(SAVED_AT,St
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
 function mergeRec(a,b){const pj=s=>{try{return s?JSON.parse(s)||{}:{}}catch(e){return {}}};const x=pj(a),y=pj(b),o=Object.assign({},x,y);
-  ['maxDay','maxCoins','earned','bankrupt','bestDay','chal','chalh','bdIz','bdRm','bdSu'].forEach(k=>{const v=Math.max(x[k]||0,y[k]||0);if(v)o[k]=v});
+  ['maxDay','maxCoins','earned','bankrupt','bestDay','chal','chalh'].forEach(k=>{const v=Math.max(x[k]||0,y[k]||0);if(v)o[k]=v});
   {const a=x.ownDay||0,b=y.ownDay||0;if(a||b)o.ownDay=a&&b?Math.min(a,b):a||b}
   ['owned','tut'].forEach(k=>{if(x[k]||y[k])o[k]=true});o.met=Object.assign({},x.met||{},y.met||{});
   {const inv={};[x.inv||{},y.inv||{}].forEach(h=>{for(const k in h)inv[k]=Math.max(inv[k]||0,h[k]||0)});if(Object.keys(inv).length)o.inv=inv}
@@ -5222,9 +5222,8 @@ function cloudAsk(){const c=CL.pick;if(!c||!HOME)return;
   modal(`<h2>${T('選擇要用哪一份存檔')}</h2><p>${T('這台裝置和雲端各有一份不同的存檔，要用哪一份？另一份會被覆蓋。')}</p>
   <div class="pickrow"><button class="btn" data-act="pickcloud">${T('雲端存檔')}<small>${saveSummary(c.game)}</small></button><button class="btn alt" data-act="picklocal">${T('這台裝置')}<small>${saveSummary(lsGet(KEY))}</small></button></div>`)}
 /* ===== leaderboard: one public doc per player in lb/{uid}; written only by its owner, readable by all ===== */
-(function(){const N={'本店單日淨利':['本店单日净利','Main Shop Best Day','居酒屋本店 1日の利益','본점 하루 순이익','Laba Harian Toko Utama'],'拉麵屋台單日淨利':['拉面屋台单日净利','Ramen Stall Best Day','ラーメン屋台 1日の利益','라멘 포장마차 하루 순이익','Laba Harian Kedai Ramen'],'海風壽司單日淨利':['海风寿司单日净利','Sea Breeze Sushi Best Day','海風寿司 1日の利益','해풍 스시 하루 순이익','Laba Harian Sushi Haifu'],'居酒屋本店單一天打烊時的最高淨利。':['居酒屋本店单一天打烊时的最高净利。','Highest profit in one day at the main izakaya.','居酒屋本店で1日の営業を終えた時の最高利益。','居酒屋 본점에서 하루 영업을 마쳤을 때의 최고 순이익이에요.','Laba tertinggi dalam satu hari di warung utama.'],'深夜拉麵屋台單一天打烊時的最高淨利。':['深夜拉面屋台单一天打烊时的最高净利。','Highest profit in one day at the late-night ramen stall.','深夜ラーメン屋台で1日の営業を終えた時の最高利益。','심야 라멘 포장마차에서 하루 영업을 마쳤을 때의 최고 순이익이에요.','Laba tertinggi dalam satu hari di kedai ramen tengah malam.'],'海風壽司單一天打烊時的最高淨利。':['海风寿司单一天打烊时的最高净利。','Highest profit in one day at Sea Breeze Sushi.','海風寿司で1日の営業を終えた時の最高利益。','해풍 스시에서 하루 영업을 마쳤을 때의 최고 순이익이에요.','Laba tertinggi dalam satu hari di Sushi Haifu.']};const L=['zh-Hans','en','ja','ko','id'];for(const k in N)L.forEach((l,i)=>{if(I18N[l])I18N[l][k]=N[k][i]})})();
-const LBT=[['bdIz','本店單日淨利','desc','居酒屋本店單一天打烊時的最高淨利。'],['bdRm','拉麵屋台單日淨利','desc','深夜拉麵屋台單一天打烊時的最高淨利。'],['bdSu','海風壽司單日淨利','desc','海風壽司單一天打烊時的最高淨利。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['chal','無限挑戰','desc','店不打烊一直營業，三次失誤就結束，比誰的營業時間長（暫停不算）。'],['chalh','極限挑戰','desc','禁用店員和道具的無限挑戰，比誰的營業時間長。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
-const LB={tab:'bdIz',cache:{},last:null,ch:0};let CHEND='';
+const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['chal','無限挑戰','desc','店不打烊一直營業，三次失誤就結束，比誰的營業時間長（暫停不算）。'],['chalh','極限挑戰','desc','禁用店員和道具的無限挑戰，比誰的營業時間長。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
+const LB={tab:'best',cache:{},last:null,ch:0};let CHEND='';
 /* nicknames with these words are rejected by database.rules.json (chat/lb/lbx name), so block them here too instead of failing silently; the owner account is exempt like in the rules */
 const NICK_BAD=/作者|站長|站长|客服|官方|admin/i;
 const nickBad=v=>!!v&&NICK_BAD.test(v)&&!(CL.user&&CL.user.email===ADMIN_EMAIL);
@@ -5235,11 +5234,11 @@ const nickBad=v=>!!v&&NICK_BAD.test(v)&&!(CL.user&&CL.user.email===ADMIN_EMAIL);
 'id':['Nama panggilan "{0}" mengandung kata terlarang (admin, penulis, resmi, dll.), jadi tidak bisa masuk papan peringkat atau chat. Silakan ganti nama.','Nama panggilan tidak boleh mengandung kata terlarang seperti "admin", "penulis", atau "resmi".','Gagal mengunggah ke papan peringkat: {0}','Simpanan ini pernah memakai fitur panel tes, jadi tidak masuk papan peringkat.','Penulis sudah memulihkan hakmu masuk papan peringkat!']};
 for(const l in A){if(I18N[l])Object.assign(I18N[l],{'你的暱稱「{0}」含有保留字（作者、官方、admin 等），無法上榜或聊天，請改個名字。':A[l][0],'排行榜上傳失敗：{0}':A[l][2],'作者已幫你恢復上排行榜的資格！':A[l][4],'這個存檔用過測試面板的功能，不會上排行榜。':A[l][3],'暱稱不能包含「作者」「官方」「admin」等保留字':A[l][1]})}})();
 function lbEntry(){const r=loadRec();
-  if(!r.nick||nickBad(r.nick))return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.maxDay>0&&!isAdmin())d.days=Math.round(r.maxDay); /* the author's test runs (1000+ days) stay off the 最長營業 board */if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);if(r.bdIz>0)d.bdIz=Math.round(r.bdIz);if(r.bdRm>0)d.bdRm=Math.round(r.bdRm);if(r.bdSu>0)d.bdSu=Math.round(r.bdSu);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;return d}
+  if(!r.nick||nickBad(r.nick))return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.maxDay>0&&!isAdmin())d.days=Math.round(r.maxDay); /* the author's test runs (1000+ days) stay off the 最長營業 board */if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;return d}
 async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return} /* a save touched by the author test tools never goes on the leaderboard */
   const k=JSON.stringify(d);if(LB.last===u.uid+k)return;
   const put=async dd=>{try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},dd))}
-    catch(e){const d2=Object.assign({},dd);delete d2.dex;delete d2.chal;delete d2.chalh;delete d2.bdIz;delete d2.bdRm;delete d2.bdSu;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}}}; /* rules not updated yet: still keep the rest of the entry */
+    catch(e){const d2=Object.assign({},dd);delete d2.dex;delete d2.chal;delete d2.chalh;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}}}; /* rules not updated yet: still keep the rest of the entry */
   try{await put(d)}catch(e){const nn=String(d.name).replace(/管理[員员]/g,'').trim();if(nn===d.name)throw e;await put(Object.assign({},d,{name:nn||'玩家'}))} /* published rules may still reject 管理員 in names: show the name without it instead of not showing him at all */
   LB.last=u.uid+k;LB.cache={}}
 const lbVal=(t,v)=>t==='chal'||t==='chalh'?chTime(v):t==='dex'?T('{0} 種',v):t==='days'?T('{0} 天',v):yen(v);
@@ -5253,7 +5252,7 @@ async function lbWithMan(f,dir){const asc=dir==='asc';let rows=await CL.api.all(
     if(real)rows=rows.filter(r=>r!==real);
     rows.push({uid:'man:'+k,name:m.name,[f]:m[f]})});
   return rows.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f])}
-const LBMAN_F=[['chal','無限挑戰',1],['chalh','極限挑戰',1],['bdIz','本店單日淨利',0],['bdRm','拉麵屋台單日淨利',0],['bdSu','海風壽司單日淨利',0],['earned','累計營收',0],['days','最長營業',0]];
+const LBMAN_F=[['chal','無限挑戰',1],['chalh','極限挑戰',1],['best','單日淨利',0],['earned','累計營收',0],['days','最長營業',0]];
 async function showLbMan(){if(!isAdmin())return;modal(`<h2>手動登錄成績</h2><p>載入中…</p>`);let man={};
   try{man=await CL.api.lbMan()}catch(e){modal(`<h2>手動登錄成績</h2><p>讀取失敗：${esc(String((e&&(e.code||e.message))||e))}</p><div class="btns"><button class="btn" data-act="lb">返回排行榜</button></div>`);return}
   const list=Object.keys(man).map(k=>{const m=man[k]||{};const v=LBMAN_F.filter(x=>typeof m[x[0]]==='number').map(x=>x[1]+' '+lbVal(x[0],m[x[0]])).join('、');
@@ -5285,7 +5284,7 @@ async function saveUnflag(){if(!isAdmin())return;const name=(($('ufname')||{}).v
   catch(e){err('送出失敗：'+String((e&&(e.code||e.message))||e))}}
 async function delLbMan(k){if(!isAdmin()||!k)return;try{await CL.api.setLbMan(k,null);LB.cache={};toast('已刪除');showLbMan()}catch(e){toast('刪除失敗')}}
 const LB_TOP=100; /* 第 100 名以後不上榜（列表只寫「未上榜」），但自己還是看得到實際名次和百分比 */
-async function showLB(){if(!LBT.some(x=>x[0]===LB.tab))LB.tab='bdIz';if(!CL.api&&FB_CONFIG){await cloudInit();if(!CL.api)return cloudDown()}if(LB.tab==='fr')return showFriends();
+async function showLB(){if(!LBT.some(x=>x[0]===LB.tab))LB.tab='best';if(!CL.api&&FB_CONFIG){await cloudInit();if(!CL.api)return cloudDown()}if(LB.tab==='fr')return showFriends();
   const tb=LBT.find(x=>x[0]===LB.tab),me=CL.user,mine=lbEntry();
   const chs=(()=>{try{const g=JSON.parse(lsGet(KEY)||'null');return !!(g&&g.cheat)}catch(e){return false}})(); /* save touched by test tools: never uploaded */
   /* opening the board retries the upload (a failed one is never remembered as done) and keeps the real server error to show under the board; at most one retry per 15s */

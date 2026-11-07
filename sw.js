@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 const CACHE='izakaya-v635';
+=======
+const CACHE='izakaya-v632';
+>>>>>>> parent of e735d9a (排行榜單日淨利拆成三家店：本店／拉麵屋台／海風壽司各一個榜（sw v633）)
 // character art lives in img/ with the content hash in each file name, so a file never changes once published:
 // keep it in its own cache that survives version bumps (an update then only re-downloads the small page, not 2.4MB of art)
 const IMGCACHE='izakaya-img';
