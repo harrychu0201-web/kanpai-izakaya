@@ -579,7 +579,7 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 </head>
 <body>
 <div id="boot" style="position:fixed;inset:0;z-index:99999;background:#24140c;color:#f3dfb4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font:700 18px/1.5 -apple-system,'PingFang TC','Noto Sans TC',sans-serif;text-align:center;padding:16px">
-<div style="font-size:42px">🏮</div><div>乾杯！居酒屋<br><span style="font-size:15px;opacity:.75">載入中… Loading…</span></div>
+<div style="font-size:42px">🏮</div><div><span id="ldtxt" style="font-size:15px;opacity:.75">Loading…</span></div><script>(function(){var L="";try{L=localStorage.getItem("izakaya-lang")||""}catch(e){}if(!L)L=(navigator.languages&&navigator.languages[0])||navigator.language||"";document.getElementById("ldtxt").textContent=/^zh/i.test(L)?"載入中…":"Loading…"})()</script>
 <button id="bootR" onclick="location.reload()" style="display:none;margin-top:6px;padding:10px 22px;border-radius:999px;border:2px solid #f3dfb4;background:transparent;color:#f3dfb4;font:inherit;font-size:16px">載入太久？點這裡重試 / Retry</button>
 <a href="privacy.html" style="position:absolute;bottom:12px;font-size:12px;color:#f3dfb4;opacity:.6">隱私權政策 · Privacy</a>
 </div>
