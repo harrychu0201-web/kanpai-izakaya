@@ -3844,7 +3844,6 @@ document.addEventListener('click',e=>{
   else if(act==='noticelist')noticeList();
   else if(act==='noticenew')inboxNotice();
   else if(act==='uidcopy'){if(CL.user)copyTxt(CL.user.uid,'已複製 ID')}
-  else if(act==='fbpubsync')fbPubSync();
   else if(act.indexOf('coop')===0)coopAct(act.slice(4),a.dataset.id);
   else if(act==='noticeedit')noticeEdit(a.dataset.id);
   else if(act==='noticeeditsave')noticeEditSave(a.dataset.id);
@@ -5521,8 +5520,6 @@ function showFb(){
   <p class="fbsmall" id="fbmsg"></p></div>
   <div class="btns"><button class="btn" data-act="fbsend">${T('送出')}</button><button class="btn alt" data-act="closem">${T('返回')}</button><button class="btn alt" data-act="notice">📢 ${T('公告')}</button>${CL.user?`<button class="btn alt" data-act="myre">💌 ${T('作者的回覆')}</button>`:''}${canInbox()?`<button class="btn" data-act="inbox">📬 收件匣</button>`:''}</div>`);
   setTimeout(()=>{const t=$('fbtext');if(t&&!('ontouchstart' in window))t.focus()},50)}
-async function fbPubSync(){const rows=INB.rows.filter(f=>!f.old&&!f.thr&&f.cat!=='re'&&f.text&&typeof f.t==='number');
-  try{const n=await CL.api.fbPubBackfill(rows);logAct('同步公開板',n+' 則');toast('已同步 '+n+' 則到公開板 👀')}catch(e){toast('同步失敗：'+String(e&&e.code||e))}}
 async function sendFb(){const t=$('fbtext'),c=$('fbcontact'),m=$('fbmsg');if(!t)return;
   const text=t.value.trim(),contact=(c?c.value:'').trim().slice(0,60);FB.text=t.value;FB.contact=c?c.value:'';
   const say=x=>{if(m)m.textContent=x};
@@ -5602,7 +5599,7 @@ function inboxDraw(){
       <div class="btns" style="justify-content:flex-start"><button class="btn" data-act="inbsend">${INB.busy?'送出中…':'送出回覆'}</button><button class="btn alt" data-act="inbre" data-id="">取消</button></div>`
     :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbread" data-id="${esc(f.id)}">${INB.read[f.id]?'↩ 取消已讀':'✔ 已讀'}</button>`}${f.uid&&!INB.who?`<button class="btn alt" data-act="inbwho" data-id="${esc(f.uid)}">👤 看這位玩家全部</button>`:''}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
   modal(`<h2>📬 收件匣（${INB.rows.filter(f=>!isDone(f)).length}）</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
-  <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button>${nDone?`<button class="btn alt" data-act="inbdone">${INB.showDone?'🙈 隱藏已回覆・已讀':'👁 顯示已回覆・已讀（'+nDone+'）'}</button>`:''}<button class="btn alt" data-act="inbold">${INB.old.length?'已載入舊意見':'載入 Firestore 舊意見'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="fbpubsync">👀 同步到公開板</button><button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
+  <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button>${nDone?`<button class="btn alt" data-act="inbdone">${INB.showDone?'🙈 隱藏已回覆・已讀':'👁 顯示已回覆・已讀（'+nDone+'）'}</button>`:''}<button class="btn alt" data-act="inbold">${INB.old.length?'已載入舊意見':'載入 Firestore 舊意見'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
   ${INB.who?`<div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbwho" data-id="">← 返回全部意見</button><span class="inbh">這位玩家的全部意見，由舊到新</span></div>`:''}
   ${shown.length?shown.map(item).join(''):'<p style="font-size:14px">'+(nDone?'未回覆的意見都處理完了 🎉':'還沒有新的意見。')+'</p>'}
   <div class="btns"><button class="btn alt" data-act="fb">返回</button></div>`);
