@@ -796,6 +796,8 @@ const HOW={
   katsu:'在<b>二號廚房</b>點<b>豬里肌</b>丟進<b>油鍋</b>。炸豬排要炸比較久，會一直佔著一個炸籃，記得早點下鍋。',
   takoyaki:'在<b>三號廚房</b>點<b>章魚麵糊</b>倒進<b>章魚燒盤</b>。烤一陣子會出現紅色的<b>翻面！</b>，要趕快點一下翻面，不然一面會烤焦。翻好再烤到金黃就點起來送。吧台右邊的 1、2、3 按鈕（或空白鍵）可以切換廚房。',
   goma:'在<b>二號廚房</b>點<b>胡麻時蔬</b>拿一份，直接送給客人。便宜、快，但賺得少，可以在商店暫時下架。',
+  miso:'在<b>拉麵台</b>點<b>味噌拉麵</b>的生料放進鍋裡，煮到金黃就點起來送給客人。煮太久會焦。',
+  chashurice:'在<b>拉麵台</b>點<b>叉燒飯</b>的生料放進鍋裡，煮到金黃就點起來送給客人。煮太久會焦。',
   taiyaki:'在<b>二號廚房</b>點<b>麵糊</b>倒進<b>鯛魚燒烤模</b>，烤到金黃就點起來送。',
   tsukemono:'在<b>三號廚房</b>點一下就能拿，直接送給客人。便宜又快，客人一多就拿來救急。',
   umeshu:'在<b>三號廚房</b>點一下就能拿，直接送給客人。',
@@ -1416,7 +1418,7 @@ function tyakiHTML(){
     if(g){st=cookState(g.t,'taiyaki');inner=sv(pieceArt('taiyaki',st)+(st==='raw'?[0,1].map(k=>`<path d="M${35+k*30} ${24-((R.t*30+k*20)%20)}q-5-7 0-14" stroke="#fff" stroke-width="3" fill="none" opacity=".6"/>`).join(''):''));bar=cookBar(g.t,'taiyaki',st)}
     else inner=`<div style="opacity:.3;width:100%;height:100%">${sv(`<path d="M10 50q14-26 46-24q18 1 26 10l12-12q4 18 0 26q4 8 0 26l-12-12q-8 9-26 10q-32 2-46-24z" fill="none" stroke="#14151a" stroke-width="6"/>`)}</div>`;
     s+=`<div class="st slot" data-ty="${i}" style="left:${x}px;top:18px;width:${TYW-4}px;height:146px;${st==='done'?'box-shadow:0 0 0 3px #ffc65a inset;background:#ffc65a22':''}"><div style="position:absolute;left:-4px;right:-4px;top:44px;height:${TYW+4}px">${inner}</div>${bar}</div>`}
-  return s+`<span class="lbl">${T('鯛魚燒烤模')}</span>`}
+  return s+`<span class="lbl">${T('鯛魚燒烤模')}${isOff('taiyaki')?' · '+T('下架中'):''}</span>`}
 function takoHTML(){
   let s=`<svg viewBox="0 0 270 182" style="position:absolute;inset:0"><rect x="2" y="8" width="266" height="166" rx="12" fill="#1e1f22" stroke="${O}" stroke-width="4"/><rect x="8" y="16" width="254" height="150" rx="6" fill="#3a3d42"/></svg>`;
   for(let i=0;i<3;i++){const x=7+i*TKW,g=R.tako[i];let inner='',bar='',st='',need=false;
@@ -2875,7 +2877,7 @@ function onTap(e){
   else if(k==='odenRaw'){if(!has('oden'))return;const c1=costOf('oden'),k0=odenCap()-R.oden.n-R.oden.cook.reduce((s,b)=>s+(b.n||2),0);if(k0<=0){nope(st);toast('關東煮鍋滿了')}else{if(live()<c1)canPay(c1);else{R.oden.cook.push({t:0,n:1});const c=srcCenter({src:'oden'});charge(c1,c.x,c.y-50)}}}
   else if(k==='odenPot'){if(!has('oden'))return;if(R.oden.n>0)R.held={src:'oden',key:'oden'};else{nope(st);toast(R.oden.cook.length?'關東煮還在燉…':'先把關東煮料下鍋')}}
   else if(SU_TRAY[k]){suAdd(SU_TRAY[k],st)}
-  else if(RAWMAP[k]){const d=RAWMAP[k],pn=STN[d],arr=R[pn],i=arr.findIndex((x,j)=>!x&&j<panCap(pn));if(['rmpan','rfry','tyaki','lamen','tako','tama','onig','maki','tpn'].includes(pn)&&!has(d)&&ITEMS[d].buy)return;if(i<0){nope(st);toast(pn==='teppan'||pn==='tpn'?'鐵板滿了':pn==='rmpan'?'煎台滿了':pn==='maki'?'捲壽司台滿了':pn==='rfry'?'油鍋滿了':pn==='tako'?'章魚燒盤滿了':pn==='tama'?'玉子燒鍋滿了':pn==='onig'?'烤網滿了':pn==='tyaki'?'烤模都在用':'炸鍋滿了')}else if(canPay(costOf(d))){arr[i]={kind:d,t:0};const c=srcCenter({src:STN[d],i});charge(costOf(d),c.x,c.y-50)}}
+  else if(RAWMAP[k]){const d=RAWMAP[k],pn=STN[d],arr=R[pn],i=arr.findIndex((x,j)=>!x&&j<panCap(pn));if(['rmpan','rfry','tyaki','lamen','tako','tama','onig','maki','tpn'].includes(pn)&&!has(d)&&ITEMS[d].buy)return;if(isOff(d)){nope(st);toast(T('這道菜目前下架中，先重新上架才能做'));return}if(i<0){nope(st);toast(pn==='teppan'||pn==='tpn'?'鐵板滿了':pn==='rmpan'?'煎台滿了':pn==='maki'?'捲壽司台滿了':pn==='rfry'?'油鍋滿了':pn==='tako'?'章魚燒盤滿了':pn==='tama'?'玉子燒鍋滿了':pn==='onig'?'烤網滿了':pn==='tyaki'?'烤模都在用':'炸鍋滿了')}else if(canPay(costOf(d))){arr[i]={kind:d,t:0};const c=srcCenter({src:STN[d],i});charge(costOf(d),c.x,c.y-50)}}
   else if(k==='rawN'||k==='rawT'){const kind=k==='rawN'?'negima':'tsukune',i=R.grill.findIndex((g,j)=>!g&&j<ST.up.grill);if(i<0){nope(st);toast('燒烤台滿了')}else if(canPay(costOf(kind))){R.grill[i]={kind,t:0};charge(costOf(kind),L.grill.x+10+i*GW+22,L.grill.y+40)}}
   else if(k==='rawC'){const i=R.fryer.findIndex((f,j)=>!f&&j<ST.up.fryer);if(i<0){nope(st);toast('炸籃都在用')}else if(canPay(costOf('karaage'))){R.fryer[i]={t:0};charge(costOf('karaage'),L.fryer.x+12+i*38+18,L.fryer.y+30)}}
   else if(k==='trash'||k==='trash2'||k==='trash3'){if(R.held&&['grill','fryer','board','tap','warm','teppan','tempura','rmpan','maki','bowl','oden','rfry','tyaki','lamen','tako','tama','onig','tpn'].includes(R.held.src)){consume(R.held);R.held=null;toast('丟掉了')}else if(R.held)R.held=null;else if(CUR==='rm'){if(k==='trash2'||k==='trash3')return renderStations();const i=R.bowls[R.lastBowl]?R.lastBowl:R.bowls.findIndex(Boolean);if(i>=0){R.bowls[i]=null;toast('拉麵碗清空了')}}else if(CUR!=='sushi'&&CUR!=='tep'){const i=R.boards[R.lastBoard]&&R.boards[R.lastBoard].base?R.lastBoard:R.boards.findIndex(b=>b.base);if(i>=0){R.boards[i]=emptyBoard();toast('砧板清空了')}}}
