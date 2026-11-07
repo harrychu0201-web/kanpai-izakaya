@@ -2177,7 +2177,7 @@ const BURNWARN=4;
 function soonBurn(g,k){return !!g&&cookState(g.t,k)==='done'&&burnAt(k)-g.t<BURNWARN}
 function needFlip(g){return !!g&&!g.fl&&g.t>=TKFLIP&&cookState(g.t,'takoyaki')==='raw'}
 function pageStatus(p){let ready=0,warn=0,flip=0,lab='';const chk=(arr,kf)=>arr.forEach(g=>{if(!g)return;const k=kf(g);if(cookState(g.t,k)==='done'){ready++;if(soonBurn(g,k))warn=1}});
-  if(CUR==='sushi'){chk(R.maki,g=>g.kind)}else if(CUR==='tep'){chk(R.tpn||[],g=>g.kind);(R.tpn||[]).forEach(g=>{if(needTp(g)){flip=1;lab=lab||TPLBL[TPS[g.kind][g.s||0]];if((g.w||0)>TPGRACE-2)warn=1}})}else if(CUR==='rm'){if(p===1){chk(R.rmpan,g=>g.kind);chk(R.mpot,()=>'noodle')}else{chk(R.rfry,g=>g.kind);chk(R.tyaki,()=>'taiyaki')}}
+  if(CUR==='sushi'){chk(R.maki,g=>g.kind)}else if(CUR==='tep'){chk(R.tpn||[],g=>g.kind);(R.tpn||[]).forEach(g=>{if(needTp(g)){flip=1;lab=lab||TPLBL[TPS[g.kind][g.s||0]];if((g.w||0)>TPGRACE-2)warn=1}})}else if(CUR==='rm'){if(p===1){chk(R.rmpan,g=>g.kind);chk(R.mpot,()=>'noodle')}else if(p===2){chk(R.rfry,g=>g.kind);chk(R.tyaki,()=>'taiyaki')}else{chk(R.lamen,g=>g.kind);chk(R.tsk,g=>g.kind)}}
   else if(p===1){chk(R.grill,g=>g.kind);chk(R.fryer,()=>'karaage')}
   else if(p===2){chk(R.teppan,g=>g.kind);chk(R.tempura,g=>g.kind)}
   else{chk(R.tako,()=>'takoyaki');chk(R.tama,g=>g.kind);chk(R.onig,g=>g.kind);R.tako.forEach(g=>{if(needFlip(g)){flip=1;if((g.w||0)>TKGRACE-2)warn=1}});[...R.tama,...R.onig].forEach(g=>{if(needStep(g)){flip=1;lab=lab||stepLbl(g);if((g.w||0)>STEPS[g.kind].grace-2)warn=1}})}
