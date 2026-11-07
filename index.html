@@ -4581,6 +4581,11 @@ Object.assign(I18N["en"],{"與電腦配對":"Play with CPU","沒人在線上也�
 Object.assign(I18N["ja"],{"與電腦配對":"CPUと組む","沒人在線上也能玩，電腦店員接手另一個位置。":"誰もオンラインでなくても遊べます。CPU店員がもう一方の役を担当します。"});
 Object.assign(I18N["ko"],{"與電腦配對":"CPU와 함께하기","沒人在線上也能玩，電腦店員接手另一個位置。":"아무도 온라인이 아니어도 플레이할 수 있어요. CPU 점원이 다른 역할을 맡아요."});
 Object.assign(I18N["id"],{"與電腦配對":"Main dengan CPU","沒人在線上也能玩，電腦店員接手另一個位置。":"Tetap bisa main meski tak ada yang online. Staf CPU mengambil peran lainnya."});
+Object.assign(I18N["zh-Hans"],{"隱藏上線狀態":"隐藏上线状态","目前已隱藏":"目前已隐藏","目前顯示在線上":"目前显示在线上","朋友看不到你在線上，也不能邀請你；隨機配對也會關閉。想一起玩時再關掉就好。":"朋友看不到你在线上，也不能邀请你；随机配对也会关闭。想一起玩时再关掉就好。","開啟後朋友看不到你在線上，就不會被邀請，適合想自己玩的時候。":"开启后朋友看不到你在线上，就不会被邀请，适合想自己玩的时候。","隱藏":"隐藏","取消隱藏":"取消隐藏","隱藏上線狀態中，先關掉才能隨機配對":"隐藏上线状态中，先关掉才能随机配对"});
+Object.assign(I18N["en"],{"隱藏上線狀態":"Hide online status","目前已隱藏":"Currently hidden","目前顯示在線上":"Currently shown as online","朋友看不到你在線上，也不能邀請你；隨機配對也會關閉。想一起玩時再關掉就好。":"Friends can’t see you online or invite you, and random match is off. Turn this off when you want to play together.","開啟後朋友看不到你在線上，就不會被邀請，適合想自己玩的時候。":"Friends won’t see you online or invite you, so you can play alone without feeling pressed to say no.","隱藏":"Hide","取消隱藏":"Unhide","隱藏上線狀態中，先關掉才能隨機配對":"Turn off Hide online status to use random match."});
+Object.assign(I18N["ja"],{"隱藏上線狀態":"オンライン状態を隠す","目前已隱藏":"現在非表示","目前顯示在線上":"現在オンライン表示","朋友看不到你在線上，也不能邀請你；隨機配對也會關閉。想一起玩時再關掉就好。":"フレンドからオンラインに見えず、招待も届きません。ランダムマッチも使えなくなります。一緒に遊びたいときに解除してください。","開啟後朋友看不到你在線上，就不會被邀請，適合想自己玩的時候。":"フレンドからオンラインに見えず、招待もされないので、ひとりで遊びたいときに断りにくくなりません。","隱藏":"隠す","取消隱藏":"解除","隱藏上線狀態中，先關掉才能隨機配對":"ランダムマッチを使うには「オンライン状態を隠す」を解除してください。"});
+Object.assign(I18N["ko"],{"隱藏上線狀態":"온라인 상태 숨기기","目前已隱藏":"현재 숨김","目前顯示在線上":"현재 온라인으로 표시","朋友看不到你在線上，也不能邀請你；隨機配對也會關閉。想一起玩時再關掉就好。":"친구에게 온라인으로 보이지 않고 초대도 받지 않아요. 랜덤 매칭도 꺼져요. 같이 놀고 싶을 때 해제하세요.","開啟後朋友看不到你在線上，就不會被邀請，適合想自己玩的時候。":"친구에게 온라인으로 보이지 않아 초대도 오지 않아요. 혼자 놀고 싶을 때 거절할 필요가 없어요.","隱藏":"숨기기","取消隱藏":"숨기기 해제","隱藏上線狀態中，先關掉才能隨機配對":"랜덤 매칭을 쓰려면 온라인 상태 숨기기를 해제하세요."});
+Object.assign(I18N["id"],{"隱藏上線狀態":"Sembunyikan status online","目前已隱藏":"Sedang disembunyikan","目前顯示在線上":"Sedang ditampilkan online","朋友看不到你在線上，也不能邀請你；隨機配對也會關閉。想一起玩時再關掉就好。":"Teman tidak bisa melihatmu online atau mengundangmu, dan pencocokan acak mati. Matikan saat ingin main bersama.","開啟後朋友看不到你在線上，就不會被邀請，適合想自己玩的時候。":"Teman tidak akan melihatmu online atau mengundangmu, jadi kamu bisa main sendiri tanpa merasa sungkan menolak.","隱藏":"Sembunyikan","取消隱藏":"Batal sembunyikan","隱藏上線狀態中，先關掉才能隨機配對":"Matikan Sembunyikan status online untuk memakai pencocokan acak."});
 /* ===== co-op (多人模式，開放給所有登入玩家): room + invite + presence + event channel + 30s reconnect grace ===== */
 const COOP={hostRole:'k',err:'',invOn:false,invOff:null,invSeen:{},on:false,w:0,code:null,role:null,room:null,p:{},ev:[],unsub:null,presOff:null,inv:{},graceWho:null,graceEnd:0,tick:null,lastOn:{},open:false};
 const COOP_GRACE=30000;
@@ -4616,7 +4621,7 @@ function mmBotRow(){return `<div class="lbme" style="flex-wrap:wrap;gap:8px"><sp
 function mmName(){return String((lbEntry()||{}).name||'').slice(0,24)}
 function mmStop(leave){const was=MM.on;MM.on=false;clearInterval(MM.timer);MM.timer=null;MM.busy=false;mwStop();
   if(leave&&was&&CL.user&&CL.api&&CL.api.mmLeave)CL.api.mmLeave(CL.user.uid).catch(()=>{});if(was)coopRender()}
-async function mmStart(){if(MM.on)return;if(!CL.user||!CL.api||!CL.api.mmJoin)return;
+async function mmStart(){if(MM.on)return;if(hideOnIs()){MM.msg='隱藏上線狀態中，先關掉才能隨機配對';coopRender();return}if(!CL.user||!CL.api||!CL.api.mmJoin)return;
   if(!lbEntry()){coopRender();return}
   if(COOP.code){coopNote('已經在連線中');return}
   MM.msg='';
@@ -4679,7 +4684,7 @@ function coopFriendsBlock(){const head=`<p class="lbdesc">${T('邀請在線上�
 function coopDyn(){const me=CL.user.uid,r=COOP.room;
   const inv=Object.keys(COOP.inv).map(c=>{const v=COOP.inv[c]||{};return `<div class="lbme"><span>📨 ${esc(v.name||T('玩家'))} ${T('邀請你一起開店')} <small>${esc(c)}</small></span><button class="btn" data-act="coopaccept" data-id="${esc(c)}">${T('接受')}</button><button class="btn alt" data-act="coopdecline" data-id="${esc(c)}">${T('拒絕')}</button></div>`}).join('');
   let body;
-  if(!COOP.code)body=(COOP.byeMsg?`<p style="color:#e0412c">${T(COOP.byeMsg)}</p>`:'')+coopFriendsBlock();
+  if(!COOP.code)body=hideOnRow()+(COOP.byeMsg?`<p style="color:#e0412c">${T(COOP.byeMsg)}</p>`:'')+coopFriendsBlock();
   else{const o=coopOther(),pr=u=>{const p=COOP.p[u];return p&&p.on?'🟢 '+T('在線'):'⚪ '+T('離線')};
     const left=COOP.graceWho?Math.max(0,Math.ceil((COOP.graceEnd-Date.now())/1000)):0;
     const st=r?r.state:T('已結束');
@@ -4743,6 +4748,7 @@ async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid
       if(!COOP.code&&lbEntry()&&(!FR.data||Date.now()-FR.t>20000)){try{await frLoad()}catch(e){console.warn('coop friends',e)}coopRender()}return}
     if(k==='bot'){coBotStart(id==='f'?'f':'k');return}
     if((k==='make'||k==='accept'||k==='mm')&&CO.bot){if(CO.open)coClose(false);coBotOff()}
+    if(k==='hideon'){const v=!hideOnIs();hideOnSet(v);ONB.hid=false;if(v){if(MM.on)mmStop(true);onHideApply()}else onBeat(true);coopPanel();return}
     if(k==='mm'){await mmStart();return}
     if(k==='mmstop'){mmStop(true);return}
     if(k==='refresh'){try{await frLoad()}catch(e){console.warn('coop friends',e)}coopRender();return}
@@ -4882,6 +4888,7 @@ async function cloudInit1(){
       // friends: a public shop snapshot (lbx), friend codes, friend lists, daily gifts
       putLbx:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lbx/'+uid),d)),
       onlineBeat:(uid,off)=>rt((rd,r)=>rd.set(rd.ref(r,'online/'+uid),off?{t:rd.serverTimestamp(),off:true}:{t:rd.serverTimestamp()})),
+      onlineHide:uid=>rt((rd,r)=>rd.set(rd.ref(r,'online/'+uid),null)),
       onlineMany:ids=>rt((rd,r)=>Promise.all(ids.map(k=>rd.get(rd.ref(r,'online/'+k)).then(s=>[k,s.val()]).catch(()=>[k,null]))).then(a=>{const o={};a.forEach(([k,v])=>{if(v&&typeof v.t==='number')o[k]=v});return o})),
       onlineNow:()=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'online'),rd.orderByChild('t'),rd.startAt(Date.now()-ON_WIN))).then(s=>{const o={};s.forEach(c=>{const v=c.val();if(v&&!v.off)o[c.key]=v.t});return o})),
       lbxMany:ids=>rt((rd,r)=>Promise.all(ids.map(k=>rd.get(rd.ref(r,'lbx/'+k)).then(s=>[k,s.val()]))).then(a=>{const o={};a.forEach(([k,v])=>{o[k]=v});return o})),
@@ -5581,9 +5588,14 @@ const canInbox=()=>!pview()&&(isAdmin()||CL.isStaff===true);
 /* 在線狀態：登入的玩家畫面開著時，每 2.5 分鐘寫一次 online/<uid>（不常駐連線，免費方案連線數有限）；
    5 分鐘內有心跳就算在線上；切到背景或關掉會標記離線 */
 const ON_WIN=300000,ON_BEAT=150000,ONB={t:0,bad:0};
-function onBeat(force){if(!CL.user||!CL.api||!CL.api.onlineBeat||document.hidden||ONB.bad>3)return;if(!force&&Date.now()-ONB.t<ON_BEAT-5000)return;ONB.t=Date.now();
+function onBeat(force){if(!CL.user||!CL.api||!CL.api.onlineBeat||document.hidden||ONB.bad>3)return;if(hideOnIs()){if(!ONB.hid)onHideApply();return}ONB.hid=false;if(!force&&Date.now()-ONB.t<ON_BEAT-5000)return;ONB.t=Date.now();
   CL.api.onlineBeat(CL.user.uid,false).then(()=>{ONB.bad=0}).catch(e=>{ONB.bad++;if(ONB.bad===1)console.warn('online',e)})}
-function onOff(){if(!ONB.t||!CL.user||!CL.api||!CL.api.onlineBeat||ONB.bad)return;ONB.t=0;CL.api.onlineBeat(CL.user.uid,true).catch(()=>{})}
+function onOff(){if(hideOnIs()||!ONB.t||!CL.user||!CL.api||!CL.api.onlineBeat||ONB.bad)return;ONB.t=0;CL.api.onlineBeat(CL.user.uid,true).catch(()=>{})}
+/* 隱藏上線狀態（存在這台裝置）：開著時移除自己的 online 節點，朋友看不到你在線上、也不能邀請你；隨機配對也不能用 */
+function hideOnIs(){try{return localStorage.getItem('izakaya-hideon')==='1'}catch(e){return false}}
+function hideOnSet(v){try{localStorage.setItem('izakaya-hideon',v?'1':'0')}catch(e){}}
+function onHideApply(){ONB.hid=true;ONB.t=0;if(!CL.user||!CL.api||!CL.api.onlineHide)return;CL.api.onlineHide(CL.user.uid).catch(e=>console.warn('hide',e))}
+function hideOnRow(){const h=hideOnIs();return `<div class="lbme" style="flex-wrap:wrap;gap:8px"><span style="flex:1 1 100%">👻 <b>${T('隱藏上線狀態')}</b>：${T(h?'目前已隱藏':'目前顯示在線上')}<br><small>${T(h?'朋友看不到你在線上，也不能邀請你；隨機配對也會關閉。想一起玩時再關掉就好。':'開啟後朋友看不到你在線上，就不會被邀請，適合想自己玩的時候。')}</small></span><button class="btn${h?'':' alt'}" data-act="hideon">${T(h?'取消隱藏':'隱藏')}</button></div>`}
 setInterval(()=>onBeat(),30000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)onOff();else onBeat(true)});
 addEventListener('pagehide',onOff);
