@@ -4499,6 +4499,23 @@ function fitGate(){
     fit();
   });
 }
+/* ===== 作者專屬除錯面板：只有 isAdmin()（作者帳號、非玩家視角）才顯示，玩家看不到 ===== */
+(function(){
+  let el=null;
+  function ok(){try{return isAdmin()}catch(e){return false}}
+  window.dbgUpdate=function(){
+    if(!ok()){if(el)el.style.display='none';return}
+    if(!el){el=document.createElement('div');el.id='author-debug-panel';
+      el.style.cssText='position:fixed;top:4px;left:4px;z-index:999999;background:rgba(0,0,0,.85);color:#fff;font-family:monospace;font-size:10px;padding:6px;border-radius:4px;line-height:1.3;pointer-events:none;word-break:break-all;max-width:260px;box-shadow:0 0 10px rgba(0,0,0,.5)';
+      document.documentElement.appendChild(el)}
+    el.style.display='block';
+    const box=document.getElementById('box'),r=box?box.getBoundingClientRect():{left:0,top:0,right:0,bottom:0};
+    const vv=window.visualViewport||{width:0,height:0,offsetLeft:0,offsetTop:0,scale:1};
+    el.innerHTML=`<b>[Window / Screen]</b><br>innerW ${innerWidth} · innerH ${innerHeight}<br>screen ${screen.width}×${screen.height}<br><b>[visualViewport]</b><br>vv ${vv.width.toFixed(1)}×${vv.height.toFixed(1)}<br>off ${vv.offsetLeft.toFixed(1)},${vv.offsetTop.toFixed(1)} · scale ${vv.scale.toFixed(3)}<br><b>[#box]</b><br>L ${r.left.toFixed(1)} T ${r.top.toFixed(1)}<br>R ${r.right.toFixed(1)} B ${r.bottom.toFixed(1)}<br><small>${new Date().toTimeString().slice(0,8)}</small>`;
+  };
+  ['resize','orientationchange'].forEach(ev=>window.addEventListener(ev,()=>dbgUpdate()));
+  if(window.visualViewport){visualViewport.addEventListener('resize',()=>dbgUpdate());visualViewport.addEventListener('scroll',()=>dbgUpdate())}
+})();
 if(window.visualViewport){visualViewport.addEventListener('resize',()=>{fitGate();compVV()});visualViewport.addEventListener('scroll',compVV)}
 /* 手機橫向時，瀏覽器（Android 系統導覽列滑動時）會平移或縮放整個網頁的「可視區域」，網頁版面本身沒變，CSS 管不到。
    這裡讀出平移量與縮放倍率，把遊戲外框反向位移、反向縮放，讓它在螢幕上維持不動。 */
@@ -4577,6 +4594,7 @@ function fit(){
   clampBubbles();
   compVV();
   if(HOME)placeChat();
+  if(window.dbgUpdate)dbgUpdate();
 }
 ['gesturestart','gesturechange','gestureend'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault(),{passive:false}));document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
 window.addEventListener('resize',()=>{fitGate();[300,800].forEach(t=>setTimeout(fit,t))});document.addEventListener('focusout',e=>{if(e.target&&/^(INPUT|TEXTAREA)$/.test(e.target.tagName))setTimeout(fit,300)});try{new ResizeObserver(()=>fit()).observe($('hud'))}catch(e){}
