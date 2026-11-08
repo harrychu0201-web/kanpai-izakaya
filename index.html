@@ -4506,17 +4506,12 @@ function refitBurst(){[0,100,300,700,1400,2500].forEach(t=>setTimeout(fit,t))}
    以前網址列／系統導覽列一出一收，舞台就跟著放大、縮小來回跳，玩家看了頭暈、也容易點錯。回主頁或轉方向時才重新量。 */
 let PLAYT=0;function playLocked(){return !HOME&&PLAYT&&Date.now()-PLAYT>3000}
 let STAB={o:'',h:0},STABGROW=false,STABJ=false;
-let STABSH=false;
 function stableVisH(){
   const o=innerWidth>innerHeight?'l':'p',v=visH();
   if(STAB.o!==o||!STAB.h){STAB={o,h:v};return v}
   /* 可見高度變小（系統導覽列、網址列滑出來）只是遮住底部，不代表螢幕變小：舞台維持原大小，不跟著縮放，
      否則每滑一次就整個縮小、收起來又放大。只有方向改變（旋轉）或回主頁才重新量。 */
-  if(v<STAB.h&&!PTR){
-    /* 可見高度變小時：只有持續 0.6 秒才縮，系統列短暫滑出不跳；持續變小則照樣縮到看得到底部按鈕為止（不切掉介面）。 */
-    if(!STABSH){STABSH=true;setTimeout(()=>{STABSH=false;const v2=visH();if(/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''))return;if(v2<STAB.h-4&&!PTR&&(innerWidth>innerHeight?'l':'p')===STAB.o){STAB.h=v2;fit()}},600)}
-    return STAB.h;
-  }
+  if(v<STAB.h&&!PTR)return STAB.h;
   /* 同一方向內突然跳超過 120px（例如導覽列或網址列瞬間滑出、或 Android 還沒量完的中間值）：先不採用，
      等它持續 0.7 秒才接受。以前會立刻重設，結果遊戲在「放大」和「縮小」兩個尺寸之間來回跳，客人點錯菜。 */
   if(Math.abs(v-STAB.h)>120){
@@ -4560,7 +4555,7 @@ function fit(){
   const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?landW():(TOUCH?(landT()?landW():stableWrapW()):$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)+(TOUCH?safeBottom():0)));
   /* 保險上限：iOS 更新後偶爾量到過大的寬高（例如讀到還沒排好的版面），遊戲會被放大到超出螢幕，只剩左上角看得到。
      不管量到什麼，遊戲的可用寬高都不會超過實際視窗的寬高。 */
-  const s=Math.min(Math.min(w,Math.max(200,window.innerWidth))/W,Math.min(maxH,Math.max(200,(TOUCH&&innerWidth>innerHeight&&STAB.h)?STAB.h:window.innerHeight))/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
+  const s=Math.min(Math.min(w,Math.max(200,window.innerWidth))/W,Math.min(maxH,Math.max(200,(TOUCH&&innerWidth>innerHeight)?Math.max(window.innerHeight,STAB.h||0):window.innerHeight))/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
   /* 左側錨定：用「釘住的寬度」排版，而不是目前寬度置中。手機橫向時，右側系統導覽列滑出會讓可見寬度變窄，置中的畫面就會整個左右移動。 */
   if(TOUCH){box.style.alignSelf='flex-start';box.style.marginLeft=Math.max(0,(Math.min(w,Math.max(200,window.innerWidth))-W*s)/2)+'px'}else{box.style.alignSelf='';box.style.marginLeft=''}
   $('game').style.transform=`scale(${s})`;
