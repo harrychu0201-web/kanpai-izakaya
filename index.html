@@ -344,7 +344,7 @@ body.tutmode:has(.modal) #tut{display:none}
 .cal-d.now{outline:2px solid #c0392b}
 .cal-d.hol{font-size:13px;background:#ffe36a;color:#3a1a10}
 .heart{position:absolute;pointer-events:none;font-size:30px;color:#ff5a8a;-webkit-text-stroke:2px #3a1a10;paint-order:stroke;animation:rise 1.2s forwards;z-index:6}
-html,body{height:100%;height:100vh;height:100svh;overflow:hidden;overscroll-behavior:none;touch-action:manipulation}
+html,body{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none;touch-action:manipulation}
 #rot{position:fixed;inset:0;z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#1a0e08f2;color:#f3dfb4;font-size:20px;font-weight:900;text-align:center;padding:24px}
 #rot svg{width:96px;height:96px;animation:rotph 1.8s infinite ease-in-out}
 @keyframes rotph{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
@@ -4496,9 +4496,7 @@ function compVV(){
   el.style.transformOrigin='0 0';
   el.style.transform=`translate(${vv.offsetLeft}px,${vv.offsetTop}px) scale(${1/sc})`;
 }
-/* 版面高度用 svh（工具列全部展開時的高度）：狀態列、導覽列滑出或收起，這個數字都不變，遊戲不會跟著跳。
-   以前用 visualViewport／dvh，工具列一動就整個縮放、位移。 */
-function visH(){let d=document.getElementById('svhProbe');if(!d){d=document.createElement('div');d.id='svhProbe';d.style.cssText='position:fixed;left:0;top:0;width:1px;height:100vh;height:100svh;visibility:hidden;pointer-events:none';document.body.appendChild(d)}const sv=d.offsetHeight;if(sv>=200)return sv;let dd=document.getElementById('dvhProbe');if(!dd){dd=document.createElement('div');dd.id='dvhProbe';dd.style.cssText='position:fixed;left:0;top:0;width:1px;height:100vh;height:100dvh;visibility:hidden;pointer-events:none';document.body.appendChild(dd)}const a=window.innerHeight,b=window.visualViewport?visualViewport.height:a;return Math.max(200,Math.min(a,b))}
+function visH(){let d=document.getElementById('dvhProbe');if(!d){d=document.createElement('div');d.id='dvhProbe';d.style.cssText='position:fixed;left:0;top:0;width:1px;height:100vh;height:100dvh;visibility:hidden;pointer-events:none';document.body.appendChild(d)}const a=window.innerHeight,b=window.visualViewport?visualViewport.height:a;return Math.max(200,Math.min(a,b))}
 /* fit() only ran on resize events; on Android the fullscreen / rotation animation reports a stale height first, so the board stayed too tall until the next HUD change (end of day). Re-run it a few times while the viewport settles. */
 function refitBurst(){[0,100,300,700,1400,2500].forEach(t=>setTimeout(fit,t))}
 /* 手機橫向時，瀏覽器的網址列／底部工具列一滑出一收起，可見高度就會跟著變，遊戲會整個跟著縮放（甚至重排）。
