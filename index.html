@@ -4523,9 +4523,12 @@ function refitBurst(){[0,100,300,700,1400,2500].forEach(t=>setTimeout(fit,t))}
    以前網址列／系統導覽列一出一收，舞台就跟著放大、縮小來回跳，玩家看了頭暈、也容易點錯。回主頁或轉方向時才重新量。 */
 let PLAYT=0;function playLocked(){return !HOME&&PLAYT&&Date.now()-PLAYT>3000}
 let STAB={o:'',h:0},STABGROW=false,STABJ=false;
+/* 手機橫向：舞台尺寸只跟著「同方向內見過的最小可見範圍」走，網址列／狀態列／導覽列一出現或收起都不改舞台大小與位置。 */
+function pinLand(){return TOUCH&&innerWidth>innerHeight}
 function stableVisH(){
   const o=innerWidth>innerHeight?'l':'p',v=visH();
   if(STAB.o!==o||!STAB.h){STAB={o,h:v};return v}
+  if(pinLand()){const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');if(!PTR&&!typing&&v<STAB.h)STAB.h=v;return STAB.h}
   /* 同一方向內突然跳超過 120px（例如導覽列或網址列瞬間滑出、或 Android 還沒量完的中間值）：先不採用，
      等它持續 0.7 秒才接受。以前會立刻重設，結果遊戲在「放大」和「縮小」兩個尺寸之間來回跳，客人點錯菜。 */
   if(Math.abs(v-STAB.h)>120){
@@ -4548,6 +4551,7 @@ function landT(){return TOUCH&&innerWidth>innerHeight}
 /* 橫向的視窗寬：營業中鎖定後只記最小值（側邊導覽列滑出滑入不會讓舞台忽大忽小）；寬度大變（摺疊／展開、分割視窗）立即重記。 */
 let LANDW={o:'',w:0};
 function landW(){const o=innerWidth>innerHeight?'l':'p',v=window.innerWidth;
+  if(pinLand()){if(LANDW.o!==o||!LANDW.w){LANDW={o,w:v};return v}if(v<LANDW.w)LANDW.w=v;return LANDW.w}
   if(LANDW.o!==o||!LANDW.w||Math.abs(v-LANDW.w)>120||!playLocked()){LANDW={o,w:v};return v}
   if(v<LANDW.w)LANDW.w=v;return LANDW.w}
 function stableWrapW(){
@@ -4569,9 +4573,10 @@ function fit(){
   const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?landW():(TOUCH?(landT()?landW():stableWrapW()):$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)+(TOUCH?safeBottom():0)));
   /* 保險上限：iOS 更新後偶爾量到過大的寬高（例如讀到還沒排好的版面），遊戲會被放大到超出螢幕，只剩左上角看得到。
      不管量到什麼，遊戲的可用寬高都不會超過實際視窗的寬高。 */
-  const s=Math.min(Math.min(w,Math.max(200,window.innerWidth))/W,Math.min(maxH,Math.max(200,window.innerHeight))/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
+  const cw=pinLand()?Math.max(screen.width,screen.height):window.innerWidth,ch=pinLand()?Math.min(screen.width,screen.height):window.innerHeight;
+  const s=Math.min(Math.min(w,Math.max(200,cw))/W,Math.min(maxH,Math.max(200,ch))/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
   /* 左側錨定：用「釘住的寬度」排版，而不是目前寬度置中。手機橫向時，右側系統導覽列滑出會讓可見寬度變窄，置中的畫面就會整個左右移動。 */
-  if(TOUCH){box.style.alignSelf='flex-start';box.style.marginLeft=Math.max(0,(Math.min(w,Math.max(200,window.innerWidth))-W*s)/2)+'px'}else{box.style.alignSelf='';box.style.marginLeft=''}
+  if(TOUCH){box.style.alignSelf='flex-start';box.style.marginLeft=Math.max(0,(Math.min(w,Math.max(200,cw))-W*s)/2)+'px'}else{box.style.alignSelf='';box.style.marginLeft=''}
   $('game').style.transform=`scale(${s})`;
   $('game').style.setProperty('--fz',Math.min(1.8,Math.max(1,0.85/s)).toFixed(2));
   clampBubbles();
