@@ -4489,10 +4489,8 @@ function compVV(){
   if(!TOUCH||!land){el.style.transform='';el.style.transformOrigin='';return}
   /* 只有真的被放大（可視寬高比版面視窗小）時才補償縮放；全螢幕切換後常會殘留一個 scale 數字但實際沒放大，
      以前會把遊戲縮成一半、留下一塊黑邊。 */
-  /* 系統導覽列／網址列滑動只會平移可視區域（offsetTop 變化），版面本身沒變，不需要補償；
-     補償只用在真的捏合放大時，否則每次滑動遊戲都會跟著位移、縮放。 */
-  const zoomed=vv.scale>1.01&&(vv.width<innerWidth-2||vv.height<innerHeight-2),sc=zoomed?vv.scale:1;
-  if(!zoomed){el.style.transform='';el.style.transformOrigin='';return} // 沒有放大時不套 transform（transform 會改變 fixed 定位子元素的基準）
+  const zoomed=vv.width<innerWidth-2||vv.height<innerHeight-2,sc=zoomed?vv.scale:1;
+  if(!vv.offsetLeft&&!vv.offsetTop&&Math.abs(sc-1)<.001){el.style.transform='';el.style.transformOrigin='';return} // 沒有平移時不套 transform（transform 會改變 fixed 定位子元素的基準）
   el.style.transformOrigin='0 0';
   el.style.transform=`translate(${vv.offsetLeft}px,${vv.offsetTop}px) scale(${1/sc})`;
 }
@@ -4509,9 +4507,6 @@ let STAB={o:'',h:0},STABGROW=false,STABJ=false;
 function stableVisH(){
   const o=innerWidth>innerHeight?'l':'p',v=visH();
   if(STAB.o!==o||!STAB.h){STAB={o,h:v};return v}
-  /* 可見高度變小（系統導覽列、網址列滑出來）只是遮住底部，不代表螢幕變小：舞台維持原大小，不跟著縮放，
-     否則每滑一次就整個縮小、收起來又放大。只有方向改變（旋轉）或回主頁才重新量。 */
-  if(v<STAB.h&&!PTR)return STAB.h;
   /* 同一方向內突然跳超過 120px（例如導覽列或網址列瞬間滑出、或 Android 還沒量完的中間值）：先不採用，
      等它持續 0.7 秒才接受。以前會立刻重設，結果遊戲在「放大」和「縮小」兩個尺寸之間來回跳，客人點錯菜。 */
   if(Math.abs(v-STAB.h)>120){
@@ -4555,7 +4550,7 @@ function fit(){
   const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?landW():(TOUCH?(landT()?landW():stableWrapW()):$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)+(TOUCH?safeBottom():0)));
   /* 保險上限：iOS 更新後偶爾量到過大的寬高（例如讀到還沒排好的版面），遊戲會被放大到超出螢幕，只剩左上角看得到。
      不管量到什麼，遊戲的可用寬高都不會超過實際視窗的寬高。 */
-  const s=Math.min(Math.min(w,Math.max(200,window.innerWidth))/W,Math.min(maxH,Math.max(200,(TOUCH&&innerWidth>innerHeight)?Math.max(window.innerHeight,STAB.h||0):window.innerHeight))/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
+  const s=Math.min(Math.min(w,Math.max(200,window.innerWidth))/W,Math.min(maxH,Math.max(200,window.innerHeight))/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
   /* 左側錨定：用「釘住的寬度」排版，而不是目前寬度置中。手機橫向時，右側系統導覽列滑出會讓可見寬度變窄，置中的畫面就會整個左右移動。 */
   if(TOUCH){box.style.alignSelf='flex-start';box.style.marginLeft=Math.max(0,(Math.min(w,Math.max(200,window.innerWidth))-W*s)/2)+'px'}else{box.style.alignSelf='';box.style.marginLeft=''}
   $('game').style.transform=`scale(${s})`;
