@@ -4481,20 +4481,21 @@ if(TOUCH&&!IOS){let fsTry=0;document.addEventListener('pointerup',function f(){g
 if(TOUCH)document.body.classList.add('lite');
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>refitBurst()));window.addEventListener('orientationchange',()=>refitBurst());
 /* ===== 統一縮放閘門（抗網址列震盪）：window / visualViewport 的 resize 都走這裡 ===== */
-let gateRAF=null,settleTimeout=null,lastGateHeight=window.innerHeight;
+let gateRAF=null,settleTimeout=null,lastGateWidth=window.innerWidth,lastGateHeight=window.innerHeight;
 function fitGate(){
   if(gateRAF)cancelAnimationFrame(gateRAF);
   gateRAF=requestAnimationFrame(()=>{
-    const currentHeight=window.innerHeight;
-    const heightDelta=Math.abs(currentHeight-lastGateHeight);
-    if(heightDelta>0&&heightDelta<120){
-      /* 微幅震盪先攔住，但排程定型計時器：系統列動畫停 150ms 後補跑一次 fit() 並更新基準，避免 HUD 被切掉 */
+    const currentWidth=window.innerWidth,currentHeight=window.innerHeight;
+    const widthDelta=Math.abs(currentWidth-lastGateWidth),heightDelta=Math.abs(currentHeight-lastGateHeight);
+    /* 寬、高變化都小於 120px：系統列（網址列、導覽列、側邊列）滑出滑入造成的抖動，先攔住，停 150ms 後補跑一次 fit() 並更新基準 */
+    if(widthDelta<120&&heightDelta<120){
       clearTimeout(settleTimeout);
-      settleTimeout=setTimeout(()=>{lastGateHeight=window.innerHeight;fit()},150);
+      settleTimeout=setTimeout(()=>{lastGateWidth=window.innerWidth;lastGateHeight=window.innerHeight;fit()},150);
       return;
     }
+    /* 真正大幅度改變（旋轉、鍵盤、桌機拉視窗）：立刻重算 */
     clearTimeout(settleTimeout);
-    lastGateHeight=currentHeight;
+    lastGateWidth=currentWidth;lastGateHeight=currentHeight;
     fit();
   });
 }
