@@ -5924,13 +5924,15 @@ const CO_FOOD={neg:{n:'蔥雞肉串',st:'g',cook:6000,burn:14000,pr:210,art:'neg
   tako:{n:'章魚燒',st:'y',cook:9000,burn:14000,pr:300,ik:'takoyaki',raw:'章魚燒糊'},onig:{n:'烤飯糰',st:'o',cook:8000,burn:14000,pr:260,ik:'yakionigiri',raw:'白飯糰'},
   ram:{n:'醬油拉麵',st:'r',cook:7000,burn:15000,pr:280,rm:'plain',raw:'生麵'},gyo:{n:'煎餃',st:'z',cook:7000,burn:13000,pr:240,ik:'gyoza',raw:'生餃子'},
   /* 融合拉麵：手拿熟的配料，點一下熟的拉麵（或反過來）就合成一碗，不能直接下鍋 */
-  kram:{n:'唐揚拉麵',st:'r',cook:7000,burn:15000,pr:560,rm:'kara',fz:['ram','kara']},eram:{n:'炸蝦拉麵',st:'r',cook:7000,burn:15000,pr:620,rm:'ebi',fz:['ram','ebi']},bram:{n:'薑燒肉拉麵',st:'r',cook:7000,burn:15000,pr:580,rm:'buta',fz:['ram','buta']}};
+  kram:{n:'唐揚拉麵',st:'r',cook:7000,burn:15000,pr:560,rm:'kara',fz:['ram','kara']},eram:{n:'炸蝦拉麵',st:'r',cook:7000,burn:15000,pr:620,rm:'ebi',fz:['ram','ebi']},bram:{n:'薑燒肉拉麵',st:'r',cook:7000,burn:15000,pr:580,rm:'buta',fz:['ram','buta']},
+  /* 拉麵台的味噌拉麵、擔擔麵：生麵（生味噌麵／生擔擔麵）下鍋，熟了拿起送出 */
+  miso:{n:'味噌拉麵',st:'r',cook:7000,burn:15000,pr:300,ik:'miso',raw:'生味噌麵'},dandan:{n:'擔擔麵',st:'r',cook:7000,burn:15000,pr:320,ik:'dandan',raw:'生擔擔麵'}};
 const coFuse=(a,b)=>Object.keys(CO_FOOD).find(F=>{const z=CO_FOOD[F].fz;return z&&((z[0]===a&&z[1]===b)||(z[0]===b&&z[1]===a))});
 /* 四間廚房：每間一個大台（4 格）+ 一個小鍋（3 格）；4 號是麵攤（拉麵鍋＋煎餃鍋） */
 const CO_ST={g:{a:'gr',n:'燒烤台',pg:1,max:CO_GRILL},f:{a:'fr',n:'油鍋',pg:1,max:CO_FRY},t:{a:'tp',n:'鐵板',pg:2,max:4},p:{a:'tm',n:'天婦羅鍋',pg:2,max:3},y:{a:'tk',n:'章魚燒盤',pg:3,max:4},o:{a:'on',n:'烤網',pg:3,max:3},r:{a:'rp',n:'拉麵鍋',pg:4,max:4},z:{a:'gz',n:'煎餃鍋',pg:4,max:3}};
 const CO_PG={1:['g','f'],2:['t','p'],3:['y','o'],4:['r','z']};
 /* 多人模式解鎖：雙方一起營業「滿 2:30」的完整天數累計到門檻，就開放下一段的菜（客人只點已開放的菜，廚房分頁也要開放才能用）。單人模式不受影響；電腦店員局不計天數、固定第一段。 */
-const CO_UNLOCK=[{d:0,k:['neg','tsu','kara']},{d:3,k:['buta','ika','ebi','kaki']},{d:6,k:['tako','onig']},{d:10,k:['ram','gyo','kram','eram','bram']}];
+const CO_UNLOCK=[{d:0,k:['neg','tsu','kara']},{d:3,k:['buta','ika','ebi','kaki']},{d:6,k:['tako','onig']},{d:10,k:['ram','gyo','kram','eram','bram','miso','dandan']}];
 const coStageOf=d=>{let s=0;CO_UNLOCK.forEach((u,i)=>{if(d>=u.d)s=i});return s};
 const coKeys=S=>CO_UNLOCK.slice(0,((S&&S.stg)||0)+1).reduce((a,u)=>a.concat(u.k),[]);
 const coOK=(S,k)=>coKeys(S).indexOf(k)>=0;
@@ -6311,7 +6313,7 @@ function cxMid(L,pg){const B=CO_PG[pg][0],F=CO_PG[pg][1];let g;
   let f;if(F==='z')f=`<rect x="2" y="8" width="132" height="110" rx="10" fill="#2a2a2e" stroke="${O}" stroke-width="4"/><ellipse cx="68" cy="63" rx="60" ry="48" fill="#1d1d20" stroke="#555" stroke-width="4"/><ellipse cx="68" cy="63" rx="52" ry="40" fill="#33302c"/><path d="M10 63h-6" stroke="#8a6a44" stroke-width="8" stroke-linecap="round"/>`;
   else if(F==='p')f=`<rect x="2" y="8" width="132" height="110" rx="10" fill="#c9ced4" stroke="${O}" stroke-width="4"/><rect x="10" y="18" width="116" height="90" rx="6" fill="#d9962e" stroke="${O}" stroke-width="3"/><rect x="10" y="18" width="116" height="10" fill="#ffe08a" opacity=".55"/>`+[0,1,2].map(i=>`<rect x="${15+i*38}" y="28" width="30" height="72" rx="4" fill="none" stroke="#5a5f66" stroke-width="3"/>`).join('');
   else{f=`<rect x="2" y="8" width="132" height="110" rx="10" fill="#2a2a2e" stroke="${O}" stroke-width="4"/><rect x="10" y="18" width="116" height="90" rx="6" fill="#3a1206"/>`;for(let i=0;i<14;i++)f+=`<ellipse cx="${18+(i*29)%104}" cy="${28+(i*41)%74}" rx="8" ry="6" fill="${i%3?'#1a0a04':'#ff6a1a'}" opacity=".85"/>`;f+=`<rect x="10" y="18" width="116" height="90" fill="#ff5a10" opacity=".16"/>`;for(let i=0;i<6;i++)f+=`<path d="M10 ${28+i*15}h116" stroke="#8a9098" stroke-width="2.5"/>`;for(let i=0;i<5;i++)f+=`<path d="M${22+i*24} 18v90" stroke="#8a9098" stroke-width="1.5"/>`}
-  const rc=L.rawC,hw=(rc[2]-6)/2,raws=pg===2?cxRawP('buta',L.rawN)+cxRawP('ika',L.rawT)+cxRawP('ebi',[rc[0],rc[1],hw,rc[3]])+cxRawP('kaki',[rc[0]+hw+6,rc[1],hw,rc[3]]):pg===4?cxRawP('ram',L.rawN)+cxRawP('gyo',L.rawT)+`<div class="cxs cxfz" style="left:${rc[0]}px;top:${rc[1]}px;width:${rc[2]}px;height:${rc[3]}px">🍜 <b>融合拉麵</b>：熟拉麵＋熟配料都放進保溫台，自動合成</div>`:cxRawP('tako',L.rawN)+cxRawP('onig',L.rawT);
+  const rc=L.rawC,hw=(rc[2]-6)/2,raws=pg===2?cxRawP('buta',L.rawN)+cxRawP('ika',L.rawT)+cxRawP('ebi',[rc[0],rc[1],hw,rc[3]])+cxRawP('kaki',[rc[0]+hw+6,rc[1],hw,rc[3]]):pg===4?cxRawP('ram',L.rawN)+cxRawP('gyo',L.rawT)+cxRawP('miso',[rc[0],rc[1],hw,rc[3]])+cxRawP('dandan',[rc[0]+hw+6,rc[1],hw,rc[3]]):cxRawP('tako',L.rawN)+cxRawP('onig',L.rawT);
   return `<div class="cxs" style="left:${L.grill[0]}px;top:${L.grill[1]}px;width:250px;height:182px;cursor:default">${sv(g,'0 0 250 182')}<div class="cxpart" id="cxp-gr"></div><span class="cxl">${CO_ST[B].n}</span></div>`
    +`<div class="cxs" style="left:${L.fry[0]}px;top:${L.fry[1]}px;width:136px;height:122px;cursor:default">${sv(f,'0 0 136 122')}<div class="cxpart" id="cxp-fr"></div><span class="cxl">${CO_ST[F].n}</span></div>`+raws}
 function cxBig(S,now,st){let o='';coArr(S,st).forEach((g,i)=>{const j=i%2,r=i>>1,pos=`left:${11+j*115}px;top:${17+r*75}px;width:113px;height:73px`;
