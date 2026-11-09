@@ -1194,6 +1194,11 @@ for(const k in MOBSPR){const m=MOBSPR[k];SPR[k]={ok:m.ok,happy:m.happy||m.ok,wor
 const MOBS=Object.keys(MOBSPR).map(k=>({spr:k,name:'路人',mob:true}));
 function pickChar(){const used=new Set((R&&R.seats||[]).filter(Boolean).map(c=>c.look.spr));const reg=CHARS.filter(c=>!used.has(c.spr)&&!(R&&!R.spawned&&c.spr==='ryuji')&&!(ST&&ST.banned&&ST.banned[c.spr]>ST.day)),mob=MOBS.filter(m=>!used.has(m.spr));if(reg.length&&(!mob.length||Math.random()<.34))return pick(reg);return mob.length?pick(mob):pick(LOOKS)}
 function custFig(look,mood){if(!look.spr)return custSVG(look,mood);const s=SPR[look.spr];return `<div class="fig spr">${['ok','happy','worry','angry','walk'].map(m=>`<img class="m-${m}" src="${s[m]}" alt="" draggable="false">`).join('')}</div>`}
+// 圖片載入失敗（舊瀏覽器、app 內建瀏覽器、網路中斷）時，客人改用 SVG 版人物，小偷改用 🥷，避免畫面上只剩點單泡泡
+document.addEventListener('error',e=>{const t=e.target;if(!t||t.tagName!=='IMG')return;const f=t.closest&&t.closest('.spr');if(!f||!f.parentNode)return;
+  const host=f.closest('.cust,.robber');if(!host)return;
+  if(host._look)f.outerHTML=custSVG(host._look,host.dataset.m||'ok');
+  else if(host.classList.contains('robber'))f.outerHTML='<div class="fig" style="position:absolute;left:0;right:0;top:40px;text-align:center;font-size:96px;line-height:1">🥷</div>'},true);
 function custSVG(look,mood){
   const sk=look.skin,hc=look.hc,tp=look.top;
   let back='',hair='',body='',extra='';
@@ -2431,7 +2436,7 @@ function spawn(){
   if(c.extra&&c.extra.ok){c.max*=BONUSPAT;c.pat=c.max} // 加碼的客人願意多等一會兒，免得還沒上菜就走了
   el.innerHTML=custFig(c.look,'ok')+`<div class="bubble hide"></div>`+(hg?`<div class="hg-badge">${hg.ic}</div>`:'');
   if(hg&&!DEMO){const rr=loadRec();rr.hg=rr.hg||{};if(!rr.hg[hg.id])dxsPrep(rr);rr.hg[hg.id]=(rr.hg[hg.id]||0)+1;saveRec(rr);setTimeout(()=>{if(R)toast(T('{0}來了！',T(hg.zh)))},300)}
-  $('custLayer').appendChild(el);c.el=el;seatClasses();
+  $('custLayer').appendChild(el);c.el=el;el._look=c.look;seatClasses();
   c.walkT=(seatX(i,seatsN())-80+170)/WALKV;el.style.transitionDuration=c.walkT.toFixed(2)+'s';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.transform='translateX(0)'}));
 }
@@ -2471,7 +2476,7 @@ function oiHTML(k,done,cls){const a=chipsOf(k),w=a.length?Math.max(52,Math.ceil(
 function renderCust(){
   R.seats.forEach(c=>{if(!c)return;const p=Math.max(0,c.pat/c.max);
     const mood=c.st==='bye'?(c.happy?'happy':'angry'):c.tail||p>.5?'ok':p>.22?'worry':'angry';
-    if(mood!==c.fig){c.fig=mood;if(c.look.spr)c.el.dataset.m=mood;else c.el.querySelector('.fig').outerHTML=custSVG(c.look,mood)}
+    if(mood!==c.fig){c.fig=mood;if(c.look.spr&&c.el.querySelector('.spr'))c.el.dataset.m=mood;else{const f=c.el.querySelector('.fig');if(f)f.outerHTML=custSVG(c.look,mood)}}
     const b=c.el.querySelector('.bubble');
     b.classList.toggle('hide',c.st!=='wait');
     setHTML(b,`<div class="pat"><i class="${p>.5?'':p>.22?'mid':'low'}" style="height:${(p*100).toFixed(0)}%"></i></div>`+c.order.map((k,j)=>oiHTML(k,c.filled[j])).join('')+(c.extra?oiHTML(c.extra.key,c.extra.done,'ex'+(c.extra.ok?'':' lock')):''));
