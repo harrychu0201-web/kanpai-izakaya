@@ -112,9 +112,6 @@ body.ovl .hud .icon-btn.bagbtn{width:auto;min-width:40px;height:36px;padding:0 9
 .bubble.cmp .oi .vt b{font-size:14px;padding:0 4px}
 .port .bubble.cmp .oi{width:38px;height:42px}.port .bubble.cmp .oi svg{width:38px;height:38px}.port .bubble.cmp .pat{height:44px}
 .bubble.nt::before,.bubble.nt::after{display:none}
-/* 還沒點餐的客人：金色外框發亮，點一下客人就點餐 */
-.bubble.untaken{border-color:#f1c40f;animation:untaken .9s ease-in-out infinite alternate}
-@keyframes untaken{to{box-shadow:0 0 0 6px #f1c40f66,0 5px 0 #00000040}}
 .cust.hurry .bubble{box-shadow:0 0 0 3px #e74c3c,0 0 14px #e74c3c;animation:hurry .6s ease-in-out infinite alternate}
 /* bonus add-on order (加碼點單): one optional extra dish per customer, dashed gold chip; a dish you haven't unlocked is greyed with a lock */
 .oi.ex{margin-left:8px;padding:3px;border:2.5px dashed #d9a21b;border-radius:12px;background:#fff6d6;box-sizing:content-box}
@@ -2942,7 +2939,7 @@ function renderCust(){
     const mood=c.st==='bye'?(c.happy?'happy':'angry'):c.tail||p>.5?'ok':p>.22?'worry':'angry';
     if(mood!==c.fig){c.fig=mood;if(c.look.spr&&c.el.querySelector('.spr'))c.el.dataset.m=mood;else{const f=c.el.querySelector('.fig');if(f)f.outerHTML=custSVG(c.look,mood)}}
     const b=c.el.querySelector('.bubble');
-    b.classList.toggle('hide',c.st!=='wait');b.classList.toggle('untaken',c.st==='wait'&&!c.taken);
+    b.classList.toggle('hide',c.st!=='wait');
     setHTML(b,`<div class="pat"><i class="${p>.5?'':p>.22?'mid':'low'}" style="height:${(p*100).toFixed(0)}%"></i></div>`+c.order.map((k,j)=>oiHTML(k,c.filled[j])).join('')+(c.extra?oiHTML(c.extra.key,c.extra.done,'ex'+(c.extra.ok?'':' lock')):''));
   });
   layoutBubbles();
