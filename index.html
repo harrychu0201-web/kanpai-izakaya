@@ -1324,6 +1324,240 @@ function drawSushiBg(){
   <rect x="-4" y="374" width="${W+8}" height="26" fill="#4a2e18" stroke="${O}" stroke-width="3"/>
   <rect x="0" y="400" width="${W}" height="${H-KY}" fill="url(#skit)"/>${Array.from({length:Math.ceil(W/64)},(_,i)=>`<path d="M${i*64} 400v${H-KY}" stroke="#2a180c" stroke-width="2" opacity=".6"/>`).join('')}</g>`;
 }
+/* ================= 裝飾品細緻重畫：暖色漸層、細輪廓、高光、接觸陰影，與新畫風背景同調 ================= */
+const DKO='#2e170c';
+const dkLG=(id,a,b,x2=0,y2=1)=>`<linearGradient id="${id}" x1="0" y1="0" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
+const dkSh=(cx,cy,rx,ry,o=.3)=>`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#1a0a04" opacity="${o}"/>`;
+const DKF='font-family="Zen Maru Gothic,Noto Sans TC,sans-serif"';
+
+function dkTV(){
+  const grass=[...Array(8)].map((_,i)=>`<rect x="${8+i*14.5}" y="30" width="14.5" height="46" fill="${i%2?'#3d8c40':'#49993f'}"/>`).join('');
+  const crowd=[...Array(26)].map((_,i)=>`<circle cx="${10+i*4.5+(i%3)}" cy="${18+(i*7%9)}" r="1.3" fill="${['#e8d0a8','#c0504a','#e9c46a','#7aa0d0','#f2f2f2'][i%5]}" opacity=".85"/>`).join('');
+  return `<defs>${dkLG('dk-tvb','#4c4c56','#14141a',1,1)}<linearGradient id="dk-tvg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".24"/><stop offset=".42" stop-color="#fff" stop-opacity="0"/></linearGradient><clipPath id="dk-tvc"><rect x="7" y="14" width="116" height="62" rx="2.5"/></clipPath></defs>
+  <rect x="4" y="13" width="130" height="78" rx="7" fill="#1a0a04" opacity=".3"/>
+  <path d="M52 0h26v10H52z" fill="#6a6a72" stroke="${DKO}" stroke-width="2"/><path d="M56 2.5h18" stroke="#a4a4ae" stroke-width="1.5" stroke-linecap="round"/>
+  <rect x="0" y="8" width="130" height="78" rx="6" fill="url(#dk-tvb)" stroke="${DKO}" stroke-width="2.5"/>
+  <path d="M7 10.6h116" stroke="#9a9aa6" stroke-width="1.2" opacity=".75" stroke-linecap="round"/>
+  <g clip-path="url(#dk-tvc)"><rect x="7" y="14" width="116" height="62" fill="#2f2f4a"/>${crowd}<rect x="7" y="26" width="116" height="5" fill="#1f5a3a"/><path d="M7 28.5h116" stroke="#e9e3d3" stroke-width="1"/>${grass}
+    <path d="M65 33L100 53L65 74L30 53Z" fill="#c99a62"/><path d="M65 41L85 53L65 66L45 53Z" fill="#4a9c46"/><circle cx="65" cy="54" r="3.2" fill="#d8ac74"/>
+    <path d="M65 74L9 36M65 74L121 36" stroke="#fff" stroke-width="1.1" opacity=".75"/>
+    <rect x="97.5" y="50.5" width="5" height="5" fill="#fff"/><rect x="27.5" y="50.5" width="5" height="5" fill="#fff"/><rect x="62.5" y="31" width="5" height="4" fill="#fff"/><path d="M62 72h6l1 3h-8z" fill="#fff"/>
+    <rect x="11" y="17" width="58" height="13" rx="2.5" fill="#0b0b10" opacity=".88"/><text x="16" y="27" ${DKF} font-weight="900" font-size="8.4" fill="#fff">灯 5 - 3 鷹</text><path d="M63 20.5l3 0-1.5 3z" fill="#ffd24a"/><circle cx="108" cy="36" r="2" fill="#fff"/><path d="M104 38l-8 4" stroke="#fff" stroke-width=".8" opacity=".5"/>
+    <rect x="7" y="14" width="116" height="62" fill="url(#dk-tvg)"/>${[...Array(12)].map((_,i)=>`<path d="M7 ${16+i*5}h116" stroke="#000" stroke-width=".5" opacity=".07"/>`).join('')}</g>
+  <rect x="7" y="14" width="116" height="62" rx="2.5" fill="none" stroke="#050508" stroke-width="1.2"/>
+  <rect x="57" y="79.5" width="16" height="2.2" rx="1" fill="#70707a"/><circle cx="117" cy="80.6" r="1.7" fill="#5cff7a"/><circle cx="117" cy="80.6" r="3" fill="#5cff7a" opacity=".25"/>`;
+}
+
+function dkRecord(lg){
+  const long=lg-58>=34;
+  const sleeves=long?[...Array(7)].map((_,i)=>`<rect x="${30+i*8}" y="${lg-22}" width="6" height="20" rx="1" fill="${['#b8372a','#2b3b6e','#e9c46a','#3d5a2a','#f3e6c8','#7a2e22','#2a4466'][i]}" stroke="${DKO}" stroke-width="1"/>`).join(''):'';
+  return `<defs>${dkLG('dk-rw','#a06c3e','#5a3418')}${dkLG('dk-rt','#c08c56','#8a5a34')}<pattern id="dk-grille" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0h4" stroke="#1c0e06" stroke-width="1.3"/></pattern><radialGradient id="dk-vinyl" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#46464c"/><stop offset="1" stop-color="#0a0a0c"/></radialGradient></defs>
+  ${dkSh(56,lg+2,48,4.5,.32)}
+  <path d="M24 56L22 ${lg}M86 56L88 ${lg}" stroke="${DKO}" stroke-width="8" stroke-linecap="round"/><path d="M24 56L22 ${lg}M86 56L88 ${lg}" stroke="#7a4a28" stroke-width="4" stroke-linecap="round"/><path d="M22.5 60L21 ${lg-4}M85.5 60L87 ${lg-4}" stroke="#c08c56" stroke-width="1" opacity=".6" stroke-linecap="round"/>
+  ${long?`<rect x="20" y="${lg-24}" width="70" height="4" rx="1.5" fill="#8a5a34" stroke="${DKO}" stroke-width="2"/>${sleeves}`:''}
+  <rect x="20" y="52" width="70" height="7" rx="2" fill="#7a4a28" stroke="${DKO}" stroke-width="2"/>
+  <rect x="0" y="22" width="110" height="34" rx="4" fill="url(#dk-rw)" stroke="${DKO}" stroke-width="2.5"/>
+  <path d="M4 24.5h102" stroke="#e0aa72" stroke-width="1.3" opacity=".7" stroke-linecap="round"/>
+  <rect x="6" y="27" width="46" height="25" rx="3" fill="#2a1608" stroke="${DKO}" stroke-width="1.6"/><rect x="8" y="29" width="42" height="21" rx="2" fill="#6a4a2a"/><rect x="8" y="29" width="42" height="21" rx="2" fill="url(#dk-grille)"/>
+  <rect x="58" y="27" width="46" height="9" rx="2" fill="#1a0e06" stroke="${DKO}" stroke-width="1.4"/><path d="M62 31.5h38" stroke="#ffb24a" stroke-width="1.6" opacity=".7" stroke-linecap="round"/><path d="M82 29v5" stroke="#ff5a3a" stroke-width="1.2"/>
+  ${[66,80,94].map(x=>`<circle cx="${x}" cy="44.5" r="4.6" fill="#e8c45a" stroke="${DKO}" stroke-width="1.6"/><circle cx="${x-1}" cy="43.3" r="1.5" fill="#fff6c8" opacity=".8"/><path d="M${x} 41v3" stroke="${DKO}" stroke-width="1.3" stroke-linecap="round"/>`).join('')}
+  <rect x="6" y="10" width="98" height="14" rx="3" fill="url(#dk-rt)" stroke="${DKO}" stroke-width="2.5"/>
+  <path d="M10 12.2h90" stroke="#f0cc98" stroke-width="1.3" opacity=".7" stroke-linecap="round"/>
+  <ellipse cx="46" cy="15" rx="35" ry="8.6" fill="#3a2418" stroke="${DKO}" stroke-width="1.6"/>
+  <ellipse cx="46" cy="14.4" rx="33" ry="7.8" fill="url(#dk-vinyl)"/>
+  ${[26,20,14].map(r=>`<ellipse cx="46" cy="14.4" rx="${r}" ry="${r*.235}" fill="none" stroke="#fff" stroke-width=".5" opacity=".16"/>`).join('')}
+  <path d="M20 12q10-6 24-6.2" stroke="#fff" stroke-width="1.6" opacity=".2" fill="none" stroke-linecap="round"/>
+  <ellipse cx="46" cy="14.4" rx="9" ry="3" fill="#c0392b" stroke="${DKO}" stroke-width="1"/><ellipse cx="46" cy="14.2" rx="2.6" ry="1" fill="#f3e6c8"/>
+  <circle cx="94" cy="9" r="5.2" fill="#d0d4da" stroke="${DKO}" stroke-width="1.8"/><circle cx="93" cy="8" r="1.7" fill="#fff" opacity=".8"/><rect x="95" y="1.6" width="6" height="6.6" rx="2" fill="#9aa0a8" stroke="${DKO}" stroke-width="1.4"/>
+  <path d="M94 9L67 15.5" stroke="${DKO}" stroke-width="3.6" stroke-linecap="round"/><path d="M94 9L67 15.5" stroke="#d0d4da" stroke-width="2" stroke-linecap="round"/><rect x="60.5" y="13.4" width="8.5" height="5" rx="1.6" transform="rotate(-14 64 16)" fill="#2a2a2e" stroke="${DKO}" stroke-width="1.2"/>
+  <text x="98" y="-3" font-size="16" fill="#ffd27a">♪</text><text x="108" y="-14" font-size="11" fill="#ffd27a" opacity=".8">♫</text>`;
+}
+
+function dkBarrels(){
+  const bar=([x,y],i)=>`<g transform="translate(${x} ${y})">
+    <path d="M3 4q28-6 56 0q4 14 0 28q-28 6-56 0q-4-14 0-28z" fill="url(#dk-ba)" stroke="${DKO}" stroke-width="2.4"/>
+    ${[9,15,21,27].map(v=>`<path d="M4 ${v}q27-3 54 0" stroke="#8a5a2a" stroke-width=".9" fill="none" opacity=".55"/>`).join('')}
+    <path d="M6 7q25-4 50 0" stroke="#fff0c8" stroke-width="1.6" opacity=".6" fill="none" stroke-linecap="round"/>
+    ${[9,53].map(v=>`<path d="M${v} 3.4v29.4" stroke="${DKO}" stroke-width="5.6"/><path d="M${v} 3.4v29.4" stroke="#6a4424" stroke-width="3"/><path d="M${v-.8} 5v26" stroke="#b08850" stroke-width=".9" opacity=".7"/>`).join('')}
+    <path d="M17 3.6v28.8M45 3.6v28.8" stroke="#c8a266" stroke-width="1" opacity=".6"/>
+    <circle cx="31" cy="18" r="11.4" fill="#fbf1dc" stroke="#b8372a" stroke-width="2.6"/><circle cx="31" cy="18" r="8.6" fill="none" stroke="#b8372a" stroke-width=".8" opacity=".6"/>
+    <text x="31" y="22.8" text-anchor="middle" font-family="Dela Gothic One,serif" font-size="13" fill="#b8372a">酒</text>
+    <ellipse cx="50" cy="4.4" rx="3.2" ry="1.8" fill="#6a4424" stroke="${DKO}" stroke-width="1.3"/>
+    <path d="M7 31q24 5 48 0" stroke="#7a4a1e" stroke-width="2" opacity=".4" fill="none"/></g>`;
+  return `<defs>${dkLG('dk-ba','#e9c898','#bf9558')}</defs>${dkSh(64,64,66,5,.28)}${[[0,22],[66,22],[33,-12]].map(bar).join('')}`;
+}
+
+function dkBoard(){
+  return `<defs>${dkLG('dk-bf','#aa7642','#6a4020')}${dkLG('dk-bs','#30503e','#1e3528')}</defs>
+  ${dkSh(38,103,36,3.6,.32)}
+  <path d="M10 94v10M66 94v10" stroke="${DKO}" stroke-width="7" stroke-linecap="round"/><path d="M10 94v10M66 94v10" stroke="#6a4020" stroke-width="3.6" stroke-linecap="round"/>
+  <rect width="76" height="100" rx="5" fill="url(#dk-bf)" stroke="${DKO}" stroke-width="2.5"/>
+  <path d="M3 18q36 3 70 0M3 52q36-3 70 0M3 78q36 3 70 0" stroke="#4a2a12" stroke-width=".9" fill="none" opacity=".5"/>
+  <path d="M6 3h64" stroke="#e8bc84" stroke-width="1.5" opacity=".75" stroke-linecap="round"/>
+  <rect x="7" y="7" width="62" height="76" rx="2" fill="url(#dk-bs)" stroke="${DKO}" stroke-width="1.5"/>
+  <rect x="7" y="7" width="62" height="5" fill="#000" opacity=".24"/>
+  <ellipse cx="24" cy="60" rx="15" ry="6" fill="#fff" opacity=".05"/><ellipse cx="52" cy="36" rx="12" ry="5" fill="#fff" opacity=".045"/><ellipse cx="40" cy="74" rx="22" ry="4" fill="#fff" opacity=".04"/>
+  <text x="38" y="26" text-anchor="middle" ${DKF} font-weight="900" font-size="14" fill="#f5f0e0">本日</text>
+  <text x="38" y="39" text-anchor="middle" ${DKF} font-weight="700" font-size="10.5" fill="#ffd27a">${CJK()?T('推薦'):'おすすめ'}</text>
+  <path d="M14 43q12 2.5 24 0t24 0" stroke="#f5f0e0" stroke-width="1.2" fill="none" opacity=".7" stroke-linecap="round"/>
+  <g stroke="#f5f0e0" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".88"><path d="M13 53q3-6 6 0q3 6 6 0"/><path d="M33 51h14M33 57h10"/><circle cx="55" cy="51" r="1" fill="#f5f0e0"/><circle cx="55" cy="57" r="1" fill="#f5f0e0"/></g>
+  <path d="M14 65q3-3 6 0M22 65q3-3 6 0" stroke="#ffd27a" stroke-width="1.3" fill="none" opacity=".7" stroke-linecap="round"/><path d="M36 64h20" stroke="#f5f0e0" stroke-width="1.4" opacity=".6" stroke-linecap="round"/>
+  <rect x="5" y="85" width="66" height="8" rx="2" fill="#7a4a24" stroke="${DKO}" stroke-width="1.8"/><rect x="15" y="86.6" width="14" height="3.2" rx="1" fill="#fff" stroke="${DKO}" stroke-width=".7"/><rect x="46" y="86.2" width="15" height="4.4" rx="1" fill="#c0504a" stroke="${DKO}" stroke-width=".8"/><path d="M6 85.8h64" stroke="#d8a468" stroke-width="1" opacity=".6"/>`;
+}
+
+function dkScroll(){
+  return `<defs>${dkLG('dk-ss','#476a42','#2f4a2e')}${dkLG('dk-sp','#f8eed6','#e6d6ae')}<pattern id="dk-sb" width="9" height="9" patternUnits="userSpaceOnUse"><path d="M0 4.5q2.25-4.5 4.5 0q2.25 4.5 4.5 0" stroke="#86ab70" stroke-width=".8" fill="none" opacity=".45"/></pattern></defs>
+  ${dkSh(26,181,28,2.6,.22)}
+  <path d="M-4 3L24-10L52 3" stroke="${DKO}" stroke-width="1.6" fill="none"/><circle cx="24" cy="-10" r="2.4" fill="#d9b060" stroke="${DKO}" stroke-width="1.3"/>
+  <rect x="3" y="7" width="46" height="170" fill="#1a0a04" opacity=".22" transform="translate(2 3)"/>
+  <rect x="2" y="6" width="44" height="168" fill="url(#dk-ss)" stroke="${DKO}" stroke-width="2"/><rect x="2" y="6" width="44" height="168" fill="url(#dk-sb)"/>
+  <rect x="2" y="6" width="44" height="9" fill="#c9a15a" stroke="${DKO}" stroke-width="1.2"/><rect x="2" y="165" width="44" height="9" fill="#c9a15a" stroke="${DKO}" stroke-width="1.2"/><path d="M3 9h42M3 168h42" stroke="#f0d492" stroke-width="1" opacity=".7"/>
+  <rect x="8" y="19" width="32" height="142" fill="url(#dk-sp)" stroke="#8a6a3a" stroke-width="1"/>
+  <path d="M10 40h5M30 80h6M12 120h5M32 150h6M20 62h4" stroke="#d6c08a" stroke-width=".8" opacity=".55"/>
+  ${[...'一期一會'].map((c,i)=>`<text x="${24+(i%2?.6:-.6)}" y="${46+i*28.5}" text-anchor="middle" font-family="LXGW WenKai TC,Kaiti TC,STKaiti,KaiTi,serif" font-weight="300" font-size="${i===0||i===2?23:25}" fill="#1a0e08">${c}</text>`).join('')}
+  <rect x="30" y="144" width="9" height="9" rx="1" fill="#c0261e" stroke="#7a1410" stroke-width=".6"/><text x="34.5" y="151.2" text-anchor="middle" font-size="6.4" font-weight="900" ${DKF} fill="#ffe9d0">灯</text>
+  <rect x="-3" y="171" width="54" height="8" rx="3.4" fill="#6a4228" stroke="${DKO}" stroke-width="2"/><path d="M0 173h48" stroke="#b08850" stroke-width="1" opacity=".6"/><circle cx="-3" cy="175" r="3.6" fill="#d9b060" stroke="${DKO}" stroke-width="1.5"/><circle cx="51" cy="175" r="3.6" fill="#d9b060" stroke="${DKO}" stroke-width="1.5"/>
+  <rect x="-3" y="2" width="54" height="7" rx="3" fill="#6a4228" stroke="${DKO}" stroke-width="2"/><path d="M0 4h48" stroke="#b08850" stroke-width="1" opacity=".6"/>`;
+}
+
+function dkShamisen(P){
+  return `<g transform="translate(${P.sham[0]} ${P.sham[1]}) rotate(8) scale(.8)"><defs>${dkLG('dk-sn','#4a2616','#1e0e06',1,0)}${dkLG('dk-sk','#fdf5e0','#e4d0a4')}</defs>
+  ${dkSh(0,181,24,3,.2)}
+  <circle cx="0" cy="-12" r="2.2" fill="#9a9aa2" stroke="${DKO}" stroke-width="1"/>
+  <path d="M-3.4 12h6.8l1.8 124h-10.4z" fill="url(#dk-sn)" stroke="${DKO}" stroke-width="1.6"/><path d="M-1.6 16v116" stroke="#8a5a3a" stroke-width="1" opacity=".55"/>
+  <path d="M-5 -2q5-9 10 0v16h-10z" fill="#2c1608" stroke="${DKO}" stroke-width="1.6"/><path d="M-3 -1q3-6 6 0" stroke="#f3e6c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <rect x="-13" y="2" width="9" height="5.4" rx="2.7" fill="#f0dca8" stroke="${DKO}" stroke-width="1.4"/><rect x="4" y="6" width="9" height="5.4" rx="2.7" fill="#f0dca8" stroke="${DKO}" stroke-width="1.4"/><rect x="-13" y="10" width="9" height="5.4" rx="2.7" fill="#f0dca8" stroke="${DKO}" stroke-width="1.4"/>
+  <rect x="-22" y="130" width="44" height="50" rx="10" fill="#3a1c10" stroke="${DKO}" stroke-width="2.4"/><path d="M-19 133h38" stroke="#8a5a3a" stroke-width="1.2" opacity=".6" stroke-linecap="round"/>
+  <rect x="-17.5" y="134.5" width="35" height="41" rx="6.5" fill="url(#dk-sk)" stroke="${DKO}" stroke-width="1.2"/>
+  <path d="M-13 140q13 4 26 0M-14 165q14 5 28 0" stroke="#c9b280" stroke-width=".8" fill="none" opacity=".6"/>
+  <path d="M-9 163q9 6 18 0v8q-9 4-18 0z" fill="#8a5a34" opacity=".55"/>
+  <path d="M-1.6 14V176M0 14V176M1.6 14V176" stroke="#fff" stroke-width=".7" opacity=".9"/>
+  <path d="M-9 150h18" stroke="${DKO}" stroke-width="3.4" stroke-linecap="round"/><rect x="-8" y="146.4" width="16" height="3.4" rx="1.4" fill="#fffaf0" stroke="${DKO}" stroke-width=".9"/>
+  <path d="M0 180v8" stroke="#a0262a" stroke-width="2.4"/><path d="M-2.6 188h5.2l1.2 9h-7.6z" fill="#b8372a" stroke="${DKO}" stroke-width="1"/></g>
+  <text x="${P.notes[0]}" y="${P.notes[1]}" font-size="22" fill="#ffd27a">♪</text><text x="${P.notes[0]+8}" y="${P.notes[1]+36}" font-size="16" fill="#ffd27a">♫</text>`;
+}
+
+function dkCat(gold){
+  const a=gold?'#ffeb94':'#ffffff',b=gold?'#d89a1c':'#e9dcc6';
+  return `<defs>${dkLG('dk-cg',a,b,1,1)}<clipPath id="dk-cc"><ellipse cx="22" cy="19" rx="17" ry="15"/></clipPath></defs>
+  ${dkSh(24,60,23,3.2,.3)}
+  <path d="M2 46q0-22 20-22t20 22q0 13-20 13t-20-13z" fill="url(#dk-cg)" stroke="${DKO}" stroke-width="2.4"/>
+  <ellipse cx="13" cy="57" rx="6.4" ry="3.6" fill="url(#dk-cg)" stroke="${DKO}" stroke-width="1.8"/><ellipse cx="31" cy="57" rx="6.4" ry="3.6" fill="url(#dk-cg)" stroke="${DKO}" stroke-width="1.8"/>
+  <path d="M36 38q12-8 9-24q-1-5-6-3.4q-4 2-3 8q-5 6-5 14z" fill="url(#dk-cg)" stroke="${DKO}" stroke-width="2.2" stroke-linejoin="round"/>
+  <circle cx="41" cy="12.4" r="2.1" fill="#f6a6b0"/><path d="M38.6 10l-.6-2M41 9.2V7M43.4 10l.6-2" stroke="${DKO}" stroke-width=".9" stroke-linecap="round"/>
+  <path d="M8 11l1-14l11 7z" fill="url(#dk-cg)" stroke="${DKO}" stroke-width="2.2" stroke-linejoin="round"/><path d="M36 11l-1-14l-11 7z" fill="url(#dk-cg)" stroke="${DKO}" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M10.5 6l.6-8l5.8 4z" fill="#f6a6b0"/><path d="M33.5 6l-.6-8l-5.8 4z" fill="#f6a6b0"/>
+  <ellipse cx="22" cy="19" rx="17" ry="15" fill="url(#dk-cg)" stroke="${DKO}" stroke-width="2.4"/>
+  ${gold?'':`<g clip-path="url(#dk-cc)"><ellipse cx="11" cy="9" rx="8" ry="6" fill="#f0a43a"/><ellipse cx="34" cy="8" rx="6" ry="5" fill="#3a2a22"/></g>`}
+  <path d="M11.5 18.6q3.2-4.4 6.4 0M26.1 18.6q3.2-4.4 6.4 0" stroke="${DKO}" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <ellipse cx="10.4" cy="24" rx="3.6" ry="2.2" fill="#f27a8a" opacity=".5"/><ellipse cx="33.6" cy="24" rx="3.6" ry="2.2" fill="#f27a8a" opacity=".5"/>
+  <path d="M20 22h4l-2 2.4z" fill="#e8707e" stroke="${DKO}" stroke-width=".8" stroke-linejoin="round"/><path d="M22 24.4v1.2M18.6 26q3.4 3 3.4-.4q0 3.4 3.4.4" stroke="${DKO}" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <path d="M4 22l8 1.2M4.6 26.4l8-2M40 22l-8 1.2M39.4 26.4l-8-2" stroke="${DKO}" stroke-width="1" opacity=".75" stroke-linecap="round"/>
+  <path d="M10 14q4-4 9-5" stroke="#fff" stroke-width="1.8" opacity=".6" fill="none" stroke-linecap="round"/>
+  <path d="M8 32q14 8 28 0v4.6q-14 8-28 0z" fill="#d23a2a" stroke="${DKO}" stroke-width="1.8" stroke-linejoin="round"/><circle cx="22" cy="39" r="4.2" fill="#f5c542" stroke="${DKO}" stroke-width="1.6"/><path d="M19.4 39h5.2M22 41.2v1.8" stroke="${DKO}" stroke-width="1" stroke-linecap="round"/><circle cx="21" cy="37.6" r="1.1" fill="#fff6c8" opacity=".9"/>
+  <path d="M15 46q7-4 14 0q2 8-7 11q-9-3-7-11z" fill="#f5c542" stroke="${DKO}" stroke-width="1.6" stroke-linejoin="round"/><path d="M19 49h6M19.4 52h5.2" stroke="${DKO}" stroke-width="1" stroke-linecap="round"/><text x="22" y="48" text-anchor="middle" font-size="3" fill="${DKO}">福</text>
+  ${gold?`<path d="M3 4l1.4 3 3 1.4-3 1.4L3 13l-1.4-3.2L-1.4 8.4l3-1.4z" fill="#fff" opacity=".9"/><path d="M44 26l1 2.2 2.2 1-2.2 1L44 32.4l-1-2.2-2.2-1 2.2-1z" fill="#fff" opacity=".8"/>`:''}`;
+}
+
+function dkBonsai(){
+  const pad=(cx,cy,rx,ry,i)=>`<g><ellipse cx="${cx}" cy="${cy+1.6}" rx="${rx}" ry="${ry}" fill="#2b5a2e" stroke="${DKO}" stroke-width="1.8"/><ellipse cx="${cx-1.5}" cy="${cy-.6}" rx="${rx-2.6}" ry="${ry-1.8}" fill="#437c3c"/><ellipse cx="${cx-3}" cy="${cy-2.4}" rx="${rx*.55}" ry="${ry*.45}" fill="#6aa853" opacity=".85"/>${[[-.5,.1],[.3,-.4],[.55,.2],[-.2,.5],[.05,-.1]].map(([u,v],j)=>`<circle cx="${cx+u*rx}" cy="${cy+v*ry}" r=".9" fill="${j%2?'#1f4a24':'#a3d37a'}" opacity=".8"/>`).join('')}</g>`;
+  return `<g transform="translate(16 286)"><defs>${dkLG('dk-bp','#8a5040','#4e281e')}</defs>
+  ${dkSh(28,62,26,3,.3)}
+  <path d="M28 44q-9-6-4-14q5-8 13-11" stroke="${DKO}" stroke-width="8.4" fill="none" stroke-linecap="round"/><path d="M28 44q-9-6-4-14q5-8 13-11" stroke="#76502e" stroke-width="5.4" fill="none" stroke-linecap="round"/><path d="M26 41q-4-6 0-11M30 30q3-4 6-5" stroke="#3c2210" stroke-width=".9" fill="none" opacity=".7" stroke-linecap="round"/>
+  <path d="M25 31q-8-2-11-11" stroke="${DKO}" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M25 31q-8-2-11-11" stroke="#76502e" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+  <path d="M35 21q7-3 11-10" stroke="${DKO}" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M35 21q7-3 11-10" stroke="#76502e" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+  ${pad(15,16,16,8.4,0)}${pad(41,9,16,8.8,1)}${pad(32,28,13,6.6,2)}
+  <path d="M5 44h46l-3 14q-1 4-5 4H13q-4 0-5-4z" fill="url(#dk-bp)" stroke="${DKO}" stroke-width="2.2" stroke-linejoin="round"/>
+  <rect x="3" y="40.6" width="50" height="6.4" rx="2.4" fill="#a2604a" stroke="${DKO}" stroke-width="2"/><path d="M6 42.4h44" stroke="#d89a82" stroke-width="1.2" opacity=".7" stroke-linecap="round"/>
+  <path d="M12 51q-1 5 1 8" stroke="#d89a82" stroke-width="1.2" opacity=".55" fill="none" stroke-linecap="round"/><path d="M12 62v1.6M44 62v1.6" stroke="${DKO}" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="28" cy="41" rx="21" ry="2.8" fill="#3a2418" opacity=".9"/><ellipse cx="15" cy="40.4" rx="5" ry="1.5" fill="#5a8a3c"/><ellipse cx="40" cy="40.8" rx="4" ry="1.3" fill="#6a9a46"/><circle cx="24" cy="41" r="1" fill="#b0a090"/><circle cx="33" cy="41.4" r="1.2" fill="#9a8a7a"/></g>`;
+}
+
+function dkDaruma(){
+  return `<g transform="translate(76 306)"><defs><radialGradient id="dk-dr" cx=".35" cy=".28" r=".95"><stop offset="0" stop-color="#f4604f"/><stop offset=".6" stop-color="#cc2a1e"/><stop offset="1" stop-color="#8e1810"/></radialGradient></defs>
+  ${dkSh(18,45,17,3,.3)}
+  <path d="M18 3q18 0 18 21q0 20-18 20t-18-20q0-21 18-21z" fill="url(#dk-dr)" stroke="${DKO}" stroke-width="2.2"/>
+  <path d="M4 33q14 7 28 0M5 38.4q13 6 26 0" stroke="#f5c542" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M8 28q10 5 20 0" stroke="#f5c542" stroke-width="1" fill="none" opacity=".7" stroke-linecap="round"/>
+  <path d="M18 3q-4 6-4 14M18 44v-6" stroke="#7a1410" stroke-width=".8" fill="none" opacity=".35"/>
+  <ellipse cx="18" cy="18.6" rx="11.8" ry="10.4" fill="#fbf1dc" stroke="${DKO}" stroke-width="1.6"/>
+  <path d="M6.6 12.4q4.4-5.6 10 -1.6M29.4 12.4q-4.4-5.6-10-1.6" stroke="${DKO}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <circle cx="13" cy="18.4" r="2.5" fill="#fff" stroke="${DKO}" stroke-width="1"/><circle cx="13" cy="18.6" r="1.4" fill="${DKO}"/><circle cx="23" cy="18.4" r="2.5" fill="#fff" stroke="${DKO}" stroke-width="1"/><circle cx="23" cy="18.6" r="1.4" fill="${DKO}"/>
+  <path d="M11 24.4q3.4 3.2 7 0q3.6 3.2 7 0" stroke="${DKO}" stroke-width="1.3" fill="none" stroke-linecap="round"/><path d="M12.4 27.6q5.6 3.4 11.2 0" stroke="${DKO}" stroke-width="1" fill="none" opacity=".7" stroke-linecap="round"/>
+  <path d="M6 13q-3 8 1 16" stroke="#fff" stroke-width="1.6" opacity=".4" fill="none" stroke-linecap="round"/></g>`;
+}
+
+function dkGoldfish(){
+  const fish=(x,y,s,fl)=>`<g transform="translate(${x} ${y}) scale(${fl?-s:s} ${s})"><path d="M7 0q8-9 15-6q-3 6 0 12q-7 3-15-6z" fill="#ff9a4a" stroke="${DKO}" stroke-width="1.3" stroke-linejoin="round" opacity=".95"/><ellipse cx="0" cy="0" rx="9" ry="5.8" fill="#ff7a2a" stroke="${DKO}" stroke-width="1.5"/><path d="M-6 -3q5-3 11 0" stroke="#ffc07a" stroke-width="1.2" fill="none" opacity=".8" stroke-linecap="round"/><path d="M-1 -5q4-5 6-1" fill="#ff9a4a" stroke="${DKO}" stroke-width="1" stroke-linejoin="round"/><path d="M2 -3q2 3 0 6M5 -2.4q2 2.6 0 5" stroke="#d8501a" stroke-width=".8" fill="none" opacity=".7"/><circle cx="-5" cy="-1" r="1.5" fill="#fff" stroke="${DKO}" stroke-width=".7"/><circle cx="-5.3" cy="-.9" r=".8" fill="${DKO}"/></g>`;
+  return `<g transform="translate(${W-78} 280)"><defs><radialGradient id="dk-gb" cx=".34" cy=".28" r=".85"><stop offset="0" stop-color="#eaf8ff" stop-opacity=".75"/><stop offset="1" stop-color="#9ed4ee" stop-opacity=".45"/></radialGradient>${dkLG('dk-gw','#8ad0f0','#3f94c0')}<clipPath id="dk-gc"><circle cx="36" cy="38" r="29.4"/></clipPath></defs>
+  ${dkSh(36,69.6,26,3.2,.32)}
+  <circle cx="36" cy="38" r="30" fill="url(#dk-gb)"/>
+  <g clip-path="url(#dk-gc)"><rect x="4" y="16" width="64" height="60" fill="url(#dk-gw)" opacity=".62"/><ellipse cx="36" cy="16.4" rx="26" ry="3.4" fill="#d8f2ff" opacity=".7"/>
+    <path d="M6 60q30 -6 60 0v14H6z" fill="#e2cc98"/><circle cx="16" cy="62" r="1.6" fill="#c9a870"/><circle cx="48" cy="64" r="1.9" fill="#b89a68"/><circle cx="58" cy="61.6" r="1.4" fill="#f0dca8"/><circle cx="30" cy="65" r="1.5" fill="#d6b87c"/>
+    <path d="M14 62q-5-10 0-18q4-6 0-12" stroke="#3f8f4a" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M20 62q4-8 0-15" stroke="#58a85a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M58 62q4-9 0-17q-3-5 1-11" stroke="#3f8f4a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    ${fish(28,40,1,false)}${fish(46,52,.78,true)}
+    <circle cx="52" cy="30" r="1.5" fill="#fff" opacity=".7"/><circle cx="55" cy="25" r="1" fill="#fff" opacity=".7"/><circle cx="18" cy="28" r="1.1" fill="#fff" opacity=".6"/></g>
+  <circle cx="36" cy="38" r="30" fill="none" stroke="${DKO}" stroke-width="2.2"/>
+  <ellipse cx="36" cy="9" rx="14" ry="3.6" fill="none" stroke="${DKO}" stroke-width="2.2"/><ellipse cx="36" cy="8.6" rx="12.4" ry="2.6" fill="#cfeeff" opacity=".35"/>
+  <path d="M14 24q4-9 14-12" stroke="#fff" stroke-width="3" opacity=".8" fill="none" stroke-linecap="round"/><circle cx="12" cy="31" r="1.8" fill="#fff" opacity=".8"/><path d="M58 52q-3 8-10 11" stroke="#fff" stroke-width="1.6" opacity=".4" fill="none" stroke-linecap="round"/></g>`;
+}
+
+const dkTable=(x,w,n,k=1.3)=>{let g=`<g transform="translate(${x} ${-262*k+232}) scale(${k})" opacity=".97"><defs>${dkLG('dk-tt','#c48c52','#9a6a38')}${dkLG('dk-ta','#8a5a30','#5e3a1c')}${dkLG('dk-tc','#9a6a3a','#6a4222')}</defs>`;
+  g+=dkSh(w/2,352,w*.56,5,.28);
+  g+=`<path d="M12 312l-1 40M${w-12} 312l1 40" stroke="${DKO}" stroke-width="8" stroke-linecap="round"/><path d="M12 312l-1 40M${w-12} 312l1 40" stroke="#7a4a28" stroke-width="4.4" stroke-linecap="round"/><path d="M10 316l-.6 28M${w-14} 316l-.6 28" stroke="#c89a62" stroke-width=".9" opacity=".6"/>`;
+  g+=`<rect x="0" y="290" width="${w}" height="22" fill="url(#dk-ta)" stroke="${DKO}" stroke-width="2.4"/><path d="M4 297h${w-8}" stroke="#4a2a12" stroke-width=".9" opacity=".5"/>`;
+  g+=`<rect x="-6" y="278" width="${w+12}" height="12" rx="3" fill="url(#dk-tt)" stroke="${DKO}" stroke-width="2.4"/><path d="M-1 280.6h${w+2}" stroke="#f0cc98" stroke-width="1.8" opacity=".75" stroke-linecap="round"/><path d="M6 285q${w*.3} -2 ${w*.5} 0t${w*.45} 0" stroke="#8a5a2a" stroke-width=".8" fill="none" opacity=".55"/>`;
+  const items=[[.1,'tok'],[.17,'cup'],[.3,'plate'],[.46,'beer'],[.6,'tok'],[.67,'cup'],[.84,'plate'],[.92,'beer']];
+  for(const [f,kd] of items){const ix=w*f;
+    if(kd==='tok')g+=`<g transform="translate(${ix} 278)">${dkSh(0,0,6,1.4,.3)}<path d="M-5 0q-3.6-6 0-11.4q-2-2 0-5.6h4q2 3.6 0 5.6q3.6 5.4 0 11.4z" fill="#f6ead0" stroke="${DKO}" stroke-width="1.6"/><path d="M-5.2 -6h10.4" stroke="#2b3b6e" stroke-width="2.4"/><path d="M-3.6 -9.4q-1 3 0 6" stroke="#fff" stroke-width="1" opacity=".8" fill="none" stroke-linecap="round"/></g>`;
+    if(kd==='cup')g+=`<g transform="translate(${ix} 278)"><path d="M-5 0l1-6h8l1 6z" fill="#f6ead0" stroke="${DKO}" stroke-width="1.5"/><ellipse cx="0" cy="-6" rx="4" ry="1" fill="#e8c26a" stroke="${DKO}" stroke-width=".8"/></g>`;
+    if(kd==='plate')g+=`<g transform="translate(${ix} 277)"><ellipse cx="0" cy="0" rx="13.6" ry="3.8" fill="#fbf1dc" stroke="${DKO}" stroke-width="1.6"/><ellipse cx="0" cy="-.3" rx="10" ry="2.4" fill="#efe0be"/><path d="M-8 -.8q2-4.4 5-1q2-4.6 5-.6q2-4 6 .4" fill="#f0846a" stroke="${DKO}" stroke-width="1"/><path d="M-6 -2.6l3-.4M-1 -3l3 0" stroke="#fff" stroke-width=".8" opacity=".7"/><path d="M4 .6q3-1 5 0" stroke="#e8f0d8" stroke-width="2" stroke-linecap="round"/></g>`;
+    if(kd==='beer')g+=`<g transform="translate(${ix} 278)"><rect x="-6" y="-15" width="12" height="15" rx="2" fill="#f2a52a" stroke="${DKO}" stroke-width="1.6"/><path d="M-3.4 -12v10" stroke="#ffd986" stroke-width="1.6" opacity=".8" stroke-linecap="round"/><path d="M6 -11q5 0 5 4.2t-5 4.2" fill="none" stroke="${DKO}" stroke-width="1.6"/><rect x="-6.6" y="-17.6" width="13.2" height="5.6" rx="2.6" fill="#fffaf0" stroke="${DKO}" stroke-width="1.4"/><circle cx="-2" cy="-17.8" r="1.6" fill="#fffaf0"/><circle cx="2.6" cy="-18" r="1.8" fill="#fffaf0"/></g>`}
+  for(let i=0;i<n;i++){const cx=w*(i+.5)/n,cl=i%2?'#2b3b6e':'#b8372a';g+=`<g transform="translate(${cx-22} 296)">${dkSh(22,64,22,3,.26)}<path d="M5 12l-1 48M39 12l1 48" stroke="${DKO}" stroke-width="7" stroke-linecap="round"/><path d="M5 12l-1 48M39 12l1 48" stroke="#8a5a34" stroke-width="3.6" stroke-linecap="round"/><rect x="2" y="26" width="40" height="7" rx="2" fill="url(#dk-tc)" stroke="${DKO}" stroke-width="1.8"/><rect x="0" y="0" width="44" height="12" rx="4.4" fill="url(#dk-tc)" stroke="${DKO}" stroke-width="2.2"/><path d="M15 12v14M22 12v14M29 12v14" stroke="#5a3418" stroke-width="3"/><path d="M15 12v14M22 12v14M29 12v14" stroke="#b88a52" stroke-width=".8" opacity=".5" transform="translate(-1 0)"/><path d="M5 3h34" stroke="#d0a068" stroke-width="1.6" opacity=".75" stroke-linecap="round"/></g>`}
+  return g+`</g>`};
+
+
+function dkHeater(){
+  return `<defs>${dkLG('dk-hb','#e2e6ec','#8e96a2',1,0)}<radialGradient id="dk-hf" cx=".5" cy=".75" r=".8"><stop offset="0" stop-color="#ffd25a"/><stop offset=".55" stop-color="#ff8a2a"/><stop offset="1" stop-color="#c8401a"/></radialGradient><radialGradient id="dk-hg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ff8a2a" stop-opacity=".42"/><stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/></radialGradient></defs>
+  <ellipse cx="30" cy="26" rx="56" ry="40" fill="url(#dk-hg)"/>${dkSh(30,63,24,3,.3)}
+  <rect x="8" y="57" width="44" height="6" rx="2.4" fill="#3a3a42" stroke="${DKO}" stroke-width="1.8"/>
+  <path d="M10 22q0-8 8-8h24q8 0 8 8v30q0 6-6 6H16q-6 0-6-6z" fill="url(#dk-hb)" stroke="${DKO}" stroke-width="2.4"/>
+  <ellipse cx="30" cy="14.4" rx="19" ry="4.6" fill="#7e8692" stroke="${DKO}" stroke-width="2"/><path d="M18 14h24M20 12.6h20" stroke="#2a2a30" stroke-width="1" opacity=".6"/>
+  <rect x="15.5" y="23" width="29" height="24" rx="5" fill="#241208" stroke="${DKO}" stroke-width="1.6"/><rect x="17" y="24.6" width="26" height="21" rx="4" fill="url(#dk-hf)"/>
+  <path d="M22 44q-2-8 2-12q1 4 3 3q-1-6 3-9q0 6 4 8q1-3 2-4q4 6 1 14z" fill="#ffe27a" opacity=".85"/>
+  <path d="M21 24v22M26 24v22M31 24v22M36 24v22M41 24v22" stroke="#241208" stroke-width="1" opacity=".55"/>
+  <circle cx="30" cy="52.6" r="2.6" fill="#e8c45a" stroke="${DKO}" stroke-width="1.2"/><path d="M30 51v2" stroke="${DKO}" stroke-width=".9"/>
+  <path d="M13 24q-1 14 0 26" stroke="#fff" stroke-width="1.8" opacity=".55" fill="none" stroke-linecap="round"/><path d="M7 28q-4 8 0 16" stroke="${DKO}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+}
+function dkRadio(){
+  return `<defs>${dkLG('dk-rd','#e0bc84','#b48850')}${dkLG('dk-rd2','#9a6a3e','#6a4026')}<pattern id="dk-rg" width="4" height="4" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".9" fill="#2a1608"/></pattern></defs>
+  ${dkSh(35,53,38,3,.3)}
+  <path d="M54 6L66-12" stroke="${DKO}" stroke-width="3" stroke-linecap="round"/><path d="M54 6L66-12" stroke="#c9ced4" stroke-width="1.4" stroke-linecap="round"/><circle cx="66" cy="-12" r="1.8" fill="#c9ced4" stroke="${DKO}" stroke-width="1"/>
+  <path d="M8 50v4M62 50v4" stroke="${DKO}" stroke-width="5" stroke-linecap="round"/>
+  <rect x="0" y="6" width="70" height="46" rx="8" fill="url(#dk-rd)" stroke="${DKO}" stroke-width="2.6"/>
+  <path d="M6 9h58" stroke="#fff2cc" stroke-width="1.5" opacity=".7" stroke-linecap="round"/>
+  <rect x="5" y="12" width="28" height="34" rx="5" fill="#5a3a24" stroke="${DKO}" stroke-width="1.6"/><rect x="7" y="14" width="24" height="30" rx="3.4" fill="#7a5232"/><rect x="7" y="14" width="24" height="30" rx="3.4" fill="url(#dk-rg)"/>
+  <rect x="38" y="12" width="26" height="14" rx="2.4" fill="#fff3c4" stroke="${DKO}" stroke-width="1.6"/><path d="M41 16.6h20M41 21.6h20" stroke="#8a6a3a" stroke-width=".8" opacity=".6"/>${[0,1,2,3,4,5].map(i=>`<path d="M${42+i*3.6} 14.2v2.4" stroke="${DKO}" stroke-width=".8"/>`).join('')}<path d="M53 13v12" stroke="#d23a2a" stroke-width="1.4"/>
+  <circle cx="45" cy="37" r="5.4" fill="url(#dk-rd2)" stroke="${DKO}" stroke-width="1.6"/><path d="M45 33.4v3.4" stroke="#f3e6c8" stroke-width="1.2" stroke-linecap="round"/><circle cx="58" cy="37" r="5.4" fill="url(#dk-rd2)" stroke="${DKO}" stroke-width="1.6"/><path d="M58 33.4v3.4" stroke="#f3e6c8" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="74" y="-4" font-size="15" fill="#ffd27a">♪</text>`;
+}
+
+/* 新畫風背景專用：背景圖本身沒有的裝飾（暖簾、燈籠、風鈴、高級酒）疊在圖上，畫法與其他裝飾一致 */
+function dkArtDeco(){
+  let o='';
+  const lant=(x,y,ch,sc)=>`<g transform="translate(${x} ${y}) scale(${sc})"><circle cx="0" cy="8" r="62" fill="#ff9a40" opacity=".16"/><path d="M0 -60V-20" stroke="#2a160c" stroke-width="3"/><rect x="-15" y="-24" width="30" height="10" rx="3" fill="#2a1208" stroke="${DKO}" stroke-width="2"/><path d="M-30 6q0-24 30-24t30 24q0 26-30 26t-30-26z" fill="url(#dk-ln)" stroke="${DKO}" stroke-width="3"/>${[-18,-8,0,8,18].map(v=>`<path d="M${v} -14q${v*.35} 20 0 36" stroke="#7a1810" stroke-width="1.3" fill="none" opacity=".55"/>`).join('')}<path d="M-22 -4q8-8 18-9" stroke="#ffd7a0" stroke-width="2.4" opacity=".6" fill="none" stroke-linecap="round"/><rect x="-15" y="30" width="30" height="10" rx="3" fill="#2a1208" stroke="${DKO}" stroke-width="2"/><path d="M0 40v14" stroke="#d9b060" stroke-width="2.4"/><path d="M-4 54h8l2 12h-12z" fill="#d23a2a" stroke="${DKO}" stroke-width="1.2"/><text x="0" y="15" text-anchor="middle" font-family="Noto Serif TC,Noto Serif CJK TC,serif" font-weight="900" font-size="24" fill="#2a0e08">${ch}</text></g>`;
+  const defs=`<defs><radialGradient id="dk-ln" cx=".4" cy=".35" r=".85"><stop offset="0" stop-color="#ff7a52"/><stop offset=".6" stop-color="#e03a26"/><stop offset="1" stop-color="#a02014"/></radialGradient>${dkLG('dk-nr','#b83a2e','#7a2018')}${dkLG('dk-gl','#f4d878','#c9982a')}</defs>`;
+  if(hasDec('noren')){
+    const pn=(x,w)=>`<path d="M${x} 124h${w}v330q${-w/2} 7 ${-w} 0z" fill="url(#dk-nr)" stroke="${DKO}" stroke-width="3"/><path d="M${x+w*.25} 128v320M${x+w*.55} 128v322M${x+w*.82} 128v318" stroke="#d8604a" stroke-width="2" opacity=".35"/><path d="M${x} 440q${w/2} 12 ${w} 0" stroke="#4a1008" stroke-width="3" fill="none" opacity=".4"/>`;
+    o+=pn(28,72)+pn(104,76)+`<text x="102" y="214" text-anchor="middle" font-family="Noto Serif TC,Noto Serif CJK TC,serif" font-weight="900" font-size="64" fill="#fbf1dc" stroke="#7a2018" stroke-width="1.4">酒</text><path d="M101 124v330" stroke="#1a0804" stroke-width="3" opacity=".7"/>`;
+    o+=lant(212,128,'灯',1.05);
+  }
+  if(hasDec('lanterns'))o+=lant(588,118,'祭',.82)+lant(1414,118,'祭',.82);
+  if(hasDec('chime')){const x=1010;o+=`<g><path d="M${x} 150V190" stroke="#2a160c" stroke-width="2.4"/><path d="M${x-26} 232q0-38 26-38t26 38z" fill="#d6f1ff" stroke="${DKO}" stroke-width="3"/><path d="M${x-18} 226q2-20 12-27" stroke="#fff" stroke-width="3" opacity=".85" fill="none" stroke-linecap="round"/><ellipse cx="${x}" cy="232" rx="26" ry="4" fill="#9ccbe6" stroke="${DKO}" stroke-width="2"/><path d="M${x} 236V254" stroke="#2a160c" stroke-width="2"/><circle cx="${x}" cy="256" r="3.4" fill="#d23a2a" stroke="${DKO}" stroke-width="1.4"/><path d="M${x} 258V272" stroke="#2a160c" stroke-width="2"/><rect x="${x-10}" y="272" width="20" height="54" rx="2" fill="#fbf1dc" stroke="${DKO}" stroke-width="2.4"/><path d="M${x-5} 282v34M${x+3} 284v28" stroke="#2b3b6e" stroke-width="2.4" opacity=".7" stroke-linecap="round"/></g>`}
+  if(hasIn('premium')){const gx=[1611,1650,1697,1739,1778,1822,1863],ys=[[248,16,26],[388,16,26]];
+    ys.forEach(([y,w,h],r)=>gx.forEach((x,i)=>{const lw=i===1&&!r?12:w;o+=`<rect x="${x-lw/2}" y="${y-h/2}" width="${lw}" height="${h}" rx="2" fill="url(#dk-gl)" stroke="${DKO}" stroke-width="1.8"/><path d="M${x-lw/2+3} ${y-h/2+5}h${lw-6}M${x-lw/2+3} ${y+3}h${lw-6}" stroke="#7a4a10" stroke-width="1.3" opacity=".75"/><circle cx="${x}" cy="${y-h/2+h*.7}" r="2" fill="#b8372a"/>`}));
+    o+=[[1640,214],[1760,358],[1852,226],[1676,368]].map(([x,y])=>`<path d="M${x} ${y-9}l2.2 6.8 6.8 2.2-6.8 2.2L${x} ${y+9}l-2.2-6.8-6.8-2.2 6.8-2.2z" fill="#fff6c8" opacity=".9"/>`).join('')}
+  return o?defs+o:''}
+
 function drawBg(){
   if(CUR==='rm'&&ST&&ST.rm){drawYatai();return}
   if(CUR==='sushi'){drawSushiBg();return}
@@ -1364,26 +1598,17 @@ function drawBg(){
   const keys=ST?unlocked(day,'iz').filter(k=>!isOff(k)):Object.keys(ITEMS).filter(k=>!ITEMS[k].buy&&ITEMS[k].shop!=='rm');
   const tsx=KY<400?Math.max(14,Math.min(P.ts,(P.sake-P.tag-14)/Math.max(keys.length,1))):P.ts,kk=KY<400?Math.min(1.25,tsx/22.4):1.25;
   keys.forEach((k,i)=>{const t=itemTag(k),x=P.tag+i*tsx;const sp=t.length===2?22:14,off=(52-((t.length-1)*sp+11))/2-7;s+=`<g transform="translate(${x} ${9+TY}) scale(${kk})"><rect width="22" height="52" fill="#f3e6c8" stroke="${O}" stroke-width="2"/>${[...t].map((c,j)=>c==='ー'?`<rect x="10" y="${7+off+j*sp}" width="2.5" height="11" fill="${O}"/>`:`<text x="11" y="${17+off+j*sp}" text-anchor="middle" font-family="Zen Maru Gothic,sans-serif" font-weight="900" font-size="12" fill="${O}">${c}</text>`).join('')}</g>`});
-  if(hasDec('shamisen'))s+=`<g transform="translate(${P.sham[0]} ${P.sham[1]}) rotate(8) scale(.8)"><rect x="-3" y="0" width="6" height="140" fill="#2a1a10" stroke="${O}" stroke-width="1.5"/><path d="M-8 6h16M-8 16h16" stroke="#e7c58a" stroke-width="3"/><rect x="-20" y="132" width="40" height="44" rx="12" fill="#f3e6c8" stroke="${O}" stroke-width="3"/><path d="M-1 10v160M1 10v160" stroke="#fff" stroke-width=".8"/></g><text x="${P.notes[0]}" y="${P.notes[1]}" font-size="22" fill="#ffd27a">♪</text><text x="${P.notes[0]+8}" y="${P.notes[1]+36}" font-size="16" fill="#ffd27a">♫</text>`;
+  if(hasDec('shamisen'))s+=dkShamisen(P);
   {const LD=TY?6:8,ly=[6,10,6].map(v=>v+TY+LD),lt=y=>-y/P.ls;s+=`<g transform="translate(${P.sake} ${ly[0]}) scale(${P.ls})">${lanternG(HOLV&&HOLV.h==='valentine'?'愛':'酒',lt(ly[0]))}</g><g transform="translate(${P.lx[0]} ${ly[1]}) scale(${P.ls})">${lanternG(HOLV&&HOLV.h==='valentine'?'愛':'焼鳥',lt(ly[1]))}</g><g transform="translate(${P.lx[1]} ${ly[2]}) scale(${P.ls})">${lanternG(HOLV&&HOLV.h==='valentine'?'愛':'刺身',lt(ly[2]))}</g>`;}
-  if(hasDec('scroll'))s+=`<g transform="translate(${P.scroll} 96)"><rect x="-4" y="0" width="56" height="7" rx="3" fill="#5a3a24" stroke="${O}" stroke-width="2"/><rect x="2" y="6" width="44" height="168" fill="#3f5a3a" stroke="${O}" stroke-width="2"/><rect x="8" y="14" width="32" height="150" fill="#f5ead2"/>${[...'一期一會'].map((c,i)=>`<text x="24" y="${44+i*33}" text-anchor="middle" font-family="LXGW WenKai TC,Kaiti TC,STKaiti,KaiTi,serif" font-weight="300" font-size="26" fill="#1a0e08">${c}</text>`).join('')}<rect x="-4" y="172" width="56" height="8" rx="4" fill="#5a3a24" stroke="${O}" stroke-width="2"/></g>`;
-  if(hasDec('board'))s+=`<g transform="translate(${P.board} 234)"><rect width="76" height="104" rx="4" fill="#8a5a34" stroke="${O}" stroke-width="3"/><rect x="7" y="7" width="62" height="90" fill="#2f4a3a"/><text x="38" y="30" text-anchor="middle" font-family="Zen Maru Gothic,sans-serif" font-weight="900" font-size="15" fill="#f5f0e0">本日</text><text x="38" y="48" text-anchor="middle" font-family="Zen Maru Gothic,sans-serif" font-weight="700" font-size="11" fill="#ffd27a">${CJK()?T('推薦'):'おすすめ'}</text><path d="M16 60h44M16 72h36M16 84h40" stroke="#f5f0e0" stroke-width="2" opacity=".7"/></g>`;
-  if(hasIn('tables')){const tb=(x,w,n,k=1.3)=>{let g=`<g transform="translate(${x} ${-262*k+232}) scale(${k})" opacity=".95">`;
-      g+=`<rect x="-6" y="278" width="${w+12}" height="12" rx="3" fill="#b07a45" stroke="${O}" stroke-width="3"/><path d="M0 282h${w}" stroke="#d9a46a" stroke-width="2" opacity=".7"/><rect x="0" y="290" width="${w}" height="22" fill="#7a4a2a" stroke="${O}" stroke-width="3"/><path d="M12 312v40M${w-12} 312v40" stroke="${O}" stroke-width="7"/><path d="M12 312v40M${w-12} 312v40" stroke="#6b3f22" stroke-width="3.5"/>`;
-      const items=[[.1,'tok'],[.17,'cup'],[.3,'plate'],[.46,'beer'],[.6,'tok'],[.67,'cup'],[.84,'plate'],[.92,'beer']];
-      for(const [f,k] of items){const ix=w*f;
-        if(k==='tok')g+=`<path d="M${ix-5} 278q-3-10 2-16h6q5 6 2 16z" fill="#f3e6c8" stroke="${O}" stroke-width="2"/><path d="M${ix-4} 269h8" stroke="#2b3b6e" stroke-width="2.5"/>`;
-        if(k==='cup')g+=`<path d="M${ix-5} 278l1-6h8l1 6z" fill="#f3e6c8" stroke="${O}" stroke-width="1.8"/>`;
-        if(k==='plate')g+=`<ellipse cx="${ix}" cy="277" rx="13" ry="3.5" fill="#fbf1dc" stroke="${O}" stroke-width="1.8"/><path d="M${ix-7} 275q3-5 6-1q3-4 7 0" fill="#e0822a" stroke="${O}" stroke-width="1.2"/>`;
-        if(k==='beer')g+=`<rect x="${ix-6}" y="263" width="12" height="15" rx="2" fill="#f2a52a" stroke="${O}" stroke-width="2"/><rect x="${ix-6}" y="261" width="12" height="5" rx="2" fill="#fffaf0" stroke="${O}" stroke-width="1.5"/>`}
-      for(let i=0;i<n;i++){const cx=w*(i+.5)/n;g+=`<g transform="translate(${cx-22} 296)"><path d="M4 0v60M40 0v60" stroke="${O}" stroke-width="7" stroke-linecap="round"/><path d="M4 0v60M40 0v60" stroke="#8a5a34" stroke-width="3.5" stroke-linecap="round"/><rect x="0" y="0" width="44" height="11" rx="4" fill="#8a5a34" stroke="${O}" stroke-width="2.5"/><rect x="2" y="24" width="40" height="7" rx="2" fill="#8a5a34" stroke="${O}" stroke-width="2"/><path d="M15 11v13M22 11v13M29 11v13" stroke="#6b3f22" stroke-width="3"/><path d="M6 3h30" stroke="#c08a52" stroke-width="2" opacity=".7"/></g>`}
-      return g+`</g>`};
+  if(hasDec('scroll'))s+=`<g transform="translate(${P.scroll} 96)">${dkScroll()}</g>`;
+  if(hasDec('board'))s+=`<g transform="translate(${P.board} 234)">${dkBoard()}</g>`;
+  if(hasIn('tables')){const tb=dkTable;
     s+=LAY==='port'?tb(178,130,2,1.25):tb(KY<400?P.sx+P.sw/2-224:Math.min(P.sx+P.sw/2-224,P.board-466),340,4,1.32)}
-  if(hasIn('tv'))s+=`<g transform="translate(${P.tv[0]} ${P.tv[1]}) scale(${P.tv[2]})"><path d="M60 0v8" stroke="${O}" stroke-width="4"/><rect x="0" y="8" width="130" height="78" rx="6" fill="#141418" stroke="${O}" stroke-width="3"/><rect x="7" y="14" width="116" height="62" fill="#3a8a3a"/><path d="M65 70l-26-24l26-24l26 24z" fill="#c9a26a"/><path d="M65 64l-20-18l20-18l20 18z" fill="#4aa04a"/><rect x="7" y="14" width="52" height="14" fill="#141418" opacity=".75"/><text x="12" y="25" font-family="Zen Maru Gothic,sans-serif" font-weight="900" font-size="10" fill="#fff">灯 5 - 3 鷹</text><circle cx="98" cy="30" r="4" fill="#fff"/><rect x="7" y="14" width="116" height="62" fill="#fff" opacity=".06"/></g>`;
-  if(hasIn('record'))s+=`<g transform="translate(${P.rec[0]} ${P.rec[1]}) scale(${P.rec[2]})"><path d="M28 58V${Math.max(8,(284-P.rec[1])/P.rec[2]-56)+56}M84 58V${Math.max(8,(284-P.rec[1])/P.rec[2]-56)+56}" stroke="${O}" stroke-width="8" stroke-linecap="round"/><path d="M28 58V${Math.max(8,(284-P.rec[1])/P.rec[2]-56)+56}M84 58V${Math.max(8,(284-P.rec[1])/P.rec[2]-56)+56}" stroke="#8a5a34" stroke-width="4" stroke-linecap="round"/><rect x="20" y="52" width="70" height="8" rx="2" fill="#8a5a34" stroke="${O}" stroke-width="2.5"/><rect x="0" y="22" width="110" height="34" rx="4" fill="#6b4026" stroke="${O}" stroke-width="3"/><rect x="6" y="10" width="98" height="14" rx="3" fill="#8a5a34" stroke="${O}" stroke-width="2.5"/><ellipse cx="46" cy="14" rx="34" ry="8" fill="#141414" stroke="${O}" stroke-width="2"/><ellipse cx="46" cy="14" rx="9" ry="3" fill="#c0392b"/><path d="M92 6l-24 10" stroke="#c9ced4" stroke-width="3" stroke-linecap="round"/><circle cx="92" cy="6" r="4" fill="#c9ced4" stroke="${O}" stroke-width="1.5"/><text x="96" y="-2" font-size="16" fill="#ffd27a">♪</text></g>`;
-  if(hasIn('barrels'))s+=`<g transform="translate(${P.bar[0]} ${P.bar[1]}) scale(${P.bar[2]})">${[[0,22],[66,22],[33,-12]].map(([x,y])=>`<g transform="translate(${x} ${y})"><rect width="62" height="36" rx="10" fill="#e3c08f" stroke="${O}" stroke-width="3"/><path d="M8 2v32M54 2v32" stroke="#5a3a24" stroke-width="4"/><circle cx="31" cy="18" r="11" fill="#fbf1dc" stroke="#b8372a" stroke-width="3"/><text x="31" y="23" text-anchor="middle" font-family="Dela Gothic One,serif" font-size="13" fill="#b8372a">酒</text></g>`).join('')}</g>`;
+  if(hasIn('tv'))s+=`<g transform="translate(${P.tv[0]} ${P.tv[1]}) scale(${P.tv[2]})">${dkTV()}</g>`;
+  if(hasIn('record'))s+=`<g transform="translate(${P.rec[0]} ${P.rec[1]}) scale(${P.rec[2]})">${dkRecord(Math.max(8,(284-P.rec[1])/P.rec[2]-56)+56)}</g>`;
+  if(hasIn('barrels'))s+=`<g transform="translate(${P.bar[0]} ${P.bar[1]}) scale(${P.bar[2]})">${dkBarrels()}</g>`;
   if(HOLV)try{s+=holDeco(HOLV.h,HOLV.L,'f')}catch(e){}
-  if(ST&&ST.up.cat)s+=`<g transform="translate(${P.cat} ${202+KY-400})"><ellipse cx="22" cy="40" rx="22" ry="20" fill="${hasIn('goldcat')?'#f0c040':'#fff'}" stroke="${O}" stroke-width="3"/><circle cx="22" cy="18" r="16" fill="${hasIn('goldcat')?'#f0c040':'#fff'}" stroke="${O}" stroke-width="3"/><path d="M8 8l2-12l8 8M36 8l-2-12l-8 8" fill="${hasIn('goldcat')?'#f0c040':'#fff'}" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M40 30q10-14 4-26" stroke="${O}" stroke-width="3" fill="${hasIn('goldcat')?'#f0c040':'#fff'}"/><path d="M15 18q3-3 6 0M25 18q3-3 6 0" stroke="${O}" stroke-width="2.5" fill="none"/><circle cx="22" cy="44" r="7" fill="#f0b229" stroke="${O}" stroke-width="2"/></g>`;
+  if(ST&&ST.up.cat)s+=`<g transform="translate(${P.cat} ${202+KY-400})">${dkCat(hasIn('goldcat'))}</g>`;
   if(ST&&ST.up.waiter)s+=`<g transform="translate(-25 118)"><image href="img/staff-girl-2.webp" x="0" y="0" width="160" height="235" preserveAspectRatio="xMidYMax meet"/></g>`;
   if(ST&&ST.up.helper)s+=`<g transform="translate(${W-135} 109)"><image href="img/staff-boy-2.webp" x="0" y="0" width="160" height="245" preserveAspectRatio="xMidYMax meet"/></g>`;
   $('bg').innerHTML=s;['bg','counter'].forEach(id=>{const e=$(id);e.setAttribute('viewBox',`0 0 ${W} ${H}`);e.setAttribute('width',W);e.setAttribute('height',H)});
@@ -1392,9 +1617,9 @@ function drawBg(){
   <rect x="-4" y="348" width="${W+8}" height="26" fill="url(#ctop2)" stroke="${O}" stroke-width="3"/><path d="M0 353h${W}" stroke="#fff3d6" stroke-width="3" opacity=".6"/>${TC.id!=='hinoki'?`<rect x="-4" y="348" width="${W+8}" height="9" fill="#fff" opacity=".22"/>`:''}
   ${TC.id==='marble'?`<path d="M40 352q60 10 120 2t140 8M420 356q80-6 160 4t200-4" stroke="#a8a29a" stroke-width="1.5" fill="none" opacity=".7"/>`:TC.id==='slab'?`<path d="M0 360q200-6 400 2t560-2M0 366q260 4 520-2t440 2" stroke="#6a3a18" stroke-width="1.5" fill="none" opacity=".6"/>`:''}<rect x="-4" y="374" width="${W+8}" height="26" fill="${TC.c[2]}" stroke="${O}" stroke-width="3"/>${TC.id!=='hinoki'?`<rect x="-4" y="374" width="${W+8}" height="5" fill="${TC.c[1]}" opacity=".9"/>`:''}<path d="M0 380h${W}" stroke="#fff" stroke-width="2" opacity=".18"/>
   <rect x="0" y="400" width="${W}" height="${H-KY}" fill="url(#kit2)"/>${Array.from({length:Math.ceil(W/48)},(_,i)=>`<path d="M${i*48} 400v${H-KY}" stroke="#24140c" stroke-width="2" opacity=".5"/>`).join('')}
-  ${hasDec('bonsai')?`<g transform="translate(16 286)"><path d="M6 46h44l-4 16H10z" fill="#6b3a24" stroke="${O}" stroke-width="3"/><path d="M28 46q-6-14 4-24q6-6 0-14" stroke="#5a3a24" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse cx="18" cy="18" rx="16" ry="9" fill="#3f7a3a" stroke="${O}" stroke-width="2.5"/><ellipse cx="40" cy="10" rx="16" ry="9" fill="#4f8a44" stroke="${O}" stroke-width="2.5"/><ellipse cx="32" cy="28" rx="13" ry="7" fill="#3f7a3a" stroke="${O}" stroke-width="2.5"/></g>`:''}
-  ${hasDec('daruma')?`<g transform="translate(76 306)"><ellipse cx="18" cy="24" rx="18" ry="20" fill="#d23a2a" stroke="${O}" stroke-width="3"/><ellipse cx="18" cy="20" rx="11" ry="10" fill="#fbf1dc" stroke="${O}" stroke-width="2"/><circle cx="14" cy="19" r="2.5" fill="${O}"/><circle cx="22" cy="19" r="2.5" fill="${O}"/><path d="M13 26q5 3 10 0" stroke="${O}" stroke-width="2" fill="none"/><path d="M8 36q10 5 20 0" stroke="#f0b229" stroke-width="3" fill="none"/></g>`:''}
-  ${hasDec('goldfish')?`<g transform="translate(${W-78} 280)"><circle cx="36" cy="36" r="32" fill="#bfe6ff" fill-opacity=".55" stroke="${O}" stroke-width="3"/><path d="M8 40q28 10 56 0v4q-28 26-56 0z" fill="#7ac7f0" opacity=".6"/><ellipse cx="22" cy="6" rx="16" ry="5" fill="none" stroke="${O}" stroke-width="3"/><g transform="translate(26 44)"><ellipse rx="8" ry="5" fill="#ff7a2a" stroke="${O}" stroke-width="1.5"/><path d="M7 0l7-5v10z" fill="#ff9a4a" stroke="${O}" stroke-width="1.5"/></g><g transform="translate(46 52) scale(-1 1)"><ellipse rx="6" ry="4" fill="#ff5a2a" stroke="${O}" stroke-width="1.5"/><path d="M5 0l6-4v8z" fill="#ff8a4a" stroke="${O}" stroke-width="1.5"/></g><path d="M8 66h56" stroke="${O}" stroke-width="3"/></g>`:''}</g>`;
+  ${hasDec('bonsai')?dkBonsai():''}
+  ${hasDec('daruma')?dkDaruma():''}
+  ${hasDec('goldfish')?dkGoldfish():''}</g>`;
 }
 
 /* ================= yatai (2nd shop): data, art, stations ================= */
@@ -2198,8 +2423,8 @@ function drawYatai(){
   for(let x=60;x<W;x+=190)s+=`<ellipse cx="${x}" cy="${KY-72}" rx="46" ry="5" fill="#ffd27a" opacity=".13"/>`;
   s+=`<rect width="${W}" height="${KY}" fill="url(#yglow)"/>`;
   if(rmStaffLv())s+=`<image href="img/rm-staff-girl.webp" x="0" y="${KY-230}" width="162" height="323" preserveAspectRatio="xMidYMax meet"/>`;
-  if(rmDec('heater'))s+=`<g transform="translate(${W-(rmStaff2Lv()?186:120)} ${KY-118})"><ellipse cx="30" cy="20" rx="44" ry="30" fill="#ff8a2a" opacity=".22"/><rect x="10" y="10" width="40" height="52" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/><rect x="16" y="20" width="28" height="22" rx="4" fill="#ff7a2a"/><path d="M20 26h20M20 32h20M20 38h20" stroke="#ffd27a" stroke-width="2"/></g>`;
-  if(rmDec('radio'))s+=`<g transform="translate(28 ${KY-104})"><rect x="0" y="22" width="70" height="30" rx="4" fill="#6b4026" stroke="${O}" stroke-width="3"/><rect x="2" y="0" width="66" height="26" rx="6" fill="#d8b47a" stroke="${O}" stroke-width="3"/><circle cx="18" cy="13" r="8" fill="#5a3a24"/><rect x="32" y="8" width="28" height="10" rx="2" fill="#fff3c4" stroke="${O}" stroke-width="1.5"/><path d="M58 0l8-14" stroke="${O}" stroke-width="2"/><text x="74" y="-4" font-size="15" fill="#ffd27a">♪</text></g>`;
+  if(rmDec('heater'))s+=`<g transform="translate(${W-(rmStaff2Lv()?186:120)} ${KY-118})">${dkHeater()}</g>`;
+  if(rmDec('radio'))s+=`<g transform="translate(28 ${KY-104})">${dkRadio()}</g>`;
   if(rmDec('flag'))s+=`<g transform="translate(${W-64} ${60+TY})"><path d="M0 0v${KY-170-TY}" stroke="#8a8a8a" stroke-width="4"/><rect x="2" y="6" width="34" height="120" fill="#fbf1dc" stroke="${O}" stroke-width="2"/><rect x="2" y="6" width="34" height="14" fill="#b8372a"/>${[...'豚骨'].map((c,i)=>`<text x="19" y="${56+i*36}" text-anchor="middle" font-family="Noto Sans TC,sans-serif" font-weight="900" font-size="26" fill="#1a0e08">${c}</text>`).join('')}</g>`;
   if(rmFryStaffLv())s+=`<image href="img/yatai-dai-3.webp" x="${Math.round(W/2-95)}" y="${KY-230}" width="162" height="400" preserveAspectRatio="xMidYMax meet"/>`;
   if(rmStaff2Lv())s+=`<image href="img/rm-staff-boy.webp" x="${W-127}" y="${KY-230}" width="127" height="323" preserveAspectRatio="xMidYMax meet"/>`;
@@ -4703,7 +4928,7 @@ drawBg=function(){_drawBg();if(!artOn()||CUR==='sushi'||CUR==='tep'||CUR==='oko'
   const mk=()=>{const im=document.createElementNS(NS,'image');im.setAttribute('href',ARTIMG.kitchen);im.setAttribute('x',0);im.setAttribute('y',oy);im.setAttribute('width',W);im.setAttribute('height',ih);im.setAttribute('preserveAspectRatio','xMidYMid slice');return im};
   /* the art room has its own lit window, so the time of day is drawn on top of it: window sky tint, moon and a light room dim (see sky()) */
   const mkBg=()=>{const s=document.createElementNS(NS,'svg');s.setAttribute('x',0);s.setAttribute('y',oy);s.setAttribute('width',W);s.setAttribute('height',ih);s.setAttribute('viewBox','0 0 1900 918');s.setAttribute('preserveAspectRatio','xMidYMid slice');const HD=(()=>{try{const hh=ST&&evNow().hol;return hh?holDeco(hh):''}catch(e){return ''}})();
-    s.innerHTML=`<image href="${ARTIMG.kitchen}" x="0" y="0" width="1900" height="918" preserveAspectRatio="none"/>${HD}<rect id="artsky" x="652" y="158" width="716" height="248" fill="#ffb04a" opacity=".25" style="pointer-events:none"/><g id="artmoon" opacity="0" style="pointer-events:none"><circle cx="700" cy="196" r="22" fill="#fff6d6"/></g><rect id="artdim" x="0" y="0" width="1900" height="918" fill="#070b1c" opacity="0" style="pointer-events:none"/>`;return s};
+    s.innerHTML=`<image href="${ARTIMG.kitchen}" x="0" y="0" width="1900" height="918" preserveAspectRatio="none"/>${HD}${dkArtDeco()}<rect id="artsky" x="652" y="158" width="716" height="248" fill="#ffb04a" opacity=".25" style="pointer-events:none"/><g id="artmoon" opacity="0" style="pointer-events:none"><circle cx="700" cy="196" r="22" fill="#fff6d6"/></g><rect id="artdim" x="0" y="0" width="1900" height="918" fill="#070b1c" opacity="0" style="pointer-events:none"/>`;return s};
   bg.insertBefore(mkBg(),bg.firstChild);
   const ct=$('counter'),g=ct.firstElementChild;if(g)[...g.children].forEach(e=>{if(e.tagName==='rect'||e.tagName==='path')e.style.display='none'});
   const cy=Math.round(oy+ih*.507)-1,cp=document.createElementNS(NS,'clipPath');cp.setAttribute('id','artclip');const cr=document.createElementNS(NS,'rect');cr.setAttribute('x',0);cr.setAttribute('y',cy);cr.setAttribute('width',W);cr.setAttribute('height',H-cy);cp.appendChild(cr);
