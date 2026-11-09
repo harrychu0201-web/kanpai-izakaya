@@ -1063,7 +1063,7 @@ function onigArt(st,s){
 function lamenArt(k,st){
   const dn=st==='done',bu=st==='burnt';
   if(st==='raw'&&k==='miso'){/* 2026-11-07 生味噌麵：玩家看不出是麵 → 畫成一捆黃色捲曲麵條＋紅色束帶 */
-    const strands=[[18,40,-6],[16,50,0],[18,60,6]].map(([x,y])=>`<path d="M${x} ${y}q8-14 16 0t16 0t16 0t16 0" fill="none" stroke="${O}" stroke-width="7" stroke-linecap="round"/><path d="M${x} ${y}q8-14 16 0t16 0t16 0t16 0" fill="none" stroke="#2b5fb0" stroke-width="4" stroke-linecap="round"/>`).join('');
+    const strands=[[18,40,-6],[16,50,0],[18,60,6]].map(([x,y])=>`<path d="M${x} ${y}q8-14 16 0t16 0t16 0t16 0" fill="none" stroke="${O}" stroke-width="7" stroke-linecap="round"/><path d="M${x} ${y}q8-14 16 0t16 0t16 0t16 0" fill="none" stroke="#c8742c" stroke-width="4" stroke-linecap="round"/>`).join('');
     return `<ellipse cx="50" cy="72" rx="40" ry="8" fill="#000" opacity=".18"/><path d="M12 44q4-20 38-20t38 20q2 22-8 28q-30 8-60 0q-10-6-8-28z" fill="#f3cf55" stroke="${O}" stroke-width="3.5" stroke-linejoin="round"/>${strands}<path d="M20 36q10-8 26-8" stroke="#fff6c0" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/><rect x="44" y="22" width="12" height="52" rx="3" fill="#d8402c" stroke="${O}" stroke-width="3"/><path d="M47 30v36" stroke="#ff9a7a" stroke-width="2" opacity=".8"/>`}
   if(k==='dandan')return dandanArt(st);
   if((k==='miso'||k==='dandan')&&st!=='raw'){/* 2026-11-08 烹調中／成品的味噌、擔擔改用客人點單同款碗（藍碗黃麵、綠碗紅醬）；焦掉變深色 */
@@ -1082,7 +1082,7 @@ function chashuMeatRaw(){
   return `<ellipse cx="50" cy="84" rx="40" ry="7" fill="#000" opacity=".16"/><path d="M10 52q4-16 40-16t40 16l-3 16q-37 9-74 0z" fill="#e9948a" stroke="${O}" stroke-width="4" stroke-linejoin="round"/><path d="M22 50q12-6 28-6t28 6M24 58q12-5 26-5t26 5" stroke="#fff2ee" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".9"/><path d="M14 74q4-14 36-14t36 14l-3 12q-33 8-66 0z" fill="#f0a898" stroke="${O}" stroke-width="4" stroke-linejoin="round"/><path d="M24 74q12-5 26-5t26 5M26 81q12-4 24-4t24 4" stroke="#fff2ee" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".9"/>`}
 /* 還沒湊齊的格子：有的料畫出來，缺的那樣用虛線框起來 */
 function chashuPrepArt(pt){
-  const dash=`fill="none" stroke="#fff" stroke-width="3.5" stroke-dasharray="6 5" stroke-linecap="round" opacity=".75"`;
+  const dash=`fill="#e8b48a" fill-opacity=".5" stroke="#3a2418" stroke-width="3" stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round"`;
   let r='';
   if(pt&&pt.rice){
     const gr=[[34,50],[46,44],[58,50],[42,36],[54,36],[30,58],[66,58]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="3.4" ry="1.9" transform="rotate(${(x*7+y*3)%70-35} ${x} ${y})" fill="#fffdf4" stroke="#c9bfa0" stroke-width="1"/>`).join('');
