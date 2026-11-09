@@ -470,6 +470,7 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 .home .card{max-height:calc(100vh - 44px);max-height:calc(100dvh - 44px);box-sizing:border-box}.lbrow.me{background:#ffd98a;box-shadow:0 0 0 2px #e0412c}
 .lbrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lbrow em{font-style:normal;font-variant-numeric:tabular-nums;color:var(--lacquer);font-weight:900}
 .lbme{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:#f1e2c2;border-radius:12px;padding:8px 12px;font-size:14px}
+.frsticky{position:sticky;bottom:0;z-index:2;background:var(--paper);padding:6px 0 4px}
 .nickin{font:inherit;font-size:20px;padding:8px 12px;border:3px solid var(--soot);border-radius:12px;background:#fffaf0;color:var(--soot);width:100%;box-sizing:border-box}
 .fbform{display:flex;flex-direction:column;gap:8px}
 .fbcats{display:flex;flex-wrap:wrap;gap:6px}.fbcats .btn{font-size:14px;padding:5px 12px;border-radius:999px}
@@ -5396,8 +5397,8 @@ function frDraw(){FR.view='list';if(!HOME||LB.tab!=='fr')return;
   modal(lbHead(tb)+(D.pend.length?`<div class="lbme"><span>🎁 ${T('收到 {0} 份禮物，共 {1}',D.pend.length,yen(sum))}</span><button class="btn" data-act="frclaim">${T('一鍵領取')}</button></div>`:'')
    +(ids.length?`<div class="lbme"><span>${unsent?T('今天還可送 {0} 位好友',unsent):T('今天已經全部送過了')}</span><button class="btn" data-act="frgiftall" ${unsent?'':'disabled'}>${T('一鍵送禮')}</button></div>`:'')
    +`<div class="lbme"><span>${T('你的好友碼')}：<b style="letter-spacing:2px">${fmtCode(fcodeOf(me.uid))}</b></span><button class="btn alt" data-act="frcopy">${T('複製')}</button><button class="btn alt" data-act="frshare">${T('分享')}</button></div>
-   <div class="lbme"><input class="nickin" id="frin" maxlength="9" placeholder="${T('輸入好友碼')}" autocomplete="off" style="flex:1;min-width:0;font-size:16px;padding:6px 10px;text-transform:uppercase"><button class="btn" data-act="fradd">${T('加好友')}</button></div>
-   <p id="frerr" style="color:#e0412c;font-size:14px;margin:2px 0" hidden></p>
+   <div class="frsticky"><div class="lbme"><input class="nickin" id="frin" maxlength="9" placeholder="${T('輸入好友碼')}" autocomplete="off" style="flex:1;min-width:0;font-size:16px;padding:6px 10px;text-transform:uppercase"><button class="btn" data-act="fradd">${T('加好友')}</button></div>
+   <p id="frerr" style="color:#e0412c;font-size:14px;margin:2px 0" hidden></p></div>
    ${ids.length?'':`<p class="lbdesc">${T('還沒有好友，把你的好友碼傳給朋友，或輸入朋友的好友碼吧！')}</p>`}
    <div class="lbtabs" style="border-bottom:0;margin:4px 0">${[['best','單日淨利'],['earned','累計營收']].map(([k,n])=>`<button class="stab ${FR.sort===k?'on':''}" data-act="frsort" data-id="${k}">${T(n)}</button>`).join('')}<span style="margin-left:auto;font-size:13px;opacity:.7;align-self:center">${(()=>{const n=ids.filter(k=>onIs((D.on||{})[k])).length;return n?'🟢 '+T('{0} 位在線上',n)+'　':''})()}${T('好友 {0}/{1}',ids.length,FR_MAX)}</span></div>
    ${coopDev()?`<div class="lbme"><span>🤝 ${T('多人模式')}</span><button class="btn alt" data-act="coopopen">${T('開啟')}</button></div>`:''}
