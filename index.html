@@ -5221,12 +5221,14 @@ function showSlots(){
   const rows=[0,1,2].map(i=>{const x=o.s[i];
     return `<div class="slrow"><div class="si">${T('存檔 {0}',i+1)}${x?`<small>${saveSummary(x.game)}・${slTime(x.at)}</small>`:`<small>${T('空的')}</small>`}</div><button class="btn alt" data-act="slotput" data-i="${i}" ${cur?'':'disabled'}>${T('存入')}</button>${x?`<button class="btn" data-act="slotload" data-i="${i}">${T('讀取')}</button>`:''}</div>`}).join('');
   const bk=o.b.map((x,i)=>`<div class="slrow"><div class="si">${T(SLWHY[x.why]||'自動備份')}<small>${saveSummary(x.game)}・${slTime(x.at)}</small></div><button class="btn" data-act="bakload" data-i="${i}">${T('還原')}</button></div>`).join('');
-  modal(`<h2>${T('存檔欄位')}</h2><p>${T('目前的進度可以存進下面三個欄位，之後隨時讀回來。欄位只存在這台裝置上，不會同步到雲端。')}</p>${rows}
+  modal(`<h2>${T('存檔欄位')}</h2><p>${T('目前的進度可以存進下面三個欄位，之後隨時讀回來。欄位只存在這台裝置上，不會同步到雲端。')}</p>${CL.user?'':`<p class="hint">${T('還沒登入，存檔只在這台裝置上～ 登入 Google 就能備份到雲端！')}</p>`}${rows}
   <div class="slh">${T('自動備份')}</div><p style="font-size:13.5px;opacity:.8">${T('開新的一局、破產、雲端存檔覆蓋之前，遊戲會自動備份舊存檔（最多 3 份）。')}</p>${bk||`<p>${T('目前沒有備份。')}</p>`}
   <div class="btns"><button class="btn" data-act="rescue">🛟 ${T('找回存檔')}</button><button class="btn alt" data-act="closem">${T('關閉')}</button></div>`)}
 function slLoadGame(g,rec){if(!g||!slOK(g))return;slBackup(lsGet(KEY),'load');CL.lowOK=true;CL.pick=null;lsSet(KEY,g);if(rec)lsSet(RKEY,mergeRec(rec,lsGet(RKEY)));touchLocal();if(CL.user&&CL.synced)cloudUpload(true);closeModal();showHome()}
 function slAsk(act,i,title,msg){modal(`<h2>${title}</h2><p>${msg}</p><div class="btns"><button class="btn" data-act="${act}" data-i="${i}" data-ok="1">${T('確定')}</button><button class="btn alt" data-act="slots">${T('取消')}</button></div>`)}
 function applyCloud(c){if(lsGet(KEY)!==c.game)slBackup(lsGet(KEY),'cloud');lsSet(KEY,c.game);if(c.rec)lsSet(RKEY,mergeRec(c.rec,lsGet(RKEY)));try{localStorage.setItem(SAVED_AT,String(c.at||Date.now()))}catch(e){}if(HOME&&!R)showHome()}
+(function(){const A={'zh-Hans':'还没登录，存档只在这台装置上～ 登录 Google 就能备份到云端！','en':'Not signed in yet, so your save stays on this device～ Sign in with Google to back it up to the cloud!','ja':'まだログインしていないので、セーブはこの端末だけに残ります～ Googleでログインするとクラウドにバックアップされます！','ko':'아직 로그인하지 않아서 저장 데이터는 이 기기에만 있어요～ Google로 로그인하면 클라우드에 백업돼요!','id':'Belum masuk, jadi simpanan hanya ada di perangkat ini～ Masuk dengan Google untuk cadangan ke cloud!'};
+for(const l in A){if(I18N[l])I18N[l]['還沒登入，存檔只在這台裝置上～ 登入 Google 就能備份到雲端！']=A[l]}})();
 /* 🛟 save rescue: every copy this player can reach (cloud now, the old Firestore copy, this device's slots and backups), furthest day first */
 let RESC=[];
 async function showRescue(){
