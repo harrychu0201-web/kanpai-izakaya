@@ -4543,7 +4543,7 @@ document.addEventListener('click',e=>{
   else if(act==='inbdone'){INB.showDone=!INB.showDone;inboxDraw()}
   else if(act==='inbre'){INB.open=a.dataset.id||null;inboxDraw()}
   else if(act==='inbwho'){INB.who=a.dataset.id||null;INB.open=null;inboxDraw()}
-  else if(act==='inbread'){fbReadToggle(a.dataset.id);inboxDraw()}
+  else if(act==='inbread'){fbReadToggle(a.dataset.id)}
   else if(act==='inbsend')inboxSend();
   else if(act==='inbdel')inboxDel(a.dataset.id);
   else if(act==='inbclaim')inboxClaim(a.dataset.id,!!a.dataset.rel);
@@ -5763,6 +5763,8 @@ async function cloudInit1(){
       fbList:n=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'fb'),rd.orderByChild('t'),rd.limitToLast(n))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.reverse()})),
       fbOld:async()=>(await fs.getDocs(fs.query(fs.collection(db,'feedback'),fs.orderBy('at','desc'),fs.limit(60)))).docs.map(d=>Object.assign({id:'fs_'+d.id,old:true},d.data())),
       fbDel:(id,row)=>rt((rd,r)=>{const u={['fb/'+id]:null,['fbpub/'+id]:null,['claim/'+id]:null};if(row){const c=Object.assign({},row);delete c.id;u['trash/'+id]=Object.assign(c,{by:CL.user.uid,delT:rd.serverTimestamp()})}return rd.update(rd.ref(r),u)}),
+      // read/unread is saved on the item itself so it shows the same on every device the author logs into (true on-read, removed on-unread; never written for Firestore fallback rows)
+      fbReadSet:(id,v)=>rt((rd,r)=>rd.set(rd.ref(r,'fb/'+id+'/rd'),v?true:null)),
       // a reply either starts a thread (fbreply/uid/id) or, if one exists already, adds to its msgs and pops it up again for the player
       fbReply:(f,text)=>rt((rd,r)=>{const ts=rd.serverTimestamp(),thr=f.thr||f.id,base='fbreply/'+f.uid+'/'+thr,u={};
         if(f.thr||(f.re&&!f.old)){const mid=rd.push(rd.ref(r,base+'/msgs')).key;u[base+'/msgs/'+mid]={a:true,text,t:ts};u[base+'/t']=ts;u[base+'/seen']=null}
@@ -6336,11 +6338,12 @@ async function replyBack(){const u=CL.user,x=RPL.list.find(y=>y.id===RPL.open),t
 const FBDRAFT_KEY='izakaya-fb-drafts';
 function fbDraftLoad(){try{return JSON.parse(localStorage.getItem(FBDRAFT_KEY)||'{}')||{}}catch(e){return {}}}
 function fbDraftSet(id,v){if(!INB.drafts)INB.drafts={};if(v)INB.drafts[id]=v;else delete INB.drafts[id];try{localStorage.setItem(FBDRAFT_KEY,JSON.stringify(INB.drafts))}catch(e){}}
-const FBREAD_KEY='izakaya-fb-read';
-function fbReadLoad(){try{return JSON.parse(localStorage.getItem(FBREAD_KEY)||'{}')||{}}catch(e){return {}}}
-function fbReadToggle(id){if(!INB.read)INB.read={};if(INB.read[id])delete INB.read[id];else INB.read[id]=true;try{localStorage.setItem(FBREAD_KEY,JSON.stringify(INB.read))}catch(e){}}
-const INB={rows:[],old:[],open:null,busy:false,err:'',claims:{},drafts:fbDraftLoad(),read:fbReadLoad()};
-const isDone=f=>!!(f.re||INB.read[f.id]);
+/* 已讀 is saved server-side on the feedback item itself (fb/$id/rd), so it's the same on every device the author logs into, not just this browser */
+function fbReadToggle(id){const f=INB.rows.concat(INB.old).find(x=>x.id===id);if(!f||f.old)return;
+  const next=!f.rd;f.rd=next;inboxDraw();
+  CL.api.fbReadSet(id,next).catch(e=>{f.rd=!next;toast('標記失敗：'+String(e&&e.code||e));inboxDraw()})}
+const INB={rows:[],old:[],open:null,busy:false,err:'',claims:{},drafts:fbDraftLoad()};
+const isDone=f=>!!(f.re||f.rd);
 const FBCATN=Object.fromEntries(FBCATS);FBCATN.re='↩️ 玩家回你';
 async function showInbox(reload){if(!canInbox())return;
   {INB.err='';modal(`<h2>📬 收件匣</h2><p style="font-size:14px">載入中…</p>`);
@@ -6352,10 +6355,10 @@ function inboxDraw(){
   const item=f=>{const op=INB.open===f.id;
     return `<div class="inbit${f.re?' done':''}"><p class="inbh">${esc(FBCATN[f.cat]||f.cat||'')} · ${chatTime(f.t||f.at||0)} ${f.lang?' · '+esc(f.lang):''} · 第 ${+f.day||0} 天${f.old?' · 舊資料':''}</p>
     ${f.ctx?`<p class="inbh">回你說的：${esc(f.ctx)}</p>`:''}<p class="inbtx">${esc(f.text||'')}</p>${f.contact?`<p class="inbh">聯絡：${esc(f.contact)}</p>`:''}
-    ${f.re?`<p class="inbre">✅ 已回覆：${esc(f.re)}</p>`:(INB.read[f.id]?'<p class="inbh">👁 已讀</p>':'')}
+    ${f.re?`<p class="inbre">✅ 已回覆：${esc(f.re)}</p>`:(f.rd?'<p class="inbh">👁 已讀</p>':'')}
     ${!op&&INB.drafts[f.id]?'<p class="inbh">📝 有未送出的草稿</p>':''}${op?`<textarea class="fbtext" id="inbtext" data-id="${esc(f.id)}" maxlength="1000" oninput="fbDraftSet(this.dataset.id,this.value)" placeholder="回覆給這位玩家…">${esc(INB.drafts[f.id]||'')}</textarea>
       <div class="btns" style="justify-content:flex-start"><button class="btn" data-act="inbsend">${INB.busy?'送出中…':'送出回覆'}</button><button class="btn alt" data-act="inbre" data-id="">取消</button></div>`
-    :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbread" data-id="${esc(f.id)}">${INB.read[f.id]?'↩ 取消已讀':'✔ 已讀'}</button>`}${f.uid&&!INB.who?`<button class="btn alt" data-act="inbwho" data-id="${esc(f.uid)}">👤 看這位玩家全部</button>`:''}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
+    :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbread" data-id="${esc(f.id)}">${f.rd?'↩ 取消已讀':'✔ 已讀'}</button>`}${f.uid&&!INB.who?`<button class="btn alt" data-act="inbwho" data-id="${esc(f.uid)}">👤 看這位玩家全部</button>`:''}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
   modal(`<h2>📬 收件匣（${INB.rows.filter(f=>!isDone(f)).length}）</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
   <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button>${nDone?`<button class="btn alt" data-act="inbdone">${INB.showDone?'🙈 隱藏已回覆・已讀':'👁 顯示已回覆・已讀（'+nDone+'）'}</button>`:''}<button class="btn alt" data-act="inbold">${INB.old.length?'已載入舊意見':'載入 Firestore 舊意見'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
   ${INB.who?`<div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbwho" data-id="">← 返回全部意見</button><span class="inbh">這位玩家的全部意見，由舊到新</span></div>`:''}

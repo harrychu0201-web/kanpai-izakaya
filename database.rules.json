@@ -200,6 +200,9 @@
         "re": {
           ".validate": "newData.isString() && newData.val().length <= 1000"
         },
+        "rd": {
+          ".validate": "newData.val() === true"
+        },
         "day": {
           ".validate": "newData.isNumber()"
         },
