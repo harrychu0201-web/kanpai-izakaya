@@ -2838,12 +2838,16 @@ function dilHTML(k){const v=dilOf(k);return `<div class="row" style="flex-wrap:w
 const emptyBoard=()=>({base:null,rice:0,top:null,tea:0,fish:[]});
 function warmShown(){return warmN()}
 const WARM_NAME={miso:'味噌',dandan:'擔擔',chashurice:'叉燒飯',tsukemen:'沾麵',tamagoyaki:'玉子燒',yakionigiri:'飯糰',takoyaki:'章魚燒'};
+/* 海風壽司保溫台：握壽司、軍艦、壽司卷、手卷、炙燒握、唐揚握、大福、糰子本身沒有盤子，放進保溫台時墊一個盤子（生魚片、沙拉、冰淇淋本來就有盤子／容器） */
+function warmIcon(key){const b=key.split(':')[0];
+  if(SUKEYS.includes(b)&&!SU_SASH[b]&&!SU_SAL[b]&&b!=='vanillaice')return sv(plateG()+`<g transform="translate(12 -3) scale(.76)">${suG(b,'done')}</g>`);
+  return icon(key)}
 function warmHTML(){
   const n=warmN(),m=n,tw=L.warmT.w,sw=(tw-8)/n,ic=Math.min(54,sw-6);
   let s=`<svg viewBox="0 0 ${tw} 54" style="position:absolute;inset:0"><rect x="2" y="6" width="${tw-4}" height="46" rx="10" fill="#d7dce2" stroke="${O}" stroke-width="3"/><rect x="8" y="12" width="${tw-16}" height="34" rx="6" fill="#ffd9a0" opacity=".55"/><path d="M8 44h${tw-16}" stroke="#ff8a3a" stroke-width="3" opacity=".6"/></svg>`;
   for(let i=0;i<m;i++){const x=4+i*sw;
     const w=R.warm[i];
-    s+=`<div class="st slot" data-warm="${i}" style="left:${x+3}px;top:2px;width:${sw-6}px;height:50px">${w?`<div style="position:absolute;left:50%;top:${-8+(54-ic+8)/2}px;width:${ic}px;height:${ic-8}px;transform:translateX(-50%)">${icon(w.key)}</div><span style="position:absolute;left:0;right:0;bottom:-1px;text-align:center;font-size:9px;line-height:11px;font-weight:700;color:#fff;background:rgba(40,28,20,.78);border-radius:4px;white-space:nowrap;overflow:hidden">${T(WARM_NAME[w.key]||(ITEMS[w.key]&&ITEMS[w.key].zh)||'')}</span>`:''}</div>`}
+    s+=`<div class="st slot" data-warm="${i}" style="left:${x+3}px;top:2px;width:${sw-6}px;height:50px">${w?`<div style="position:absolute;left:50%;top:${-8+(54-ic+8)/2}px;width:${ic}px;height:${ic-8}px;transform:translateX(-50%)">${warmIcon(w.key)}</div><span style="position:absolute;left:0;right:0;bottom:-1px;text-align:center;font-size:9px;line-height:11px;font-weight:700;color:#fff;background:rgba(40,28,20,.78);border-radius:4px;white-space:nowrap;overflow:hidden">${T(WARM_NAME[w.key]||(ITEMS[w.key]&&ITEMS[w.key].zh)||'')}</span>`:''}</div>`}
   const used=R.warm.slice(0,m).filter(Boolean).length;
   return s+`<span class="lbl" style="bottom:-10px">${T(CUR!=='sushi'&&n>=5?'保溫台（不會焦）':'保溫台')} ${used}/${m}</span>`;
 }
