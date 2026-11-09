@@ -2132,23 +2132,199 @@ function tpWages(){const l=tpStaffLv();return l?Math.round(TP_STAFF.lv[l-1].wage
 function tpAt(k,s){return COOK[k]*(s+1)/(TPS[k].length+1)}
 function needTp(g){if(!g||!TPS[g.kind])return false;const s=g.s||0;return s<TPS[g.kind].length&&g.t>=tpAt(g.kind,s)&&cookState(g.t,g.kind)==='raw'}
 /* ---- 畫：生的 / 煎到一半 / 熟 / 焦 ---- */
-function tpArt(k,st,s,bad){
+/* ---- 鐵板燒食材圖（2026-11-10 重畫）：一律俯視 3/4 角度，深棕描邊、平塗＋硬陰影＋高光 ---- */
+function tpShade(h,f){const n=parseInt(h.slice(1),16),r=n>>16&255,g=n>>8&255,b=n&255,t=f<0?[26,15,8]:[255,255,255],a=Math.abs(f),m=(v,w)=>Math.round(v+(w-v)*a).toString(16).padStart(2,'0');return '#'+m(r,t[0])+m(g,t[1])+m(b,t[2])}
+/* 把一個形狀往下疊出厚度（先畫整串外框，再畫整串填色，這樣只有最外圍有描邊） */
+function tpExtrude(d,dy,fill,sw){let o='',n=Math.max(2,Math.round(dy/1.2));for(let i=n;i>=0;i--)o+=`<path d="${d}" transform="translate(0 ${(dy*i/n).toFixed(1)})" fill="${O}" stroke="${O}" stroke-width="${sw||3}" stroke-linejoin="round"/>`;for(let i=n;i>=0;i--)o+=`<path d="${d}" transform="translate(0 ${(dy*i/n).toFixed(1)})" fill="${fill}"/>`;return o}
+function tpBz(P,t){const u=1-t;return [u*u*u*P[0][0]+3*u*u*t*P[1][0]+3*u*t*t*P[2][0]+t*t*t*P[3][0],u*u*u*P[0][1]+3*u*u*t*P[1][1]+3*u*t*t*P[2][1]+t*t*t*P[3][1]]}
+function tpBzT(P,t){const u=1-t,dx=3*u*u*(P[1][0]-P[0][0])+6*u*t*(P[2][0]-P[1][0])+3*t*t*(P[3][0]-P[2][0]),dy=3*u*u*(P[1][1]-P[0][1])+6*u*t*(P[2][1]-P[1][1])+3*t*t*(P[3][1]-P[2][1]),l=Math.hypot(dx,dy)||1;return [dx/l,dy/l]}
+function tpRnd(seed){let x=seed;return ()=>{x=(x*1664525+1013904223)%4294967296;return x/4294967296}}
+function tpArt(k,st,s,bad,mode){
   if(k==='okosaka')return okArt(k,st,s,bad);
-  const B=st==='burnt',D=st==='done',p=D?1:Math.min(1,(s||0)/TPS[k].length),mix=(a,b)=>{const h=x=>parseInt(x,16),A=[1,3,5].map(i=>h(a.substr(i,2))),C=[1,3,5].map(i=>h(b.substr(i,2)));return '#'+A.map((v,i)=>Math.round(v+(C[i]-v)*p).toString(16).padStart(2,'0')).join('')};
-  const col=(raw,done)=>B?'#2e2016':mix(raw,done);
-  if(k==='tpgarlic'){const r=col('#f7f2e4','#e3ac54');let o=`<ellipse cx="50" cy="66" rx="38" ry="16" fill="${r}" stroke="${O}" stroke-width="3"/><path d="M16 62Q50 30 84 62" fill="${r}" stroke="${O}" stroke-width="3"/>`;
-    [[30,56],[42,48],[56,46],[68,54],[50,60],[36,64],[62,64]].forEach(([x,y],i)=>o+=`<ellipse cx="${x}" cy="${y}" rx="3.2" ry="1.8" transform="rotate(${i*41} ${x} ${y})" fill="${B?'#1a120c':'#fffaf0'}" opacity=".85"/>`);
-    if(!B)[[38,52,0],[58,52,30],[48,42,-20]].forEach(([x,y,a])=>o+=`<ellipse cx="${x}" cy="${y}" rx="6" ry="4" transform="rotate(${a} ${x} ${y})" fill="${D?'#f2c46a':'#f4ecd2'}" stroke="${O}" stroke-width="1.5"/>`);
-    if(D)o+=`<circle cx="44" cy="58" r="2" fill="#4c9a3c"/><circle cx="60" cy="48" r="2" fill="#4c9a3c"/><circle cx="66" cy="60" r="2" fill="#4c9a3c"/>`;return o}
-  if(k==='tpcabbage'){const g1=col('#bfe39a','#8cbf4e'),g2=col('#e7f5cf','#c9dd8a');let o='';
-    [[30,62,-20],[50,56,10],[68,64,30],[42,70,-5],[60,72,15]].forEach(([x,y,a],i)=>o+=`<path d="M${x-16} ${y}Q${x} ${y-20} ${x+16} ${y}Q${x} ${y+10} ${x-16} ${y}Z" transform="rotate(${a} ${x} ${y})" fill="${i%2?g2:g1}" stroke="${O}" stroke-width="2.5"/>`);
-    if(D)o+=`<path d="M30 52q4-4 8 0M58 50q4-4 8 0" stroke="#8a4a1a" stroke-width="3" fill="none"/>`;return o}
-  if(k==='tpchicken'){const c=col('#f3c2b0','#d98a3a');return `<path d="M18 62Q16 40 40 38Q62 34 80 46Q90 56 78 70Q60 82 36 78Q20 74 18 62Z" fill="${c}" stroke="${O}" stroke-width="3"/>${(s||0)>0&&!B?[0,1,2].map(i=>`<path d="M${32+i*16} 46l-8 26" stroke="#6a3410" stroke-width="4" stroke-linecap="round" opacity=".7"/>`).join(''):''}<path d="M30 50q10-6 22-4" stroke="#fff" stroke-width="3" fill="none" opacity=".35"/>`}
-  if(k==='tpokono'){const c=col('#f5e2a8','#cf8a3c'),sc=(s||0)>=2||D;return `<ellipse cx="50" cy="60" rx="38" ry="22" fill="${c}" stroke="${O}" stroke-width="3"/>${sc&&!B?`<ellipse cx="50" cy="58" rx="32" ry="17" fill="#6a3416"/><path d="M24 52l8 8l8-8l8 8l8-8l8 8l8-8" stroke="#fff6dc" stroke-width="3" fill="none" stroke-linejoin="round"/><circle cx="36" cy="64" r="2" fill="#3f8a3a"/><circle cx="58" cy="66" r="2" fill="#3f8a3a"/><path d="M44 46q4-6 10 0" stroke="#e8a0b0" stroke-width="3" fill="none"/>`:!B?`<circle cx="36" cy="58" r="4" fill="#9ed07a"/><circle cx="58" cy="54" r="4" fill="#9ed07a"/><circle cx="62" cy="66" r="4" fill="#f0a0a0"/><circle cx="44" cy="68" r="3" fill="#f0a0a0"/>`:''}`}
-  if(k==='tpshrimp'){const c=col('#c8ccd2','#f07a4a'),c2=col('#e6e8ec','#ffc09a');return [[34,58,-10],[64,60,12]].map(([x,y,a])=>`<g transform="rotate(${a} ${x} ${y})"><path d="M${x-14} ${y+12}Q${x-20} ${y-14} ${x+4} ${y-16}Q${x+18} ${y-14} ${x+14} ${y}" fill="none" stroke="${O}" stroke-width="13" stroke-linecap="round"/><path d="M${x-14} ${y+12}Q${x-20} ${y-14} ${x+4} ${y-16}Q${x+18} ${y-14} ${x+14} ${y}" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round"/><path d="M${x-10} ${y-2}Q${x-10} ${y-10} ${x} ${y-12}" stroke="${c2}" stroke-width="3" fill="none"/><path d="M${x+14} ${y}l8 6l-10 2z" fill="${c}" stroke="${O}" stroke-width="2"/></g>`).join('')}
-  if(k==='tpscallop'){const c=col('#fbf4e6','#f6e2c4'),t=col('#fbf4e6','#c9822e');return [[30,60],[52,66],[72,58]].map(([x,y])=>`<ellipse cx="${x}" cy="${y+4}" rx="13" ry="9" fill="${c}" stroke="${O}" stroke-width="2.5"/><ellipse cx="${x}" cy="${y}" rx="13" ry="8" fill="${t}" stroke="${O}" stroke-width="2.5"/>`).join('')+(D?`<path d="M26 54l8 4M48 60l8 4M68 52l8 4" stroke="#fff6dc" stroke-width="2" opacity=".8"/>`:'')}
-  if(k==='tpwagyu'){const c=col('#d9576a','#8a4022'),f=col('#f3c2c8','#b8784a');let o='';[[28,58],[48,52],[68,58],[38,70],[60,70]].forEach(([x,y])=>o+=`<rect x="${x-10}" y="${y-9}" width="20" height="18" rx="4" fill="${c}" stroke="${O}" stroke-width="2.5"/><path d="M${x-6} ${y-4}l6 4l6-3" stroke="${f}" stroke-width="2" fill="none"/>`);if(D)o+=`<path d="M36 46l2-6M56 42l2-6" stroke="#fff" stroke-width="2" opacity=".6"/>`;return o}
-  if(k==='tplobster'){const c=col('#7a6a8a','#e0412c'),m=col('#efe6e0','#fff3e6');return `<path d="M20 62Q20 44 44 42L78 46Q90 50 86 62Q82 74 70 76L40 78Q20 78 20 62Z" fill="${c}" stroke="${O}" stroke-width="3"/><path d="M30 60Q32 50 46 50L74 52Q80 56 76 64Q72 70 64 70L42 70Q30 70 30 60Z" fill="${m}" stroke="${O}" stroke-width="2"/><path d="M84 50l12-10M84 52l12-4" stroke="${c}" stroke-width="3" stroke-linecap="round"/><path d="M20 62l-10-6l2 12z" fill="${c}" stroke="${O}" stroke-width="2"/>${D?`<path d="M46 56h20" stroke="#f2c46a" stroke-width="3"/><circle cx="56" cy="62" r="2" fill="#4c9a3c"/>`:''}`}
+  const B=st==='burnt',D=st==='done',p=D?1:Math.min(1,(s||0)/TPS[k].length),tray=mode==='tray',sg=s||0;
+  const mix=(a,b)=>{const h=x=>parseInt(x,16),A=[1,3,5].map(i=>h(a.substr(i,2))),C=[1,3,5].map(i=>h(b.substr(i,2)));return '#'+A.map((v,i)=>Math.round(v+(C[i]-v)*p).toString(16).padStart(2,'0')).join('')};
+  const col=(raw,done)=>B?'#2e2016':mix(raw,done),sh=tpShade,OL=`stroke="${O}" stroke-linejoin="round"`;
+  const shadow=(rx,ry,cy)=>`<ellipse cx="50" cy="${cy||80}" rx="${rx}" ry="${ry}" fill="#000" opacity=".2"/>`;
+  /* ============ 白飯 → 蒜香炒飯 ============ */
+  if(k==='tpgarlic'){
+    const r=col('#fffaf0','#e6b05a'),rs=sh(r,-.18),rl=sh(r,.4);let o='';
+    const grains=(n,seed,fx)=>{const R=tpRnd(seed);let g='';for(let i=0;i<n;i++){const x=fx.x0+R()*(fx.x1-fx.x0),y=fx.y0+R()*(fx.y1-fx.y0);if(((x-50)/fx.rx)**2+((y-fx.cy)/fx.ry)**2>1)continue;g+=`<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="3.1" ry="1.7" transform="rotate(${Math.round(R()*180)} ${x.toFixed(1)} ${y.toFixed(1)})" fill="${B?'#40301f':sh(r,.5)}" stroke="${sh(r,-.28)}" stroke-width=".8"/>`}return g};
+    if(tray){ /* 飯碗：白瓷碗＋藍圈＋冒尖的飯 */
+      o+=shadow(34,6,88);
+      o+=`<path d="M38 82h24l3 8H35z" fill="#d9c6a4" ${OL} stroke-width="2.5"/>`;
+      o+=`<path d="M12 50Q12 84 50 86Q88 84 88 50Z" fill="#f6f1e6" ${OL} stroke-width="3"/>`;
+      o+=`<path d="M12 50Q16 76 50 80Q84 76 88 50Q86 60 80 66Q50 74 20 66Q14 60 12 50Z" fill="#e4dccb"/>`;
+      o+=`<path d="M17 62Q50 76 83 62" fill="none" stroke="#4f7fc0" stroke-width="4.5" stroke-linecap="round"/><path d="M24 70Q50 80 76 70" fill="none" stroke="#4f7fc0" stroke-width="2.5" stroke-linecap="round"/>`;
+      o+=`<path d="M12 50Q14 22 50 20Q86 22 88 50Q50 60 12 50Z" fill="${r}" ${OL} stroke-width="3"/>`;
+      o+=`<path d="M70 28Q84 34 86 48Q76 52 66 52Q76 42 70 28Z" fill="${rs}"/>`;
+      o+=grains(46,7,{x0:16,x1:84,y0:24,y1:56,rx:36,ry:30,cy:46});
+      o+=`<path d="M12 50Q14 22 50 20Q86 22 88 50" fill="none" ${OL} stroke-width="3"/>`;
+      return o}
+    o+=shadow(40,9,80);
+    o+=`<path d="M10 70C8 48 28 26 50 26C72 26 92 48 90 70C90 80 72 85 50 85C28 85 10 80 10 70Z" fill="${r}" ${OL} stroke-width="3"/>`;
+    o+=`<path d="M90 70C90 80 72 85 50 85C28 85 10 80 10 70C26 77 46 77 60 72C76 67 86 58 89 48C91 56 91 63 90 70Z" fill="${rs}"/>`;
+    o+=grains(60,11,{x0:14,x1:86,y0:30,y1:80,rx:38,ry:34,cy:56});
+    o+=`<path d="M10 70C8 48 28 26 50 26C72 26 92 48 90 70C90 80 72 85 50 85C28 85 10 80 10 70Z" fill="none" ${OL} stroke-width="3"/>`;
+    if(p>.5||D){ /* 蒜片、蛋花、蔥花 */
+      [[34,46,-20],[58,40,25],[46,58,10],[70,56,-30],[26,64,35],[56,70,-10]].forEach(([x,y,a])=>o+=`<ellipse cx="${x}" cy="${y}" rx="6.2" ry="3.8" transform="rotate(${a} ${x} ${y})" fill="${B?'#40301f':'#f9d86e'}" ${OL} stroke-width="1.6"/><ellipse cx="${x-1}" cy="${y-1}" rx="2.4" ry="1.2" transform="rotate(${a} ${x} ${y})" fill="#fff3b8" opacity="${B?0:.9}"/>`);
+      if(!B)[[44,38],[64,50],[30,56],[52,64],[40,70],[74,64],[58,34]].forEach(([x,y],i)=>o+=`<rect x="${x}" y="${y}" width="5" height="2.6" rx="1.3" transform="rotate(${i*37} ${x} ${y})" fill="#4aa03a" stroke="#2f6e25" stroke-width=".6"/>`);
+      if(!B)[[38,52],[68,44],[48,48]].forEach(([x,y])=>o+=`<circle cx="${x}" cy="${y}" r="2.2" fill="#ffd23a" stroke="#c9902a" stroke-width=".6"/>`)}
+    return o}
+  /* ============ 高麗菜 ============ */
+  if(k==='tpcabbage'){
+    const g=col('#8fc65a','#7fb04a'),gd=sh(g,-.2),gl=col('#d9f0b0','#c8d88a'),vn=sh(gl,.6);let o='';
+    if(tray){ /* 整顆高麗菜 */
+      o+=shadow(32,6,88);
+      o+=`<path d="M50 20C78 20 90 44 86 64C82 82 64 88 50 88C36 88 18 82 14 64C10 44 22 20 50 20Z" fill="${g}" ${OL} stroke-width="3"/>`;
+      o+=`<path d="M50 88C30 86 14 76 14 60C14 44 26 30 40 26C32 42 34 66 50 88Z" fill="${gd}" ${OL} stroke-width="2.5"/>`;
+      o+=`<path d="M50 88C70 86 86 76 86 60C86 44 74 30 60 26C68 42 66 66 50 88Z" fill="${gd}" ${OL} stroke-width="2.5"/>`;
+      o+=`<path d="M50 86C37 70 35 46 50 26C65 46 63 70 50 86Z" fill="${gl}" ${OL} stroke-width="2.5"/>`;
+      o+=`<path d="M50 82V38M50 70L41 58M50 62L59 50M50 54L44 46" fill="none" stroke="${vn}" stroke-width="2.4" stroke-linecap="round"/>`;
+      o+=`<path d="M26 66Q22 50 32 38M74 66Q78 50 68 38M24 56Q27 62 31 66M76 56Q73 62 69 66" fill="none" stroke="${sh(g,.45)}" stroke-width="2" stroke-linecap="round"/>`;
+      o+=`<path d="M28 34Q36 26 44 25" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".4"/>`;
+      return o}
+    o+=shadow(40,8,82);
+    const leaf=(x,y,a,sc,c,cl)=>`<g transform="translate(${x} ${y}) rotate(${a}) scale(${sc})"><path d="M0 -20C16 -19 24 0 10 17C6 22 -6 22 -10 17C-24 0 -16 -19 0 -20Z" fill="${c}" ${OL} stroke-width="${(3/sc).toFixed(2)}"/><path d="M0 -15V17M0 -4L-8 -11M0 4L8 -3M0 10L-7 4" fill="none" stroke="${cl}" stroke-width="${(2.2/sc).toFixed(2)}" stroke-linecap="round"/></g>`;
+    [[30,62,-30,1],[68,60,28,1],[50,48,4,1.05],[40,72,-10,.9],[62,74,14,.9]].forEach(([x,y,a,sc],i)=>o+=leaf(x,y,a,sc,i%2?g:sh(g,.12),vn));
+    if(D&&!B)[[38,42],[62,40],[66,66],[28,70],[50,76]].forEach(([x,y],i)=>o+=`<path d="M${x-5} ${y}q5-6 10 0" fill="none" stroke="#9a5a1e" stroke-width="3" stroke-linecap="round"/>`);
+    return o}
+  /* ============ 雞腿 ============ */
+  if(k==='tpchicken'){
+    const c=col('#f3b89c','#d98a3a'),cs=sh(c,-.2),cl=sh(c,.4),bone='#f8f0e0';let o='';
+    o+=shadow(38,8,84);
+    o+=`<circle cx="76" cy="19" r="7.5" fill="${bone}" ${OL} stroke-width="2.6"/><circle cx="86" cy="28" r="7.5" fill="${bone}" ${OL} stroke-width="2.6"/>`;
+    o+=`<path d="M58 46L81 24" stroke="${O}" stroke-width="13" stroke-linecap="round"/><path d="M58 46L81 24" stroke="${bone}" stroke-width="8.5" stroke-linecap="round"/><path d="M62 40L78 25" stroke="#e2d6bd" stroke-width="2.4" stroke-linecap="round"/>`;
+    const meat='M13 62C10 40 30 24 52 30C64 33 70 42 66 51C64 56 59 59 57 64C53 80 34 88 23 80C16 75 13 69 13 62Z';
+    o+=`<path d="${meat}" fill="${c}" ${OL} stroke-width="3"/>`;
+    o+=`<path d="M23 80C34 88 53 80 57 64C59 59 64 56 66 51C66 62 58 76 46 80C38 83 28 83 23 80Z" fill="${cs}"/>`;
+    o+=`<path d="M20 52Q25 38 42 35" fill="none" stroke="${cl}" stroke-width="4" stroke-linecap="round" opacity=".7"/>`;
+    o+=`<path d="M62 50C60 55 57 59 56 63" fill="none" stroke="${sh(c,-.35)}" stroke-width="2.4" stroke-linecap="round"/>`;
+    if(p<.4&&!B)[[28,66],[38,72],[46,60],[34,52],[52,70]].forEach(([x,y])=>o+=`<circle cx="${x}" cy="${y}" r="1.5" fill="${sh(c,-.14)}"/>`);
+    if((sg>0||D)&&!B)[[24,72,38,48],[34,76,48,52],[44,76,56,56]].forEach(([x1,y1,x2,y2])=>o+=`<path d="M${x1} ${y1}L${x2} ${y2}" stroke="#6a3410" stroke-width="4.2" stroke-linecap="round" opacity=".62"/>`);
+    if(D&&!B)o+=`<path d="M28 46Q34 40 40 40" fill="none" stroke="#fff3c8" stroke-width="3" stroke-linecap="round" opacity=".7"/>`;
+    o+=`<path d="${meat}" fill="none" ${OL} stroke-width="3"/>`;
+    return o}
+  /* ============ 大阪燒麵糊 ============ */
+  if(k==='tpokono'){
+    const bt=col('#f9e49a','#d9a04a'),btl=sh(bt,.35),cooked=sg>=1||D,sauce=sg>=2||D;let o='';
+    if(tray){ /* 一碗麵糊 */
+      o+=shadow(34,6,88);
+      o+=`<path d="M38 82h24l3 8H35z" fill="#9fb6cc" ${OL} stroke-width="2.5"/>`;
+      o+=`<path d="M10 46Q10 84 50 86Q90 84 90 46Z" fill="#cfe0ee" ${OL} stroke-width="3"/>`;
+      o+=`<path d="M10 46Q14 76 50 80Q86 76 90 46Q88 58 82 64Q50 74 18 64Q12 58 10 46Z" fill="#a9c1d6"/>`;
+      o+=`<ellipse cx="50" cy="46" rx="40" ry="14" fill="#eaf3fa" ${OL} stroke-width="3"/>`;
+      o+=`<ellipse cx="50" cy="47" rx="34" ry="10.5" fill="${bt}" stroke="#c9a24a" stroke-width="1.5"/>`;
+      o+=`<path d="M28 44Q40 40 54 43" fill="none" stroke="#fff8d8" stroke-width="3" stroke-linecap="round" opacity=".85"/>`;
+      [[36,48],[56,50],[66,45],[46,52]].forEach(([x,y])=>o+=`<path d="M${x-3.5} ${y}q3.5-5 7 0q-3.5 3-7 0z" fill="#8fcb68" stroke="#4f9a3c" stroke-width="1"/>`);
+      [[44,45],[70,49],[30,48]].forEach(([x,y])=>o+=`<rect x="${x}" y="${y}" width="4" height="2.4" rx="1.2" fill="#f19aa6"/>`);
+      o+=`<path d="M64 40L88 12" stroke="${O}" stroke-width="8" stroke-linecap="round"/><path d="M64 40L88 12" stroke="#c99a5e" stroke-width="4.5" stroke-linecap="round"/><ellipse cx="60" cy="45" rx="8" ry="5" transform="rotate(-48 60 45)" fill="#c99a5e" ${OL} stroke-width="2.4"/>`;
+      return o}
+    o+=shadow(42,9,82);
+    if(!cooked){
+      const bl='M10 56C8 42 26 32 44 32C66 30 90 38 90 54C92 70 70 80 48 78C26 80 10 70 10 56Z';
+      o+=`<path d="${bl}" fill="${bt}" ${OL} stroke-width="3"/>`;
+      o+=`<path d="M90 54C92 70 70 80 48 78C26 80 10 70 10 56C26 66 48 68 66 62C80 58 88 52 89 44C90 48 90 51 90 54Z" fill="${sh(bt,-.14)}"/>`;
+      o+=`<path d="M24 44Q38 36 58 38" fill="none" stroke="#fffbe6" stroke-width="3.5" stroke-linecap="round" opacity=".85"/>`;
+      [[30,56],[48,48],[64,58],[56,68],[72,46],[38,66]].forEach(([x,y],i)=>o+=`<path d="M${x-5} ${y}q5-7 10 0q-5 4-10 0z" transform="rotate(${i*40} ${x} ${y})" fill="#8fcb68" stroke="#4f9a3c" stroke-width="1.2"/>`);
+      [[42,56],[60,50],[70,64],[34,48]].forEach(([x,y])=>o+=`<rect x="${x}" y="${y}" width="5" height="2.6" rx="1.3" fill="#f19aa6"/>`);
+      [[52,60],[36,60],[66,54],[46,42],[58,72]].forEach(([x,y])=>o+=`<circle cx="${x}" cy="${y}" r="1.4" fill="#e3c27a"/>`);
+      [[24,52],[56,44],[44,70]].forEach(([x,y])=>o+=`<circle cx="${x}" cy="${y}" r="3" fill="none" stroke="#fffbe6" stroke-width="1.4" opacity=".8"/>`);
+      return o}
+    const top=sauce?col('#8a4a22','#7a3a18'):col('#e9b85e','#d9a04a'),side=col('#e0a458','#c98838');
+    const disc='M12 56a38 22 0 1 0 76 0a38 22 0 1 0 -76 0Z';
+    o+=tpExtrude(disc,10,B?'#2e2016':side,3);
+    o+=`<ellipse cx="50" cy="56" rx="38" ry="22" fill="${top}" ${OL} stroke-width="3"/>`;
+    if(sauce&&!B){
+      o+=`<ellipse cx="50" cy="55" rx="31" ry="17" fill="#6a3010"/><path d="M26 48Q40 40 58 44" fill="none" stroke="#b86a34" stroke-width="3" stroke-linecap="round" opacity=".8"/>`;
+      o+=`<path d="M24 52L32 60L40 50L48 60L56 50L64 60L72 52" fill="none" stroke="#fff6dc" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      o+=`<path d="M30 46Q50 38 70 46" fill="none" stroke="#fff6dc" stroke-width="2.2" stroke-linecap="round" opacity=".9"/>`;
+      [[34,62],[58,64],[66,52],[44,56],[52,48],[28,54]].forEach(([x,y])=>o+=`<rect x="${x}" y="${y}" width="3.6" height="2" rx="1" fill="#3f9a3a"/>`);
+      [[42,44],[56,56],[62,46]].forEach(([x,y],i)=>o+=`<path d="M${x} ${y}q5-6 9-1q-3 5-9 1z" transform="rotate(${i*50} ${x} ${y})" fill="#e8b0a0" stroke="#b46a5a" stroke-width="1"/>`)
+    }else if(!B){
+      o+=`<path d="M28 50Q40 44 56 46" fill="none" stroke="#fff3c8" stroke-width="3" stroke-linecap="round" opacity=".7"/>`;
+      [[36,60],[56,62],[64,52],[46,52]].forEach(([x,y])=>o+=`<circle cx="${x}" cy="${y}" r="2.6" fill="#b87a2a" opacity=".6"/>`)
+    }
+    return o}
+  /* ============ 大蝦 ============ */
+  if(k==='tpshrimp'){
+    const c=col('#aebdcc','#f0663a'),cd=sh(c,-.28),cl=sh(c,.42),belly=col('#dfe6ee','#ffb18a');let o='';
+    const P=[[70,30],[36,10],[4,48],[44,82]],rr=t=>11-5.6*t;
+    const Tm=tpBzT(P,1),E=tpBz(P,1),ang=Math.atan2(Tm[1],Tm[0])*180/Math.PI;
+    o+=shadow(40,6,90);
+    [[-38,.82],[-14,1],[14,1],[38,.82]].forEach(([a,sc])=>o+=`<g transform="translate(${E[0].toFixed(1)} ${E[1].toFixed(1)}) rotate(${(ang+a).toFixed(1)}) scale(${sc})"><path d="M-2 -4C8 -10 21 -8 23 0C21 8 8 10 -2 4Z" fill="${a%2||Math.abs(a)>20?cd:c}" ${OL} stroke-width="2.6"/><path d="M4 0H18" stroke="${sh(c,-.4)}" stroke-width="1.6" stroke-linecap="round"/></g>`);
+    for(let t=.12;t<.9;t+=.11){const q=tpBz(P,t),n=tpBzT(P,t),nx=-n[1],ny=n[0],sg2=((46-q[0])*nx+(46-q[1])*ny)>0?1:-1,r=rr(t);
+      o+=`<path d="M${(q[0]+nx*sg2*(r-1)).toFixed(1)} ${(q[1]+ny*sg2*(r-1)).toFixed(1)}L${(q[0]+nx*sg2*(r+7)+n[0]*3).toFixed(1)} ${(q[1]+ny*sg2*(r+7)+n[1]*3).toFixed(1)}" stroke="${O}" stroke-width="4" stroke-linecap="round"/><path d="M${(q[0]+nx*sg2*(r-1)).toFixed(1)} ${(q[1]+ny*sg2*(r-1)).toFixed(1)}L${(q[0]+nx*sg2*(r+7)+n[0]*3).toFixed(1)} ${(q[1]+ny*sg2*(r+7)+n[1]*3).toFixed(1)}" stroke="${cd}" stroke-width="1.8" stroke-linecap="round"/>`}
+    let ol='',fl='';for(let i=0;i<=44;i++){const t=i/44,q=tpBz(P,t),r=rr(t);ol+=`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="${(r+1.7).toFixed(1)}" fill="${O}"/>`;fl+=`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="${r.toFixed(1)}" fill="${c}"/>`}
+    o+=ol+fl;
+    let bd='',hl='';for(let i=0;i<=30;i++){const t=.04+i/30*.9,q=tpBz(P,t),n=tpBzT(P,t),nx=-n[1],ny=n[0],sg2=((46-q[0])*nx+(46-q[1])*ny)>0?1:-1,r=rr(t);bd+=`${i?'L':'M'}${(q[0]+nx*sg2*r*.55).toFixed(1)} ${(q[1]+ny*sg2*r*.55).toFixed(1)}`;hl+=`${i?'L':'M'}${(q[0]-nx*sg2*r*.5).toFixed(1)} ${(q[1]-ny*sg2*r*.5).toFixed(1)}`}
+    o+=`<path d="${bd}" fill="none" stroke="${belly}" stroke-width="3.4" stroke-linecap="round" opacity=".85"/><path d="${hl}" fill="none" stroke="${cl}" stroke-width="2.6" stroke-linecap="round" opacity=".75"/>`;
+    for(let t=.2;t<.92;t+=.1){const q=tpBz(P,t),n=tpBzT(P,t),nx=-n[1],ny=n[0],r=rr(t);o+=`<path d="M${(q[0]-nx*r).toFixed(1)} ${(q[1]-ny*r).toFixed(1)}L${(q[0]+nx*r).toFixed(1)} ${(q[1]+ny*r).toFixed(1)}" stroke="${cd}" stroke-width="2.2" stroke-linecap="round"/>`}
+    const H=tpBz(P,0);
+    o+=`<path d="M${H[0]+3} ${H[1]-8}L${H[0]+21} ${H[1]-20}L${H[0]+9} ${H[1]+2}Z" fill="${c}" ${OL} stroke-width="2.4"/>`;
+    o+=`<path d="M${H[0]+6} ${H[1]-9}C${H[0]+16} ${H[1]-24} ${H[0]+22} ${H[1]-26} ${H[0]+24} ${H[1]-32}M${H[0]+9} ${H[1]-3}C${H[0]+20} ${H[1]-12} ${H[0]+26} ${H[1]-12} ${H[0]+27} ${H[1]-20}" fill="none" stroke="${O}" stroke-width="2.4" stroke-linecap="round"/>`;
+    o+=`<circle cx="${H[0]+4}" cy="${H[1]-2}" r="3.6" fill="${B?'#111':'#1b1210'}" ${OL} stroke-width="1.4"/><circle cx="${H[0]+5}" cy="${H[1]-3.2}" r="1.2" fill="#fff"/>`;
+    return `<g transform="translate(7 9) scale(.86)">${o}</g>`}
+  /* ============ 干貝 ============ */
+  if(k==='tpscallop'){
+    const sc=col('#f4c6aa','#e6a468'),sd=sh(sc,-.25),top=col('#fffbf2','#f2c468'),side=col('#efe2cb','#d6963e');let o='';
+    o+=shadow(38,6,90);
+    o+=`<path d="M36 86h28l-3 7H39z" fill="${sd}" ${OL} stroke-width="2.4"/>`;
+    const shell='M50 88C30 78 9 60 13 40Q14 28 24 25Q28 19 36 22Q42 17 50 21Q58 17 64 22Q72 19 76 25Q86 28 87 40C91 60 70 78 50 88Z';
+    o+=`<path d="${shell}" fill="${sc}" ${OL} stroke-width="3"/>`;
+    o+=`<path d="M50 88C70 78 91 60 87 40Q86 28 76 25Q72 19 64 22Q60 20 58 21Q70 40 62 66Q58 78 50 88Z" fill="${sh(sc,-.12)}"/>`;
+    [[16,46],[22,34],[32,26],[42,22],[50,21],[58,22],[68,26],[78,34],[84,46]].forEach(([x,y])=>o+=`<path d="M50 84L${x} ${y}" stroke="${sd}" stroke-width="1.8" stroke-linecap="round" opacity=".9"/>`);
+    o+=`<path d="${shell}" fill="none" ${OL} stroke-width="3"/>`;
+    const disc='M27 52a23 13.5 0 1 0 46 0a23 13.5 0 1 0 -46 0Z';
+    o+=tpExtrude(disc,10,B?'#2e2016':side,3);
+    o+=`<ellipse cx="50" cy="52" rx="23" ry="13.5" fill="${top}" ${OL} stroke-width="3"/>`;
+    if(D&&!B){o+=`<ellipse cx="50" cy="52" rx="17" ry="9" fill="#e0a040" opacity=".55"/><path d="M38 52h24M44 46l12 12M56 46L44 58" stroke="#9a5a1a" stroke-width="2.2" stroke-linecap="round" opacity=".55"/>`;
+      o+=`<path d="M44 48q6-5 12 0q3 5-4 6q-8 1-8-6z" fill="#ffe27a" ${OL} stroke-width="1.5"/>`;
+      [[40,56],[60,56],[56,45]].forEach(([x,y])=>o+=`<rect x="${x}" y="${y}" width="4" height="2.2" rx="1" fill="#4aa03a"/>`)}
+    else if(!B)o+=`<path d="M34 46Q42 41 54 43" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".85"/><ellipse cx="50" cy="52" rx="16" ry="8" fill="none" stroke="#f1e6d2" stroke-width="1.5" opacity=".7"/>`;
+    return o}
+  /* ============ 和牛 ============ */
+  if(k==='tpwagyu'){
+    const tc=col('#d4394f','#8d4a2c'),sd=col('#8c1f33','#a85a4a'),fat=col('#fff0e2','#e8c9a0'),mb=col('#ffe3e4','#d89a8a');let o='';
+    const T='M12 50Q12 36 28 34L70 28Q88 26 89 42L87 58Q86 69 70 71L28 77Q11 79 12 64Z';
+    o+=shadow(40,6,91);
+    o+=tpExtrude(T,12,B?'#2e2016':sd,3);
+    if(D&&!B)o+=`<path d="M13 64Q12 79 28 89L70 83Q86 81 87 70L87 80Q86 91 70 93" fill="none" stroke="#c9605a" stroke-width="0"/>`;
+    o+=`<path d="${T}" fill="${tc}" ${OL} stroke-width="3"/>`;
+    o+=`<path d="M14 47Q15 38 29 36L70 30Q84 28 86 40" fill="none" stroke="${fat}" stroke-width="6" stroke-linecap="round" opacity="${B?.3:1}"/>`;
+    o+=`<clipPath id="wgcl"><path d="${T}"/></clipPath><g clip-path="url(#wgcl)">`;
+    const mo=D?.45:1;
+    o+=`<g fill="none" stroke="${mb}" stroke-linecap="round" stroke-linejoin="round" opacity="${B?.15:mo}"><path d="M18 56Q30 48 40 55Q50 62 60 52Q70 44 84 50" stroke-width="2.8"/><path d="M22 68Q34 61 46 66Q58 71 68 63Q76 58 84 62" stroke-width="2.4"/><path d="M34 42Q40 52 35 62" stroke-width="2"/><path d="M58 38Q63 48 60 58" stroke-width="2"/><path d="M72 52Q76 60 72 68" stroke-width="2"/><path d="M26 48Q22 54 26 60M48 44Q52 50 48 55M64 62Q60 68 62 73" stroke-width="1.6"/></g>`;
+    if((sg>0||D)&&!B)o+=`<path d="M22 76L40 30M38 74L56 28M54 72L72 26M70 70L88 24" stroke="#2a1208" stroke-width="4.5" stroke-linecap="round" opacity=".5"/>`;
+    o+=`</g><path d="${T}" fill="none" ${OL} stroke-width="3"/>`;
+    if(D&&!B)o+=`<path d="M30 44q3-6 7-9M52 38q3-6 7-9" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".6"/>`;
+    return o}
+  /* ============ 龍蝦 ============ */
+  if(k==='tplobster'){
+    const c=col('#566694','#e23d2a'),cd=sh(c,-.28),cl=sh(c,.38),belly=col('#b9c4dc','#ffb089');let o='';
+    o+=shadow(34,5,99);
+    /* 尾扇 */
+    [[-42,.9],[-18,1],[18,1],[42,.9]].forEach(([a,sc])=>o+=`<g transform="translate(50 86) rotate(${a+90}) scale(${sc*.72})"><path d="M0 -5C10 -9 22 -7 24 0C22 7 10 9 0 5Z" fill="${Math.abs(a)>30?cd:c}" ${OL} stroke-width="2.6"/><path d="M5 0H19" stroke="${sh(c,-.4)}" stroke-width="1.6" stroke-linecap="round"/></g>`);
+    o+=`<path d="M44 86Q50 94 56 86Q50 80 44 86Z" fill="${c}" ${OL} stroke-width="2.4"/>`;
+    /* 腳 */
+    [[34,42,22,48],[34,48,21,57],[35,54,23,65],[66,42,78,48],[66,48,79,57],[65,54,77,65]].forEach(([x1,y1,x2,y2])=>o+=`<path d="M${x1} ${y1}L${x2} ${y2}" stroke="${O}" stroke-width="4.6" stroke-linecap="round"/><path d="M${x1} ${y1}L${x2} ${y2}" stroke="${cd}" stroke-width="2" stroke-linecap="round"/>`);
+    /* 尾節 */
+    for(let i=4;i>=0;i--){const y0=58+i*6.6,w=14.5-i*1.5;o+=`<path d="M${50-w} ${y0}Q50 ${y0-3} ${50+w} ${y0}L${50+w-1} ${y0+9}Q50 ${y0+11} ${50-w+1} ${y0+9}Z" fill="${i%2?c:sh(c,.08)}" ${OL} stroke-width="2.6"/><path d="M${50-w+3} ${y0+5}Q50 ${y0+7.5} ${50+w-3} ${y0+5}" fill="none" stroke="${belly}" stroke-width="1.6" opacity=".6"/>`}
+    /* 前胸甲 */
+    o+=`<path d="M50 20C63 20 69 33 67 47C65 58 59 64 50 64C41 64 35 58 33 47C31 33 37 20 50 20Z" fill="${c}" ${OL} stroke-width="3"/>`;
+    o+=`<path d="M67 47C65 58 59 64 50 64C41 64 35 58 33 47C40 52 60 52 67 47Z" fill="${cd}" opacity=".6"/>`;
+    o+=`<path d="M50 28V58M42 40Q50 46 58 40" fill="none" stroke="${cd}" stroke-width="2" stroke-linecap="round" opacity=".7"/><path d="M40 28Q44 24 50 24" fill="none" stroke="${cl}" stroke-width="3" stroke-linecap="round" opacity=".7"/>`;
+    o+=`<path d="M50 12L46.5 23H53.5Z" fill="${c}" ${OL} stroke-width="2.2"/>`;
+    /* 觸鬚 */
+    o+=`<path d="M45 22C38 12 26 8 14 10M55 22C62 12 74 8 86 10" fill="none" stroke="${O}" stroke-width="3.4" stroke-linecap="round"/><path d="M45 22C38 12 26 8 14 10M55 22C62 12 74 8 86 10" fill="none" stroke="${cd}" stroke-width="1.5" stroke-linecap="round"/>`;
+    /* 大螯 */
+    const claw=(sx)=>{const arm=sx<0?[[37,38],[26,40],[19,32]]:[[63,38],[74,40],[81,32]];
+      return `<path d="M${arm[0][0]} ${arm[0][1]}L${arm[1][0]} ${arm[1][1]}L${arm[2][0]} ${arm[2][1]}" fill="none" stroke="${O}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M${arm[0][0]} ${arm[0][1]}L${arm[1][0]} ${arm[1][1]}L${arm[2][0]} ${arm[2][1]}" fill="none" stroke="${c}" stroke-width="6.4" stroke-linecap="round" stroke-linejoin="round"/>`+
+      `<g transform="translate(${sx<0?17:83} 22) rotate(${sx<0?-18:18}) scale(1.12)"><path d="M-9 8C-13 -4 -9 -16 -3 -25C-2 -17 -1 -8 0 -4C1 -8 2 -17 3 -25C9 -16 13 -4 9 8C7 16 -7 16 -9 8Z" fill="${c}" ${OL} stroke-width="2.7"/><path d="M0 -4L0 -22" stroke="${cd}" stroke-width="1.6" stroke-linecap="round"/><path d="M-7 6Q0 12 7 6" fill="none" stroke="${cd}" stroke-width="1.6"/><path d="M-6 -2Q-8 -10 -4 -16" fill="none" stroke="${cl}" stroke-width="2.2" stroke-linecap="round" opacity=".8"/></g>`};
+    o+=claw(-1)+claw(1);
+    /* 眼睛 */
+    o+=`<circle cx="44" cy="24" r="2.8" fill="#1b1210" ${OL} stroke-width="1.2"/><circle cx="56" cy="24" r="2.8" fill="#1b1210" ${OL} stroke-width="1.2"/>`;
+    if(D&&!B)o+=`<path d="M50 70V88" stroke="#ffe0a0" stroke-width="3" stroke-linecap="round" opacity=".8"/><circle cx="46" cy="76" r="2" fill="#4aa03a"/><circle cx="55" cy="82" r="2" fill="#4aa03a"/>`;
+    return `<g transform="translate(8 9) scale(.84)">${o}</g>`}
   return ''}
 function tpFlameG(a){const k=1+a*.7,op=Math.max(0,1-a/.9);return `<g opacity="${op.toFixed(2)}" transform="translate(50 74) scale(${k.toFixed(2)}) translate(-50 -74)"><path d="M50 0C66 22 86 30 78 56C72 74 28 74 22 56C14 30 36 24 50 0Z" fill="#ff7a1a" opacity=".9"/><path d="M50 22C60 36 70 42 64 58C60 68 40 68 36 58C30 44 44 36 50 22Z" fill="#ffd23a"/></g>`}
 function tpPlate(){return `<ellipse cx="50" cy="70" rx="46" ry="20" fill="#7a4a2a" stroke="${O}" stroke-width="3"/><ellipse cx="50" cy="66" rx="40" ry="16" fill="#3a3d42" stroke="${O}" stroke-width="2.5"/>`}
@@ -2166,7 +2342,7 @@ function tpnHTML(){const n=tpnN(),bw=L.tpn?L.tpn.w:430,SW=(bw-20)/n;
     s+=`<div class="st slot" data-tpn="${i}" style="left:${x}px;top:18px;width:${SW-4}px;height:146px;${st==='done'?'box-shadow:0 0 0 3px #ffc65a inset;background:#ffc65a22':need?`box-shadow:0 0 0 3px ${perf?'#ffd23a':'#ff5a3c'} inset;background:${perf?'#ffd23a33':'#ff5a3c22'}`:''}"><div style="position:absolute;left:-4px;right:-4px;top:${CUR==='oko'?26:34}px;height:${CUR==='oko'?Math.min(Math.round(SW+8),124):Math.round(SW+8)}px">${inner}</div>${need?`<span class="tkflip" style="${perf?'background:#f0a818;color:#2a1608':''}">${T(TPLBL[TPS[g.kind][g.s||0]])}</span>`:''}${bar}</div>`}
   if(CUR==='oko')return s+`<span class="lbl" style="white-space:nowrap">${T('御好燒鐵板')}</span>`;const cn=(R.tpc||0)%TPSHOW;return s+`<span class="lbl" style="white-space:nowrap">${T('大鐵板')}　🔥 ${T('火焰秀')} <span style="color:#ffb02e;letter-spacing:1px">${'●'.repeat(cn)}</span><span style="opacity:.45;letter-spacing:1px">${'○'.repeat(TPSHOW-cn)}</span>${(R.tpc||0)>1?` ${T('連擊 ×{0}',R.tpc)}`:''}</span>`}
 function tpStHTML(name){if(CUR!=='tep'&&CUR!=='oko')return null;const k=TP_TRAY[name];if(!k)return null;
-  return sv(`<rect x="4" y="10" width="64" height="72" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/><rect x="8" y="14" width="56" height="8" rx="4" fill="#fff" opacity=".35"/><g transform="translate(4 14) scale(.64)">${tpArt(k,'raw',0)}</g>`,'0 0 72 90')+`<span class="lbl" style="white-space:nowrap;font-size:11px">${T(TP_RAWN[k])}</span>`+(has(k)?'':`<div class="locked">${T('商店<br>購買')}</div>`)}
+  return sv(`<rect x="4" y="10" width="64" height="72" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/><rect x="8" y="14" width="56" height="8" rx="4" fill="#fff" opacity=".35"/><g transform="${k==='okosaka'?'translate(4 14) scale(.64)':'translate(2 9) scale(.7)'}">${tpArt(k,'raw',0,false,'tray')}</g>`,'0 0 72 90')+`<span class="lbl" style="white-space:nowrap;font-size:11px">${T(TP_RAWN[k])}</span>`+(has(k)?'':`<div class="locked">${T('商店<br>購買')}</div>`)}
 /* ---- 點鐵板上的格子 ---- */
 function clickTpn(i,el){const g=R.tpn[i];if(!g)return;const s=cookState(g.t,g.kind),c=srcCenter({src:'tpn',i});
   if(s==='raw'){
