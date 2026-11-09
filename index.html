@@ -1475,20 +1475,22 @@ function rfryHTML(){
     else inner=`<div style="opacity:.22;width:100%;height:100%">${sv(`<rect x="14" y="20" width="72" height="60" rx="6" fill="none" stroke="#5a3a10" stroke-width="5"/><path d="M14 40h72M14 60h72M38 20v60M62 20v60" stroke="#5a3a10" stroke-width="3"/>`)}</div>`;
     s+=`<div class="st slot" data-rf="${i}" style="left:${x}px;top:20px;width:${FW-4}px;height:144px;${st==='done'?'box-shadow:0 0 0 3px #fff4a8 inset;background:#fff4a822':''}"><div style="position:absolute;left:-3px;right:-3px;top:38px;height:${FW+2}px">${inner}</div>${bar}</div>`}
   return s+`<span class="lbl">${T('油鍋')}</span>`}
+/* 拉麵台／沾麵台：每格前面是一口冒泡的湯鍋＋蒸氣（煮的料理要看起來是煮的，不是煎台） */
+function potSvg(){const O='#2a1b14';return `<svg viewBox="0 0 83 146" style="position:absolute;inset:0;pointer-events:none"><g fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".3"><path d="M28 34q-5-6 0-12t0-12"/><path d="M41 30q-5-6 0-12t0-12"/><path d="M54 34q-5-6 0-12t0-12"/></g><rect x="1" y="106" width="9" height="6" rx="2" fill="#5a616a" stroke="${O}" stroke-width="2"/><rect x="73" y="106" width="9" height="6" rx="2" fill="#5a616a" stroke="${O}" stroke-width="2"/><path d="M10 104h63v24q0 16-15 16H25q-15 0-15-16z" fill="#9aa3ad" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><ellipse cx="41.5" cy="104" rx="31" ry="7" fill="#7fb8d9" stroke="${O}" stroke-width="3"/><g fill="#e8f6ff"><circle cx="30" cy="103" r="2"/><circle cx="44" cy="106" r="2.5"/><circle cx="54" cy="102" r="1.6"/></g></svg>`}
 function lamenHTML(){
-  let s=`<svg viewBox="0 0 170 182" style="position:absolute;inset:0"><rect x="2" y="8" width="166" height="166" rx="12" fill="#1e1f22" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="150" height="150" rx="6" fill="#3d4147"/><path d="M85 22v140" stroke="#fff" stroke-width="3" opacity=".08"/></svg>`;
+  let s=`<svg viewBox="0 0 170 182" style="position:absolute;inset:0"><rect x="2" y="8" width="166" height="166" rx="12" fill="#1e1f22" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="150" height="150" rx="6" fill="#2b3a4a"/></svg>`;
   for(let i=0;i<2;i++){const x=10+i*85;
     const g=R.lamen[i];let inner='',bar='',st='';
     if(g&&g.wait){inner=sv(chashuPrepArt(g.parts))}
     else if(g){st=cookState(g.t,g.kind);inner=sv(pieceArt(g.kind,st));bar=cookBar(g.t,g.kind,st)}
-    s+=`<div class="st slot" data-lm="${i}" style="left:${x}px;top:18px;width:83px;height:146px;${st==='done'?'box-shadow:0 0 0 3px #8fd3ff inset;background:#8fd3ff22':''}"><div style="position:absolute;left:-4px;right:-4px;top:40px;height:91px">${inner}</div>${bar}</div>`}
+    s+=`<div class="st slot" data-lm="${i}" style="left:${x}px;top:18px;width:83px;height:146px;${st==='done'?'box-shadow:0 0 0 3px #8fd3ff inset;background:#8fd3ff22':''}">${potSvg()}<div style="position:absolute;left:-4px;right:-4px;top:40px;height:91px">${inner}</div>${bar}</div>`}
   return s+`<span class="lbl">${T('拉麵台')}</span>`}
 function tskHTML(){
-  let s=`<svg viewBox="0 0 170 182" style="position:absolute;inset:0"><rect x="2" y="8" width="166" height="166" rx="12" fill="#1e1f22" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="150" height="150" rx="6" fill="#3d4147"/><path d="M85 22v140" stroke="#fff" stroke-width="3" opacity=".08"/></svg>`;
+  let s=`<svg viewBox="0 0 170 182" style="position:absolute;inset:0"><rect x="2" y="8" width="166" height="166" rx="12" fill="#1e1f22" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="150" height="150" rx="6" fill="#2b3a4a"/></svg>`;
   for(let i=0;i<2;i++){const x=10+i*85;
     const g=R.tsk[i];let inner='',bar='',st='';
     if(g){st=cookState(g.t,g.kind);inner=sv(pieceArt(g.kind,st));bar=cookBar(g.t,g.kind,st)}
-    s+=`<div class="st slot" data-ts="${i}" style="left:${x}px;top:18px;width:83px;height:146px;${st==='done'?'box-shadow:0 0 0 3px #8fd3ff inset;background:#8fd3ff22':''}"><div style="position:absolute;left:-4px;right:-4px;top:40px;height:91px">${inner}</div>${bar}</div>`}
+    s+=`<div class="st slot" data-ts="${i}" style="left:${x}px;top:18px;width:83px;height:146px;${st==='done'?'box-shadow:0 0 0 3px #8fd3ff inset;background:#8fd3ff22':''}">${potSvg()}<div style="position:absolute;left:-4px;right:-4px;top:40px;height:91px">${inner}</div>${bar}</div>`}
   return s+`<span class="lbl">${T('沾麵台')}</span>`}
 function tyakiHTML(){
   let s=`<svg viewBox="0 0 170 182" style="position:absolute;inset:0"><rect x="2" y="8" width="166" height="166" rx="12" fill="#1e1f22" stroke="${O}" stroke-width="4"/><rect x="8" y="16" width="154" height="150" rx="6" fill="#3a3d42"/></svg>`;
