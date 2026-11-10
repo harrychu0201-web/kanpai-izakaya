@@ -720,17 +720,20 @@ const ITEMS={
   tpgarlic:{tag:'ガーリックライス',tz:'蒜香炒飯',jp:'ガーリックライス',zh:'蒜香炒飯',price:1200,cost:150,w:3,shop:'tep',buy:3000,st:'大鐵板'},
   tpcabbage:{tag:'キャベツ焼',tz:'鐵板高麗菜',jp:'鉄板キャベツ',zh:'鐵板高麗菜',price:1000,cost:120,w:3,shop:'tep',buy:6000,st:'大鐵板'},
   tpchicken:{tag:'チキンステーキ',tz:'雞腿排',jp:'チキンステーキ',zh:'鐵板雞腿排',price:1600,cost:220,w:2,shop:'tep',buy:12000,st:'大鐵板'},
-  tpokono:{tag:'お好み焼き',tz:'大阪燒',jp:'お好み焼き',zh:'大阪燒',price:1500,cost:200,w:2,shop:'tep',buy:18000,st:'大鐵板'},
+  tpokono:{tag:'お好み焼き',tz:'大阪燒',jp:'お好み焼き',zh:'大阪燒',price:1500,cost:200,w:2,shop:'tepold',buy:18000,st:'大鐵板'},/* 2026-11-10 已移到御好燒店（okosaka），這筆只留給舊存檔 */
   tpshrimp:{tag:'海老バター',tz:'奶油大蝦',jp:'海老のバター焼き',zh:'奶油大蝦',price:2000,cost:280,w:2,shop:'tep',buy:26000,st:'大鐵板'},
   tpscallop:{tag:'帆立焼き',tz:'鐵板干貝',jp:'帆立の鉄板焼き',zh:'鐵板干貝',price:2200,cost:300,w:2,shop:'tep',buy:35000,st:'大鐵板'},
   tpwagyu:{tag:'和牛サイコロ',tz:'火焰和牛',jp:'和牛サイコロステーキ',zh:'火焰骰子和牛',price:3200,cost:450,w:1,shop:'tep',buy:60000,st:'大鐵板'},
   tplobster:{tag:'伊勢海老フランベ',tz:'火焰龍蝦',jp:'伊勢海老のフランベ',zh:'火焰龍蝦',price:4200,cost:600,w:1,shop:'tep',buy:90000,st:'大鐵板'},
   /* 御好燒店（作者＋管理員測試中） */
   okosaka:{tag:'お好み焼き',tz:'大阪燒',jp:'お好み焼き',zh:'大阪燒',price:900,cost:130,w:3,shop:'oko',buy:5000,st:'御好燒鐵板'},
+  okhiro:{tag:'広島焼き',tz:'廣島燒',jp:'広島焼き',zh:'廣島燒',price:1100,cost:170,w:3,shop:'oko',buy:8000,st:'御好燒鐵板'},
+  okmoji:{tag:'もんじゃ焼き',tz:'文字燒',jp:'もんじゃ焼き',zh:'文字燒',price:800,cost:110,w:2,shop:'oko',buy:6000,st:'御好燒鐵板'},
+  okmoder:{tag:'モダン焼き',tz:'摩登燒',jp:'モダン焼き',zh:'摩登燒',price:1200,cost:180,w:2,shop:'oko',buy:10000,st:'御好燒鐵板'},
 };
 const FISH={maguro:'鮪魚',salmon:'鮭魚',tai:'鯛魚'};
 const ING_COST={bowl:0,boat:0,rice:60,tsalmon:80,tume:60,tea:30,maguro:200,salmon:200,tai:200};
-const COOK={miso:6,dandan:7,tsukemen:6,chashurice:0,negima:5,tsukune:6,karaage:6,buta:6,gyu:7,ika:6,hotate:5,ebiten:5,kakifry:6,gyoza:6,friedrice:5,noodle:5,koro:4,tori:6,katsu:9,taiyaki:7,takoyaki:9,tamagoyaki:8,yakionigiri:9,tamagonigiri:0,salmonnigiri:0,tunanigiri:0,ikanigiri:0,tainigiri:0,ebinigiri:0,negitorogunkan:0,ikuragunkan:0,unigunkan:0,kappamaki:0,tekkamaki:0,salmonmaki:0,salmontemaki:0,tunatemaki:0,ikuratemaki:0,karaagenigiri:0,aburisalmonnigiri:0,aburitunanigiri:0,aburitainigiri:0,aburiebinigiri:0,salmonsashimi:0,tunasashimi:0,taisashimi:0,mixsashimi:0,cucumbersalad:0,salmonsalad:0,tunasalad:0,ebisalad:0,vanillaice:0,daifuku:0,dango:0,tpgarlic:7,tpcabbage:5,tpchicken:8,tpokono:8,tpshrimp:6,tpscallop:5,tpwagyu:7,tplobster:9,okosaka:18,asm:1e9,rice:1e9};
+const COOK={miso:6,dandan:7,tsukemen:6,chashurice:0,negima:5,tsukune:6,karaage:6,buta:6,gyu:7,ika:6,hotate:5,ebiten:5,kakifry:6,gyoza:6,friedrice:5,noodle:5,koro:4,tori:6,katsu:9,taiyaki:7,takoyaki:9,tamagoyaki:8,yakionigiri:9,tamagonigiri:0,salmonnigiri:0,tunanigiri:0,ikanigiri:0,tainigiri:0,ebinigiri:0,negitorogunkan:0,ikuragunkan:0,unigunkan:0,kappamaki:0,tekkamaki:0,salmonmaki:0,salmontemaki:0,tunatemaki:0,ikuratemaki:0,karaagenigiri:0,aburisalmonnigiri:0,aburitunanigiri:0,aburitainigiri:0,aburiebinigiri:0,salmonsashimi:0,tunasashimi:0,taisashimi:0,mixsashimi:0,cucumbersalad:0,salmonsalad:0,tunasalad:0,ebisalad:0,vanillaice:0,daifuku:0,dango:0,tpgarlic:7,tpcabbage:5,tpchicken:8,tpokono:8,tpshrimp:6,tpscallop:5,tpwagyu:7,tplobster:9,okosaka:18,okhiro:28,okmoji:18,okmoder:24,asm:1e9,rice:1e9};
 const NEWD=['hiyayakko','highball','buta','ika','ebiten','hotate','kakifry','gyu'],NEWD3=['tsukemono','umeshu','takoyaki','tamagoyaki','reishu','yakionigiri'];
 /* stepped dishes (kitchen 3): cooking pauses at each step until you tap, like the takoyaki flip. t = cooking seconds at which each step is asked,
    grace = seconds you get to tap before the dish is ruined, lbl = red badge text, ok = toast after the tap */
@@ -2114,11 +2117,11 @@ function suAct(l){
    提示剛跳出（標籤還是金色）時點下去算「完美」，連續完美 TPSHOW 次就來一場火焰秀：全場等餐的客人耐心回滿、每位多給一筆賞錢 */
 const TEP_PRICE=2500000,TP_SLOT6_COST=50000,TPGRACE=4.5,TPPERF=1.4,TPAUTO=2,TPSHOW=6;
 function tepDev(){try{return !pview()&&canView()}catch(e){return false}}
-const TPKEYS=['tpgarlic','tpcabbage','tpchicken','tpokono','tpshrimp','tpscallop','tpwagyu','tplobster'];
-const TPS={tpgarlic:['stir','stir'],tpcabbage:['stir'],tpchicken:['flip'],tpokono:['flip','sauce'],tpshrimp:['flip'],tpscallop:['flip'],tpwagyu:['flip','fire'],tplobster:['fire','flip','fire']};
+const TPKEYS=['tpgarlic','tpcabbage','tpchicken','tpshrimp','tpscallop','tpwagyu','tplobster'];
+const TPS={tpgarlic:['stir','stir'],tpcabbage:['stir'],tpchicken:['flip'],tpshrimp:['flip'],tpscallop:['flip'],tpwagyu:['flip','fire'],tplobster:['fire','flip','fire']};
 const TPLBL={stir:'翻炒！',flip:'翻面！',sauce:'刷醬！',fire:'點火！'},TPOK={stir:'炒起來了！',flip:'翻面了！',sauce:'刷好醬了！',fire:'火焰燒！'},TPSTAFFLBL={stir:'阿炎翻炒',flip:'阿炎翻面',sauce:'阿炎刷醬',fire:'阿炎點火'};
-const TP_TRAY={rawTpGarlic:'tpgarlic',rawTpCabbage:'tpcabbage',rawTpChicken:'tpchicken',rawTpOkono:'tpokono',rawTpShrimp:'tpshrimp',rawTpScallop:'tpscallop',rawTpWagyu:'tpwagyu',rawTpLobster:'tplobster'};
-const TP_RAWN={tpgarlic:'白飯',tpcabbage:'高麗菜',tpchicken:'雞腿',tpokono:'大阪燒麵糊',tpshrimp:'大蝦',tpscallop:'干貝',tpwagyu:'和牛',tplobster:'龍蝦'};
+const TP_TRAY={rawTpGarlic:'tpgarlic',rawTpCabbage:'tpcabbage',rawTpChicken:'tpchicken',rawTpShrimp:'tpshrimp',rawTpScallop:'tpscallop',rawTpWagyu:'tpwagyu',rawTpLobster:'tplobster'};
+const TP_RAWN={tpgarlic:'白飯',tpcabbage:'高麗菜',tpchicken:'雞腿',tpshrimp:'大蝦',tpscallop:'干貝',tpwagyu:'和牛',tplobster:'龍蝦'};
 Object.assign(RAWMAP,TP_TRAY);TPKEYS.forEach(k=>{STN[k]='tpn'});
 Object.assign(HOW,Object.fromEntries(TPKEYS.map(k=>[k,`點<b>${TP_RAWN[k]}</b>下到<b>大鐵板</b>，煎到一半依序會跳出 ${TPS[k].map(s=>`<b>${TPLBL[s]}</b>`).join(' → ')}，跳出來就點一下（金色時點是完美）。煎好再點起來送。`])));
 const TP_STAFF={zh:'鐵板師傅・阿炎',lv:[
@@ -2140,7 +2143,7 @@ function tpBz(P,t){const u=1-t;return [u*u*u*P[0][0]+3*u*u*t*P[1][0]+3*u*t*t*P[2
 function tpBzT(P,t){const u=1-t,dx=3*u*u*(P[1][0]-P[0][0])+6*u*t*(P[2][0]-P[1][0])+3*t*t*(P[3][0]-P[2][0]),dy=3*u*u*(P[1][1]-P[0][1])+6*u*t*(P[2][1]-P[1][1])+3*t*t*(P[3][1]-P[2][1]),l=Math.hypot(dx,dy)||1;return [dx/l,dy/l]}
 function tpRnd(seed){let x=seed;return ()=>{x=(x*1664525+1013904223)%4294967296;return x/4294967296}}
 function tpArt(k,st,s,bad,mode){
-  if(k==='okosaka')return okArt(k,st,s,bad);
+  if(OKN[k])return okArt(k,st,s,bad);
   const B=st==='burnt',D=st==='done',p=D?1:Math.min(1,(s||0)/TPS[k].length),tray=mode==='tray',sg=s||0;
   const mix=(a,b)=>{const h=x=>parseInt(x,16),A=[1,3,5].map(i=>h(a.substr(i,2))),C=[1,3,5].map(i=>h(b.substr(i,2)));return '#'+A.map((v,i)=>Math.round(v+(C[i]-v)*p).toString(16).padStart(2,'0')).join('')};
   const col=(raw,done)=>B?'#2e2016':mix(raw,done),sh=tpShade,OL=`stroke="${O}" stroke-linejoin="round"`;
@@ -2407,12 +2410,12 @@ function drawTepBg(){
 }
 /* ---- 版面 ---- */
 const TP_LAND={tap:{x:10,y:406,w:100,h:186},tpn:{x:122,y:410,w:430,h:182},trash2:{x:790,y:346,w:72,h:54},
-  rawTpGarlic:{x:566,y:406,w:64,h:90},rawTpCabbage:{x:632,y:406,w:64,h:90},rawTpChicken:{x:698,y:406,w:64,h:90},rawTpOkono:{x:764,y:406,w:64,h:90},
-  rawTpShrimp:{x:566,y:500,w:64,h:90},rawTpScallop:{x:632,y:500,w:64,h:90},rawTpWagyu:{x:698,y:500,w:64,h:90},rawTpLobster:{x:764,y:500,w:64,h:90},
+  rawTpGarlic:{x:566,y:406,w:64,h:90},rawTpCabbage:{x:632,y:406,w:64,h:90},rawTpChicken:{x:698,y:406,w:64,h:90},rawTpShrimp:{x:764,y:406,w:64,h:90},
+  rawTpScallop:{x:566,y:500,w:64,h:90},rawTpWagyu:{x:632,y:500,w:64,h:90},rawTpLobster:{x:698,y:500,w:64,h:90},
   warmT:{x:262,y:346,w:440,h:54},pgbtn:{x:880,y:354,w:166,h:44,pg:0}};
 const TP_PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},tpn:{x:123.5,y:418,w:410,h:182,k:1.12},trash2:{x:402,y:340,w:72,h:54,k:1.12},
-  rawTpGarlic:{x:8,y:640,w:78,h:100,k:1.12},rawTpCabbage:{x:100,y:640,w:78,h:100,k:1.12},rawTpChicken:{x:192,y:640,w:78,h:100,k:1.12},rawTpOkono:{x:284,y:640,w:78,h:100,k:1.12},
-  rawTpShrimp:{x:8,y:762,w:78,h:100,k:1.12},rawTpScallop:{x:100,y:762,w:78,h:100,k:1.12},rawTpWagyu:{x:192,y:762,w:78,h:100,k:1.12},rawTpLobster:{x:284,y:762,w:78,h:100,k:1.12},
+  rawTpGarlic:{x:8,y:640,w:78,h:100,k:1.12},rawTpCabbage:{x:100,y:640,w:78,h:100,k:1.12},rawTpChicken:{x:192,y:640,w:78,h:100,k:1.12},rawTpShrimp:{x:284,y:640,w:78,h:100,k:1.12},
+  rawTpScallop:{x:8,y:762,w:78,h:100,k:1.12},rawTpWagyu:{x:100,y:762,w:78,h:100,k:1.12},rawTpLobster:{x:192,y:762,w:78,h:100,k:1.12},
   warmT:{x:8,y:340,w:360,h:54,k:1.12},pgbtn:{x:482,y:350,w:174,h:46,pg:0}};
 /* ---- 商店 ---- */
 function shopTep(sub){
@@ -2442,23 +2445,27 @@ function tepActs(act,a){
 
 /* ===== 御好燒店：只有作者和管理員（admins/）看得到（2026-11-09） =====
    平價庶民鐵板，沿用炎舞鐵板燒的鐵板格子；每道菜一步一步自己做，到提示點就停下等你點，等太久就失敗。
-   現在只有大阪燒（拌勻→鋪肉→蓋鍋→翻面→翻回來→刷醬→擠醬撒料），廣島燒／文字燒／摩登燒之後再加 */
+   四道：大阪燒／廣島燒／文字燒／摩登燒（2026-11-10 起；炎舞的大阪燒已移到這裡） */
 const OKO_PRICE=1200000;
 function okoDev(){return tepDev()}
-const OKKEYS=['okosaka'];
+const OKKEYS=['okosaka','okhiro','okmoji','okmoder'];
 TPS.okosaka=['mix','pork','lid','flip','flip2','sauce','top'];
-Object.assign(TPLBL,{mix:'拌勻！',pork:'鋪肉！',lid:'蓋鍋！',flip2:'翻回來！',top:'擠醬撒料！'});
-Object.assign(TPOK,{mix:'麵糊拌勻了！',pork:'鋪好五花肉了！',lid:'蓋上鍋蓋悶煎～',flip2:'翻回肉面朝上了！',top:'擠好美乃滋、撒好料了！'});
-Object.assign(TP_TRAY,{rawOkOsaka:'okosaka'});Object.assign(TP_RAWN,{okosaka:'大阪燒料'});
-Object.assign(RAWMAP,{rawOkOsaka:'okosaka'});OKKEYS.forEach(k=>{STN[k]='tpn'});
+TPS.okhiro=['spread','pile','pork','flip','noodle','egg','stack','top'];
+TPS.okmoji=['stir','dam','pour','blend','flat','scrape'];
+TPS.okmoder=['mix','pork','flip','noodle','stack','egg','top'];
+Object.assign(TPLBL,{mix:'拌勻！',pork:'鋪肉！',lid:'蓋鍋！',flip2:'翻回來！',top:'擠醬撒料！',spread:'攤餅！',pile:'疊料！',noodle:'炒麵！',egg:'煎蛋！',stack:'疊起來！',dam:'築土手！',pour:'倒湯汁！',blend:'拌開！',flat:'攤平！',scrape:'鏟起來！'});
+Object.assign(TPOK,{mix:'麵糊拌勻了！',pork:'鋪好五花肉了！',lid:'蓋上鍋蓋悶煎～',flip2:'翻回肉面朝上了！',top:'擠好美乃滋、撒好料了！',spread:'攤成薄餅了！',pile:'疊好高麗菜和豆芽了！',noodle:'炒好麵了！',egg:'煎好蛋了！',stack:'疊起來了！',dam:'圍好土手了！',pour:'倒入湯汁了！',blend:'拌開了！',flat:'攤平了！',scrape:'鏟起來了！'});
+Object.assign(TP_TRAY,{rawOkOsaka:'okosaka',rawOkHiro:'okhiro',rawOkMoji:'okmoji',rawOkModern:'okmoder'});Object.assign(TP_RAWN,{okosaka:'大阪燒料',okhiro:'廣島燒料',okmoji:'文字燒料',okmoder:'摩登燒料'});
+Object.assign(RAWMAP,{rawOkOsaka:'okosaka',rawOkHiro:'okhiro',rawOkMoji:'okmoji',rawOkModern:'okmoder'});OKKEYS.forEach(k=>{STN[k]='tpn'});
 Object.assign(HOW,Object.fromEntries(OKKEYS.map(k=>[k,`點<b>${TP_RAWN[k]}</b>下到<b>鐵板</b>，煎到一半依序會跳出 ${TPS[k].map(s=>`<b>${TPLBL[s]}</b>`).join(' → ')}，跳出來就點一下。煎好再點起來送。`])));
 /* ---- 大阪燒的圖：七個階段（拌勻→鋪肉→蓋鍋→翻面→翻回→刷醬→擠醬撒料）＋焦。種子固定、結果快取，所以每次重畫都長一樣 ---- */
 const OKC={};
 function okRng(a){return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+const OKN={okosaka:7,okhiro:8,okmoji:6,okmoder:7},OKSEED={okosaka:0,okhiro:1000,okmoji:2000,okmoder:3000};
 function okArt(k,st,s,bad){
-  const B=st==='burnt',D=st==='done',n=D?7:Math.max(0,Math.min(7,s||0)),key=(B?'b':'n')+n;
+  const B=st==='burnt',D=st==='done',N=OKN[k]||7;let n=D?N:Math.max(0,Math.min(N,s||0));const key=k+(B?'b':'n')+n;
   if(OKC[key])return OKC[key];
-  const r=okRng(n*97+(B?5:3)),f=v=>(+v).toFixed(1),cx=50,cy=57,rx=43,ry=24;
+  const r=okRng(n*97+(B?5:3)+(OKSEED[k]||0)),f=v=>(+v).toFixed(1),cx=50,cy=57,rx=43,ry=24;
   const E=(x,y,a,b,fill,sw=1.6,sc=O,op)=>`<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(a)}" ry="${f(b)}" fill="${fill}" stroke="${sw?sc:'none'}" stroke-width="${sw}"${op!=null?` opacity="${op}"`:''}/>`;
   const inE=(x,y,a,b)=>{const t=r()*6.2832,q=Math.sqrt(r());return[x+a*q*Math.cos(t),y+b*q*Math.sin(t)]};
   const blob=(x,y,a,b,jit,fill,sw=1.6)=>{const N=26,P=[];for(let i=0;i<N;i++){const t=6.2832*i/N,q=1+(r()*2-1)*jit+.025*Math.sin(3*t+.6);P.push([x+a*q*Math.cos(t),y+b*q*Math.sin(t)])}
@@ -2479,6 +2486,74 @@ function okArt(k,st,s,bad){
     for(let i=0;i<14;i++){const[x,y]=inE(cx,cy,rx*.86,ry*.8);o+=E(x,y,r()*4+1.5,r()*2.4+1,i%3?'#120d09':'#4a3828',0)}
     for(let i=0;i<5;i++){const[x,y]=inE(cx,cy-6,rx*.6,ry*.4);o+=`<path d="M${f(x)} ${f(y)}q-3-5 0-9t0-7" fill="none" stroke="#8a8f96" stroke-width="2" stroke-linecap="round" opacity=".4"/>`}
     return OKC[key]=o}
+  /* ===== 廣島燒／文字燒／摩登燒 ===== */
+  const layer=(x,yc,a,b,th,top,side,jit=.03)=>blob(x,yc+th,a,b,jit,side)+blob(x,yc,a,b,jit,top);
+  const strands=(x,y,a,b,cnt,L,cols,w=1.5)=>{let q='';for(let i=0;i<cnt;i++){const[px,py]=inE(x,y,a,b);q+=strand(px,py,r()*3.14,r()*L*.6+L*.7,r()*2-1,cols[i%cols.length],w)}return q};
+  const noodles=(x,y,a,b,cnt)=>strands(x,y,a,b,cnt,7,['#a5622a','#7a3f16','#c98a3a'],2.1);
+  const egg=(x,y,a,b)=>blob(x,y,a,b,.05,'#fffaf0')+E(x+a*.1,y-b*.05,a*.42,b*.46,'#ffb818',1.2)+E(x+a*.02,y-b*.28,a*.14,b*.1,'#fff3c0',0,O,.9);
+  const dots=(x,y,a,b,cnt,col,rr)=>{let q='';for(let i=0;i<cnt;i++){const[px,py]=inE(x,y,a,b);q+=E(px,py,rr*(.8+r()*.5),rr*(.7+r()*.4),col,.6)}return q};
+  const grid=(x,y,a,b,gap)=>{let d='';const q=.92,A=a*q,Bq=b*q;
+    for(let c=-A+gap/2;c<A;c+=gap){const h=Bq*Math.sqrt(Math.max(0,1-(c/A)**2));d+=`M${f(x+c)} ${f(y-h)}`;for(let t=-1;t<=1.001;t+=.25)d+=`L${f(x+c+Math.sin(t*4+c)*.6)} ${f(y+h*t)}`}
+    for(let c=-Bq+gap*Bq/A/2;c<Bq;c+=gap*Bq/A){const w=A*Math.sqrt(Math.max(0,1-(c/Bq)**2));d+=`M${f(x-w)} ${f(y+c)}`;for(let t=-1;t<=1.001;t+=.25)d+=`L${f(x+w*t)} ${f(y+c+Math.sin(t*4+c)*.6)}`}
+    return `<path d="${d}" fill="none" stroke="${O}" stroke-width="2.7" stroke-linejoin="round" opacity=".35"/><path d="${d}" fill="none" stroke="#fffaf0" stroke-width="1.4" stroke-linejoin="round"/>`};
+  const wavy=(x0,x1,y,amp,cyc)=>{let d='';for(let i=0;i<=60;i++){const t=i/60;d+=(i?'L':'M')+f(x0+(x1-x0)*t)+' '+f(y+amp*Math.sin(6.2832*cyc*t))}
+    return `<path d="${d}" fill="none" stroke="${O}" stroke-width="4.2" stroke-linejoin="round" opacity=".4"/><path d="${d}" fill="none" stroke="#fffaf0" stroke-width="2.2" stroke-linejoin="round"/>`};
+  const toppings=(x,y,a,b,nr,nk)=>{let q='';for(let i=0;i<8;i++){const[px,py]=inE(x,y-1,a*.4,b*.35);q+=strand(px,py,r()*2-1,r()*3+5,r()*1-.5,'#e0303a',1.4)}
+    for(let i=0;i<nr;i++){const[px,py]=inE(x,y-2,a*.62,b*.55);q+=ring(px,py,r()*1.2+2.2)}
+    for(let i=0;i<14;i++){const[px,py]=inE(x,y,a*.78,b*.7);q+=`<circle cx="${f(px)}" cy="${f(py)}" r="${f(r()*.6+.9)}" fill="#2f6b24" stroke="#16361a" stroke-width=".5"/>`}
+    for(let i=0;i<nk;i++){const[px,py]=inE(x,y-3,a*.6,b*.5);q+=katsu(px,py,r()*120-60)}return q};
+  const NS=['#a5622a','#7a3f16','#c98a3a'];
+  const edgeNoodles=(x,yc,a,b,cnt)=>{let q='';for(let i=0;i<cnt;i++){const t=r()*6.2832,px=x+a*.98*Math.cos(t),py=yc+b*.98*Math.sin(t);q+=strand(px,py,t+(r()-.5)*.6,r()*3+3.5,r()*1-.5,NS[i%3],2)}return q};
+  if(k==='okhiro'){
+    const GC='#e2a24a',GS='#8a4a1b',CAB='#e8dc98',CABS='#b9a95e',PK='#c9774a',PKS='#8a4a2a';
+    const mound=(x,y,a,b,cnt)=>blob(x,y,a,b,.07,'#dfe6a2')+strands(x,y-2,a*.88,b*.8,cnt,8,['#cfe39a','#f3f0b8','#b9d77a','#e8e2a0'],1.6)+strands(x,y,a*.8,b*.7,Math.round(cnt/3),5,['#fbf6dc'],1.9)+dots(x,y,a*.8,b*.7,5,'#f1d27a',1.6);
+    const miniStack=(x,y)=>layer(x,y+9,19,10,2.5,PK,PKS)+layer(x,y+5,19,10,2.5,CAB,CABS)+layer(x,y,21,11,2.5,GC,GS)+gloss(x-4,y-3,9,2,.3);
+    if(n===0){o+=blob(cx,cy+2,22,12,.1,'#f3e6ae')+gloss(cx-6,cy-3,12,3,.5)+dots(cx,cy+2,14,7,4,'#fbf0c4',2)}
+    else if(n===1){o+=layer(cx,cy+3,42,22,3,'#f4e6ae','#c9b268',.05)+dots(cx,cy+3,34,17,10,'#fbf0c4',1.6)+dots(cx,cy+3,34,17,5,'#f1d27a',1.2)+gloss(cx-14,cy-6,22,4,.4)}
+    else if(n===2){o+=layer(cx,cy+7,42,22,3,'#f4e6ae','#c9b268',.05)+mound(cx,cy+1,31,15,34)}
+    else if(n===3){o+=layer(cx,cy+7,42,22,3,'#f4e6ae','#c9b268',.05)+mound(cx,cy+1,31,15,30);for(const[x,y,a]of[[-17,-3,-8],[0,-7,6],[17,-3,-6],[-8,4,10],[10,4,-12]])o+=pork(cx+x,cy+y,a)}
+    else if(n===4){o+=layer(cx,cy+13,38,20,5,PK,PKS)+layer(cx,cy+6,37,19.5,5,CAB,CABS)+layer(cx,cy-1,41,22,3,GC,GS,.04)+dots(cx,cy-1,32,16,12,'#b0662a',2)+gloss(cx-14,cy-9,22,4,.34)}
+    else if(n===5||n===6){o+=miniStack(cx+22,cy-12)+layer(cx-6,cy+10,34,18,5,'#b5702f','#6a3a14')+noodles(cx-6,cy+9,28,13,26)+gloss(cx-16,cy+3,14,2.5,.3);
+      if(n===6)o+=egg(cx-6,cy+6,19,9.5)}
+    else{
+      o+=layer(cx,cy+9,41,22,5,'#b5702f','#6a3a14')+edgeNoodles(cx,cy+9,41,22,9)
+        +layer(cx,cy+3,40,21,3,'#fff6dc','#c9b268')
+        +layer(cx,cy-3,38,20,4,CAB,PK)
+        +layer(cx,cy-10,41,22,3,GC,GS,.04);
+      if(n===7)o+=dots(cx,cy-10,32,16,12,'#b0662a',2)+gloss(cx-14,cy-18,22,4,.34);
+      else{
+        o+=blob(cx,cy-10,35,17,.05,'#5b2a10')+E(cx-10,cy-19,20,3,'#c0703a',0,O,.55)
+          +grid(cx,cy-10,38,19,8.5)
+          +toppings(cx,cy-10,38,19,7,12)}}
+    return OKC[key]=o}
+  if(k==='okmoji'){
+    const bits=(x,y,a,b,cnt,L=8)=>strands(x,y,a,b,cnt,L,['#e9dc8e','#cfe39a','#f3f0b8','#d9cf86'],2.2)+dots(x,y,a*.9,b*.9,Math.round(cnt/4),'#f1d27a',1.8)+dots(x,y,a*.9,b*.9,Math.round(cnt/5),'#fff8ea',2.2)+Array.from({length:Math.round(cnt/6)},()=>{const[px,py]=inE(x,y,a*.85,b*.85);return pork(px,py,r()*60-30)}).join('');
+    const bub=(x,y,a,b,cnt)=>{let q='';for(let i=0;i<cnt;i++){const[px,py]=inE(x,y,a,b);const rr=r()*1.6+.9;q+=`<circle cx="${f(px)}" cy="${f(py)}" r="${f(rr)}" fill="#f7e6bc" stroke="#9a6a38" stroke-width=".7" opacity=".9"/>`}return q};
+    if(n===0){o+=blob(cx,cy+2,25,12,.12,'#e8dca0')+bits(cx,cy+1,19,8,24,7)}
+    else if(n===1){o+=blob(cx,cy+2,33,16,.1,'#e8d58e')+bits(cx,cy+1,28,12,38,8)}
+    else if(n===2){o+=E(cx,cy+3,42,22.5,'#d9c27a',2)+E(cx,cy+4,21,10.5,'#3a3d42',2)+E(cx,cy+6,16,7,'#26282c',0,O,.5)+bits(cx,cy+3,37,18.5,46,8)}
+    else if(n===3){o+=E(cx,cy+3,42,22.5,'#d9c27a',2)+E(cx,cy+4,23,11.5,'#d3a46a',2)+E(cx-3,cy+2,16,6.5,'#e3bb82',0,O,.6)+bub(cx,cy+4,18,8,9)+bits(cx,cy+3,38,19,40,7)+E(cx-8,cy-2,9,1.8,'#fff3d0',0,O,.5)}
+    else if(n===4){o+=blob(cx,cy+3,38,19.5,.06,'#d5b583')+bub(cx,cy+3,30,14,16)+bits(cx,cy+3,31,15,30,7)+gloss(cx-12,cy-6,18,3,.4)}
+    else if(n===5){o+=blob(cx,cy+3,42,22,.03,'#e0b071')+blob(cx,cy+3,36,18.5,.03,'#f1d79f').replace(/stroke="#3a2318"/,'stroke="#8a5322"')+E(cx,cy+3,34,17,'none',5,'#c58d4a',.55)+bub(cx,cy+3,30,14,20)+bits(cx,cy+3,29,13,18,6)}
+    else{
+      o+=E(cx+0,cy+8,43,22.5,'#6b3a18',1.6)+E(cx,cy+3,43,22.5,'#e0b071',1.6)+E(cx,cy+3,36,18,'#f3dba6',1.6,'#8a5322')+E(cx,cy+3,35,17,'none',5,'#c58d4a',.6)
+        +strands(cx,cy+3,31,14,10,7,['#e9dc8e'],1.8)+dots(cx,cy+3,31,14,5,'#fff8ea',2.6)+dots(cx,cy+3,31,14,4,'#ffd34a',2)
+        +Array.from({length:3},()=>{const[px,py]=inE(cx,cy+3,29,13);return pork(px,py,r()*3-1.5)}).join('')
+        +`<path d="M${f(cx-30)} ${f(cy+4)}q8-10 15 0t15 0t15 0t15 0" fill="none" stroke="${O}" stroke-width="4.4" stroke-linecap="round" opacity=".45"/><path d="M${f(cx-30)} ${f(cy+4)}q8-10 15 0t15 0t15 0t15 0" fill="none" stroke="#6b3414" stroke-width="2.4" stroke-linecap="round"/><path d="M${f(cx-30)} ${f(cy+3)}q8-10 15 0t15 0t15 0t15 0" fill="none" stroke="#b06a2c" stroke-width=".9" stroke-linecap="round"/>`
+        +dots(cx,cy+3,30,14,7,'#fff7d8',2)
+        +`<g transform="translate(${f(cx+38)} ${f(cy+22)}) rotate(-28)"><rect x="-3" y="-20" width="3" height="27" rx="1.5" fill="#7a4a22" stroke="${O}" stroke-width="1.5"/><rect x="-9" y="-25" width="16" height="10" rx="2.5" fill="#c9ced6" stroke="${O}" stroke-width="1.5"/><rect x="-7" y="-23.5" width="12" height="2" rx="1" fill="#fff" opacity=".6"/></g>`}
+    return OKC[key]=o}
+  if(k==='okmoder'&&n>=4){
+    const GC='#d9953f',GS='#8a4a1b';
+    if(n===4){o+=layer(cx+22,cy-9,19,10,4,GC,GS)+gloss(cx+17,cy-13,9,2,.35)+layer(cx-6,cy+10,34,18,5,'#b5702f','#6a3a14')+noodles(cx-6,cy+9,28,13,26)+gloss(cx-16,cy+3,14,2.5,.3)}
+    else{
+      o+=layer(cx,cy+11,41,22,6,'#b5702f','#6a3a14')+edgeNoodles(cx,cy+11,41,22,10)
+        +layer(cx,cy+1,38,21,8,GC,GS,.035);
+      if(n===5)o+=dots(cx,cy+1,30,15,10,'#b0662a',2)+gloss(cx-14,cy-8,20,4,.36);
+      else if(n===6)o+=dots(cx,cy+1,32,15,10,'#b0662a',2)+egg(cx,cy-1,24,12.5)+gloss(cx-16,cy-9,14,2.5,.25);
+      else o+=blob(cx,cy+1,34,17.5,.05,'#5b2a10')+E(cx-10,cy-9,18,2.8,'#c0703a',0,O,.5)+egg(cx,cy-2,25,12.5)+wavy(cx-32,cx+32,cy+10,2.4,4)+toppings(cx+14,cy+3,26,13,4,5)}
+    return OKC[key]=o}
+  if(k==='okmoder')n=[0,1,2,4][n];
   const under=n>=4?'#8a4a1b':'#d4bd82',top=n===0?'#efe0a2':n<=3?'#f3e6ae':n===4?'#d9953f':'#d08a3a';
   o+=E(cx,cy+6,rx,ry,under);
   o+=blob(cx,cy,rx,ry,n===0?.08:.025,top);
@@ -2532,15 +2607,15 @@ function drawOkoBg(){
   <rect x="0" y="400" width="${W}" height="${H-KY}" fill="url(#okkit)"/>${Array.from({length:Math.ceil(W/64)},(_,i)=>`<path d="M${i*64} 400v${H-KY}" stroke="#1a0f08" stroke-width="2" opacity=".6"/>`).join('')}</g>`;
 }
 /* ---- 版面 ---- */
-const OK_LAND={tap:{x:10,y:406,w:100,h:186},tpn:{x:122,y:410,w:520,h:182},trash2:{x:790,y:346,w:72,h:54},rawOkOsaka:{x:662,y:406,w:64,h:90},warmT:{x:262,y:346,w:440,h:54},pgbtn:{x:880,y:354,w:166,h:44,pg:0}};
-const OK_PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},tpn:{x:123.5,y:418,w:410,h:182,k:1.12},trash2:{x:402,y:340,w:72,h:54,k:1.12},rawOkOsaka:{x:8,y:640,w:78,h:100,k:1.12},warmT:{x:8,y:340,w:360,h:54,k:1.12},pgbtn:{x:482,y:350,w:174,h:46,pg:0}};
+const OK_LAND={tap:{x:10,y:406,w:100,h:186},tpn:{x:122,y:410,w:520,h:182},trash2:{x:790,y:346,w:72,h:54},rawOkOsaka:{x:662,y:406,w:64,h:90},rawOkHiro:{x:728,y:406,w:64,h:90},rawOkMoji:{x:662,y:500,w:64,h:90},rawOkModern:{x:728,y:500,w:64,h:90},warmT:{x:262,y:346,w:440,h:54},pgbtn:{x:880,y:354,w:166,h:44,pg:0}};
+const OK_PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},tpn:{x:123.5,y:418,w:410,h:182,k:1.12},trash2:{x:402,y:340,w:72,h:54,k:1.12},rawOkOsaka:{x:8,y:640,w:78,h:100,k:1.12},rawOkHiro:{x:100,y:640,w:78,h:100,k:1.12},rawOkMoji:{x:192,y:640,w:78,h:100,k:1.12},rawOkModern:{x:284,y:640,w:78,h:100,k:1.12},warmT:{x:8,y:340,w:360,h:54,k:1.12},pgbtn:{x:482,y:350,w:174,h:46,pg:0}};
 /* ---- 商店 ---- */
 function shopOko(){
   const SV=ST||load()||{coins:0},own=k=>!!(SV.menu&&SV.menu[k]);
   const lock=`<p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`;
-  if(!SV.oko)return `<h3 class="sh">${T('御好燒店・花錢解鎖')}</h3><div class="shop"><div class="up"><b>🥞 ${T('開一家御好燒店')}</b><p>${T('平價的庶民鐵板：每道菜都要自己一步一步做，拌麵糊、鋪肉、蓋鍋悶煎、翻面、刷醬、擠美乃滋。解鎖送大阪燒。')}</p>${lock}<button class="btn" data-act="buyoko" ${SV.coins<OKO_PRICE?'disabled':''}>${T('花 {0} 解鎖',yen(OKO_PRICE))}</button></div></div>`;
+  if(!SV.oko)return `<h3 class="sh">${T('御好燒店・花錢解鎖')}</h3><div class="shop"><div class="up"><b>🥞 ${T('開一家御好燒店')}</b><p>${T('平價的庶民鐵板：每道菜都要自己一步一步做，拌麵糊、鋪肉、翻面、炒麵、煎蛋、疊起來、擠美乃滋。賣大阪燒、廣島燒、文字燒、摩登燒四種，解鎖送大阪燒。')}</p>${lock}<button class="btn" data-act="buyoko" ${SV.coins<OKO_PRICE?'disabled':''}>${T('花 {0} 解鎖',yen(OKO_PRICE))}</button></div></div>`;
   const menu=OKKEYS.map(k=>`<div class="up" style="display:grid;grid-template-columns:64px 1fr;column-gap:10px;align-items:center"><div style="grid-row:span 3;width:64px;height:64px">${sv(tpIcon(k))}</div><b>${dishTitle(k)}</b><p>${T('售價 {0}・食材 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}<br><small>${TPS[k].map(s=>T(TPLBL[s])).join(' → ')}</small></p>${own(k)?`<p>${T('已購買')}</p>${ST?`<div style="grid-column:1/-1;white-space:nowrap">${offBtn(k)}</div>`:''}`:`<button class="btn" data-act="okbuy" data-id="${k}" ${SV.coins<ITEMS[k].buy?'disabled':''}>${T('買下 {0}',yen(ITEMS[k].buy))}</button>`}</div>`).join('');
-  return `${lock}<h3 class="sh">${T('御好燒菜單')}</h3><div class="shop">${menu}</div><p class="hint">${T('廣島燒、文字燒、摩登燒之後會陸續加入。')}</p><div class="btns"><button class="btn" data-act="okoopen">${T('去御好燒店營業')}</button></div>`;
+  return `${lock}<h3 class="sh">${T('御好燒菜單')}</h3><div class="shop">${menu}</div><div class="btns"><button class="btn" data-act="okoopen">${T('去御好燒店營業')}</button></div>`;
 }
 function okoHome(){const kp=shopKeep,sy=shopScroll;const bk=SUBACK?'shopback':ST&&!R&&!HOME?'back':'closem';modal(`<h2>🥞 ${T('御好燒店')}</h2>${shopOko()}<div class="btns"><button class="btn" data-act="${bk}">${T(SUBACK?'回到商店':ST&&!R&&!HOME?'回到今天':'關閉')}</button></div>`);{const c=document.querySelector('.card');if(c&&kp)c.scrollTop=sy;shopKeep=false}}
 function okoActs(act,a){
@@ -4264,7 +4339,7 @@ function showDayIntro(){
   ${TD.ev?`<div class="evbox"><span class="ei">${EVS[TD.ev][0]}</span><div><b>${T('今日事件：{0}',T(EVS[TD.ev][1]))}</b><br>${evDesc(TD)}${TD.ev==='sale'?`<div class="salepick"><small>${T('想讓哪道菜特價？點一下就能換：')}</small><div>${saleCands().map(k=>`<button class="btn ${TD.sale===k?'':'alt'}" data-act="salepick" data-id="${k}">${dishTitle(k)} ¥${Math.round(ITEMS[k].cost*(1+.25*lvOf(k))*.5/10)*10}</button>`).join('')}</div></div>`:''}</div></div>`:''}
   ${TD.rob?`<p class="hint">${T('聽說附近最近不太平靜……')}${ST.weapon?'':T('（商店「武器」分頁有賣防身用品）')}</p>`:''}
   <p>${rentOf()?T('今天店租 {0}（每週調漲），打烊時會從淨利扣掉。',yen(rentOf()))+T('存到 {0} 後，到商店按「買下店面」就不用再付房租。',yen(GOAL)):''}${T('營業時間 16:00 到凌晨 00:30，晚餐（18–20 點）和續攤（21–22 點）客人最多，00:20 最後點餐，之後不再接新客人。淨利（營收扣掉食材成本）越高星星越多，拿到一顆星就能進到下一天。')}</p>
-  ${CUR==='oko'?`<p style="font-size:14px;line-height:1.6">${T('御好燒店的菜在<b>鐵板</b>上一步一步做。點<b>大阪燒料</b>下到鐵板，煎到一半會依序跳出<b>拌勻、鋪肉、蓋鍋、翻面、翻回來、刷醬、擠醬撒料</b>，跳出來就點一下，等太久就失敗。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
+  ${CUR==='oko'?`<p style="font-size:14px;line-height:1.6">${T('御好燒店的菜在<b>鐵板</b>上一步一步做。點<b>大阪燒料、廣島燒料、文字燒料、摩登燒料</b>下到鐵板，煎到一半會依序跳出<b>拌勻、鋪肉、翻面、炒麵、疊起來、擠醬撒料</b>之類的提示（每道菜不一樣），跳出來就點一下，等太久就失敗。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
   ${CUR==='tep'?`<p style="font-size:14px;line-height:1.6">${T('炎舞鐵板燒的菜在<b>大鐵板</b>上煎。煎到一半會跳出<b>翻炒／翻面／刷醬／點火</b>，一定要點，等太久就失敗。提示剛跳出、標籤還是<b>金色</b>時點下去就是<b>完美</b>；連續完美 6 次會來一場<b>🔥 火焰秀</b>：全場等餐的客人耐心回滿，每位還多給一筆賞錢。失手或煎焦會讓連擊歸零。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
   ${CUR==='sushi'?`<p style="font-size:14px;line-height:1.6">${T('海風壽司的菜是在<b>壽司台</b>上一層一層疊出來的，<b>順序很重要</b>：先放的材料在下面，後放的在上面，每一種壽司的順序都不一樣，照下面的製作教學來。')}</p>`:''}
   ${show.length?`<details class="howwrap"${howOpen()?' open':''} ontoggle="howSave(this.open)"><summary class="howsum">${T('📖 製作做法（點一下收起／展開）')}</summary><div class="how">${show.map(k=>`<div class="how-row">${icon(k==='chazuke'?'chazuke:salmon':k==='sashimi'?'sashimi:maguro+tai':k)}<div><b>${dishTitle(k)}</b>${ST.day>1?`<span class="new">${T('新菜')}</span>`:''}<br>${T(HOW[k])}</div></div>`).join('')}</div></details>`:''}
