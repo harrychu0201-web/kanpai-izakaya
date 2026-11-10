@@ -746,6 +746,10 @@ const TKFLIP=4,TKGRACE=7,TKW=86,TKAUTO=2.5; // TKAUTO: 阿健 (Lv2+) flips a tak
 const STN={buta:'teppan',gyu:'teppan',ika:'teppan',hotate:'teppan',ebiten:'tempura',kakifry:'tempura',gyoza:'rmpan',friedrice:'rmpan',koro:'rfry',tori:'rfry',katsu:'rfry',taiyaki:'tyaki',miso:'lamen',chashurice:'lamen',dandan:'lamen',tsukemen:'tsk',takoyaki:'tako',tamagoyaki:'tama',yakionigiri:'onig',tamagonigiri:'maki',salmonnigiri:'maki',tunanigiri:'maki',ikanigiri:'maki',tainigiri:'maki',ebinigiri:'maki',negitorogunkan:'maki',ikuragunkan:'maki',unigunkan:'maki',kappamaki:'maki',tekkamaki:'maki',salmonmaki:'maki',salmontemaki:'maki',tunatemaki:'maki',ikuratemaki:'maki',karaagenigiri:'maki',aburisalmonnigiri:'maki',aburitunanigiri:'maki',aburitainigiri:'maki',aburiebinigiri:'maki',salmonsashimi:'maki',tunasashimi:'maki',taisashimi:'maki',mixsashimi:'maki',cucumbersalad:'maki',salmonsalad:'maki',tunasalad:'maki',ebisalad:'maki',vanillaice:'maki',daifuku:'maki',dango:'maki'};
 const RAWMAP={rawButa:'buta',rawGyu:'gyu',rawIka:'ika',rawHotate:'hotate',rawEbi:'ebiten',rawKaki:'kakifry',rawGyoza:'gyoza',rawRice:'friedrice',rawKoro:'koro',rawTori:'tori',rawKatsu:'katsu',rawTai:'taiyaki',rawTako:'takoyaki',rawTama:'tamagoyaki',rawOnig:'yakionigiri',rawMiso:'miso',rawTan:'dandan',rawTsuke:'tsukemen'};
 const INSTANT=['sake','edamame','highball','hiyayakko','lsour','ramune','oolong','cola','menma','kyuri','goma','tsukemono','umeshu','reishu'];
+/* 海風壽司的甜點（冰淇淋、麻糬、糰子）不用放上壽司台：點食材盤的那一格直接拿在手上，點客人才送出並付食材錢（跟飲料、毛豆一樣） */
+const SU_DIRECT={rawSIce:'vanillaice',rawSMochi:'daifuku',rawSDango:'dango'};
+/* 「點了就付食材錢」的手持品：回傳它的菜名，不是的話回傳 null */
+function instKey(h){return h?SU_DIRECT[h.src]||(INSTANT.includes(h.src)?h.src:null):null}
 function has(k){return !!(ST&&ST.menu&&ST.menu[k])}
 function teppanOn(){return ['buta','gyu','ika','hotate'].some(has)}
 function tempuraOn(){return ['ebiten','kakifry'].some(has)}
@@ -812,9 +816,9 @@ const HOW={
   salmonsalad:'先放<b>生菜</b>墊底，再點一份<b>配料</b>。食材在食材盤的<b>第 2 頁</b>。',
   tunasalad:'先放<b>生菜</b>墊底，再點一份<b>配料</b>。食材在食材盤的<b>第 2 頁</b>。',
   ebisalad:'先放<b>生菜</b>墊底，再點一份<b>配料</b>。食材在食材盤的<b>第 2 頁</b>。',
-  vanillaice:'點一下<b>冰淇淋</b>，就是一球香草冰淇淋。食材在食材盤的<b>第 2 頁</b>。',
-  daifuku:'點一下<b>麻糬</b>，包上紅豆餡就是大福。食材在食材盤的<b>第 2 頁</b>。',
-  dango:'點一下<b>糰子</b>，三色一串就完成。食材在食材盤的<b>第 2 頁</b>。',
+  vanillaice:'點一下<b>冰淇淋</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。',
+  daifuku:'點一下<b>麻糬</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。',
+  dango:'點一下<b>糰子</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。',
   beer:'<b>生啤機</b>會自動裝杯，滿了點一下拿起來，再點客人送上。',
   edamame:'點<b>毛豆</b>拿一盤，再點客人。',
   negima:'點<b>蔥雞肉生串</b>放上燒烤台。烤成金黃色就點起來送給客人，放太久會烤焦。',
@@ -2053,6 +2057,12 @@ function suAdd(id,el){
   g.parts=parts;g.kind=res||'asm';g.t=0;g.at=R.t;g.staff=false;
   if(pay){const c=srcCenter({src:'maki',i});charge(pay,c.x,c.y-50)}
 }
+/* 甜點：點食材盤的格子就拿在手上（不佔壽司台），再點客人送出；食材錢送出時才扣，手上的可以連續送給下一位點同一道的客人 */
+function suDirect(k,el){
+  const d=SU_DIRECT[k];
+  if(!has(d)){nope(el);toast('先到商店買下用得到它的菜');return}
+  if(canPay(costOf(d)))R.held={src:k,key:d}
+}
 function suTrayArt(id){
   const wood=inner=>`<rect x="4" y="12" width="64" height="66" rx="6" fill="#a8703a" stroke="${O}" stroke-width="3"/><rect x="5" y="13" width="62" height="4" rx="2" fill="#c98f52" opacity=".7"/><rect x="10" y="18" width="52" height="54" rx="4" fill="#fbf1dc" stroke="${O}" stroke-width="2"/>${inner}`;
   if(id==='rice')return `<ellipse cx="36" cy="80" rx="31" ry="7" fill="${O}" opacity=".25"/><path d="M8 34H64L60 76Q36 84 12 76Z" fill="#b97d45" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M10 48Q36 56 62 48M11 62Q36 70 61 62" stroke="#7a4a2a" stroke-width="3" fill="none"/><ellipse cx="36" cy="34" rx="28" ry="9" fill="#fcf8ee" stroke="${O}" stroke-width="3"/><path d="M14 31Q36 24 58 31" stroke="#e3d8bc" stroke-width="3" fill="none"/><circle cx="26" cy="33" r="2" fill="#e3d8bc"/><circle cx="40" cy="30" r="2" fill="#e3d8bc"/><circle cx="48" cy="35" r="2" fill="#e3d8bc"/>`;
@@ -2084,6 +2094,7 @@ function makiHTML(){
   return s+`<span class="lbl">${T('壽司台')}</span>`}
 function suDemand(){const d={};for(const c of R.seats){if(!c||c.st!=='wait')continue; /* 只算已經入座、在等餐的客人，客人還在走進來時不先做 */c.order.forEach((k,j)=>{if(!c.filled[j])d[k]=(d[k]||0)+1});if(c.extra&&c.extra.ok&&!c.extra.done)d[c.extra.key]=(d[c.extra.key]||0)+1}
   R.maki.forEach(g=>{if(g&&g.kind!=='asm')d[g.kind]=(d[g.kind]||0)-1});
+  if(R.held&&SU_DIRECT[R.held.src])d[R.held.key]=(d[R.held.key]||0)-1; /* 玩家手上已經拿著甜點，健太郎不用再做同一份 */
   R.maki.forEach(g=>{if(g&&g.kind==='asm'){const k=Object.keys(d).find(x=>d[x]>0&&SU_REC[x]&&SU_REC[x].length>g.parts.length&&g.parts.every((p,j)=>SU_REC[x][j]===p));if(k)d[k]--}});
   return d}
 function suStaffStep(dt){const l=suStaffLv();if(!l)return;const m=dilMul('sushistaff');if(!m)return;R.suT=(R.suT??1)-dt*m;if(R.suT<=0){R.suT=l>=3?.35:l>=2?.5:1;suAct(l)}}
@@ -3715,6 +3726,7 @@ function onTap(e){
   else if(k==='rawMen'){const i=R.mpot.findIndex((x,j)=>!x&&j<mpotN());if(i<0){nope(st);toast('麵鍋滿了')}else if(canPay(costOf('ramen'))){R.mpot[i]={kind:'noodle',t:0};const c=srcCenter({src:'mpot',i});charge(costOf('ramen'),c.x,c.y-50)}}
   else if(k==='odenRaw'){if(!has('oden'))return;const c1=costOf('oden'),k0=odenCap()-R.oden.n-R.oden.cook.reduce((s,b)=>s+(b.n||2),0);if(k0<=0){nope(st);toast('關東煮鍋滿了')}else{if(live()<c1)canPay(c1);else{R.oden.cook.push({t:0,n:1});const c=srcCenter({src:'oden'});charge(c1,c.x,c.y-50)}}}
   else if(k==='odenPot'){if(!has('oden'))return;if(R.oden.n>0)R.held={src:'oden',key:'oden'};else{nope(st);toast(R.oden.cook.length?'關東煮還在燉…':'先把關東煮料下鍋')}}
+  else if(SU_DIRECT[k]){suDirect(k,st)}
   else if(SU_TRAY[k]){suAdd(SU_TRAY[k],st)}
   else if(k==='rawCRice'||k==='rawCMeat'){chashuPart(k,st)}
   else if(RAWMAP[k]){const d=RAWMAP[k],pn=STN[d],arr=R[pn],i=arr.findIndex((x,j)=>!x&&j<panCap(pn));if(['rmpan','rfry','tyaki','lamen','tsk','tako','tama','onig','maki','tpn'].includes(pn)&&!has(d)&&ITEMS[d].buy)return;if(isOff(d)){nope(st);toast(T('這道菜目前下架中，先重新上架才能做'));return}if(i<0){nope(st);toast(pn==='teppan'||pn==='tpn'?'鐵板滿了':pn==='rmpan'?'煎台滿了':pn==='maki'?'捲壽司台滿了':pn==='rfry'?'油鍋滿了':pn==='tako'?'章魚燒盤滿了':pn==='tama'?'玉子燒鍋滿了':pn==='onig'?'烤網滿了':pn==='tyaki'?'烤模都在用':pn==='lamen'?'拉麵台滿了':pn==='tsk'?'沾麵台滿了':'炸鍋滿了')}else if(canPay(costOf(d))){arr[i]={kind:d,t:0};const c=srcCenter({src:STN[d],i});charge(costOf(d),c.x,c.y-50)}}
@@ -3808,7 +3820,7 @@ function mishapHit(v,x,quip,sfxk){ // a customer got hit: shakes, laughs it off 
 function mishapSplash(c){
   const h=R.held,from=srcCenter(h),n=seatsN(),vs=mishapVictim(c),v=vs.length?pick(vs):null,cx=seatX(c.seat,n);
   const tx=v?seatX(v.seat,n):cx+(c.seat<n/2?1:-1)*150;
-  if(INSTANT.includes(h.src))charge(costOf(h.src),from.x,from.y-20);else{consume(h);if(R.held&&R.held.src===h.src&&R.held.i===h.i)R.held=null}
+  if(instKey(h))charge(costOf(instKey(h)),from.x,from.y-20);else{consume(h);if(R.held&&R.held.src===h.src&&R.held.i===h.i)R.held=null}
   R.held=null;sfx('pour');shake(c);popup(cx,110,T('手滑了！'));mfly(h.key,from,{x:tx,y:90},520);
   setTimeout(()=>{if(!R)return;
     if(v&&v.st==='wait'&&v.el){const f=document.createElement('div');f.className='foam';v.el.appendChild(f);setTimeout(()=>f.remove(),4300);
@@ -3864,7 +3876,12 @@ function shopHasStaff(){
 function autoTake(c){c.taken=true;sfx('pick');popup(seatX(c.seat,seatsN()),120,T('店員點餐'));renderCust();renderStations()}
 function deliver(seat){
   const c=R.seats[seat];if(!c||c.st!=='wait')return;
-  if(!c.taken){takeOrder(c);return}
+  if(!c.taken){
+    /* 手上剛好拿著這位客人點的菜（壽司、飲料一做好就能送，常常比點餐還早做好）：這一下就同時點餐並上菜，不用再多點第二次 */
+    const hk=R.held&&heldValid()?R.held.key:null;
+    if(hk&&(c.order.some((k,idx)=>!c.filled[idx]&&k===hk)||(c.extra&&c.extra.ok&&!c.extra.done&&c.extra.key===hk)))c.taken=true;
+    else{takeOrder(c);return}
+  }
   if(!R.held){shake(c);toast('先點做好的菜拿起來，再點客人');return}
   if(!heldValid()){R.held=null;renderStations();toast('那份已經不能送了');return}
   let j=c.order.findIndex((k,idx)=>!c.filled[idx]&&k===R.held.key);
@@ -3874,11 +3891,12 @@ function deliver(seat){
   sfx('serve');giveTo(c,j,R.held,true);
 }
 function giveTo(c,j,h,byPlayer){
-  if(INSTANT.includes(h.src)&&live()<costOf(h.src)){if(byPlayer){toast(T('錢包沒錢了，買不起食材！'));askLoan()}return false}
+  const ik=instKey(h);
+  if(ik&&live()<costOf(ik)){if(byPlayer){toast(T('錢包沒錢了，買不起食材！'));askLoan()}return false}
   const from=srcCenter(h),to={x:seatX(c.seat,seatsN()),y:70};
   const f=document.createElement('div');f.className='fly';f.innerHTML=icon(h.key);f.style.left=(from.x-28)+'px';f.style.top=(from.y-28)+'px';$('fx').appendChild(f);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{f.style.transform=`translate(${to.x-from.x}px,${to.y-from.y}px) scale(.8)`;f.style.opacity=.2}));setTimeout(()=>f.remove(),420);
-  if(INSTANT.includes(h.src))charge(costOf(h.src),from.x,from.y-20);else{consume(h);if(R.held&&R.held.src===h.src&&R.held.i===h.i)R.held=null}
+  if(ik)charge(costOf(ik),from.x,from.y-20);else{consume(h);if(R.held&&R.held.src===h.src&&R.held.i===h.i)R.held=null}
   const ex=j==='x';
   if(ex){c.extra.done=true;popup(seatX(c.seat,seatsN()),120,T('加碼點單！小費 +10%'));sfx('star')}else{c.filled[j]=true;c.lastKey=h.key}
   c.pat=Math.min(c.max,c.pat+3);
@@ -5983,6 +6001,14 @@ async function cloudUpload(now){
   add("ja",{"唐揚握壽司": "唐揚げ握り", "炙燒鮭魚握壽司": "炙りサーモン握り", "炙燒鮪魚握壽司": "炙りまぐろ握り", "炙燒鯛魚握壽司": "炙り鯛握り", "炙燒甜蝦握壽司": "炙り甘えび握り", "鮭魚生魚片": "サーモン刺身", "鮪魚生魚片": "まぐろ刺身", "鯛魚生魚片": "鯛の刺身", "綜合生魚片拼盤": "刺身盛り合わせ", "小黃瓜沙拉": "きゅうりサラダ", "鮭魚沙拉": "サーモンサラダ", "鮪魚沙拉": "まぐろサラダ", "甜蝦沙拉": "甘えびサラダ", "香草冰淇淋": "バニラアイス", "紅豆大福": "あんこ大福", "三色糰子": "三色団子", "唐揚雞塊": "から揚げ", "生菜": "レタス", "噴槍": "バーナー", "麻糬": "もち", "糰子": "団子", "先放<b>壽司飯</b>，再點<b>唐揚雞塊</b>疊上去，就是唐揚握壽司。食材在食材盤的<b>第 2 頁</b>。": "まず<b>シャリ</b>を置き、<b>から揚げ</b>をのせると唐揚げ握りの完成。材料は食材トレイの<b>2ページ目</b>にあります。", "先放<b>壽司飯</b>，疊上<b>魚片</b>，最後點<b>噴槍</b>炙燒一下（噴槍放最後）。食材在食材盤的<b>第 2 頁</b>。": "<b>シャリ</b>の上に<b>ネタ</b>をのせ、最後に<b>バーナー</b>で炙ります（バーナーは最後）。材料は食材トレイの<b>2ページ目</b>にあります。", "先放<b>生菜</b>墊底，再連點兩片<b>同一種魚片</b>，做成生魚片。食材在食材盤的<b>第 2 頁</b>。": "まず<b>レタス</b>を敷き、<b>同じ魚</b>を2枚続けてのせると刺身になります。材料は食材トレイの<b>2ページ目</b>にあります。", "先放<b>生菜</b>墊底，再依序點<b>鮭魚、鮪魚、鯛魚</b>各一片，做成拼盤。食材在食材盤的<b>第 2 頁</b>。": "<b>レタス</b>を敷き、<b>サーモン、まぐろ、鯛</b>を順に1枚ずつのせて盛り合わせに。材料は食材トレイの<b>2ページ目</b>にあります。", "先放<b>生菜</b>墊底，再點一份<b>配料</b>。食材在食材盤的<b>第 2 頁</b>。": "まず<b>レタス</b>を敷き、<b>トッピング</b>を1つのせます。材料は食材トレイの<b>2ページ目</b>にあります。", "點一下<b>冰淇淋</b>，就是一球香草冰淇淋。食材在食材盤的<b>第 2 頁</b>。": "<b>アイス</b>を1回タップするとバニラアイスが1つできます。食材トレイの<b>2ページ目</b>にあります。", "點一下<b>麻糬</b>，包上紅豆餡就是大福。食材在食材盤的<b>第 2 頁</b>。": "<b>もち</b>を1回タップするとあんこ大福ができます。食材トレイの<b>2ページ目</b>にあります。", "點一下<b>糰子</b>，三色一串就完成。食材在食材盤的<b>第 2 頁</b>。": "<b>団子</b>を1回タップすると三色団子が1本できます。食材トレイの<b>2ページ目</b>にあります。", "先放壽司飯、海苔或生菜": "まずシャリ、海苔、レタスを置こう", "噴槍要最後再用，先把壽司做好": "バーナーは最後に。先に寿司を作ろう", "唐揚握壽司順序做法": "唐揚げ握りの順番", "炙燒握壽司順序做法": "炙り握りの順番", "生魚片順序做法": "刺身の順番", "沙拉順序做法": "サラダの順番", "第 2 頁食材盤": "食材トレイの2ページ目", "壽司台旁的食材盤有兩頁。點右上角的 1／2 就能切換，壽司台在兩頁都看得到。新菜色（唐揚握、炙燒、生魚片、沙拉、甜點）的食材都在第 2 頁。": "寿司台の横の食材トレイは2ページあります。右上の 1／2 で切り替え、寿司台はどちらのページでも見えます。新メニュー（から揚げ握り、炙り、刺身、サラダ、デザート）の材料は2ページ目にあります。", "新菜色（唐揚握、炙燒、生魚片、沙拉、甜點）的食材放在營業畫面食材盤的「第 2 頁」。買下任一道新菜，右上角就會出現 1／2 切換鈕。": "新メニュー（から揚げ握り、炙り、刺身、サラダ、デザート）の材料は、営業画面の食材トレイの2ページ目にあります。新メニューを1つ買うと、右上に 1／2 の切り替えボタンが出ます。"});
   add("ko",{"唐揚握壽司": "가라아게 니기리", "唐揚げ握り": "가라아게 니기리", "炙燒鮭魚握壽司": "연어 아부리 니기리", "炙りサーモン握り": "연어 아부리 니기리", "炙燒鮪魚握壽司": "참치 아부리 니기리", "炙りまぐろ握り": "참치 아부리 니기리", "炙燒鯛魚握壽司": "도미 아부리 니기리", "炙り鯛握り": "도미 아부리 니기리", "炙燒甜蝦握壽司": "단새우 아부리 니기리", "炙り甘えび握り": "단새우 아부리 니기리", "鮭魚生魚片": "연어 사시미", "サーモン刺身": "연어 사시미", "鮪魚生魚片": "참치 사시미", "まぐろ刺身": "참치 사시미", "鯛魚生魚片": "도미 사시미", "鯛の刺身": "도미 사시미", "綜合生魚片拼盤": "모둠 사시미", "刺身盛り合わせ": "모둠 사시미", "小黃瓜沙拉": "오이 샐러드", "きゅうりサラダ": "오이 샐러드", "鮭魚沙拉": "연어 샐러드", "サーモンサラダ": "연어 샐러드", "鮪魚沙拉": "참치 샐러드", "まぐろサラダ": "참치 샐러드", "甜蝦沙拉": "단새우 샐러드", "甘えびサラダ": "단새우 샐러드", "香草冰淇淋": "바닐라 아이스크림", "バニラアイス": "바닐라 아이스크림", "紅豆大福": "팥 다이후쿠", "あんこ大福": "팥 다이후쿠", "三色糰子": "삼색 당고", "三色団子": "삼색 당고", "唐揚雞塊": "가라아게", "生菜": "양상추", "噴槍": "토치", "麻糬": "모찌", "糰子": "당고", "先放<b>壽司飯</b>，再點<b>唐揚雞塊</b>疊上去，就是唐揚握壽司。食材在食材盤的<b>第 2 頁</b>。": "먼저 <b>초밥</b>을 놓고 <b>가라아게</b>를 올리면 가라아게 니기리가 완성돼요. 재료는 재료 트레이 <b>2페이지</b>에 있어요.", "先放<b>壽司飯</b>，疊上<b>魚片</b>，最後點<b>噴槍</b>炙燒一下（噴槍放最後）。食材在食材盤的<b>第 2 頁</b>。": "<b>초밥</b> 위에 <b>생선 조각</b>을 올리고 마지막에 <b>토치</b>로 살짝 구워요(토치는 마지막). 재료는 재료 트레이 <b>2페이지</b>에 있어요.", "先放<b>生菜</b>墊底，再連點兩片<b>同一種魚片</b>，做成生魚片。食材在食材盤的<b>第 2 頁</b>。": "먼저 <b>양상추</b>를 깔고 <b>같은 생선</b>을 두 번 올리면 사시미가 돼요. 재료는 재료 트레이 <b>2페이지</b>에 있어요.", "先放<b>生菜</b>墊底，再依序點<b>鮭魚、鮪魚、鯛魚</b>各一片，做成拼盤。食材在食材盤的<b>第 2 頁</b>。": "<b>양상추</b>를 깔고 <b>연어, 참치, 도미</b>를 순서대로 한 점씩 올리면 모둠이 돼요. 재료는 재료 트레이 <b>2페이지</b>에 있어요.", "先放<b>生菜</b>墊底，再點一份<b>配料</b>。食材在食材盤的<b>第 2 頁</b>。": "먼저 <b>양상추</b>를 깔고 <b>토핑</b> 하나를 올려요. 재료는 재료 트레이 <b>2페이지</b>에 있어요.", "點一下<b>冰淇淋</b>，就是一球香草冰淇淋。食材在食材盤的<b>第 2 頁</b>。": "<b>아이스크림</b>을 한 번 누르면 바닐라 한 스쿱이 완성돼요. 재료 트레이 <b>2페이지</b>에 있어요.", "點一下<b>麻糬</b>，包上紅豆餡就是大福。食材在食材盤的<b>第 2 頁</b>。": "<b>모찌</b>를 한 번 누르면 팥 다이후쿠가 완성돼요. 재료 트레이 <b>2페이지</b>에 있어요.", "點一下<b>糰子</b>，三色一串就完成。食材在食材盤的<b>第 2 頁</b>。": "<b>당고</b>를 한 번 누르면 삼색 꼬치가 완성돼요. 재료 트레이 <b>2페이지</b>에 있어요.", "先放壽司飯、海苔或生菜": "먼저 초밥, 김, 양상추를 놓으세요", "噴槍要最後再用，先把壽司做好": "토치는 마지막에, 먼저 초밥을 만드세요", "唐揚握壽司順序做法": "가라아게 니기리 순서", "炙燒握壽司順序做法": "아부리 니기리 순서", "生魚片順序做法": "사시미 순서", "沙拉順序做法": "샐러드 순서", "第 2 頁食材盤": "재료 트레이 2페이지", "壽司台旁的食材盤有兩頁。點右上角的 1／2 就能切換，壽司台在兩頁都看得到。新菜色（唐揚握、炙燒、生魚片、沙拉、甜點）的食材都在第 2 頁。": "스시대 옆 재료 트레이는 두 페이지예요. 오른쪽 위의 1／2로 전환하고, 스시대는 두 페이지 모두에서 보여요. 새 메뉴(가라아게, 아부리, 사시미, 샐러드, 디저트)의 재료는 2페이지에 있어요.", "新菜色（唐揚握、炙燒、生魚片、沙拉、甜點）的食材放在營業畫面食材盤的「第 2 頁」。買下任一道新菜，右上角就會出現 1／2 切換鈕。": "새 메뉴(가라아게, 아부리, 사시미, 샐러드, 디저트)의 재료는 영업 화면 재료 트레이 2페이지에 있어요. 새 메뉴를 하나 사면 오른쪽 위에 1／2 전환 버튼이 나타나요."});
   add("id",{"唐揚握壽司": "Nigiri karaage", "唐揚げ握り": "Nigiri karaage", "炙燒鮭魚握壽司": "Nigiri salmon bakar", "炙りサーモン握り": "Nigiri salmon bakar", "炙燒鮪魚握壽司": "Nigiri tuna bakar", "炙りまぐろ握り": "Nigiri tuna bakar", "炙燒鯛魚握壽司": "Nigiri kakap merah bakar", "炙り鯛握り": "Nigiri kakap merah bakar", "炙燒甜蝦握壽司": "Nigiri udang manis bakar", "炙り甘えび握り": "Nigiri udang manis bakar", "鮭魚生魚片": "Sashimi salmon", "サーモン刺身": "Sashimi salmon", "鮪魚生魚片": "Sashimi tuna", "まぐろ刺身": "Sashimi tuna", "鯛魚生魚片": "Sashimi kakap merah", "鯛の刺身": "Sashimi kakap merah", "綜合生魚片拼盤": "Sashimi campur", "刺身盛り合わせ": "Sashimi campur", "小黃瓜沙拉": "Salad timun", "きゅうりサラダ": "Salad timun", "鮭魚沙拉": "Salad salmon", "サーモンサラダ": "Salad salmon", "鮪魚沙拉": "Salad tuna", "まぐろサラダ": "Salad tuna", "甜蝦沙拉": "Salad udang manis", "甘えびサラダ": "Salad udang manis", "香草冰淇淋": "Es krim vanila", "バニラアイス": "Es krim vanila", "紅豆大福": "Daifuku kacang merah", "あんこ大福": "Daifuku kacang merah", "三色糰子": "Dango tiga warna", "三色団子": "Dango tiga warna", "唐揚雞塊": "Karaage", "生菜": "Selada", "噴槍": "Obor", "麻糬": "Mochi", "糰子": "Dango", "先放<b>壽司飯</b>，再點<b>唐揚雞塊</b>疊上去，就是唐揚握壽司。食材在食材盤的<b>第 2 頁</b>。": "Letakkan <b>nasi sushi</b> dulu, lalu ketuk <b>karaage</b> untuk menumpuknya jadi nigiri karaage. Bahan ada di <b>halaman 2</b> nampan bahan.", "先放<b>壽司飯</b>，疊上<b>魚片</b>，最後點<b>噴槍</b>炙燒一下（噴槍放最後）。食材在食材盤的<b>第 2 頁</b>。": "Taruh <b>nasi sushi</b>, letakkan <b>irisan ikan</b>, lalu bakar dengan <b>obor</b> di akhir (obor paling terakhir). Bahan ada di <b>halaman 2</b> nampan bahan.", "先放<b>生菜</b>墊底，再連點兩片<b>同一種魚片</b>，做成生魚片。食材在食材盤的<b>第 2 頁</b>。": "Letakkan <b>selada</b> sebagai alas, lalu ketuk <b>ikan yang sama</b> dua kali untuk dua irisan sashimi. Bahan ada di <b>halaman 2</b> nampan bahan.", "先放<b>生菜</b>墊底，再依序點<b>鮭魚、鮪魚、鯛魚</b>各一片，做成拼盤。食材在食材盤的<b>第 2 頁</b>。": "Letakkan <b>selada</b>, lalu tambahkan satu irisan <b>salmon, tuna, dan kakap merah</b> berurutan untuk sashimi campur. Bahan ada di <b>halaman 2</b> nampan bahan.", "先放<b>生菜</b>墊底，再點一份<b>配料</b>。食材在食材盤的<b>第 2 頁</b>。": "Letakkan <b>selada</b> dulu, lalu tambahkan satu <b>topping</b>. Bahan ada di <b>halaman 2</b> nampan bahan.", "點一下<b>冰淇淋</b>，就是一球香草冰淇淋。食材在食材盤的<b>第 2 頁</b>。": "Ketuk <b>es krim</b> sekali untuk satu scoop vanila. Ada di <b>halaman 2</b> nampan bahan.", "點一下<b>麻糬</b>，包上紅豆餡就是大福。食材在食材盤的<b>第 2 頁</b>。": "Ketuk <b>mochi</b> sekali untuk daifuku kacang merah. Ada di <b>halaman 2</b> nampan bahan.", "點一下<b>糰子</b>，三色一串就完成。食材在食材盤的<b>第 2 頁</b>。": "Ketuk <b>dango</b> sekali untuk satu tusuk tiga warna. Ada di <b>halaman 2</b> nampan bahan.", "先放壽司飯、海苔或生菜": "Mulai dari nasi sushi, nori, atau selada", "噴槍要最後再用，先把壽司做好": "Gunakan obor paling akhir, selesaikan sushinya dulu", "唐揚握壽司順序做法": "Urutan nigiri karaage", "炙燒握壽司順序做法": "Urutan nigiri bakar", "生魚片順序做法": "Urutan sashimi", "沙拉順序做法": "Urutan salad", "第 2 頁食材盤": "Halaman 2 nampan bahan", "壽司台旁的食材盤有兩頁。點右上角的 1／2 就能切換，壽司台在兩頁都看得到。新菜色（唐揚握、炙燒、生魚片、沙拉、甜點）的食材都在第 2 頁。": "Nampan bahan di sebelah papan sushi punya dua halaman. Ketuk 1 / 2 di kanan atas untuk beralih; papan sushi tetap terlihat di kedua halaman. Bahan menu baru (karaage, bakar, sashimi, salad, dessert) ada di halaman 2.", "新菜色（唐揚握、炙燒、生魚片、沙拉、甜點）的食材放在營業畫面食材盤的「第 2 頁」。買下任一道新菜，右上角就會出現 1／2 切換鈕。": "Bahan menu baru (karaage, bakar, sashimi, salad, dessert) ada di halaman 2 nampan bahan saat melayani. Beli satu menu baru dan tombol 1 / 2 muncul di kanan atas."});
+})();
+/* sushi desserts are picked up straight from the tray (2026-11-10) */
+(function(){const add=(L,o)=>{const t=I18N[L]=I18N[L]||{};for(const k in o)if(!(k in t))t[k]=o[k]};
+  add("zh-Hans",{"點一下<b>冰淇淋</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "点一下<b>冰淇淋</b>拿起来，不用放上寿司台，直接点客人就送出。食材在食材盘的<b>第 2 页</b>。", "點一下<b>麻糬</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "点一下<b>麻薯</b>拿起来，不用放上寿司台，直接点客人就送出。食材在食材盘的<b>第 2 页</b>。", "點一下<b>糰子</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "点一下<b>团子</b>拿起来，不用放上寿司台，直接点客人就送出。食材在食材盘的<b>第 2 页</b>。"});
+  add("en",{"點一下<b>冰淇淋</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "Tap <b>ice cream</b> to pick it up. No need to put it on the sushi counter, just tap the customer to serve it. It is on <b>page 2</b> of the tray.", "點一下<b>麻糬</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "Tap <b>mochi</b> to pick it up. No need to put it on the sushi counter, just tap the customer to serve it. It is on <b>page 2</b> of the tray.", "點一下<b>糰子</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "Tap <b>dango</b> to pick it up. No need to put it on the sushi counter, just tap the customer to serve it. It is on <b>page 2</b> of the tray."});
+  add("ja",{"點一下<b>冰淇淋</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "<b>アイス</b>をタップして持ち上げます。寿司台に置かなくても、お客さんをタップすればそのまま出せます。食材トレイの<b>2ページ目</b>にあります。", "點一下<b>麻糬</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "<b>もち</b>をタップして持ち上げます。寿司台に置かなくても、お客さんをタップすればそのまま出せます。食材トレイの<b>2ページ目</b>にあります。", "點一下<b>糰子</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "<b>団子</b>をタップして持ち上げます。寿司台に置かなくても、お客さんをタップすればそのまま出せます。食材トレイの<b>2ページ目</b>にあります。"});
+  add("ko",{"點一下<b>冰淇淋</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "<b>아이스크림</b>을(를) 눌러 집어 들어요. 초밥대에 올릴 필요 없이 손님을 누르면 바로 내가요. 재료 트레이 <b>2페이지</b>에 있어요.", "點一下<b>麻糬</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "<b>모찌</b>을(를) 눌러 집어 들어요. 초밥대에 올릴 필요 없이 손님을 누르면 바로 내가요. 재료 트레이 <b>2페이지</b>에 있어요.", "點一下<b>糰子</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "<b>당고</b>을(를) 눌러 집어 들어요. 초밥대에 올릴 필요 없이 손님을 누르면 바로 내가요. 재료 트레이 <b>2페이지</b>에 있어요."});
+  add("id",{"點一下<b>冰淇淋</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "Ketuk <b>es krim</b> untuk mengambilnya. Tidak perlu ditaruh di meja sushi, langsung ketuk pelanggan untuk menyajikannya. Ada di <b>halaman 2</b> nampan bahan.", "點一下<b>麻糬</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "Ketuk <b>mochi</b> untuk mengambilnya. Tidak perlu ditaruh di meja sushi, langsung ketuk pelanggan untuk menyajikannya. Ada di <b>halaman 2</b> nampan bahan.", "點一下<b>糰子</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "Ketuk <b>dango</b> untuk mengambilnya. Tidak perlu ditaruh di meja sushi, langsung ketuk pelanggan untuk menyajikannya. Ada di <b>halaman 2</b> nampan bahan."});
 })();
 /* data tables whose names are shown in many places: read them through T() so every screen (gacha, items, achievements, sushi parts, holiday guests) follows the language */
 (function(){const tr=(o,k,ctx)=>{const raw=o[k];Object.defineProperty(o,k,{get(){return ctx?TX(raw,ctx):T(raw)},enumerable:true,configurable:true})};
