@@ -4186,7 +4186,7 @@ function arcBetType(g,v){
   const e=document.getElementById('arcBetAmt');if(e)e.value=n;
 }
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.arcbet)arcBetType(t.dataset.arcbet,t.value)});
-function showArcade(){modal(`<h2>${T('遊戲廳')}</h2><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p><p style="font-size:14px">${T('試試你的小手氣~')}</p><div class="btns"><button class="btn" data-act="arcslot">🎰 ${T('拉霸機')}</button><button class="btn" data-act="arcpin">🔮 ${T('彈珠台')}</button><button class="btn" data-act="chopen">♾️ ${T('無限挑戰')}</button><button class="btn" data-act="omk">🎋 ${T('幸運籤')}</button><button class="btn" data-act="gacha">🥚 ${T('扭蛋機')}</button><button class="btn alt" data-act="closem">${T('返回')}</button></div>`)}
+function showArcade(){modal(`<h2>${T('遊戲廳')}</h2><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p><p style="font-size:14px">${T('試試你的小手氣~')}</p><div class="btns"><button class="btn" data-act="arcslot">🎰 ${T('拉霸機')}</button><button class="btn" data-act="arcpin">🔮 ${T('彈珠台')}</button><button class="btn" data-act="chopen">♾️ ${T('無限挑戰')}</button><button class="btn" data-act="omk">🎋 ${T('幸運籤')}</button><button class="btn" data-act="gacha">🥚 ${T('扭蛋機')}</button><button class="btn" data-act="fc">🍙 ${T('點食成金')}</button><button class="btn alt" data-act="closem">${T('返回')}</button></div>`)}
 const ARC_CSS=`<style>.arc-reels{display:flex;gap:10px;justify-content:center;margin:14px 0}.arc-reels span{width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:38px;background:#fff8e6;border:3px solid #7a4a2a;border-radius:12px;box-shadow:inset 0 -4px 0 #e9d3a6}.arc-msg{font-size:15px;min-height:1.4em;text-align:center;margin:6px 0}</style>`;
 const GACHA_PRICE=300,GACHA_PITY=10,GACHA_RATE={c:60,r:30,s:10};
 const GACHA_NAME={c:'普通',r:'稀有',s:'超稀有',x:'秘密'},GACHA_COL={c:'#7a4a2a',r:'#2f7fb8',s:'#c8891a',x:'#7a3ad0'};
@@ -4669,6 +4669,7 @@ document.addEventListener('click',e=>{
   else if(act==='replayok')startReplay(+$('rpday').value);
   else if(act==='rpagain')startReplay(+a.dataset.id);
   else if(act==='arcade')showArcade();
+  else if(/^fc(buy|tab|qty)?$/.test(act))fcAct(act,a);
   else if(act==='arcslot')showArcSlot();
   else if(act==='arcpin')showArcPin();
   else if(act==='omk')showOmikuji();
@@ -7604,5 +7605,373 @@ function voLobbyBtns(){return `<button class="btn alt" data-act="coopmic">${VO.o
 </script>
 <script>/* 拉麵台味噌／擔擔圖下加字 (2026-11-10) */Object.assign(I18N["zh-Hans"],{"味噌":"味噌","擔擔":"担担"});Object.assign(I18N["en"],{"味噌":"Miso","擔擔":"Dan"});Object.assign(I18N["ja"],{"味噌":"味噌","擔擔":"担々"});Object.assign(I18N["ko"],{"味噌":"미소","擔擔":"탄탄"});Object.assign(I18N["id"],{"味噌":"Miso","擔擔":"Dandan"});</script>
 <script>/* 送錯菜改成客人氣走 (2026-11-11) */(function(){const A={"zh-Hans":["送错菜了！","送错菜了！客人气走了，不会付钱","上错客人（客人会气走）、食物烧焦、客人等太久生气走了。上错客人只算一次失误。"],"en":["Wrong dish!","Wrong dish! The customer stormed off without paying","Serving the wrong customer (they storm off), burning food, or a customer storming off after waiting too long. A wrong serve only counts as one strike."],"ja":["違う料理だ！","違う料理を出してしまい、お客は怒ってお金を払わず帰った","別のお客に出す（お客は怒って帰る）、料理を焦がす、待ちくたびれたお客が怒って帰る。間違いは一回だけ数える。"],"ko":["잘못 나갔어요!","잘못 서빙해서 손님이 화나서 돈도 안 내고 나갔어요","다른 손님에게 서빙(손님이 화나서 나감), 음식 태우기, 오래 기다린 손님이 화나서 나가기. 잘못 서빙은 한 번만 세요."],"id":["Salah menu!","Salah menu! Tamu pergi marah tanpa membayar","Salah antar ke tamu (tamu pergi marah), makanan gosong, atau tamu pergi marah karena menunggu terlalu lama. Salah antar hanya dihitung sekali."]};const K=["送錯菜了！","送錯菜了！客人氣走了，不會付錢","上錯客人（客人會氣走）、食物燒焦、客人等太久生氣走了。上錯客人只算一次失誤。"];for(const L in A){const t=I18N[L]=I18N[L]||{};K.forEach((k,i)=>{t[k]=A[L][i]})}})();</script>
+<script>/* 點食成金：遊戲廳裡的放置點擊小遊戲（獨立貨幣「食券」，只存這台裝置，與店裡的錢、排行榜、雲端存檔完全分開） (2026-11-11) */
+(function(){
+const KEY='izakaya-fc-v1';
+// 圖鑑：emoji, 繁中名, 稀有度（c 普通 / r 稀有 / l 傳說）
+const FOODS=[
+['🍙','飯糰','c'],['🍢','烤串','c'],['🥟','煎餃','c'],['🍤','炸蝦','c'],['🍡','三色糰子','c'],['🍘','仙貝','c'],
+['🥣','味噌湯','c'],['🍵','熱茶','c'],['🍺','生啤酒','c'],['🥚','溫泉蛋','c'],['🍥','魚板','c'],['🍠','烤地瓜','c'],
+['🥒','醃黃瓜','c'],['🍚','白飯','c'],['🍆','烤茄子','c'],['🥜','花生','c'],['🍋','檸檬沙瓦','c'],['🍧','刨冰','c'],
+['🍜','拉麵','r'],['🍣','握壽司','r'],['🍱','鰻魚飯','r'],['🍛','咖哩飯','r'],['🥘','壽喜燒','r'],['🍲','關東煮','r'],
+['🍳','玉子燒','r'],['🍖','炭火烤肉','r'],['🍗','日式炸雞','r'],['🍶','純米清酒','r'],['🍰','草莓蛋糕','r'],['🐟','鯛魚燒','r'],
+['🦞','活龍蝦','l'],['🦀','松葉蟹','l'],['🐡','河豚','l'],['🥩','A5和牛','l'],['🍈','夕張哈密瓜','l'],['🍽️','主廚特選懷石','l']
+];
+const FI=n=>FOODS.findIndex(f=>f[1]===n);
+// 進化階段：用圖鑑裡的食物當每一階的樣子（白飯 → 懷石）
+const TIERS=['白飯','飯糰','烤串','炸蝦','煎餃','握壽司','拉麵','鰻魚飯','A5和牛','松葉蟹','活龍蝦','主廚特選懷石'].map(FI);
+const MAXLV=120,LV0=100,LVR=1.32;
+const TOOLS=[
+ {e:'🥢',n:'竹筷',inc:1,base:50,r:1.25},
+ {e:'🥢',n:'黑檀筷',inc:10,base:5000,r:1.3},
+ {e:'🥇',n:'金箸',inc:100,base:500000,r:1.35},
+ {e:'✨',n:'神之箸',inc:1000,base:5e7,r:1.4}
+];
+const HELPERS=[
+ {e:'🍢',n:'烤串爐',p:0.1,base:15},{e:'🍤',n:'天婦羅炸鍋',p:1,base:100},{e:'🍣',n:'壽司職人',p:8,base:1100},
+ {e:'🍜',n:'拉麵屋台',p:47,base:12000},{e:'🥩',n:'鐵板燒師傅',p:260,base:130000},{e:'🍱',n:'鰻魚專門店',p:1400,base:1.4e6},
+ {e:'🏮',n:'居酒屋分店',p:7800,base:2e7},{e:'⭐',n:'米其林餐廳',p:44000,base:3.3e8}
+];
+const HR=1.15;
+const ACH=[];
+[[ 'tp','點擊 {0} 次',[1,100,1000,10000,100000]],['e','累計賺取 {0} 食券',[1000,1e6,1e9,1e12,1e15]],['h','雇用 {0} 位幫手',[1,25,100,300]],['col','收集 {0} 種美食',[6,18,36]],['lv','進化到第 {0} 級',[10,40,80,120]]]
+ .forEach(([k,t,vs])=>vs.forEach(v=>ACH.push({id:k+v,k,t,v})));
+const RAR={c:{n:'普通',col:'#8a5a34',w:70},r:{n:'稀有',col:'#2f7fb8',w:25},l:{n:'傳說',col:'#c8891a',w:5}};
+const NUMERAL=['一','二','三','四','五','六','七','八','九','十'];
+
+const FC={s:null,timer:null,tab:'shop',qty:1,last:0,saveAt:0,dropAt:0,tick:0,lv:0,msgT:null,pt:1,ps:0,mult:1};
+window.FC=FC;
+function arr(a,n){return Array.from({length:n},(_,i)=>{const v=+(a&&a[i]);return isFinite(v)&&v>0?v:0})}
+function def(){return{e:0,c:0,tp:0,h:arr(0,HELPERS.length),t:arr(0,TOOLS.length),col:{},ach:{},ts:Date.now()}}
+function load(){
+  try{const o=JSON.parse(localStorage.getItem(KEY));
+    if(o&&typeof o==='object'){const d=def();const n=v=>{v=+v;return isFinite(v)&&v>0?v:0};
+      return{e:n(o.e),c:n(o.c),tp:n(o.tp),h:arr(o.h,HELPERS.length),t:arr(o.t,TOOLS.length),col:o.col&&typeof o.col==='object'?o.col:{},ach:o.ach&&typeof o.ach==='object'?o.ach:{},ts:n(o.ts)||d.ts}}
+  }catch(e){}
+  return def();
+}
+function save(){const s=FC.s;if(!s)return;s.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
+function fmt(n){
+  if(!isFinite(n))return '∞';
+  const L=LANG;let U,B;
+  if(L==='zh-Hant'||L==='ja'){U=['','萬','億','兆','京','垓'];B=1e4}
+  else if(L==='zh-Hans'){U=['','万','亿','兆','京','垓'];B=1e4}
+  else if(L==='ko'){U=['','만','억','조','경','해'];B=1e4}
+  else{U=['','K','M','B','T','Qa','Qi','Sx'];B=1e3}
+  if(n<B){return n<10?String(Math.round(n*100)/100):n<100?String(Math.round(n*10)/10):Math.round(n).toLocaleString('en-US')}
+  let i=0;while(n>=B&&i<U.length-1){n/=B;i++}
+  if(n>=B)return n.toExponential(2);
+  const d=n>=100?0:n>=10?1:2;
+  return String(parseFloat(n.toFixed(d)))+U[i];
+}
+function level(e){return e<LV0?0:Math.min(MAXLV,Math.floor(Math.log(e/LV0)/Math.log(LVR))+1)}
+function nColl(){return Object.keys(FC.s.col).length}
+function nAch(){return Object.keys(FC.s.ach).length}
+function nHelp(){return FC.s.h.reduce((a,b)=>a+b,0)}
+function calc(){
+  const s=FC.s,L=level(s.e);
+  FC.mult=Math.pow(1.03,L)*(1+0.02*nColl())*(1+0.01*nAch());
+  let tp=1;TOOLS.forEach((t,i)=>{tp+=t.inc*s.t[i]});
+  let ps=0;HELPERS.forEach((h,i)=>{ps+=h.p*s.h[i]});
+  FC.pt=tp*FC.mult;FC.ps=ps*FC.mult;FC.lvNow=L;
+}
+function dishName(L){
+  const ti=Math.min(TIERS.length-1,Math.floor(L/10)),g=L>=MAXLV?10:L%10+1;
+  const nm=T(FOODS[TIERS[ti]][1]);
+  return (LANG==='zh-Hant'||LANG==='zh-Hans'||LANG==='ja')?nm+'・'+NUMERAL[g-1]+(LANG==='zh-Hans'?'重':'重'):nm+' · '+T('第 {0} 段',g);
+}
+function say(t){
+  const e=document.getElementById('fcMsg');if(!e)return;
+  e.textContent=t;e.style.opacity=1;clearTimeout(FC.msgT);FC.msgT=setTimeout(()=>{const x=document.getElementById('fcMsg');if(x)x.style.opacity=0},2600);
+}
+function drop(){
+  const s=FC.s;let r=Math.random()*100,ra='c';
+  if(r<RAR.l.w)ra='l';else if(r<RAR.l.w+RAR.r.w)ra='r';
+  const pool=[];FOODS.forEach((f,i)=>{if(f[2]===ra)pool.push(i)});
+  const i=pool[Math.floor(Math.random()*pool.length)],f=FOODS[i];
+  if(!s.col[i]){s.col[i]=1;say(T('圖鑑新增：{0} {1}',f[0],T(f[1])));calc();if(FC.tab==='dex')renderList();tabLabels()}
+  else{s.col[i]++;const b=Math.max(FC.ps*30,FC.pt*20);s.c+=b;s.e+=b;say(T('又拿到 {0}，換成 {1} 食券',f[0]+T(f[1]),fmt(b)));if(FC.tab==='dex')renderList()}
+}
+function checkAch(){
+  const s=FC.s;let hit=false;
+  const val={tp:s.tp,e:s.e,h:nHelp(),col:nColl(),lv:level(s.e)};
+  ACH.forEach(a=>{if(!s.ach[a.id]&&val[a.k]>=a.v){s.ach[a.id]=1;hit=true;say(T('達成：{0}',T(a.t,fmt(a.v))))}});
+  if(hit){calc();tabLabels();if(FC.tab==='ach')renderList()}
+}
+function tap(ev){
+  const s=FC.s;if(!s)return;
+  const g=FC.pt;s.c+=g;s.e+=g;s.tp++;
+  if(Math.random()<0.02)drop();
+  const w=document.getElementById('fcWrap'),d=document.getElementById('fcDish');
+  if(d){try{d.animate([{transform:'scale(1)'},{transform:'scale(.9)'},{transform:'scale(1)'}],{duration:110})}catch(e){}}
+  if(w&&w.children.length<16){
+    const p=document.createElement('span');p.className='pop';p.textContent='+'+fmt(g);
+    p.style.cssText='font-size:18px;left:'+(30+Math.random()*40)+'%;top:'+(25+Math.random()*30)+'%';
+    w.appendChild(p);setTimeout(()=>p.remove(),1000);
+  }
+  if(s.tp%5===0)checkAch();
+  upd(true);
+}
+// ----- 商店 -----
+function info(kind,i,qty){
+  const s=FC.s,it=kind==='h'?HELPERS[i]:TOOLS[i],r=kind==='h'?HR:it.r,o=s[kind][i];
+  const first=it.base*Math.pow(r,o);
+  const cost=n=>first*(Math.pow(r,n)-1)/(r-1);
+  let n=qty;
+  if(qty==='max'){n=Math.floor(Math.log(1+s.c*(r-1)/first)/Math.log(r));if(!(n>=1))n=1;n=Math.min(n,9999)}
+  return{n,cost:cost(n)};
+}
+function buy(kind,i){
+  const s=FC.s,f=info(kind,i,FC.qty);
+  if(s.c<f.cost)return;
+  s.c-=f.cost;s[kind][i]+=f.n;calc();checkAch();updShop();upd(true);save();
+}
+function shopHTML(){
+  const row=(kind,it,i)=>`<div class="fc-it"><div class="fc-ie">${it.e}</div><div class="fc-info"><div class="fc-nm">${T(it.n)} <em id="fco${kind}${i}"></em></div><small id="fcd${kind}${i}"></small></div><button class="fc-buy" data-act="fcbuy" data-k="${kind}" data-i="${i}" id="fcb${kind}${i}"></button></div>`;
+  return `<div class="fc-h">🥢 ${T('工具')}</div>${TOOLS.map((t,i)=>row('t',t,i)).join('')}<div class="fc-h">👨‍🍳 ${T('幫手')}</div>${HELPERS.map((h,i)=>row('h',h,i)).join('')}`;
+}
+function updShop(){
+  const s=FC.s;
+  [['t',TOOLS],['h',HELPERS]].forEach(([k,L])=>L.forEach((it,i)=>{
+    const o=document.getElementById('fco'+k+i);if(!o)return;
+    o.textContent='×'+s[k][i];
+    document.getElementById('fcd'+k+i).textContent=k==='t'?T('每次點擊 +{0}',fmt(it.inc*FC.mult)):T('每秒 +{0}',fmt(it.p*FC.mult));
+    const f=info(k,i,FC.qty),b=document.getElementById('fcb'+k+i);
+    b.innerHTML='<b>×'+f.n+'</b><span>'+fmt(f.cost)+'</span>';
+    b.classList.toggle('poor',s.c<f.cost);
+  }));
+}
+function dexHTML(){
+  const s=FC.s;
+  const cells=FOODS.map((f,i)=>{const got=s.col[i];const c=RAR[f[2]].col;
+    return got?`<div class="fc-cell" style="border-color:${c}"><div class="fc-ce">${f[0]}</div><div class="fc-cn">${T(f[1])}</div><div class="fc-cr" style="color:${c}">${T(RAR[f[2]].n)}${got>1?' ×'+got:''}</div></div>`
+    :`<div class="fc-cell off"><div class="fc-ce">${f[0]}</div><div class="fc-cn">？？？</div><div class="fc-cr">${T(RAR[f[2]].n)}</div></div>`}).join('');
+  return `<p class="fc-note">${T('每收集一種美食，收益 +2%（目前 +{0}%）',nColl()*2)}　${T('點美食或等一等就會掉落新美食。')}</p><div class="fc-dex">${cells}</div>`;
+}
+function achHTML(){
+  const s=FC.s,val={tp:s.tp,e:s.e,h:nHelp(),col:nColl(),lv:level(s.e)};
+  const rows=ACH.map(a=>{const done=s.ach[a.id],cur=Math.min(val[a.k],a.v),pc=Math.max(0,Math.min(100,cur/a.v*100));
+    return `<div class="fc-a${done?' done':''}"><div class="fc-ae">${done?'🏅':'🔒'}</div><div class="fc-info"><div class="fc-nm">${T(a.t,fmt(a.v))}</div>${done?`<small>${T('已達成')}</small>`:`<div class="fc-pb"><i style="width:${pc}%"></i></div><small>${fmt(cur)} / ${fmt(a.v)}</small>`}</div><div class="fc-ar">+1%</div></div>`}).join('');
+  return `<p class="fc-note">${T('每個成就，收益 +1%（目前 +{0}%）',nAch())}</p>${rows}`;
+}
+function renderList(reset){
+  const el=document.getElementById('fcList');if(!el)return;
+  const sy=reset?0:el.scrollTop;
+  el.innerHTML=FC.tab==='shop'?shopHTML():FC.tab==='dex'?dexHTML():achHTML();
+  el.scrollTop=sy;
+  const q=document.getElementById('fcQty');if(q)q.style.display=FC.tab==='shop'?'flex':'none';
+  document.querySelectorAll('.fc-tab').forEach(b=>b.classList.toggle('on',b.dataset.t===FC.tab));
+  document.querySelectorAll('.fc-q').forEach(b=>b.classList.toggle('on',String(FC.qty)===b.dataset.q));
+  if(FC.tab==='shop')updShop();
+}
+function tabLabels(){
+  const a=document.getElementById('fcTdex'),b=document.getElementById('fcTach');
+  if(a)a.textContent=T('圖鑑')+' '+nColl()+'/'+FOODS.length;
+  if(b)b.textContent=T('成就')+' '+nAch()+'/'+ACH.length;
+}
+function upd(light){
+  const s=FC.s;if(!s)return;
+  const L=level(s.e);
+  if(L>FC.lv){if(FC.lv>=0&&document.getElementById('fcRoot'))say(T('進化為「{0}」！',dishName(L)));FC.lv=L;calc()}
+  const set=(id,t)=>{const e=document.getElementById(id);if(e&&e.textContent!==t)e.textContent=t};
+  set('fcCoin',fmt(Math.floor(s.c)));
+  set('fcPT',T('每次點擊 {0}',fmt(FC.pt)));
+  set('fcPS',T('每秒 {0}',fmt(FC.ps)));
+  const nm=dishName(L);set('fcName',nm);
+  const d=document.getElementById('fcDish');const em=FOODS[TIERS[Math.min(TIERS.length-1,Math.floor(L/10))]][0];if(d&&d.textContent!==em)d.textContent=em;
+  const bar=document.getElementById('fcBar');
+  if(L>=MAXLV){if(bar)bar.style.width='100%';set('fcNext',T('已進化到頂點！'))}
+  else{const prev=L===0?0:LV0*Math.pow(LVR,L-1),next=LV0*Math.pow(LVR,L);
+    if(bar)bar.style.width=Math.max(0,Math.min(100,(s.e-prev)/(next-prev)*100))+'%';
+    set('fcNext',T('再賺 {0} 食券進化（{1}/{2} 級）',fmt(Math.max(0,next-s.e)),L,MAXLV))}
+  if(!light){
+    set('fcFoot',T('累計賺取：{0}',fmt(s.e))+'　'+T('總點擊：{0}',fmt(s.tp))+'　'+T('收益加成：×{0}',fmt(FC.mult)));
+    if(FC.tab==='shop')updShop();
+  }
+}
+function step(){
+  const s=FC.s;
+  if(!s||!document.getElementById('fcRoot')){clearInterval(FC.timer);FC.timer=null;if(s)save();return}
+  const now=Date.now(),dt=Math.min(7200,Math.max(0,(now-FC.last)/1000));FC.last=now;
+  const g=FC.ps*dt;s.c+=g;s.e+=g;
+  FC.dropAt+=dt;if(FC.dropAt>=20){FC.dropAt=0;drop()}
+  FC.tick++;
+  if(FC.tick%5===0){checkAch();upd(false)}else upd(true);
+  if(now-FC.saveAt>5000){FC.saveAt=now;save()}
+}
+function open(){
+  FC.s=load();FC.tab='shop';FC.tick=0;FC.dropAt=0;
+  const s=FC.s;
+  const off=Math.min(7200,Math.max(0,(Date.now()-s.ts)/1000));
+  calc();FC.lv=level(s.e);
+  let offTxt='';
+  if(off>=30&&FC.ps>0){const g=FC.ps*off;s.c+=g;s.e+=g;offTxt=T('你不在的時候，幫手賺了 {0} 食券',fmt(g));calc();FC.lv=level(s.e)}
+  modal(`<style>${CSS}</style><div id="fcRoot" class="fc"><div class="fc-top"><h2>🍙 ${T('點食成金')}</h2><button class="btn alt fc-x" data-act="arcade">${T('返回')}</button></div>
+<div class="fc-grid"><div class="fc-left"><div class="fc-coinrow"><b id="fcCoin">0</b><small>${T('食券')}</small></div><div class="fc-rate"><span id="fcPT"></span><span id="fcPS"></span></div>
+<div class="fc-wrap" id="fcWrap"><div class="fc-dish" id="fcDish">🍚</div><div class="fc-msg" id="fcMsg"></div></div>
+<div class="fc-name" id="fcName"></div><div class="fc-bar"><i id="fcBar"></i></div><div class="fc-next" id="fcNext"></div></div>
+<div class="fc-right"><div class="fc-tabs"><button class="fc-tab" data-act="fctab" data-t="shop">${T('商店')}</button><button class="fc-tab" data-act="fctab" data-t="dex" id="fcTdex"></button><button class="fc-tab" data-act="fctab" data-t="ach" id="fcTach"></button></div>
+<div class="fc-qty" id="fcQty"><button class="fc-q" data-act="fcqty" data-q="1">×1</button><button class="fc-q" data-act="fcqty" data-q="10">×10</button><button class="fc-q" data-act="fcqty" data-q="100">×100</button><button class="fc-q" data-act="fcqty" data-q="max">${T('最多')}</button></div>
+<div class="fc-list" id="fcList"></div></div></div>
+<div class="fc-foot" id="fcFoot"></div><div class="fc-save">${T('食券只存在這台裝置，與店裡的錢完全分開。')}</div></div>`);
+  const d=document.getElementById('fcDish');
+  if(d)d.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();tap(e)});
+  renderList();tabLabels();upd(false);
+  if(offTxt)say(offTxt);
+  FC.last=Date.now();FC.saveAt=FC.last;
+  clearInterval(FC.timer);FC.timer=setInterval(step,100);
+}
+window.fcAct=function(act,a){
+  if(act==='fc')open();
+  else if(act==='fcbuy')buy(a.dataset.k,+a.dataset.i);
+  else if(act==='fctab'){FC.tab=a.dataset.t;renderList(true)}
+  else if(act==='fcqty'){FC.qty=a.dataset.q==='max'?'max':+a.dataset.q;renderList()}
+};
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&FC.s&&document.getElementById('fcRoot'))save()});
+window.addEventListener('pagehide',()=>{if(FC.s&&document.getElementById('fcRoot'))save()});
+const CSS=`.fc{display:flex;flex-direction:column;gap:8px;color:var(--soot)}
+.fc-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.fc-top h2{font-size:30px}
+.fc-x{font-size:15px;padding:6px 16px}
+.fc-grid{display:grid;grid-template-columns:196px minmax(0,1fr);gap:14px;height:372px}
+.fc-left{display:flex;flex-direction:column;align-items:center;gap:4px;background:#fff8e6;border:3px solid var(--soot);border-radius:16px;padding:10px 8px;min-width:0}
+.fc-coinrow{display:flex;align-items:baseline;gap:6px;max-width:100%}.fc-coinrow b{font-family:var(--f-disp);font-size:30px;color:#b8741a;line-height:1.1;white-space:nowrap}.fc-coinrow small{font-size:13px;font-weight:700}
+.fc-rate{display:flex;flex-direction:column;align-items:center;font-size:12.5px;font-weight:700;color:#7a4a2a;line-height:1.35}
+.fc-wrap{position:relative;flex:1;width:100%;display:flex;align-items:center;justify-content:center;min-height:0}
+.fc-dish{font-size:92px;line-height:1;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;filter:drop-shadow(0 5px 0 #0003);padding:6px}
+.fc-wrap .pop{position:absolute;z-index:6}
+.fc-msg{position:absolute;left:0;right:0;top:0;text-align:center;font-size:12.5px;font-weight:800;color:#fff;background:#3b2417e6;border-radius:10px;padding:3px 6px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:7}
+.fc-name{font-size:15px;font-weight:900;text-align:center;line-height:1.25}
+.fc-bar,.fc-pb{width:100%;height:9px;background:#e7d5ac;border:2px solid var(--soot);border-radius:99px;overflow:hidden;box-sizing:border-box}
+.fc-bar i,.fc-pb i{display:block;height:100%;background:#f0b229}
+.fc-next{font-size:11.5px;font-weight:600;color:#7a4a2a;text-align:center;line-height:1.3;min-height:2.6em}
+.fc-right{display:flex;flex-direction:column;gap:6px;min-width:0;min-height:0}
+.fc-tabs{display:flex;gap:6px}.fc-tab{flex:1;font-size:14px;font-weight:800;padding:6px 4px;border-radius:10px;border:3px solid var(--soot);background:#fffaf0;color:var(--soot);white-space:nowrap}.fc-tab.on{background:var(--lacquer);color:#fff}
+.fc-qty{display:flex;gap:6px}.fc-q{flex:1;font-size:13px;font-weight:800;padding:3px 0;border-radius:8px;border:2px solid var(--soot);background:#fffaf0;color:var(--soot)}.fc-q.on{background:#f0b229}
+.fc-list{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:6px;padding-right:2px;-webkit-overflow-scrolling:touch}
+.fc-h{font-size:13px;font-weight:900;color:#7a4a2a;margin-top:2px}
+.fc-it,.fc-a{display:flex;align-items:center;gap:8px;background:#fff8e6;border:2px solid #d9c08a;border-radius:12px;padding:6px 8px;flex:none}
+.fc-ie,.fc-ae{font-size:28px;line-height:1;width:34px;text-align:center;flex:none}
+.fc-info{flex:1;min-width:0}.fc-nm{font-size:14px;font-weight:900;line-height:1.25}.fc-nm em{font-style:normal;font-size:12px;color:#7a4a2a;font-weight:700}
+.fc-info small{display:block;font-size:11.5px;color:#7a4a2a;font-weight:600;line-height:1.3}
+.fc-buy{display:flex;flex-direction:column;align-items:center;min-width:78px;padding:4px 8px;border-radius:10px;border:3px solid var(--soot);background:#f0b229;color:var(--soot);font-size:12px;box-shadow:0 3px 0 var(--soot);flex:none}
+.fc-buy b{font-size:12px}.fc-buy span{font-size:14px;font-weight:900}.fc-buy:active{transform:translateY(2px);box-shadow:0 1px 0 var(--soot)}.fc-buy.poor{background:#d8cdb4;opacity:.7}
+.fc-note{font-size:12px!important;line-height:1.4!important;color:#7a4a2a;font-weight:700!important}
+.fc-dex{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.fc-cell{background:#fff8e6;border:3px solid #8a5a34;border-radius:12px;padding:5px 2px;text-align:center}.fc-ce{font-size:30px;line-height:1.1}.fc-cn{font-size:12px;font-weight:900;line-height:1.2}.fc-cr{font-size:11px;font-weight:700}
+.fc-cell.off{border-color:#cdbb92;background:#efe3c5}.fc-cell.off .fc-ce{filter:brightness(0);opacity:.28}.fc-cell.off .fc-cn,.fc-cell.off .fc-cr{color:#a8956a}
+.fc-a.done{background:#fff1c4;border-color:#e0a82a}.fc-ar{font-size:13px;font-weight:900;color:#b8741a;flex:none}
+.fc-foot{font-size:12px;font-weight:700;color:#7a4a2a;text-align:center}.fc-save{font-size:11px;color:#9a8460;text-align:center;margin-top:-4px}
+@media (max-width:560px){
+.card:has(.fc){padding:14px 14px}
+.fc-grid{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);height:392px;gap:8px}
+.fc-left{display:grid;grid-template-columns:92px minmax(0,1fr);column-gap:10px;row-gap:1px;align-items:center;justify-items:start;padding:8px 10px}
+.fc-left>*{grid-column:2}.fc-left .fc-wrap{grid-column:1;grid-row:1/7;height:92px;width:92px}
+.fc-dish{font-size:58px;padding:2px}.fc-coinrow b{font-size:26px}.fc-rate{align-items:flex-start;flex-direction:row;gap:10px}
+.fc-name{text-align:left}.fc-next{text-align:left;min-height:0}.fc-bar{width:100%}
+.fc-top h2{font-size:26px}
+}
+@media (max-height:450px){
+.card:has(.fc){padding:8px 12px;gap:4px}
+.fc{gap:4px}.fc-top h2{font-size:20px}.fc-x{font-size:13px;padding:3px 12px;border-width:2px;box-shadow:0 2px 0 var(--soot);border-radius:10px}
+.fc-grid{height:calc(100vh - 118px);min-height:210px;gap:10px;grid-template-columns:172px minmax(0,1fr)}
+.fc-left{padding:6px;gap:2px}.fc-coinrow b{font-size:24px}.fc-dish{font-size:62px;padding:2px}.fc-next{min-height:0;font-size:11px}.fc-rate{font-size:11.5px;flex-direction:row;gap:8px}
+.fc-foot,.fc-save{display:none}
+.fc-tab{padding:3px 2px;font-size:13px;border-width:2px}.fc-q{padding:1px 0;font-size:12px}
+.fc-it,.fc-a{padding:4px 6px}.fc-ie,.fc-ae{font-size:24px;width:28px}.fc-buy{padding:2px 6px;min-width:70px}.fc-buy span{font-size:13px}
+}`;
+
+// ----- 多語言 -----
+const L=['zh-Hans','en','ja','ko','id'];
+const D={
+'點食成金':['点食成金','Tap Tap Tasty','点食成金','점식성금','Ketuk Jadi Emas'],
+'食券':['食券','Meal tickets','食券','식권','Kupon makan'],
+'每次點擊 {0}':['每次点击 {0}','Per tap {0}','タップ毎 {0}','터치당 {0}','Per ketuk {0}'],
+'每秒 {0}':['每秒 {0}','Per sec {0}','毎秒 {0}','초당 {0}','Per detik {0}'],
+'每次點擊 +{0}':['每次点击 +{0}','+{0} per tap','タップ毎 +{0}','터치당 +{0}','+{0} per ketuk'],
+'每秒 +{0}':['每秒 +{0}','+{0} per sec','毎秒 +{0}','초당 +{0}','+{0} per detik'],
+'第 {0} 段':['第 {0} 段','Stage {0}','第{0}段','{0}단계','Tahap {0}'],
+'再賺 {0} 食券進化（{1}/{2} 級）':['再赚 {0} 食券进化（{1}/{2} 级）','Earn {0} more to evolve (Lv {1}/{2})','あと {0} 食券で進化（Lv {1}/{2}）','{0} 식권 더 모으면 진화 (Lv {1}/{2})','Cari {0} lagi untuk evolusi (Lv {1}/{2})'],
+'已進化到頂點！':['已进化到顶点！','Fully evolved!','進化の頂点に到達！','최고 단계 진화 완료!','Evolusi maksimal!'],
+'進化為「{0}」！':['进化为“{0}”！','Evolved into "{0}"!','「{0}」に進化！','"{0}"(으)로 진화!','Berevolusi jadi "{0}"!'],
+'商店':['商店','Shop','ショップ','상점','Toko'],
+'圖鑑':['图鉴','Dex','図鑑','도감','Koleksi'],
+'成就':['成就','Goals','実績','업적','Prestasi'],
+'最多':['最多','Max','最大','최대','Maks'],
+'工具':['工具','Tools','道具','도구','Alat'],
+'幫手':['帮手','Helpers','助っ人','도우미','Pembantu'],
+'圖鑑新增：{0} {1}':['图鉴新增：{0} {1}','New in dex: {0} {1}','図鑑に追加：{0} {1}','도감 추가: {0} {1}','Koleksi baru: {0} {1}'],
+'又拿到 {0}，換成 {1} 食券':['又拿到 {0}，换成 {1} 食券','Got {0} again — traded for {1} tickets','{0} をまたゲット、{1} 食券に交換','{0} 또 획득, {1} 식권으로 교환','Dapat {0} lagi, ditukar {1} kupon'],
+'達成：{0}':['达成：{0}','Done: {0}','達成：{0}','달성: {0}','Tercapai: {0}'],
+'點擊 {0} 次':['点击 {0} 次','Tap {0} times','{0}回タップ','{0}번 터치','Ketuk {0} kali'],
+'累計賺取 {0} 食券':['累计赚取 {0} 食券','Earn {0} tickets in total','累計 {0} 食券を稼ぐ','누적 {0} 식권 획득','Kumpulkan {0} kupon'],
+'雇用 {0} 位幫手':['雇用 {0} 位帮手','Hire {0} helpers','助っ人を {0} 人雇う','도우미 {0}명 고용','Pekerjakan {0} pembantu'],
+'收集 {0} 種美食':['收集 {0} 种美食','Collect {0} foods','料理を {0} 種類集める','음식 {0}종 수집','Kumpulkan {0} makanan'],
+'進化到第 {0} 級':['进化到第 {0} 级','Evolve to Lv {0}','Lv {0} まで進化','Lv {0}까지 진화','Evolusi ke Lv {0}'],
+'已達成':['已达成','Completed','達成済み','달성 완료','Selesai'],
+'每收集一種美食，收益 +2%（目前 +{0}%）':['每收集一种美食，收益 +2%（目前 +{0}%）','Each food collected gives +2% income (now +{0}%).','料理を1種類集めるごとに収益 +2%（現在 +{0}%）','음식을 하나 모을 때마다 수익 +2% (현재 +{0}%)','Tiap makanan yang dikoleksi: pendapatan +2% (sekarang +{0}%).'],
+'點美食或等一等就會掉落新美食。':['点美食或等一等就会掉落新美食。','Tap the dish or wait a bit to find new foods.','料理をタップするか少し待つと新しい料理が出ます。','음식을 누르거나 잠시 기다리면 새 음식이 나와요.','Ketuk makanan atau tunggu sebentar untuk menemukan makanan baru.'],
+'每個成就，收益 +1%（目前 +{0}%）':['每个成就，收益 +1%（目前 +{0}%）','Each goal gives +1% income (now +{0}%).','実績ひとつにつき収益 +1%（現在 +{0}%）','업적 하나당 수익 +1% (현재 +{0}%)','Tiap prestasi: pendapatan +1% (sekarang +{0}%).'],
+'累計賺取：{0}':['累计赚取：{0}','Total earned: {0}','累計：{0}','누적: {0}','Total: {0}'],
+'總點擊：{0}':['总点击：{0}','Taps: {0}','タップ数：{0}','터치: {0}','Ketukan: {0}'],
+'收益加成：×{0}':['收益加成：×{0}','Bonus: ×{0}','収益ボーナス：×{0}','수익 보너스: ×{0}','Bonus: ×{0}'],
+'你不在的時候，幫手賺了 {0} 食券':['你不在的时候，帮手赚了 {0} 食券','While you were away, helpers earned {0} tickets','留守中に助っ人が {0} 食券を稼ぎました','자리를 비운 사이 도우미가 {0} 식권을 벌었어요','Saat kamu pergi, pembantu mendapat {0} kupon'],
+'食券只存在這台裝置，與店裡的錢完全分開。':['食券只存在这台设备，与店里的钱完全分开。','Tickets are stored on this device only, separate from your shop money.','食券はこの端末にだけ保存され、お店のお金とは完全に別です。','식권은 이 기기에만 저장되며 가게 돈과 완전히 별개예요.','Kupon hanya disimpan di perangkat ini, terpisah dari uang toko.'],
+// 食物（圖鑑、進化階段）
+'飯糰':['饭团','Onigiri','おにぎり','주먹밥','Onigiri'],
+'烤串':['烤串','Yakitori','焼き鳥','꼬치구이','Yakitori'],
+'煎餃':['煎饺','Gyoza','焼き餃子','군만두','Gyoza'],
+'炸蝦':['炸虾','Fried shrimp','エビフライ','새우튀김','Udang goreng'],
+'三色糰子':['三色团子','Dango','三色団子','경단','Dango'],
+'仙貝':['仙贝','Senbei','せんべい','센베이','Senbei'],
+'味噌湯':['味噌汤','Miso soup','味噌汁','된장국','Sup miso'],
+'熱茶':['热茶','Hot tea','お茶','따뜻한 차','Teh hangat'],
+'生啤酒':['生啤酒','Draft beer','生ビール','생맥주','Bir draft'],
+'溫泉蛋':['温泉蛋','Onsen egg','温泉卵','온천 달걀','Telur onsen'],
+'魚板':['鱼板','Kamaboko','かまぼこ','어묵','Kamaboko'],
+'烤地瓜':['烤红薯','Roasted sweet potato','焼き芋','군고구마','Ubi panggang'],
+'醃黃瓜':['腌黄瓜','Pickled cucumber','きゅうりの漬物','오이 절임','Timun acar'],
+'白飯':['白饭','Steamed rice','白ごはん','흰쌀밥','Nasi putih'],
+'烤茄子':['烤茄子','Grilled eggplant','焼きなす','구운 가지','Terong panggang'],
+'花生':['花生','Peanuts','ピーナッツ','땅콩','Kacang'],
+'檸檬沙瓦':['柠檬沙瓦','Lemon sour','レモンサワー','레몬 사와','Lemon sour'],
+'刨冰':['刨冰','Shaved ice','かき氷','빙수','Es serut'],
+'拉麵':['拉面','Ramen','ラーメン','라멘','Ramen'],
+'握壽司':['握寿司','Nigiri sushi','にぎり寿司','니기리 스시','Sushi nigiri'],
+'鰻魚飯':['鳗鱼饭','Eel rice box','うな重','장어덮밥','Nasi belut'],
+'咖哩飯':['咖喱饭','Curry rice','カレーライス','카레라이스','Nasi kari'],
+'壽喜燒':['寿喜烧','Sukiyaki','すき焼き','스키야키','Sukiyaki'],
+'關東煮':['关东煮','Oden','おでん','오뎅','Oden'],
+'玉子燒':['玉子烧','Tamagoyaki','玉子焼き','계란말이','Tamagoyaki'],
+'炭火烤肉':['炭火烤肉','Charcoal grilled meat','炭火焼き肉','숯불구이','Daging panggang arang'],
+'日式炸雞':['日式炸鸡','Karaage','唐揚げ','가라아게','Karaage'],
+'純米清酒':['纯米清酒','Junmai sake','純米酒','준마이 사케','Sake junmai'],
+'草莓蛋糕':['草莓蛋糕','Strawberry cake','いちごケーキ','딸기 케이크','Kue stroberi'],
+'鯛魚燒':['鲷鱼烧','Taiyaki','たい焼き','붕어빵','Taiyaki'],
+'活龍蝦':['活龙虾','Live lobster','活き伊勢海老','활 랍스터','Lobster hidup'],
+'松葉蟹':['松叶蟹','Snow crab','松葉ガニ','대게','Kepiting salju'],
+'河豚':['河豚','Fugu','ふぐ','복어','Fugu'],
+'A5和牛':['A5和牛','A5 Wagyu','A5和牛','A5 와규','Wagyu A5'],
+'夕張哈密瓜':['夕张哈密瓜','Yubari melon','夕張メロン','유바리 멜론','Melon Yubari'],
+'主廚特選懷石':['主厨特选怀石',"Chef's kaiseki",'おまかせ懐石','오마카세 가이세키','Kaiseki pilihan chef'],
+// 工具與幫手
+'竹筷':['竹筷','Bamboo chopsticks','竹の箸','대나무 젓가락','Sumpit bambu'],
+'黑檀筷':['乌木筷','Ebony chopsticks','黒檀の箸','흑단 젓가락','Sumpit eboni'],
+'金箸':['金箸','Gold chopsticks','金の箸','금 젓가락','Sumpit emas'],
+'神之箸':['神之箸','Divine chopsticks','神の箸','신의 젓가락','Sumpit dewa'],
+'烤串爐':['烤串炉','Yakitori grill','焼き鳥コンロ','꼬치 화로','Pemanggang yakitori'],
+'天婦羅炸鍋':['天妇罗炸锅','Tempura fryer','天ぷら鍋','튀김 솥','Penggorengan tempura'],
+'壽司職人':['寿司职人','Sushi chef','寿司職人','스시 장인','Koki sushi'],
+'拉麵屋台':['拉面屋台','Ramen stall','ラーメン屋台','라멘 포장마차','Kedai ramen'],
+'鐵板燒師傅':['铁板烧师傅','Teppanyaki master','鉄板焼きの達人','철판구이 장인','Master teppanyaki'],
+'鰻魚專門店':['鳗鱼专门店','Eel specialty shop','うなぎ専門店','장어 전문점','Toko belut'],
+'居酒屋分店':['居酒屋分店','Izakaya branch','居酒屋の支店','이자카야 분점','Cabang izakaya'],
+'米其林餐廳':['米其林餐厅','Michelin restaurant','ミシュランの店','미슐랭 레스토랑','Restoran Michelin'],
+'傳說':['传说','Legendary','伝説','전설','Legendaris'],
+'普通':['普通','Common','ノーマル','일반','Biasa'],
+'稀有':['稀有','Rare','レア','희귀','Langka']
+};
+for(const k in D)D[k].forEach((v,i)=>{const t=I18N[L[i]]=I18N[L[i]]||{};if(!(k in t))t[k]=v});
+})();
+</script>
 </body>
 </html>
