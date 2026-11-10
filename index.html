@@ -6920,7 +6920,7 @@ function coTick(){const S=CO.S;if(!S||S.over||!coHost())return;const now=Date.no
   let ch=false;
   S.cu.forEach((c,i)=>{if(!c||c.dirty)return;
     if(c.e){if(now-c.e>=CO_EAT){S.cu[i]={dirty:1};ch=true}return}
-    if(now>c.d){S.cu[i]=null;S.hearts--;coFx('*','😡 客人氣跑了！命 -1');ch=true}});
+    if(now>c.d){if(S.bot&&S.hk==='f'&&S.ol)c.o.forEach((k,n)=>{if(!c.s[n]&&CO_FOOD[k]&&S.ol[k]>0){if(--S.ol[k]<=0)delete S.ol[k]}});S.cu[i]=null;S.hearts--;coFx('*','😡 客人氣跑了！命 -1');ch=true}});
   {const wt=S.cu.filter(c=>c&&!c.dirty&&!c.e),pend=wt.reduce((n,c)=>n+c.s.filter(v=>!v).length,0);
    if(!wt.length&&S.nx-now>2500)S.nx=now+2500;
    if(now>=S.nx){const prog=Math.min(1,(now-S.t0)/S.dur);
@@ -6930,7 +6930,10 @@ function coTick(){const S=CO.S;if(!S||S.over||!coHost())return;const now=Date.no
   if(S.hearts<=0){coEnd('hearts');return}
   if(ch)coDirty();coPaint()}
 /* 點單數不會超過客人真的還在等的份數（客人氣跑、送完了就自動少掉），廚房跟電腦就不會多做 */
-function coOlFix(S){const o=S.ol;if(!o)return false;const p=coBotPend(S);let ch=false;
+function coOlFix(S){const o=S.ol;if(!o)return false;
+  /* 2026-11-11 跟電腦廚房搭檔時，玩家點什麼電腦就做什麼（亂點就亂做），點單不再被裁成客人真的在等的份數；客人氣跑時另外扣掉他沒吃到的那幾份 */
+  if(S.bot&&S.hk==='f')return false;
+  const p=coBotPend(S);let ch=false;
   Object.keys(o).forEach(k=>{const n=Math.min(o[k],p[k]||0);if(n!==o[k]){ch=true;if(n>0)o[k]=n;else delete o[k]}});return ch}
 function coEnd(why){const S=CO.S;if(!S||S.over)return;S.over=1;S.why=why;S.endAt=Date.now();clearInterval(CO.tickT);CO.tickT=null;coPush();coPaint()}
 function coDirty(){if(!coHost()||CO.snapT)return;CO.snapT=setTimeout(()=>{CO.snapT=null;coPush()},90)}
@@ -6978,7 +6981,7 @@ function coBotTick(){const S=CO.S,b=CO.bot;if(!S||!b||S.over)return;const now=Da
   coApply(bot,cmd);coDirty();coPaint()}
 /* 廚房電腦 */
 function coBotK(S,now){const H=S.hd.k,sts=Object.keys(CO_ST),p=coBotPend(S),ol=S.ol||{};
-  const need={};Object.keys(CO_FOOD).forEach(k=>{need[k]=p[k]||0});
+  const need={};Object.keys(CO_FOOD).forEach(k=>{need[k]=Math.max(p[k]||0,ol[k]||0)});/* 點單上寫幾份就做幾份，即使客人其實沒點 */
   const have={},ready={};const add=k=>{have[k]=(have[k]||0)+1},rdy=k=>{ready[k]=(ready[k]||0)+1};
   sts.forEach(st=>coArr(S,st).forEach(v=>{if(v&&coSlot(v,now)!=='burnt')add(v.k)}));S.wm.forEach(v=>{if(v){add(v.k);rdy(v.k)}});
   if(S.hd.f&&CO_FOOD[S.hd.f.k]){add(S.hd.f.k);rdy(S.hd.f.k)}if(H&&H.s!=='burnt')add(H.k);
