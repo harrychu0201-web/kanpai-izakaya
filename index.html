@@ -5191,15 +5191,27 @@ function loop(now){
 }
 const TOUCH=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;
 function goFS(){if(!TOUCH||IOS||document.fullscreenElement||document.webkitFullscreenElement)return;
-  /* installed app whose manifest is already display:fullscreen: the window is immersive from launch, so asking the page to go fullscreen again only flashes the "now full screen" toast and re-lays-out the screen (the blink right after opening) */
-  try{if(matchMedia('(display-mode: fullscreen)').matches)return}catch(x){}
+  /* manifest display:"fullscreen" only stops Chrome drawing its own address bar — it does NOT hide the Android status bar or nav bar by itself (confirmed on device: both stayed visible on launch from an installed icon). Only the real Fullscreen API actually hides them, so always call it on first touch instead of skipping when display-mode already reports fullscreen. */
   const e=document.documentElement,f=e.requestFullscreen||e.webkitRequestFullscreen;if(!f)return;try{const p=f.call(e,{navigationUI:'hide'});if(p&&p.then)p.then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(x){}}).catch(()=>{})}catch(x){}}
 const IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),STANDALONE=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 function iosTip(){const w=$('modalLayer');const was=R&&R.paused;if(R)R.paused=true;modal(`<h2>${T('iPhone 要這樣全螢幕')}</h2><p>${T('iPhone 的 Safari 不支援網頁全螢幕，但可以把遊戲加到主畫面，之後從桌面圖示打開就會是全螢幕，跟 App 一樣。')}</p><div class="how"><div class="how-row"><div><b>1.</b> ${T('點 Safari 下方（或上方）的<b>分享</b>按鈕（方框加向上箭頭）')}</div></div><div class="how-row"><div><b>2.</b> ${T('往下滑，選<b>「加入主畫面」</b>')}</div></div><div class="how-row"><div><b>3.</b> ${T('回到手機桌面，點「乾杯！居酒屋」圖示開始玩')}</div></div></div><div class="btns"><button class="btn" data-act="iostipok">${T('知道了')}</button></div>`);IOSTIPR=!was}
 let IOSTIPR=false;
-if(TOUCH&&!IOS){let fsTry=0;document.addEventListener('pointerup',function f(){goFS();if(document.fullscreenElement||document.webkitFullscreenElement||++fsTry>=2)document.removeEventListener('pointerup',f)})}
+let fsArmed=false;
+function armFSRetry(){
+  /* 原本只在遊戲一開始嘗試 1~2 次重新全螢幕，之後就永久拔掉監聽；
+     玩家從螢幕邊緣滑出系統列/導覽列時，Android 會直接把全螢幕模式關掉，
+     之前完全沒有機制再把它叫回來，畫面就一直卡在被系統列擠壓的狀態。
+     現在只要偵測到全螢幕被關掉，就重新武裝這個監聽，玩家下一下點擊就會自動補叫一次全螢幕。 */
+  if(!TOUCH||IOS||fsArmed)return;
+  fsArmed=true;let fsTry=0;
+  document.addEventListener('pointerup',function f(){
+    goFS();
+    if(document.fullscreenElement||document.webkitFullscreenElement||++fsTry>=2){document.removeEventListener('pointerup',f);fsArmed=false}
+  });
+}
+armFSRetry();
 if(TOUCH)document.body.classList.add('lite');
-['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>refitBurst()));window.addEventListener('orientationchange',()=>refitBurst());
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{refitBurst();if(!document.fullscreenElement&&!document.webkitFullscreenElement)armFSRetry()}));window.addEventListener('orientationchange',()=>refitBurst());
 /* ===== 統一縮放閘門（抗網址列震盪）：window / visualViewport 的 resize 都走這裡 ===== */
 let gateRAF=null,settleTimeout=null,lastGateWidth=window.innerWidth,lastGateHeight=window.innerHeight;
 function fitGate(){
