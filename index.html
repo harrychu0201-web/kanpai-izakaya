@@ -743,7 +743,7 @@ function stepDef(g){return g&&STEPS[g.kind]}
 function needStep(g){const d=stepDef(g);return !!d&&(g.s||0)<d.t.length&&g.t>=d.t[g.s||0]&&cookState(g.t,g.kind)==='raw'}
 function stepLbl(g){return STEPS[g.kind].lbl[g.s||0]}
 const TKFLIP=4,TKGRACE=7,TKW=86,TKAUTO=2.5; // TKAUTO: 阿健 (Lv2+) flips a takoyaki this many seconds after it asks, if you haven't // takoyaki: must be flipped once after TKFLIP s of cooking, within TKGRACE s, or one side burns
-const STN={buta:'teppan',gyu:'teppan',ika:'teppan',hotate:'teppan',ebiten:'tempura',kakifry:'tempura',gyoza:'rmpan',friedrice:'rmpan',koro:'rfry',tori:'rfry',katsu:'rfry',taiyaki:'tyaki',miso:'lamen',chashurice:'lamen',dandan:'lamen',tsukemen:'tsk',takoyaki:'tako',tamagoyaki:'tama',yakionigiri:'onig',tamagonigiri:'maki',salmonnigiri:'maki',tunanigiri:'maki',ikanigiri:'maki',tainigiri:'maki',ebinigiri:'maki',negitorogunkan:'maki',ikuragunkan:'maki',unigunkan:'maki',kappamaki:'maki',tekkamaki:'maki',salmonmaki:'maki',salmontemaki:'maki',tunatemaki:'maki',ikuratemaki:'maki',karaagenigiri:'maki',aburisalmonnigiri:'maki',aburitunanigiri:'maki',aburitainigiri:'maki',aburiebinigiri:'maki',salmonsashimi:'maki',tunasashimi:'maki',taisashimi:'maki',mixsashimi:'maki',cucumbersalad:'maki',salmonsalad:'maki',tunasalad:'maki',ebisalad:'maki',vanillaice:'maki',daifuku:'maki',dango:'maki'};
+const STN={buta:'teppan',gyu:'teppan',ika:'teppan',hotate:'teppan',ebiten:'tempura',kakifry:'tempura',gyoza:'rmpan',friedrice:'rmpan',koro:'rfry',tori:'rfry',katsu:'rfry',taiyaki:'tyaki',miso:'lamen',chashurice:'lamen',dandan:'lamen',tsukemen:'tsk',takoyaki:'tako',tamagoyaki:'tama',yakionigiri:'onig',tamagonigiri:'maki',salmonnigiri:'maki',tunanigiri:'maki',ikanigiri:'maki',tainigiri:'maki',ebinigiri:'maki',negitorogunkan:'maki',ikuragunkan:'maki',unigunkan:'maki',kappamaki:'maki',tekkamaki:'maki',salmonmaki:'maki',salmontemaki:'maki',tunatemaki:'maki',ikuratemaki:'maki',karaagenigiri:'maki',aburisalmonnigiri:'maki',aburitunanigiri:'maki',aburitainigiri:'maki',aburiebinigiri:'maki',salmonsashimi:'sal',tunasashimi:'sal',taisashimi:'sal',mixsashimi:'sal',cucumbersalad:'sal',salmonsalad:'sal',tunasalad:'sal',ebisalad:'sal',vanillaice:'maki',daifuku:'maki',dango:'maki'};
 const RAWMAP={rawButa:'buta',rawGyu:'gyu',rawIka:'ika',rawHotate:'hotate',rawEbi:'ebiten',rawKaki:'kakifry',rawGyoza:'gyoza',rawRice:'friedrice',rawKoro:'koro',rawTori:'tori',rawKatsu:'katsu',rawTai:'taiyaki',rawTako:'takoyaki',rawTama:'tamagoyaki',rawOnig:'yakionigiri',rawMiso:'miso',rawTan:'dandan',rawTsuke:'tsukemen'};
 const INSTANT=['sake','edamame','highball','hiyayakko','lsour','ramune','oolong','cola','menma','kyuri','goma','tsukemono','umeshu','reishu'];
 /* 海風壽司的甜點（冰淇淋、麻糬、糰子）不用放上壽司台：點食材盤的那一格直接拿在手上，點客人才送出並付食材錢（跟飲料、毛豆一樣） */
@@ -753,8 +753,8 @@ function instKey(h){return h?SU_DIRECT[h.src]||(INSTANT.includes(h.src)?h.src:nu
 function has(k){return !!(ST&&ST.menu&&ST.menu[k])}
 function teppanOn(){return ['buta','gyu','ika','hotate'].some(has)}
 function tempuraOn(){return ['ebiten','kakifry'].some(has)}
-function page2On(){return CUR==='sushi'?SUKEYS2.some(has):CUR==='tep'||CUR==='oko'?false:CUR==='rm'?rmK2():NEWD.some(has)}
-function page3On(){if(CUR==='rm')return lamenOn()||tskOn()||has('oolong')||has('cola')||has('menma')||has('kyuri');return CUR!=='sushi'&&CUR!=='tep'&&CUR!=='oko'&&NEWD3.some(has)}
+function page2On(){return CUR==='sushi'?SUKEYS2.some(k=>!SU_SALK.includes(k)&&!SU_SWEET.includes(k)&&has(k)):CUR==='tep'||CUR==='oko'?false:CUR==='rm'?rmK2():NEWD.some(has)}
+function page3On(){if(CUR==='sushi')return SU_SALK.concat(SU_SWEET).some(has);if(CUR==='rm')return lamenOn()||tskOn()||has('oolong')||has('cola')||has('menma')||has('kyuri');return CUR!=='sushi'&&CUR!=='tep'&&CUR!=='oko'&&NEWD3.some(has)}
 function pages(){const a=[1];if(page2On())a.push(2);if(page3On())a.push(3);return a}
 function nextPage(){const a=pages();return a[(a.indexOf(KP)+1)%a.length]}
 /* bonus add-on order (加碼點單): some customers also want ONE extra dish from the menu, whether or not you own it yet.
@@ -808,17 +808,17 @@ const HOW={
   aburitunanigiri:'先放<b>壽司飯</b>，疊上<b>魚片</b>，最後點<b>噴槍</b>炙燒一下（噴槍放最後）。食材在食材盤的<b>第 2 頁</b>。',
   aburitainigiri:'先放<b>壽司飯</b>，疊上<b>魚片</b>，最後點<b>噴槍</b>炙燒一下（噴槍放最後）。食材在食材盤的<b>第 2 頁</b>。',
   aburiebinigiri:'先放<b>壽司飯</b>，疊上<b>魚片</b>，最後點<b>噴槍</b>炙燒一下（噴槍放最後）。食材在食材盤的<b>第 2 頁</b>。',
-  salmonsashimi:'先放<b>生菜</b>墊底，再連點兩片<b>同一種魚片</b>，做成生魚片。食材在食材盤的<b>第 2 頁</b>。',
-  tunasashimi:'先放<b>生菜</b>墊底，再連點兩片<b>同一種魚片</b>，做成生魚片。食材在食材盤的<b>第 2 頁</b>。',
-  taisashimi:'先放<b>生菜</b>墊底，再連點兩片<b>同一種魚片</b>，做成生魚片。食材在食材盤的<b>第 2 頁</b>。',
-  mixsashimi:'先放<b>生菜</b>墊底，再依序點<b>鮭魚、鮪魚、鯛魚</b>各一片，做成拼盤。食材在食材盤的<b>第 2 頁</b>。',
-  cucumbersalad:'先放<b>生菜</b>墊底，再點一份<b>配料</b>。食材在食材盤的<b>第 2 頁</b>。',
-  salmonsalad:'先放<b>生菜</b>墊底，再點一份<b>配料</b>。食材在食材盤的<b>第 2 頁</b>。',
-  tunasalad:'先放<b>生菜</b>墊底，再點一份<b>配料</b>。食材在食材盤的<b>第 2 頁</b>。',
-  ebisalad:'先放<b>生菜</b>墊底，再點一份<b>配料</b>。食材在食材盤的<b>第 2 頁</b>。',
-  vanillaice:'點一下<b>冰淇淋</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。',
-  daifuku:'點一下<b>麻糬</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。',
-  dango:'點一下<b>糰子</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。',
+  salmonsashimi:'到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再連點兩片<b>同一種魚片</b>，做成生魚片。',
+  tunasashimi:'到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再連點兩片<b>同一種魚片</b>，做成生魚片。',
+  taisashimi:'到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再連點兩片<b>同一種魚片</b>，做成生魚片。',
+  mixsashimi:'到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再依序點<b>鮭魚、鮪魚、鯛魚</b>各一片，做成拼盤。',
+  cucumbersalad:'到<b>第 3 頁</b>：先點<b>碗</b>放上<b>沙拉檯</b>，再點<b>生菜</b>，最後放上<b>配料</b>，做成沙拉。',
+  salmonsalad:'到<b>第 3 頁</b>：先點<b>碗</b>放上<b>沙拉檯</b>，再點<b>生菜</b>，最後放上<b>配料</b>，做成沙拉。',
+  tunasalad:'到<b>第 3 頁</b>：先點<b>碗</b>放上<b>沙拉檯</b>，再點<b>生菜</b>，最後放上<b>配料</b>，做成沙拉。',
+  ebisalad:'到<b>第 3 頁</b>：先點<b>碗</b>放上<b>沙拉檯</b>，再點<b>生菜</b>，最後放上<b>配料</b>，做成沙拉。',
+  vanillaice:'到<b>第 3 頁</b>點一下<b>冰淇淋</b>拿起來，不用放上任何檯面，直接點客人就送出。',
+  daifuku:'到<b>第 3 頁</b>點一下<b>麻糬</b>拿起來，不用放上任何檯面，直接點客人就送出。',
+  dango:'到<b>第 3 頁</b>點一下<b>糰子</b>拿起來，不用放上任何檯面，直接點客人就送出。',
   beer:'<b>生啤機</b>會自動裝杯，滿了點一下拿起來，再點客人送上。',
   edamame:'點<b>毛豆</b>拿一盤，再點客人。',
   negima:'點<b>蔥雞肉生串</b>放上燒烤台。烤成金黃色就點起來送給客人，放太久會烤焦。',
@@ -1827,12 +1827,17 @@ function rmStHTML(name){
 /* ===== 海風壽司 (phase 1): 捲壽司台 + 壽司職人・健太郎 ===== */
 const SUKEYS2=['karaagenigiri','aburisalmonnigiri','aburitunanigiri','aburitainigiri','aburiebinigiri','salmonsashimi','tunasashimi','taisashimi','mixsashimi','cucumbersalad','salmonsalad','tunasalad','ebisalad','vanillaice','daifuku','dango'];
 const SUKEYS=['tamagonigiri','salmonnigiri','tunanigiri','ikanigiri','tainigiri','ebinigiri','negitorogunkan','ikuragunkan','unigunkan','kappamaki','tekkamaki','salmonmaki','salmontemaki','tunatemaki','ikuratemaki'].concat(SUKEYS2);
+const SU_SALK=['salmonsashimi','tunasashimi','taisashimi','mixsashimi','cucumbersalad','salmonsalad','tunasalad','ebisalad']; /* 沙拉檯（第 3 頁）做的菜：沙拉用碗、生魚片用盤子，跟壽司檯分開，格子也不互相佔用 */
+const SU_SWEET=['vanillaice','daifuku','dango']; /* 甜點：點食材拿在手上直接送客人，不放上任何檯面；店員（Lv2 以上）也是直接送 */
+const SU_SWEETTRAY={vanillaice:'rawSIce',daifuku:'rawSMochi',dango:'rawSDango'};
+const SU_SALN=4;
+function suStn(k){return SU_SALK.includes(k)?'sal':'maki'}
 const SU_STAFF={zh:'壽司職人・健太郎',lv:[
   {cost:60000,wage:900,d:'能做：有訂單時，會從空格開始疊，或接續你已經開始的壽司，幫你疊完（食材錢照付）。沒有訂單就不會動手，也不會送餐。你剛碰過的格子，他會讓開六秒。普通速度下大約每 1 秒動一次；店員認真度調高會更快，讓開的時間也會縮短。'},
   {cost:110000,wage:1400,d:'能做：上一級的全部，加上把做好的壽司送給等待中的客人（先來的先送）。普通速度下大約每 0.5 秒動一次，送餐時剛碰過的壽司只讓開 0.8 秒。'},
   {cost:180000,wage:2000,d:'能做：上一級的全部，動作最快，普通速度下大約每 0.35 秒動一次。'}]};
 const SU_MAKI5_COST=40000;
-function makiN(){const n=(ST&&ST.sushi&&ST.sushi.up&&ST.sushi.up.maki)?5:4;SU_LAND.maki.w=SU_PORT.maki.w=n===5?362:290;if(R&&R.maki)while(R.maki.length<n)R.maki.push(null);return n}
+function makiN(){const n=(ST&&ST.sushi&&ST.sushi.up&&ST.sushi.up.maki)?5:4;SU_LAND.maki.w=SU_PORT.maki.w=n===5?362:290;if(R&&R.maki)while(R.maki.length<n)R.maki.push(null);if(R&&!R.sal)R.sal=new Array(SU_SALN).fill(null);return n}
 function suUp(k,d){const S=ST||load();return (S&&S.sushi&&S.sushi.up&&S.sushi.up[k])||d}
 function suNv(){const S=ST||load();return !!(S&&S.sushi&&S.sushi.nv)} /* nv=2026/11/09 之後開的海風壽司：店員、保溫台都要另外買；舊存檔沒有這個旗標，維持原本的免費 Lv1 健太郎和共用保溫台，不收回已經拿到的東西 */
 function suStaffLv(){return noStaff()?0:suNv()?suUp('staff',0):Math.max(1,suUp('staff',0))}
@@ -1944,12 +1949,14 @@ function suSashimiG(list){
   return plate+daikon+shiso+list.map((id,i)=>suSlabG(id,x0+i*17,48+(i%2)*2,-6+i*3)).join('')+wasabi;
 }
 /* 沙拉：白碗裡堆生菜，上面放一份配料（top 不是已知配料就只有生菜） */
-function suSaladG(top){
+function suSaladG(top,stage){ /* stage: 'empty' 只有碗；'lettuce' 碗＋生菜；沒給＝完成的沙拉 */
   const bowl='M10 52Q12 88 50 90Q88 88 90 52Z',leaf=(d,c)=>`<path d="${d}" fill="${c}" stroke="${O}" stroke-width="2.4" stroke-linejoin="round"/>`;
   const cube=(x,y,c,h)=>`<g transform="rotate(${(x*7)%30-15} ${x} ${y})"><rect x="${x-7}" y="${y-6}" width="14" height="12" rx="3" fill="${c}" stroke="${O}" stroke-width="2.2"/><path d="M${x-5} ${y-3}h6" stroke="${h}" stroke-width="2" stroke-linecap="round" opacity=".75"/></g>`;
   let s=`<ellipse cx="50" cy="91" rx="34" ry="5" fill="${O}" opacity=".22"/><path d="${bowl}" transform="translate(2 3)" fill="${O}" opacity=".28"/><path d="${bowl}" fill="#f4f7fa" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M18 62Q22 82 46 86" stroke="#cfd9e3" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="52" rx="40" ry="9" fill="#e9eff4" stroke="${O}" stroke-width="3"/>`;
+  if(stage==='empty')return s;
   s+=leaf('M12 52Q4 36 18 28Q30 22 38 34Q44 46 40 54Z','#6cc04a')+leaf('M60 54Q56 40 66 30Q82 24 92 38Q96 50 88 54Z','#8ad45e')+leaf('M28 54Q26 34 42 26Q60 22 70 36Q74 48 68 54Z','#a4e070');
   s+=`<path d="M40 50Q46 38 54 30M52 50Q58 40 66 34" stroke="#d6f5ad" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
+  if(stage==='lettuce')return s;
   if(top==='cucumber')s+=[[36,42],[52,36],[66,43]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="8.5" fill="#b9e08a" stroke="${O}" stroke-width="2.4"/><circle cx="${x}" cy="${y}" r="4.6" fill="#e6f6c8"/><circle cx="${x-1}" cy="${y}" r="1.2" fill="#8fbf5a"/>`).join('');
   else if(top==='salmon')s+=cube(36,42,'#f68a4c','#ffd9bd')+cube(52,36,'#f79a5e','#ffe3cc')+cube(66,43,'#f68a4c','#ffd9bd');
   else if(top==='tuna')s+=cube(36,42,'#b4213a','#e06a78')+cube(52,36,'#c42c46','#ec7e8b')+cube(66,43,'#b4213a','#e06a78');
@@ -1995,7 +2002,8 @@ function suAsmG(parts){
   const q=parts.join();
   if(q==='rice')return riceG();
   if(q==='nori')return suNoriSheet();
-  if(parts[0]==='lettuce'){const fs=parts.slice(1).filter(x=>SU_FISH[x]);return fs.length>=2?suSashimiG(fs):suSaladG(parts[1])}
+  if(parts[0]==='bowl')return suSaladG(parts[2],parts.length<2?'empty':parts.length<3?'lettuce':undefined); /* 沙拉：碗 → 生菜 → 配料，一步一步長出來 */
+  if(parts[0]==='plate')return suSashimiG(parts.slice(1).filter(x=>SU_FISH[x])); /* 生魚片：盤子 → 魚片，一片一片排上去 */
   if(q==='nori,rice')return suNoriSheet()+`<rect x="22" y="42" width="56" height="34" rx="7" fill="#fcf8ee"/>`+suGrains([[30,50],[42,48],[54,50],[66,48],[72,58],[60,62],[46,60],[34,64],[50,70],[68,70]]);
   if(q==='rice,nori')return suGunkanBase();
   if(parts[0]==='rice'&&parts.length===2){const t=parts[1];return riceG()+(SU_FISH[t]?suTopG(t):t==='karaage'?suKaraageTopG():t==='tamago'?suTamagoG():`<g transform="translate(0 -6)">${suBlobG(t)}</g>`)}
@@ -2018,7 +2026,7 @@ function suPieces(kind){
 const SU_REC={tamagonigiri:['rice','tamago'],salmonnigiri:['rice','salmon'],tunanigiri:['rice','tuna'],ikanigiri:['rice','ika'],tainigiri:['rice','tai'],ebinigiri:['rice','ebi'],
   negitorogunkan:['rice','nori','negitoro'],ikuragunkan:['rice','nori','ikura'],unigunkan:['rice','nori','uni'],
   kappamaki:['nori','rice','cucumber'],tekkamaki:['nori','rice','tuna'],salmonmaki:['nori','rice','salmon'],
-  salmontemaki:['rice','salmon','nori'],tunatemaki:['rice','tuna','nori'],ikuratemaki:['rice','ikura','nori'],karaagenigiri:['rice','karaage'],aburisalmonnigiri:['rice','salmon','torch'],aburitunanigiri:['rice','tuna','torch'],aburitainigiri:['rice','tai','torch'],aburiebinigiri:['rice','ebi','torch'],salmonsashimi:['lettuce','salmon','salmon'],tunasashimi:['lettuce','tuna','tuna'],taisashimi:['lettuce','tai','tai'],mixsashimi:['lettuce','salmon','tuna','tai'],cucumbersalad:['lettuce','cucumber'],salmonsalad:['lettuce','salmon'],tunasalad:['lettuce','tuna'],ebisalad:['lettuce','ebi'],vanillaice:['icecream'],daifuku:['mochi'],dango:['dango']};
+  salmontemaki:['rice','salmon','nori'],tunatemaki:['rice','tuna','nori'],ikuratemaki:['rice','ikura','nori'],karaagenigiri:['rice','karaage'],aburisalmonnigiri:['rice','salmon','torch'],aburitunanigiri:['rice','tuna','torch'],aburitainigiri:['rice','tai','torch'],aburiebinigiri:['rice','ebi','torch'],salmonsashimi:['plate','salmon','salmon'],tunasashimi:['plate','tuna','tuna'],taisashimi:['plate','tai','tai'],mixsashimi:['plate','salmon','tuna','tai'],cucumbersalad:['bowl','lettuce','cucumber'],salmonsalad:['bowl','lettuce','salmon'],tunasalad:['bowl','lettuce','tuna'],ebisalad:['bowl','lettuce','ebi'],vanillaice:['icecream'],daifuku:['mochi'],dango:['dango']};
 /* 順序表：從 SU_REC 直接產生，和實際判定用的是同一份，不會跟遊戲對不上 */
 let SUORDPAUSE=false;
 function suOrdHTML(){return `<button class="ordst" data-act="suorder" aria-label="${T('壽司順序提示')}" style="position:absolute;inset:0;width:100%;height:100%;padding:2px 4px;border:3px solid #5a3420;border-radius:10px;background:#1a0e08;color:#f3dfb4;font:900 13px/1.15 system-ui,-apple-system,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 3px 0 #0006"><span style="font-size:18px;line-height:1">📋</span><span>${T('順序提示')}</span></button>`}
@@ -2034,28 +2042,37 @@ function suOrderModal(){
   modal(`<button data-act="suordx" aria-label="${T('關閉')}" style="position:sticky;top:0;align-self:flex-end;margin:-12px -12px -26px 0;z-index:2;width:38px;height:38px;border-radius:50%;border:3px solid #5a3420;background:#fcf8ee;color:#2a1608;font:900 18px/1 system-ui,sans-serif;cursor:pointer;padding:0">✕</button><h2>📋 ${T('壽司順序表')}</h2>${rows}<div class="btns"><button class="btn" data-act="suordx">${T('關閉')}</button></div>`);
 }
 const SU_TRAY1={rawSRice:'rice',rawSNori:'nori',rawNTama:'tamago',rawNSal:'salmon',rawNTuna:'tuna',rawNIka:'ika',rawNTai:'tai',rawNEbi:'ebi',rawNIkura:'ikura',rawNUni:'uni',rawNNegi:'negitoro',rawNKappa:'cucumber'};
-const SU_TRAY2={rawSRice2:'rice',rawNSal2:'salmon',rawNTuna2:'tuna',rawNTai2:'tai',rawNEbi2:'ebi',rawNKappa2:'cucumber',rawSLet:'lettuce',rawSKara:'karaage',rawSTorch:'torch',rawSIce:'icecream',rawSMochi:'mochi',rawSDango:'dango'};
-const SU_TRAY=Object.assign({},SU_TRAY1,SU_TRAY2); /* 第 2 頁食材盤：重複放一份常用的飯和魚片，做炙燒、沙拉、生魚片時不用來回翻頁 */
-const SU_PNAME={rice:'壽司飯',nori:'海苔',tamago:'玉子',salmon:'鮭魚',tuna:'鮪魚',ika:'烏賊',tai:'鯛魚',ebi:'甜蝦',ikura:'鮭魚卵',uni:'海膽',negitoro:'蔥鮪泥',cucumber:'小黃瓜',karaage:'唐揚雞塊',lettuce:'生菜',torch:'噴槍',icecream:'冰淇淋',mochi:'麻糬',dango:'糰子'};
-function suRecs(){return SUKEYS.filter(has)}
-function suFits(parts,id){const q=parts.concat(id);return suRecs().some(k=>{const r=SU_REC[k];return q.length<=r.length&&q.every((p,j)=>r[j]===p)})}
-function suResult(parts){const q=parts.join();return suRecs().find(k=>SU_REC[k].join()===q)||null}
+const SU_TRAY2={rawSRice2:'rice',rawNSal2:'salmon',rawNTuna2:'tuna',rawNTai2:'tai',rawNEbi2:'ebi',rawSKara:'karaage',rawSTorch:'torch'}; /* 第 2 頁：炙燒、唐揚（用壽司檯）：重複放一份常用的飯和魚片，不用來回翻頁 */
+const SU_TRAY3={rawLBowl:'bowl',rawLPlate:'plate',rawLLet:'lettuce',rawLKappa:'cucumber',rawLSal:'salmon',rawLTuna:'tuna',rawLTai:'tai',rawLEbi:'ebi',rawSIce:'icecream',rawSMochi:'mochi',rawSDango:'dango'}; /* 第 3 頁：沙拉檯（沙拉、生魚片）和直接送的甜點 */
+const SU_TRAY=Object.assign({},SU_TRAY1,SU_TRAY2,SU_TRAY3);
+const SU_TRAYSTN=Object.fromEntries(Object.keys(SU_TRAY1).concat(Object.keys(SU_TRAY2)).map(k=>[k,'maki']).concat(Object.keys(SU_TRAY3).map(k=>[k,'sal'])));
+const SU_PNAME={rice:'壽司飯',nori:'海苔',tamago:'玉子',salmon:'鮭魚',tuna:'鮪魚',ika:'烏賊',tai:'鯛魚',ebi:'甜蝦',ikura:'鮭魚卵',uni:'海膽',negitoro:'蔥鮪泥',cucumber:'小黃瓜',karaage:'唐揚雞塊',lettuce:'生菜',torch:'噴槍',icecream:'冰淇淋',mochi:'麻糬',dango:'糰子',bowl:'碗',plate:'盤子'};
+/* 壽司檯（maki）和沙拉檯（sal）各有自己的格子、自己的做法；甜點不經過任何檯面 */
+function suArr(stn){return stn==='sal'?R.sal:R.maki}
+function suCap(stn){return stn==='sal'?SU_SALN:makiN()}
+function suRecs(stn){return SUKEYS.filter(k=>has(k)&&!SU_SWEET.includes(k)&&(!stn||suStn(k)===stn))}
+function suFits(parts,id,stn){const q=parts.concat(id);return suRecs(stn).some(k=>{const r=SU_REC[k];return q.length<=r.length&&q.every((p,j)=>r[j]===p)})}
+function suResult(parts,stn){const q=parts.join();return suRecs(stn).find(k=>SU_REC[k].join()===q)||null}
 function suTrayOpen(id){return SUKEYS.some(k=>has(k)&&SU_REC[k].includes(id))}
-function suAdd(id,el){
-  const eFree=R.maki.findIndex((g,j)=>!g&&j<makiN());
+function suSlotHeld(stn,j){return !!(R.held&&R.held.src===stn&&R.held.i===j)}
+function suWrongFirst(id,stn){
+  if(stn==='sal')return '沙拉檯要先放碗（做沙拉）或盤子（做生魚片）';
+  return id==='torch'?'噴槍要最後再用，先把壽司做好':id==='rice'||id==='nori'?'這樣組不起來，換個順序試試':'先放壽司飯或海苔'}
+function suAdd(id,el,stn){
+  stn=stn||'maki';const arr=suArr(stn),cap=suCap(stn);
   /* 手捲的作法是「飯→配料→海苔」，飯和配料疊完時會先被判成握壽司，所以海苔要能接在做好的握壽司上面變手捲（SU_REC 裡的順序才對得上）。
-     優先順序：先接在做到一半的壽司上 → 再接在剛做好、且海苔能接上的握壽司上 → 最後才開新格 */
-  let i=-1;R.maki.forEach((g,j)=>{if(!g||j>=makiN()||!suFits(g.parts,id))return;const a=R.maki[i];if(i<0||(g.kind==='asm'&&a.kind!=='asm')||((g.kind==='asm')===(a.kind==='asm')&&(g.at||0)>(a.at||0)))i=j}); /* 先接在還沒做完的格子，其中選最近動過的；做好的握壽司最後才輪到（再蓋海苔變手卷） */
-  if(i<0){const e=R.maki.findIndex((g,j)=>!g&&j<makiN());
+     優先順序：先接在做到一半的格子上 → 再接在剛做好、且這樣放得上去的握壽司上 → 最後才開新格 */
+  let i=-1;arr.forEach((g,j)=>{if(!g||j>=cap||!suFits(g.parts,id,stn))return;const a=arr[i];if(i<0||(g.kind==='asm'&&a.kind!=='asm')||((g.kind==='asm')===(a.kind==='asm')&&(g.at||0)>(a.at||0)))i=j}); /* 先接在還沒做完的格子，其中選最近動過的；做好的握壽司最後才輪到（再蓋海苔變手卷） */
+  if(i<0){const e=arr.findIndex((g,j)=>!g&&j<cap);
     if(!suTrayOpen(id)){nope(el);toast('先到商店買下用得到它的菜');return}
-    if(!suFits([],id)){nope(el);toast(id==='torch'?'噴槍要最後再用，先把壽司做好':id==='rice'||id==='nori'||id==='lettuce'?'這樣組不起來，換個順序試試':SUKEYS2.some(has)?'先放壽司飯、海苔或生菜':'先放壽司飯或海苔');return}
-    if(e<0){nope(el);toast('壽司台滿了');return}
-    i=e;R.maki[i]={kind:'asm',parts:[],t:0}}
-  const g=R.maki[i],parts=g.parts.concat(id),res=suResult(parts),old=g.kind!=='asm'?costOf(g.kind):0,pay=res?Math.max(0,costOf(res)-old):0;
-  if(pay&&!canPay(pay)){if(!g.parts.length)R.maki[i]=null;return}
-  if(R.held&&R.held.src==='maki'&&R.held.i===i)R.held=null;
+    if(!suFits([],id,stn)){nope(el);toast(suWrongFirst(id,stn));return}
+    if(e<0){nope(el);toast(stn==='sal'?'沙拉檯滿了':'壽司台滿了');return}
+    i=e;arr[i]={kind:'asm',parts:[],t:0}}
+  const g=arr[i],parts=g.parts.concat(id),res=suResult(parts,stn),old=g.kind!=='asm'?costOf(g.kind):0,pay=res?Math.max(0,costOf(res)-old):0;
+  if(pay&&!canPay(pay)){if(!g.parts.length)arr[i]=null;return}
+  if(suSlotHeld(stn,i))R.held=null;
   g.parts=parts;g.kind=res||'asm';g.t=0;g.at=R.t;g.staff=false;
-  if(pay){const c=srcCenter({src:'maki',i});charge(pay,c.x,c.y-50)}
+  if(pay){const c=srcCenter({src:stn,i});charge(pay,c.x,c.y-50)}
 }
 /* 甜點：點食材盤的格子就拿在手上（不佔壽司台），再點客人送出；食材錢送出時才扣，手上的可以連續送給下一位點同一道的客人 */
 function suDirect(k,el){
@@ -2073,6 +2090,8 @@ function suTrayArt(id){
   if(id==='karaage')return wood(`<g transform="translate(9 14) scale(.54)">${suKaraageTopG()}</g><g transform="translate(9 36) scale(.54)">${suKaraageTopG()}</g>`);
   if(id==='lettuce')return wood(`<path d="M14 66Q10 44 24 34Q38 28 44 40Q48 54 40 66Z" fill="#6cc04a" stroke="${O}" stroke-width="2.4" stroke-linejoin="round"/><path d="M30 68Q28 44 42 32Q58 26 66 40Q68 56 58 68Z" fill="#8ad45e" stroke="${O}" stroke-width="2.4" stroke-linejoin="round"/><path d="M22 58Q30 48 38 40M42 60Q48 48 56 40" stroke="#d6f5ad" stroke-width="2.4" fill="none" stroke-linecap="round"/>`);
   if(id==='torch')return wood(`<g transform="rotate(-35 36 46)"><rect x="12" y="38" width="30" height="18" rx="5" fill="#c2362c" stroke="${O}" stroke-width="2.4"/><path d="M16 42h18" stroke="#ff9a8a" stroke-width="2.4" stroke-linecap="round" opacity=".8"/><rect x="40" y="41" width="12" height="12" rx="2.5" fill="#b8bcc4" stroke="${O}" stroke-width="2.2"/><rect x="50" y="43" width="6" height="8" fill="#6b7078" stroke="${O}" stroke-width="2"/><path d="M56 40Q66 47 56 54Q60 47 56 40Z" fill="#ff9a2e" stroke="${O}" stroke-width="1.8" stroke-linejoin="round"/><rect x="18" y="55" width="11" height="13" rx="3" fill="#3a2a22" stroke="${O}" stroke-width="2.2"/></g>`);
+  if(id==='bowl')return wood(`<g transform="translate(9 10) scale(.54)">${suSaladG('','empty')}</g><g transform="translate(9 24) scale(.54)">${suSaladG('','empty')}</g>`);
+  if(id==='plate')return wood(`<g transform="translate(9 14) scale(.54)">${suSashimiG([])}</g><g transform="translate(9 30) scale(.54)">${suSashimiG([])}</g>`);
   if(id==='icecream')return wood(`<g transform="translate(10 17) scale(.52)">${suIceG()}</g>`);
   if(id==='mochi')return wood(`<g transform="translate(9 22) scale(.54)">${suDaifukuG()}</g>`);
   if(id==='dango')return wood(`<g transform="translate(9 18) scale(.54)">${suDangoG()}</g>`);
@@ -2092,46 +2111,56 @@ function makiHTML(){
     else inner=`<div style="opacity:.2;width:100%;height:100%">${sv(`<path d="M12 64C9 51 24 43 50 43C76 43 91 51 88 64C90 76 76 84 50 84C24 84 10 76 12 64Z" fill="none" stroke="#4a2e18" stroke-width="3" stroke-dasharray="6 5"/>`)}</div>`;
     s+=`<div class="st slot" data-mk="${i}" style="left:${x}px;top:18px;width:64px;height:146px;${done?'box-shadow:0 0 0 3px #ffc65a inset;background:#ffc65a22':''}"><div style="position:absolute;left:-6px;right:-6px;top:38px;height:76px">${inner}</div></div>`}
   return s+`<span class="lbl">${T('壽司台')}</span>`}
-function suDemand(){const d={};for(const c of R.seats){if(!c||c.st!=='wait'||!c.taken)continue; /* 只算已經入座、而且已經點餐的客人（跟本店、拉麵屋台的店員一致）：客人還在走進來、或還沒點餐時不先做，否則會對還沒點餐的單亂開工，之後又因為還沒點餐不接續，在好幾道菜之間跳來跳去、每道都做一半 */c.order.forEach((k,j)=>{if(!c.filled[j])d[k]=(d[k]||0)+1});if(c.extra&&c.extra.ok&&!c.extra.done)d[c.extra.key]=(d[c.extra.key]||0)+1}
-  R.maki.forEach(g=>{if(g&&g.kind!=='asm')d[g.kind]=(d[g.kind]||0)-1});
-  if(R.held&&SU_DIRECT[R.held.src])d[R.held.key]=(d[R.held.key]||0)-1; /* 玩家手上已經拿著甜點，健太郎不用再做同一份 */
-  R.maki.forEach(g=>{if(g&&g.kind==='asm'){const k=Object.keys(d).find(x=>d[x]>0&&SU_REC[x]&&SU_REC[x].length>g.parts.length&&g.parts.every((p,j)=>SU_REC[x][j]===p));if(k)d[k]--}});
+/* 沙拉檯（第 3 頁）：4 個位置，放碗做沙拉、放盤子做生魚片；做好的不會壞，也不會過期 */
+function salHTML(){
+  const bw=290;
+  let s=`<svg viewBox="0 0 ${bw} 182" style="position:absolute;inset:0"><rect x="2" y="8" width="${bw-4}" height="166" rx="12" fill="#4f6f82" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="${bw-20}" height="150" rx="6" fill="#dcebf2"/>${[26,44,62,80,98,116,134,152].map(y=>`<path d="M10 ${y}H${bw-10}" stroke="#bcd3df" stroke-width="2" opacity=".6"/>`).join('')}<path d="M14 20H${bw-14}" stroke="#fff" stroke-width="3" opacity=".6"/><rect x="2" y="162" width="${bw-4}" height="12" rx="5" fill="#3c5666" stroke="${O}" stroke-width="3"/></svg>`;
+  for(let i=0;i<SU_SALN;i++){const x=12+i*68,g=R.sal[i];let inner='',done=false;
+    if(g){done=g.kind!=='asm';inner=sv(done?suG(g.kind):suAsmG(g.parts))}
+    else inner=`<div style="opacity:.25;width:100%;height:100%">${sv(`<path d="M12 64C9 51 24 43 50 43C76 43 91 51 88 64C90 76 76 84 50 84C24 84 10 76 12 64Z" fill="none" stroke="#2e4a5a" stroke-width="3" stroke-dasharray="6 5"/>`)}</div>`;
+    s+=`<div class="st slot" data-sl="${i}" style="left:${x}px;top:18px;width:64px;height:146px;${done?'box-shadow:0 0 0 3px #ffc65a inset;background:#ffc65a22':''}"><div style="position:absolute;left:-6px;right:-6px;top:38px;height:76px">${inner}</div></div>`}
+  return s+`<span class="lbl">${T('沙拉檯')}</span>`}
+function suDemand(){const d={};for(const c of R.seats){if(!c||c.st!=='wait'||!c.taken)continue; /* 只算已經入座、而且已經點餐的客人（跟本店、拉麵屋台的店員一致）：客人還在走進來、或還沒點餐時不先做，否則會對還沒點餐的單亂開工，之後又因為還沒點餐不接續，在好幾道菜之間跳來跳去、每道都做一半 */c.order.forEach((k,j)=>{if(!c.filled[j]&&!SU_SWEET.includes(k))d[k]=(d[k]||0)+1});if(c.extra&&c.extra.ok&&!c.extra.done&&!SU_SWEET.includes(c.extra.key))d[c.extra.key]=(d[c.extra.key]||0)+1} /* 甜點不在檯面上做，不算進店員要做的份數 */
+  [R.maki,R.sal].forEach(arr=>arr.forEach(g=>{if(g&&g.kind!=='asm')d[g.kind]=(d[g.kind]||0)-1}));
+  [R.maki,R.sal].forEach(arr=>arr.forEach(g=>{if(g&&g.kind==='asm'){const k=Object.keys(d).find(x=>d[x]>0&&SU_REC[x]&&SU_REC[x].length>g.parts.length&&g.parts.every((p,j)=>SU_REC[x][j]===p));if(k)d[k]--}}));
   return d}
-/* 健太郎自己疊到一半的東西：客人走了以後，若剛好已經等於一道做完的菜（例如生菜＋鮭魚＝鮭魚沙拉）、而且沒有客人在等更長的做法，就直接當成那道菜用，不會再另外重做一份；
-   台面全滿、又都是沒人要的東西時，清掉他自己做的最舊那一個，不讓他卡住不動 */
+/* 健太郎自己疊到一半的東西：客人走了以後，若剛好已經等於一道做完的菜、而且沒有客人在等更長的做法，就直接當成那道菜用，不會再另外重做一份 */
 function suWantsPrefix(parts,longer){const hit=k=>k&&SU_REC[k]&&(longer?SU_REC[k].length>parts.length:SU_REC[k].length>=parts.length)&&parts.every((p,i)=>SU_REC[k][i]===p);
   return R.seats.some(c=>c&&c.st==='wait'&&c.taken&&(c.order.some((x,j)=>!c.filled[j]&&hit(x))||(c.extra&&c.extra.ok&&!c.extra.done&&hit(c.extra.key))))}
-function suSettle(){R.maki.forEach((g,i)=>{if(!g||g.kind!=='asm'||!g.staff||i>=makiN())return;const res=suResult(g.parts);if(res&&!suWantsPrefix(g.parts,true)){g.kind=res;g.t=0}})}
-function suFreeSlot(d){let best=-1,bt=-1;
-  R.maki.forEach((g,j)=>{if(!g||j>=makiN()||!g.staff||(R.held&&R.held.src==='maki'&&R.held.i===j))return;
+function suSettle(){[['maki',R.maki],['sal',R.sal]].forEach(([stn,arr])=>arr.forEach((g,i)=>{if(!g||g.kind!=='asm'||!g.staff||i>=suCap(stn))return;const res=suResult(g.parts,stn);if(res&&!suWantsPrefix(g.parts,true)){g.kind=res;g.t=0}}))}
+/* 台面滿了又有客人在等時，店員要自己清出一格。以前只有「他自己做的」格子能清，你碰過的格子永遠算你的，
+   台面被你做好又沒人要的壽司塞滿，他就整個停住不動（卡死）。現在不管是誰做的，只要放著超過讓開的時間、而且多出來沒人要，就可以清；
+   你正拿在手上、或剛碰過的格子才不動 */
+function suFreeSlot(d,stn){const arr=suArr(stn),cap=suCap(stn);let best=-1,bt=-1;
+  arr.forEach((g,j)=>{if(!g||j>=cap||suSlotHeld(stn,j)||!suIdle(g))return;
     const spare=g.kind==='asm'?!suWantsPrefix(g.parts,false):(d[g.kind]||0)<0; /* 做好的菜：台面上的份數比等餐的客人還多，才算多出來的 */
     if(spare&&g.t>bt){bt=g.t;best=j}});
-  if(best>=0){if(R.maki[best].kind!=='asm')d[R.maki[best].kind]=(d[R.maki[best].kind]||0)+1;R.maki[best]=null}
+  if(best>=0){if(arr[best].kind!=='asm')d[arr[best].kind]=(d[arr[best].kind]||0)+1;arr[best]=null}
   return best}
 function suStaffStep(dt){const l=suStaffLv();if(!l)return;const m=dilMul('sushistaff');if(!m)return;R.suT=(R.suT??1)-dt*m;if(R.suT<=0){R.suT=l>=3?.35:l>=2?.5:1;suAct(l)}}
-/* 玩家剛動過的壽司台格子，健太郎先讓開六秒，讓玩家自己接著做或端給客人，不會搶著幫忙 */
-function suIdle(g,s=6){if(g.staff)return true; /* 健太郎自己開的格子不用讓開；玩家碰過之後才會標記為非 staff，才需要等六秒 */const m=dilMul('sushistaff')||1;return R.t-(g.at||0)>s/m}
+/* 玩家剛動過的格子，健太郎先讓開六秒，讓玩家自己接著做或端給客人，不會搶著幫忙 */
+function suIdle(g,s=6){if(g.staff)return true; /* 健太郎自己動過的格子不用讓開；玩家碰過之後才會標記為非 staff，才需要等六秒 */const m=dilMul('sushistaff')||1;return R.t-(g.at||0)>s/m}
 function suAct(l){suSettle();
-  if(l>=2){const src=[];R.maki.forEach((g,i)=>{if(g&&g.kind!=='asm'&&suIdle(g,.8)&&!(R.held&&R.held.src==='maki'&&R.held.i===i))src.push({src:'maki',i,key:g.kind})});
-    for(const c of waiting()){for(let j=0;j<c.order.length;j++){if(c.filled[j])continue;const h=src.find(x=>x.key===c.order[j]);if(h&&giveTo(c,j,h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}
-      if(c.extra&&c.extra.ok&&!c.extra.done){const h=src.find(x=>x.key===c.extra.key);if(h&&giveTo(c,'x',h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}}}
-  const d=suDemand(),inProg=k=>R.maki.some(g=>g&&g.kind==='asm'&&SU_REC[k].length>g.parts.length&&g.parts.every((p,j)=>SU_REC[k][j]===p));
+  if(l>=2){const src=[];[['maki',R.maki],['sal',R.sal]].forEach(([stn,arr])=>arr.forEach((g,i)=>{if(g&&g.kind!=='asm'&&suIdle(g,.8)&&!suSlotHeld(stn,i))src.push({src:stn,i,key:g.kind})}));
+    const sweet=k=>SU_SWEET.includes(k)&&has(k)&&!(R.held&&R.held.key===k)?{src:SU_SWEETTRAY[k],key:k}:null; /* 甜點：店員直接從食材盤拿給客人（不經過檯面，不會在檯上多出一份）；你手上已經拿著同一道，就讓你送 */
+    for(const c of waiting()){for(let j=0;j<c.order.length;j++){if(c.filled[j])continue;const h=src.find(x=>x.key===c.order[j])||sweet(c.order[j]);if(h&&giveTo(c,j,h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}
+      if(c.extra&&c.extra.ok&&!c.extra.done){const h=src.find(x=>x.key===c.extra.key)||sweet(c.extra.key);if(h&&giveTo(c,'x',h,false)!==false){popup(56,176,T('健太郎上菜'));renderStations();return}}}}
+  const d=suDemand(),inProg=k=>suArr(suStn(k)).some(g=>g&&g.kind==='asm'&&SU_REC[k].length>g.parts.length&&g.parts.every((p,j)=>SU_REC[k][j]===p));
   /* 有半成品在進行中的菜也要列入，否則需求被半成品扣成 0 後就沒人去接著做（手捲卡住） */
   /* 還有等餐的客人真的要這道菜（沒被半成品扣掉的原始需求），半成品才會被接續；沒人點的半成品不再硬做完 */
   const wants=k=>R.seats.some(c=>c&&c.st==='wait'&&c.taken&&(c.order.some((x,j)=>x===k&&!c.filled[j])||(c.extra&&c.extra.ok&&!c.extra.done&&c.extra.key===k)));
-  const ks=SUKEYS.filter(k=>has(k)&&((d[k]||0)>0||(inProg(k)&&wants(k)))).sort((a,b)=>earliestNeed(a)-earliestNeed(b)||(d[b]||0)-(d[a]||0));
-  for(const k of ks){const r=SU_REC[k];let i=-1,best=-1;
-    R.maki.forEach((g,j)=>{if(g&&g.kind==='asm'&&g.parts.length<r.length&&g.parts.every((p,x)=>r[x]===p)&&g.parts.length>best&&!(R.held&&R.held.src==='maki'&&R.held.i===j)&&suIdle(g)){best=g.parts.length;i=j}});
-    /* 有訂單才動手：先接續玩家已經開始做的壽司；沒有可接的，就從空格開新的一份（只針對還沒被其他份覆蓋的訂單，d[k]<=0 代表已經有人在做或沒人點） */
-    if(i<0){if((d[k]||0)<=0)continue;let e=R.maki.findIndex((g,j)=>!g&&j<makiN());if(e<0)e=suFreeSlot(d);if(e<0)continue;i=e}
-    const base=R.maki[i]?R.maki[i].parts:[];
-    /* 只有做到這個訂單要的那一種才算完成：鮪魚手捲的前兩步（飯＋鮪魚）會被判成鮪魚握，若直接完成就會不停重做握壽司 */
+  const ks=SUKEYS.filter(k=>has(k)&&!SU_SWEET.includes(k)&&((d[k]||0)>0||(inProg(k)&&wants(k)))).sort((a,b)=>earliestNeed(a)-earliestNeed(b)||(d[b]||0)-(d[a]||0));
+  for(const k of ks){const stn=suStn(k),arr=suArr(stn),cap=suCap(stn),r=SU_REC[k];let i=-1,best=-1;
+    arr.forEach((g,j)=>{if(g&&j<cap&&g.kind==='asm'&&g.parts.length<r.length&&g.parts.every((p,x)=>r[x]===p)&&g.parts.length>best&&!suSlotHeld(stn,j)&&suIdle(g)){best=g.parts.length;i=j}});
+    /* 有訂單才動手：先接續已經開始做的（包括你開頭做到一半的）；沒有可接的，就從空格開新的一份（只針對還沒被其他份覆蓋的訂單，d[k]<=0 代表已經有人在做或沒人點） */
+    if(i<0){if((d[k]||0)<=0)continue;let e=arr.findIndex((g,j)=>!g&&j<cap);if(e<0)e=suFreeSlot(d,stn);if(e<0)continue;i=e}
+    const base=arr[i]?arr[i].parts:[];
     /* 只有組成的順序完全等於這道菜的配方才算完成；中途剛好等於別道菜（如飯＋鮭魚＝鮭魚握）不算，繼續等海苔 */
     const id=r[base.length],parts=base.concat(id),done=parts.length===r.length?k:null,pay=done?costOf(done):0;
     if(pay&&live()<pay)continue;
-    if(!R.maki[i])R.maki[i]={kind:'asm',parts:[],t:0,staff:true};
-    const g=R.maki[i];g.parts=parts;g.kind=done||'asm';
-    if(pay){const p=srcCenter({src:'maki',i});charge(pay,p.x,p.y-50);shoPop(T('健太郎做好了{0}',JP(k)))}
+    if(!arr[i])arr[i]={kind:'asm',parts:[],t:0,staff:true};
+    const g=arr[i];g.parts=parts;g.kind=done||'asm';g.staff=true;
+    if(pay){const p=srcCenter({src:stn,i});charge(pay,p.x,p.y-50);shoPop(T('健太郎做好了{0}',JP(k)))}
     renderStations();return}
 }
 /* ===== 炎舞鐵板燒：只有作者和管理員（admins/）看得到，玩家視角下也關閉（2026-11-05） =====
@@ -2762,19 +2791,24 @@ const LAND_R={tap:{x:10,y:406,w:100,h:122},ramune:{x:10,y:534,w:100,h:58},oolong
   rfry:{x:10,y:410,w:300,h:182,pg:2},rawKoro:{x:316,y:406,w:72,h:90,pg:2},rawTori:{x:316,y:502,w:72,h:90,pg:2},rawKatsu:{x:394,y:406,w:72,h:90,pg:2},goma:{x:394,y:502,w:72,h:90,pg:2},
   tyaki:{x:472,y:410,w:170,h:182,pg:2},rawTai:{x:648,y:406,w:84,h:90,pg:2},trash2:{x:648,y:540,w:84,h:52,pg:2},pgbtn:{x:786,y:354,w:166,h:44,pg:0},lamen:{x:10,y:410,w:170,h:182,pg:3},rawMiso:{x:190,y:406,w:72,h:90,pg:3},rawTan:{x:190,y:502,w:72,h:90,pg:3},rawCRice:{x:268,y:406,w:72,h:90,pg:3},rawCMeat:{x:268,y:502,w:72,h:90,pg:3},tsk:{x:570,y:406,w:170,h:182,pg:3},rawTsuke:{x:750,y:406,w:72,h:90,pg:3},trash3:{x:750,y:540,w:84,h:52,pg:3}};
 /* 海風壽司 layouts (phase 1: tap + 捲壽司台 + 4 raw trays; warmT kept only because buildStations expects it) */
-const SU_LAND={tap:{x:10,y:406,w:100,h:186},maki:{x:122,y:410,w:290,h:182},trash2:{x:704,y:346,w:72,h:54},
+const SU_LAND={tap:{x:10,y:406,w:100,h:186},maki:{x:122,y:410,w:290,h:182},sal:{x:122,y:410,w:290,h:182,pg:3,like:'maki'},trash2:{x:704,y:346,w:72,h:54},
   rawSRice:{x:486,y:406,w:64,h:90},rawSNori:{x:552,y:406,w:64,h:90},rawNTama:{x:618,y:406,w:64,h:90},rawNSal:{x:684,y:406,w:64,h:90},rawNTuna:{x:750,y:406,w:64,h:90},rawNIka:{x:816,y:406,w:64,h:90},
   rawNTai:{x:486,y:500,w:64,h:90},rawNEbi:{x:552,y:500,w:64,h:90},rawNNegi:{x:618,y:500,w:64,h:90},rawNIkura:{x:684,y:500,w:64,h:90},rawNUni:{x:750,y:500,w:64,h:90},rawNKappa:{x:816,y:500,w:64,h:90},
-  /* 第 2 頁食材盤（like：位置跟第 1 頁同一格） */
-  rawSRice2:{x:486,y:406,w:64,h:90,pg:2,like:'rawSRice'},rawNSal2:{x:552,y:406,w:64,h:90,pg:2,like:'rawSNori'},rawNTuna2:{x:618,y:406,w:64,h:90,pg:2,like:'rawNTama'},rawNTai2:{x:684,y:406,w:64,h:90,pg:2,like:'rawNSal'},rawNEbi2:{x:750,y:406,w:64,h:90,pg:2,like:'rawNTuna'},rawNKappa2:{x:816,y:406,w:64,h:90,pg:2,like:'rawNIka'},
-  rawSLet:{x:486,y:500,w:64,h:90,pg:2,like:'rawNTai'},rawSKara:{x:552,y:500,w:64,h:90,pg:2,like:'rawNEbi'},rawSTorch:{x:618,y:500,w:64,h:90,pg:2,like:'rawNNegi'},rawSIce:{x:684,y:500,w:64,h:90,pg:2,like:'rawNIkura'},rawSMochi:{x:750,y:500,w:64,h:90,pg:2,like:'rawNUni'},rawSDango:{x:816,y:500,w:64,h:90,pg:2,like:'rawNKappa'},
+  /* 第 2 頁食材盤（炙燒、唐揚，用壽司檯）（like：位置跟第 1 頁同一格） */
+  rawSRice2:{x:486,y:406,w:64,h:90,pg:2,like:'rawSRice'},rawNSal2:{x:552,y:406,w:64,h:90,pg:2,like:'rawSNori'},rawNTuna2:{x:618,y:406,w:64,h:90,pg:2,like:'rawNTama'},rawNTai2:{x:684,y:406,w:64,h:90,pg:2,like:'rawNSal'},rawNEbi2:{x:750,y:406,w:64,h:90,pg:2,like:'rawNTuna'},rawSKara:{x:816,y:406,w:64,h:90,pg:2,like:'rawNIka'},
+  rawSTorch:{x:486,y:500,w:64,h:90,pg:2,like:'rawNTai'},
+  /* 第 3 頁食材盤（沙拉檯：碗、盤子、生菜、魚片，加上直接送的甜點） */
+  rawLBowl:{x:486,y:406,w:64,h:90,pg:3,like:'rawSRice'},rawLPlate:{x:552,y:406,w:64,h:90,pg:3,like:'rawSNori'},rawLLet:{x:618,y:406,w:64,h:90,pg:3,like:'rawNTama'},rawLKappa:{x:684,y:406,w:64,h:90,pg:3,like:'rawNSal'},rawLSal:{x:750,y:406,w:64,h:90,pg:3,like:'rawNTuna'},rawLTuna:{x:816,y:406,w:64,h:90,pg:3,like:'rawNIka'},
+  rawLTai:{x:486,y:500,w:64,h:90,pg:3,like:'rawNTai'},rawLEbi:{x:552,y:500,w:64,h:90,pg:3,like:'rawNEbi'},rawSIce:{x:618,y:500,w:64,h:90,pg:3,like:'rawNNegi'},rawSMochi:{x:684,y:500,w:64,h:90,pg:3,like:'rawNIkura'},rawSDango:{x:750,y:500,w:64,h:90,pg:3,like:'rawNUni'},
   warmT:{x:262,y:346,w:440,h:54},pgbtn:{x:786,y:354,w:166,h:44,pg:0}};
-const SU_PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},maki:{x:123.5,y:418,w:290,h:182,k:1.12},trash2:{x:402,y:340,w:72,h:54,k:1.12},
+const SU_PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},maki:{x:123.5,y:418,w:290,h:182,k:1.12},sal:{x:123.5,y:418,w:290,h:182,k:1.12,pg:3},trash2:{x:402,y:340,w:72,h:54,k:1.12},
   rawSRice:{x:8,y:640,w:78,h:100,k:1.12},rawSNori:{x:100,y:640,w:78,h:100,k:1.12},rawNTama:{x:192,y:640,w:78,h:100,k:1.12},rawNSal:{x:284,y:640,w:78,h:100,k:1.12},rawNTuna:{x:376,y:640,w:78,h:100,k:1.12},rawNIka:{x:468,y:640,w:78,h:100,k:1.12},
   rawNTai:{x:8,y:762,w:78,h:100,k:1.12},rawNEbi:{x:100,y:762,w:78,h:100,k:1.12},rawNNegi:{x:192,y:762,w:78,h:100,k:1.12},rawNIkura:{x:284,y:762,w:78,h:100,k:1.12},rawNUni:{x:376,y:762,w:78,h:100,k:1.12},rawNKappa:{x:468,y:762,w:78,h:100,k:1.12},
-  rawSRice2:{x:8,y:640,w:78,h:100,k:1.12,pg:2},rawNSal2:{x:100,y:640,w:78,h:100,k:1.12,pg:2},rawNTuna2:{x:192,y:640,w:78,h:100,k:1.12,pg:2},rawNTai2:{x:284,y:640,w:78,h:100,k:1.12,pg:2},rawNEbi2:{x:376,y:640,w:78,h:100,k:1.12,pg:2},rawNKappa2:{x:468,y:640,w:78,h:100,k:1.12,pg:2},
-  rawSLet:{x:8,y:762,w:78,h:100,k:1.12,pg:2},rawSKara:{x:100,y:762,w:78,h:100,k:1.12,pg:2},rawSTorch:{x:192,y:762,w:78,h:100,k:1.12,pg:2},rawSIce:{x:284,y:762,w:78,h:100,k:1.12,pg:2},rawSMochi:{x:376,y:762,w:78,h:100,k:1.12,pg:2},rawSDango:{x:468,y:762,w:78,h:100,k:1.12,pg:2},
-  warmT:{x:8,y:340,w:360,h:54,k:1.12},pgbtn:{x:486,y:350,w:108,h:46,pg:0}};
+  rawSRice2:{x:8,y:640,w:78,h:100,k:1.12,pg:2},rawNSal2:{x:100,y:640,w:78,h:100,k:1.12,pg:2},rawNTuna2:{x:192,y:640,w:78,h:100,k:1.12,pg:2},rawNTai2:{x:284,y:640,w:78,h:100,k:1.12,pg:2},rawNEbi2:{x:376,y:640,w:78,h:100,k:1.12,pg:2},rawSKara:{x:468,y:640,w:78,h:100,k:1.12,pg:2},
+  rawSTorch:{x:8,y:762,w:78,h:100,k:1.12,pg:2},
+  rawLBowl:{x:8,y:640,w:78,h:100,k:1.12,pg:3},rawLPlate:{x:100,y:640,w:78,h:100,k:1.12,pg:3},rawLLet:{x:192,y:640,w:78,h:100,k:1.12,pg:3},rawLKappa:{x:284,y:640,w:78,h:100,k:1.12,pg:3},rawLSal:{x:376,y:640,w:78,h:100,k:1.12,pg:3},rawLTuna:{x:468,y:640,w:78,h:100,k:1.12,pg:3},
+  rawLTai:{x:8,y:762,w:78,h:100,k:1.12,pg:3},rawLEbi:{x:100,y:762,w:78,h:100,k:1.12,pg:3},rawSIce:{x:192,y:762,w:78,h:100,k:1.12,pg:3},rawSMochi:{x:284,y:762,w:78,h:100,k:1.12,pg:3},rawSDango:{x:376,y:762,w:78,h:100,k:1.12,pg:3},
+  warmT:{x:8,y:340,w:360,h:54,k:1.12},pgbtn:{x:484,y:350,w:114,h:46,pg:0}};
 const PORT_R={tap:{x:10,y:418,w:96,h:122,k:1.12},ramune:{x:10,y:561.4,w:96,h:58,k:1.12},oolong:{x:490,y:636,w:96,h:48,k:1.3,pg:3},cola:{x:490,y:688,w:96,h:48,k:1.3,pg:3},menma:{x:490,y:740,w:96,h:48,k:1.3,pg:3},kyuri:{x:490,y:792,w:96,h:48,k:1.3,pg:3},tsk:{x:300,y:636,w:170,h:182,k:1.3,pg:3},rawTsuke:{x:300,y:826,w:84,h:84,k:1.3,pg:3},lsour:{x:123.5,y:418,w:84,h:90,k:1.12},odenPot:{x:123.5,y:525.5,w:84,h:90,k:1.12},rmpan:{x:223.5,y:418,w:210,h:182,k:1.12},
   rawGyoza:{x:466,y:418,w:72,h:90,k:1.12},rawRice:{x:466,y:525.5,w:72,h:90,k:1.12},rawMen:{x:11,y:636,w:72,h:90,k:1.3},odenRaw:{x:11,y:760,w:72,h:90,k:1.3},
   mpot:{x:112,y:636,w:170,h:182,k:1.3},bowls:{x:342,y:636,w:110,h:128,k:1.3},trash:{x:342,y:812,w:110,h:52,k:1.3},rmtop:{x:494,y:636,w:84,h:186,k:1.25},warmT:{x:8,y:340,w:360,h:54,k:1.12},
@@ -2859,7 +2893,7 @@ function stHTML(name){
   if(name==='rawOnig')return sv(`<rect x="4" y="12" width="64" height="66" rx="8" fill="#b97d45" stroke="${O}" stroke-width="3"/><rect x="10" y="18" width="52" height="54" rx="5" fill="#f7ecd3" stroke="${O}" stroke-width="2"/><g transform="translate(9 14) scale(.62)">${onigArt('raw',0)}</g><ellipse cx="54" cy="64" rx="9" ry="6" fill="#f3efe6" stroke="${O}" stroke-width="2"/>`,'0 0 72 90')+`<span class="lbl">${T('生飯糰')} ¥${costOf('yakionigiri')}</span>`+(has('yakionigiri')?'':`<div class="locked">${T('商店<br>解鎖')}</div>`);
   if(name==='highball'||name==='hiyayakko')return sv(`<g transform="translate(6 -4) scale(.88)">${newIcon(name)}</g>`,'0 0 100 90')+`<span class="lbl">${JP(name)}</span>`+(has(name)?'':`<div class="locked">${T('商店<br>解鎖')}</div>`);
   if(name==='deco2')return sv(`<rect x="6" y="70" width="88" height="10" fill="#3f2416"/><rect x="12" y="20" width="18" height="50" rx="5" fill="#2a1a12" stroke="${O}" stroke-width="2.5"/><rect x="14" y="36" width="14" height="16" fill="#f3e6c8"/><rect x="38" y="28" width="20" height="42" rx="6" fill="#c98a2a" stroke="${O}" stroke-width="2.5"/><rect x="66" y="40" width="20" height="30" rx="5" fill="#f4f4f4" stroke="${O}" stroke-width="2.5"/><circle cx="76" cy="38" r="8" fill="#d8d8d8" stroke="${O}" stroke-width="2.5"/><path d="M14 100h72" stroke="#5a3a24" stroke-width="6"/>`,'0 0 100 128')+`<span class="lbl">${T('調味料')}</span>`;
-  if(name==='trash2'&&!(R.held&&['grill','fryer','board','tap','warm','teppan','tempura','rmpan','maki','bowl','oden','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(R.held.src)))return sv(`<rect x="4" y="6" width="120" height="40" rx="10" fill="#5a5f66" stroke="${O}" stroke-width="3"/><path d="M48 16h32M58 16v-4h12v4M52 16l3 24h18l3-24" fill="#8a9098" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`,'0 0 128 52')+`<span class="lbl">${T('垃圾桶')}</span>`;
+  if(name==='trash2'&&!(R.held&&['grill','fryer','board','tap','warm','teppan','tempura','rmpan','maki','sal','bowl','oden','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(R.held.src)))return sv(`<rect x="4" y="6" width="120" height="40" rx="10" fill="#5a5f66" stroke="${O}" stroke-width="3"/><path d="M48 16h32M58 16v-4h12v4M52 16l3 24h18l3-24" fill="#8a9098" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`,'0 0 128 52')+`<span class="lbl">${T('垃圾桶')}</span>`;
   if(name==='trash2')name='trash';
   if(name==='trash')return sv(`<rect x="4" y="6" width="120" height="40" rx="10" fill="#5a5f66" stroke="${O}" stroke-width="3"/><path d="M48 16h32M58 16v-4h12v4M52 16l3 24h18l3-24" fill="#8a9098" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`,'0 0 128 52')+`<span class="lbl">${R.held&&['grill','fryer','board','tap','warm','rmpan','maki','bowl','oden','teppan','tempura','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(R.held.src)?T('丟掉手上的'):T(CUR==='rm'?'清空拉麵碗':'清空砧板')}</span>`;
   if(name==='board'){const n=boardsN();
@@ -2984,8 +3018,8 @@ function prevPage(){const a=pages();return a[(a.indexOf(KP)-1+a.length)%a.length
 function pgName(p){return T(p===1?'一號廚房':p===2?'二號廚房':'三號廚房')}
 /* [1] [2] [3] : one button per kitchen; the lit one is the current kitchen, locked ones are dimmed and do nothing; badges float above each button */
 function pgHTML(){const a=pages();
-  return [1,2,3].filter(p=>CUR!=='sushi'||p<3).map(p=>{const ok=a.includes(p);return `<span class="pgn${p===KP?' on':''}${ok?'':' off'}"${ok?` data-pgk="${p}"`:''}>${p}${ok?pgBadge(p):''}</span>`}).join('')}
-function onPage(k){return k==='warmT'||k==='gunT'||(CUR==='sushi'&&(k==='maki'||k==='tap'||k==='trash2'||k==='suord'))||((L[k].pg||1)===KP)}
+  return [1,2,3].map(p=>{const ok=a.includes(p);return `<span class="pgn${p===KP?' on':''}${ok?'':' off'}"${ok?` data-pgk="${p}"`:''}>${p}${ok?pgBadge(p):''}</span>`}).join('')}
+function onPage(k){return k==='warmT'||k==='gunT'||(CUR==='sushi'&&(k==='maki'?KP!==3:k==='tap'||k==='trash2'||k==='suord'))||((L[k].pg||1)===KP)} /* 壽司店：壽司檯在第 1、2 頁都看得到，第 3 頁換成沙拉檯 */
 function bareOn(){return CHEAT()&&CUR!=='rm'&&!!(ST&&ST.tforce&&ST.tforce.bare)}
 function setPage(p){const a=pages();KP=a.includes(p)?p:1;const bare=bareOn();for(const k in L){const el=$('st-'+k);if(el)el.hidden=bare||(k==='pgbtn'?a.length<2:!onPage(k))}if(R)renderStations()}
 function tapTime(){return ST.up.tap?1:2}
@@ -3029,15 +3063,15 @@ function buildStations(){
     const trR=(CUR==='sushi'||CUR==='tep'||CUR==='oko')&&L.trash2?L.trash2.x-6:1e9,gw0=ST.weapon?GUNW*k+(LAY==='port'?26:64):0;
     if(x+ww*k>trR){x=trR-ww*k;if(x<8+gw0){x=8+gw0;sw=Math.max(20,Math.floor(((trR-x)/k-8)/wn));ww=wn*sw+8}}
     if(ST.weapon){const gw=GUNW*k,gap=LAY==='port'?26:64,left=8;
-      if(x-gw-gap<left){x=left+gw+gap;const lim=Math.min((L.pgbtn&&page2On()?L.pgbtn.x:W)-8,trR);if(x+ww*k>lim){sw=Math.max(20,Math.floor(((lim-x)/k-8)/wn));ww=wn*sw+8}}
+      if(x-gw-gap<left){x=left+gw+gap;const lim=Math.min((L.pgbtn&&pages().length>1?L.pgbtn.x:W)-8,trR);if(x+ww*k>lim){sw=Math.max(20,Math.floor(((lim-x)/k-8)/wn));ww=wn*sw+8}}
       L.gunT={x:x-gw-gap,y:L.warmT.y,w:GUNW,h:54,k}}
     L.warmT=Object.assign({},L.warmT,{w:ww,x})}
   /* 海風壽司：順序提示做成檯面上的按鈕，放在槍的左邊（沒有槍時，也留出槍的位置再往左放），手指比較好按 */
   delete L.suord;if(CUR==='sushi'){const sk=L.warmT.k||1,ow=84,bx=(L.gunT?L.gunT.x:L.warmT.x-GUNW*sk-64)-ow-8;if(bx>=8)L.suord={x:bx,y:L.warmT.y,w:ow,h:54,k:sk}}
   const host=$('stations');host.innerHTML='';cache.clear();
-  for(const k in L){const r=L[k],el=document.createElement('div');el.className=k==='pgbtn'?'pgbtn':'st'+(['grill','fryer','ing','warmT','tap','board','teppan','tempura','deco2','rmpan','maki','mpot','bowls','rmtop','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(k)?' host':'');el.id='st-'+k;if(k!=='pgbtn')el.dataset.st=k;
+  for(const k in L){const r=L[k],el=document.createElement('div');el.className=k==='pgbtn'?'pgbtn':'st'+(['grill','fryer','ing','warmT','tap','board','teppan','tempura','deco2','rmpan','maki','sal','mpot','bowls','rmtop','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(k)?' host':'');el.id='st-'+k;if(k!=='pgbtn')el.dataset.st=k;
     Object.assign(el.style,{left:r.x+'px',top:r.y+'px',width:r.w+'px',height:r.h+'px'});el.style.setProperty('--k',r.k||1);
-    if(['grill','fryer','ing','warmT','tap','board','teppan','tempura','deco2','rmpan','maki','mpot','bowls','rmtop','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(k)){el.style.cursor='default'}
+    if(['grill','fryer','ing','warmT','tap','board','teppan','tempura','deco2','rmpan','maki','sal','mpot','bowls','rmtop','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(k)){el.style.cursor='default'}
     host.appendChild(el)}
   $('fx').innerHTML='<div class="hand" id="hand" hidden></div><div class="toast" id="toastEl"></div>';
   setPage(KP);
@@ -3046,7 +3080,7 @@ function setHTML(el,h){if(cache.get(el)!==h){el.innerHTML=h;cache.set(el,h)}}
 function renderStations(){
   for(const k in L){const el=$('st-'+k);if(!el)continue;
     if(el.hidden&&k!=='pgbtn')continue;
-    setHTML(el,k==='gunT'?gunStandHTML():k==='grill'?grillHTML():k==='fryer'?fryerHTML():k==='warmT'?warmHTML():k==='teppan'?teppanHTML():k==='tempura'?tempuraHTML():k==='maki'?makiHTML():k==='tpn'?tpnHTML():k==='rmpan'?rmpanHTML():k==='rfry'?rfryHTML():k==='tyaki'?tyakiHTML():k==='tako'?takoHTML():k==='lamen'?lamenHTML():k==='tsk'?tskHTML():k==='tama'?stepHTML('tama'):k==='onig'?stepHTML('onig'):k==='mpot'?mpotHTML():k==='pgbtn'?pgHTML():k==='suord'?suOrdHTML():stHTML(k));
+    setHTML(el,k==='gunT'?gunStandHTML():k==='grill'?grillHTML():k==='fryer'?fryerHTML():k==='warmT'?warmHTML():k==='teppan'?teppanHTML():k==='tempura'?tempuraHTML():k==='maki'?makiHTML():k==='sal'?salHTML():k==='tpn'?tpnHTML():k==='rmpan'?rmpanHTML():k==='rfry'?rfryHTML():k==='tyaki'?tyakiHTML():k==='tako'?takoHTML():k==='lamen'?lamenHTML():k==='tsk'?tskHTML():k==='tama'?stepHTML('tama'):k==='onig'?stepHTML('onig'):k==='mpot'?mpotHTML():k==='pgbtn'?pgHTML():k==='suord'?suOrdHTML():stHTML(k));
     el.classList.toggle('held',!!R.held&&R.held.src===k&&R.held.i==null);
     if(k==='gunT')el.classList.toggle('alert',gunAlert());}
   document.querySelectorAll('[data-grill]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='grill'&&R.held.i==+e.dataset.grill));
@@ -3057,6 +3091,7 @@ function renderStations(){
   document.querySelectorAll('[data-tem]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='tempura'&&R.held.i==+e.dataset.tem));
   document.querySelectorAll('[data-fry]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='fryer'&&R.held.i==+e.dataset.fry));
   document.querySelectorAll('[data-mk]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='maki'&&R.held.i==+e.dataset.mk));
+  document.querySelectorAll('[data-sl]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='sal'&&R.held.i==+e.dataset.sl));
   document.querySelectorAll('[data-rp]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='rmpan'&&R.held.i==+e.dataset.rp));
   document.querySelectorAll('[data-rf]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='rfry'&&R.held.i==+e.dataset.rf));
   document.querySelectorAll('[data-ty]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='tyaki'&&R.held.i==+e.dataset.ty));
@@ -3140,7 +3175,7 @@ function startDay(){SHOPHOME=false;pastSave();achDay();DAYLEN=159;setTimeout(()=
   const un=unlocked(ST.day),avg=un.reduce((s,k)=>s+ITEMS[k].price*ITEMS[k].w,0)/un.reduce((s,k)=>s+ITEMS[k].w,0);
   const P=quota*avg*(ST.day>=3?1.85:1.55)*1.15*.68;
   R={t:0,quota,closed:false,spawned:0,lost:0,served:0,earned:0,seats:new Array(seatsN()).fill(null),cool:.8,held:null,
-     taps:[{st:'empty',t:0},{st:'empty',t:0}],grill:new Array(5).fill(null),fryer:new Array(3).fill(null),warm:new Array(12).fill(null),teppan:new Array(4).fill(null),tempura:new Array(3).fill(null),boards:[emptyBoard(),emptyBoard()],lastBoard:0,rmpan:new Array(rpanN()).fill(null),rfry:new Array(5).fill(null),tyaki:new Array(3).fill(null),lamen:new Array(2).fill(null),tsk:new Array(2).fill(null),tako:new Array(3).fill(null),tama:new Array(2).fill(null),onig:new Array(2).fill(null),tpn:new Array(tpnN()).fill(null),tpc:0,maki:new Array(makiN()).fill(null),mpot:new Array(mpotN()).fill(null),bowls:new Array(bowlsN()).fill(null),lastBowl:0,oden:{n:0,cook:[]},where:CUR,wage:CUR==='rm'?rmWages():CUR==='sushi'?suWages():CUR==='tep'?tpWages():CUR==='oko'?0:wages(),rent:rentOf(),staffT:1,helpT:1,
+     taps:[{st:'empty',t:0},{st:'empty',t:0}],grill:new Array(5).fill(null),fryer:new Array(3).fill(null),warm:new Array(12).fill(null),teppan:new Array(4).fill(null),tempura:new Array(3).fill(null),boards:[emptyBoard(),emptyBoard()],lastBoard:0,rmpan:new Array(rpanN()).fill(null),rfry:new Array(5).fill(null),tyaki:new Array(3).fill(null),lamen:new Array(2).fill(null),tsk:new Array(2).fill(null),tako:new Array(3).fill(null),tama:new Array(2).fill(null),onig:new Array(2).fill(null),tpn:new Array(tpnN()).fill(null),tpc:0,maki:new Array(makiN()).fill(null),sal:new Array(SU_SALN).fill(null),mpot:new Array(mpotN()).fill(null),bowls:new Array(bowlsN()).fill(null),lastBowl:0,oden:{n:0,cook:[]},where:CUR,wage:CUR==='rm'?rmWages():CUR==='sushi'?suWages():CUR==='tep'?tpWages():CUR==='oko'?0:wages(),rent:rentOf(),staffT:1,helpT:1,
      goals:[Math.round(P*.42/100)*100,Math.round(P*.65/100)*100,Math.round(P*.85/100)*100],cost:0,stolen:0,fines:0,aim:false,rob:null,ev:evNow(),paused:false,over:false};
   const pre=ST.pre&&ST.pre.day===ST.day?ST.pre:null;if(pre){if(pre.ext){R.extH=pre.ext;DAYLEN+=pre.ext*159/8.5}if(pre.nb&&!propBlocked('nb'))R.fxNb=1;if(pre.fast&&!propBlocked('fast'))R.fxFast=1;if(pre.tip)R.fxTip=1;if(pre.pt)R.ptHeld=pre.pt;
     {const bk=['nb','fast'].filter(k=>pre[k]&&propBlocked(k));if(bk.length){const rc=loadRec();rc.inv=rc.inv||{};bk.forEach(k=>{rc.inv[k]=(rc.inv[k]||0)+1});saveRec(rc);cloudUpload(true);setTimeout(()=>toast(T('海風壽司用不到{0}，已退回背包',bk.map(k=>T(PROPS[k].n)).join('、'))),700)}}
@@ -3192,7 +3227,7 @@ function step(dt){
   if(CUR==='sushi')suStaffStep(dt);else if(CUR==='tep')tpStaffStep(dt);else if(CUR==='oko'){}else if(CUR!=='rm')staffStep(dt);else{rmStaffStep(dt);rmCookStep(dt);rmFryStep(dt)}
   if(R.fxFast&&fastCook())renderStations();
   if(R.ptHeld>0&&R.seats.some(c=>c&&c.st==='wait'&&c.pat<c.max*.3)){R.ptHeld--;R.seats.forEach(c=>{if(c&&c.st==='wait')c.pat=c.max});renderHUD();toast(T('備妥的耐心回復自動生效！'))}
-  const cdt=dt*cookMul();R.rmpan.forEach(g=>{if(g)g.t+=dt});R.maki.forEach(g=>{if(g)g.t+=dt});R.rfry.forEach(g=>{if(g)g.t+=dt});R.tyaki.forEach(g=>{if(g)g.t+=dt});R.lamen.forEach(g=>{if(g&&!g.wait)g.t+=dt});R.tsk.forEach(g=>{if(g)g.t+=dt});R.mpot.forEach(g=>{if(g)g.t+=dt*(rmUp('fast',0)?1.4:1)});
+  const cdt=dt*cookMul();R.rmpan.forEach(g=>{if(g)g.t+=dt});R.maki.forEach(g=>{if(g)g.t+=dt});(R.sal||[]).forEach(g=>{if(g)g.t+=dt});R.rfry.forEach(g=>{if(g)g.t+=dt});R.tyaki.forEach(g=>{if(g)g.t+=dt});R.lamen.forEach(g=>{if(g&&!g.wait)g.t+=dt});R.tsk.forEach(g=>{if(g)g.t+=dt});R.mpot.forEach(g=>{if(g)g.t+=dt*(rmUp('fast',0)?1.4:1)});
   R.oden.cook.forEach(b=>b.t+=dt);{const ot=odenT(),dn=R.oden.cook.filter(b=>b.t>=ot).reduce((s,b)=>s+(b.n||2),0);if(dn){R.oden.n+=dn;R.oden.cook=R.oden.cook.filter(b=>b.t<ot);sfx('done')}}
   R.grill.forEach(g=>{if(g)g.t+=cdt});R.fryer.forEach(f=>{if(f)f.t+=cdt});R.teppan.forEach(g=>{if(g)g.t+=cdt});R.tempura.forEach(g=>{if(g)g.t+=cdt});
   R.tako.forEach((g,i)=>{if(!g)return;if(!g.fl&&g.t>=TKFLIP){g.t=TKFLIP;g.w=(g.w||0)+cdt;if(staffLv('helper')>=2&&g.w>=TKAUTO){g.fl=1;g.w=0;sfx('pick');if(KP===3){const c=srcCenter({src:'tako',i});popup(c.x,c.y-60,T('阿健翻面'))}renderStations();return}if(g.w>TKGRACE){if(R.fxNb){g.fl=1;g.w=0}else g.t=burnAt('takoyaki')+.1}}else g.t+=cdt}); // waits for the flip (you, or 阿健 at Lv2+), burns if missed
@@ -3673,6 +3708,7 @@ function srcCenter(h){
   if(h.src==='teppan')return at(L.teppan,12+h.i*TW+TW/2,90);
   if(h.src==='tempura')return at(L.tempura,12+h.i*MW+MW/2,60);
   if(h.src==='maki')return at(L.maki,12+h.i*68+32,90);
+  if(h.src==='sal')return at(L.sal,12+h.i*68+32,90);
   if(h.src==='rmpan')return at(L.rmpan,10+h.i*RPW+RPW/2,90);
   if(h.src==='rfry')return at(L.rfry,7+h.i*FW+FW/2,90);
   if(h.src==='tyaki')return at(L.tyaki,7+h.i*TYW+TYW/2,90);
@@ -3692,7 +3728,7 @@ function heldValid(){const h=R.held;if(!h)return false;
   if(h.src==='fryer'){const f=R.fryer[h.i];return !!f&&cookState(f.t,'karaage')==='done'}
   if(h.src==='board')return boardDone(h.i);
   if(h.src==='warm')return !!R.warm[h.i];
-  if(['teppan','tempura','rmpan','maki','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(h.src)){const g=R[h.src][h.i];return !!g&&cookState(g.t,g.kind)==='done'}
+  if(['teppan','tempura','rmpan','maki','sal','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(h.src)){const g=R[h.src][h.i];return !!g&&cookState(g.t,g.kind)==='done'}
   if(h.src==='bowl')return bowlDone(h.i);
   if(h.src==='oden')return R.oden.n>0;
   return true}
@@ -3702,7 +3738,7 @@ function consume(h){
   if(h.src==='fryer')R.fryer[h.i]=null;
   if(h.src==='board')R.boards[h.i]=emptyBoard();
   if(h.src==='warm')R.warm[h.i]=null;
-  if(['teppan','tempura','rmpan','maki','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(h.src))R[h.src][h.i]=null;
+  if(['teppan','tempura','rmpan','maki','sal','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(h.src))R[h.src][h.i]=null;
   if(h.src==='bowl')R.bowls[h.i]=null;
   if(h.src==='oden')R.oden.n=Math.max(0,R.oden.n-1);
 }
@@ -3714,6 +3750,7 @@ function onTap(e){
   const tpn=t.closest('[data-tep]');if(tpn){clickPan('teppan',+tpn.dataset.tep,tpn);return}
   const tmn=t.closest('[data-tem]');if(tmn){clickPan('tempura',+tmn.dataset.tem,tmn);return}
   const mkn=t.closest('[data-mk]');if(mkn){clickPan('maki',+mkn.dataset.mk,mkn);return}
+  const sln=t.closest('[data-sl]');if(sln){clickPan('sal',+sln.dataset.sl,sln);return}
   const tpq=t.closest('[data-tpn]');if(tpq){clickTpn(+tpq.dataset.tpn,tpq);return}
   const rpn=t.closest('[data-rp]');if(rpn){clickPan('rmpan',+rpn.dataset.rp,rpn);return}
   const rfn=t.closest('[data-rf]');if(rfn){clickPan('rfry',+rfn.dataset.rf,rfn);return}
@@ -3738,12 +3775,12 @@ function onTap(e){
   else if(k==='odenRaw'){if(!has('oden'))return;const c1=costOf('oden'),k0=odenCap()-R.oden.n-R.oden.cook.reduce((s,b)=>s+(b.n||2),0);if(k0<=0){nope(st);toast('關東煮鍋滿了')}else{if(live()<c1)canPay(c1);else{R.oden.cook.push({t:0,n:1});const c=srcCenter({src:'oden'});charge(c1,c.x,c.y-50)}}}
   else if(k==='odenPot'){if(!has('oden'))return;if(R.oden.n>0)R.held={src:'oden',key:'oden'};else{nope(st);toast(R.oden.cook.length?'關東煮還在燉…':'先把關東煮料下鍋')}}
   else if(SU_DIRECT[k]){suDirect(k,st)}
-  else if(SU_TRAY[k]){suAdd(SU_TRAY[k],st)}
+  else if(SU_TRAY[k]){suAdd(SU_TRAY[k],st,SU_TRAYSTN[k])}
   else if(k==='rawCRice'||k==='rawCMeat'){chashuPart(k,st)}
   else if(RAWMAP[k]){const d=RAWMAP[k],pn=STN[d],arr=R[pn],i=arr.findIndex((x,j)=>!x&&j<panCap(pn));if(['rmpan','rfry','tyaki','lamen','tsk','tako','tama','onig','maki','tpn'].includes(pn)&&!has(d)&&ITEMS[d].buy)return;if(isOff(d)){nope(st);toast(T('這道菜目前下架中，先重新上架才能做'));return}if(i<0){nope(st);toast(pn==='teppan'||pn==='tpn'?'鐵板滿了':pn==='rmpan'?'煎台滿了':pn==='maki'?'捲壽司台滿了':pn==='rfry'?'油鍋滿了':pn==='tako'?'章魚燒盤滿了':pn==='tama'?'玉子燒鍋滿了':pn==='onig'?'烤網滿了':pn==='tyaki'?'烤模都在用':pn==='lamen'?'拉麵台滿了':pn==='tsk'?'沾麵台滿了':'炸鍋滿了')}else if(canPay(costOf(d))){arr[i]={kind:d,t:0};const c=srcCenter({src:STN[d],i});charge(costOf(d),c.x,c.y-50)}}
   else if(k==='rawN'||k==='rawT'){const kind=k==='rawN'?'negima':'tsukune',i=R.grill.findIndex((g,j)=>!g&&j<ST.up.grill);if(i<0){nope(st);toast('燒烤台滿了')}else if(canPay(costOf(kind))){R.grill[i]={kind,t:0};charge(costOf(kind),L.grill.x+10+i*GW+22,L.grill.y+40)}}
   else if(k==='rawC'){const i=R.fryer.findIndex((f,j)=>!f&&j<ST.up.fryer);if(i<0){nope(st);toast('炸籃都在用')}else if(canPay(costOf('karaage'))){R.fryer[i]={t:0};charge(costOf('karaage'),L.fryer.x+12+i*38+18,L.fryer.y+30)}}
-  else if(k==='trash'||k==='trash2'||k==='trash3'){if(R.held&&['grill','fryer','board','tap','warm','teppan','tempura','rmpan','maki','bowl','oden','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(R.held.src)){consume(R.held);R.held=null;toast('丟掉了')}else if(R.held)R.held=null;else if(CUR==='rm'){if(k==='trash2'||k==='trash3')return renderStations();const i=R.bowls[R.lastBowl]?R.lastBowl:R.bowls.findIndex(Boolean);if(i>=0){R.bowls[i]=null;toast('拉麵碗清空了')}}else if(CUR!=='sushi'&&CUR!=='tep'&&CUR!=='oko'){const i=R.boards[R.lastBoard]&&R.boards[R.lastBoard].base?R.lastBoard:R.boards.findIndex(b=>b.base);if(i>=0){R.boards[i]=emptyBoard();toast('砧板清空了')}}}
+  else if(k==='trash'||k==='trash2'||k==='trash3'){if(R.held&&['grill','fryer','board','tap','warm','teppan','tempura','rmpan','maki','sal','bowl','oden','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(R.held.src)){consume(R.held);R.held=null;toast('丟掉了')}else if(R.held)R.held=null;else if(CUR==='rm'){if(k==='trash2'||k==='trash3')return renderStations();const i=R.bowls[R.lastBowl]?R.lastBowl:R.bowls.findIndex(Boolean);if(i>=0){R.bowls[i]=null;toast('拉麵碗清空了')}}else if(CUR!=='sushi'&&CUR!=='tep'&&CUR!=='oko'){const i=R.boards[R.lastBoard]&&R.boards[R.lastBoard].base?R.lastBoard:R.boards.findIndex(b=>b.base);if(i>=0){R.boards[i]=emptyBoard();toast('砧板清空了')}}}
   renderStations();
 }
 /* 叉燒飯：白飯＋叉燒配料放進拉麵台同一格，湊齊才開始煮；先放哪一樣都可以，各付一部分食材錢（加起來等於原本的食材錢） */
@@ -4507,7 +4544,7 @@ function shopSushi(sub){
   const staff=`<div class="up"><b>${T(SU_STAFF.zh)}${l?' Lv'+l:''}</b><p>${l?T('目前雇用中，日薪 {0}',yen(SU_STAFF.lv[l-1].wage)):T('還沒雇用')}</p>${SU_STAFF.lv.map((t,i)=>`<div class="up ${i+1===l?'done':''}" style="margin:6px 0"><b>Lv${i+1}${i+1===l?' ・'+T('目前'):''}</b> <span class="price">${yen(t.cost)}</span> <span>${T('日薪 {0}',yen(t.wage))}</span><p>${T(t.d)}</p></div>`).join('')}${nx?`<button class="btn" data-act="suhire" ${SV.coins<nx.cost?'disabled':''}>${T(l?'升級 {0}':'雇用 {0}',yen(nx.cost))}</button>`:`<p>${T('已經是最高等級。')}</p>`}</div>`;
   const wn=suUp('warm',3),wx=SU_WARM.find(w=>w.n>wn),warm=!suNv()?'':wx?`<div class="up"><b>${T(wx.zh)}</b><p>${T(wx.d)}</p><button class="btn" data-act="suwarm" ${SV.coins<wx.cost?'disabled':''}>${T('買下 {0}',yen(wx.cost))}</button></div>`:`<div class="up done"><b>${T(SU_WARM[SU_WARM.length-1].zh)}</b><p>${T('已購買')}</p></div>`;
   const deco=`<h3 class="sh">${T('店內布置・讓客人更有耐心')}</h3><div class="shop">${SDECOR.map(d=>{const own=sdec(d.id);return `<div class="up ${own?'done':''}"><b>${T(d.zh)}<span class="new" style="background:#5c9a3a">${T('耐心 +{0}%',Math.round(d.b*100))}</span></b><p>${T(d.d)}</p><div class="row"><span class="price">${yen(d.cost)}</span>${own?`<span>${T('已布置')}</span>`:`<button class="btn" data-act="sudec" data-id="${d.id}" ${SV.coins<d.cost?'disabled':''}>${T('購買')}</button>`}</div></div>`}).join('')}</div>`;
-  const MENUP=`<h3 class="sh">${T('壽司菜單')}</h3><p class="hint">${T('新菜色（唐揚握、炙燒、生魚片、沙拉、甜點）的食材放在營業畫面食材盤的「第 2 頁」。買下任一道新菜，右上角就會出現 1／2 切換鈕。')}</p><div class="shop">${menu}</div>`;
+  const MENUP=`<h3 class="sh">${T('壽司菜單')}</h3><p class="hint">${T('新菜色的食材放在營業畫面食材盤的「第 2 頁」（唐揚握、炙燒）和「第 3 頁」（沙拉、生魚片、甜點）。沙拉和生魚片在獨立的沙拉檯上做。買下新菜色，右上角就會出現 1／2／3 切換鈕。')}</p><div class="shop">${menu}</div>`;
   const KITP=`<h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${warm}${suUp('maki',0)?`<div class="up done"><b>${T('壽司台第五格')}</b><p>${T('已擴充，壽司台現在有五個位置。')}</p></div>`:`<div class="up"><b>${T('壽司台第五格')}</b><p>${T('壽司台多一個位置，可以同時做五件壽司。')}</p><button class="btn" data-act="sumaki" ${SV.coins<SU_MAKI5_COST?'disabled':''}>${T('買下 {0}',yen(SU_MAKI5_COST))}</button></div>`}${l?`<div class="up">${dilHTML('sushistaff').split('data-act="dil"').join('data-act="sudil"')}</div>`:''}</div>`;
   const DECOP=deco,TAILB=`<div class="btns"><button class="btn alt" data-act="sugopen">📖 ${T('製作教學')}</button><button class="btn" data-act="susopen">${T('去海風壽司營業')}</button></div>`;
   return sub==='kit'?KITP+TAILB:sub==='deco'?DECOP+TAILB:MENUP+TAILB;
@@ -4530,18 +4567,24 @@ function startSushiTut(fromDay){
 }
 /* 📖 製作教學：一道一道教，每道點開會讓示範客人點那道菜，高亮第一個材料，不存檔 */
 const SU_LESSON_KEYS=['tamagonigiri','salmonnigiri','tunanigiri','ikanigiri','tainigiri','ebinigiri','negitorogunkan','ikuragunkan','unigunkan','kappamaki','tekkamaki','salmonmaki','salmontemaki','tunatemaki','ikuratemaki'];
-const SU_LESSON_KEYS2=['karaagenigiri','aburisalmonnigiri','salmonsashimi','mixsashimi','salmonsalad','vanillaice','daifuku','dango'];
-const SU_PIECE_TRAY=Object.fromEntries(Object.entries(SU_TRAY1).map(([t,p])=>[p,t])),SU_PIECE_TRAY2=Object.fromEntries(Object.entries(SU_TRAY2).map(([t,p])=>[p,t]));
+const SU_LESSON_KEYS2=['karaagenigiri','aburisalmonnigiri'];
+const SU_LESSON_KEYS3=['salmonsashimi','mixsashimi','salmonsalad','vanillaice','daifuku','dango'];
+const SU_PIECE_TRAY=Object.fromEntries(Object.entries(SU_TRAY1).map(([t,p])=>[p,t])),SU_PIECE_TRAY2=Object.fromEntries(Object.entries(SU_TRAY2).map(([t,p])=>[p,t])),SU_PIECE_TRAY3=Object.fromEntries(Object.entries(SU_TRAY3).map(([t,p])=>[p,t]));
 function suLessonSteps(){
   const st=[{t:null,h:'海風壽司・製作教學',p:'壽司台上的每道菜都是一層一層疊出來的，而且<b>順序一換就變成另一道菜</b>。下面一道一道看，每道的示範客人都會點那道菜。'}];
   for(const k of SU_LESSON_KEYS){
     const seq=SU_REC[k];
     st.push({t:'#st-'+SU_PIECE_TRAY[seq[0]],o:k,pg:1,h:dishTitle(k),p:`${T(HOW[k]||'')}<br><small>${T('放的順序：')}${seq.map(p=>T(SU_PNAME[p])).join(' → ')}</small>`});
   }
-  st.push({t:'#st-pgbtn',pg:2,h:'第 2 頁食材盤',p:'壽司台旁的食材盤有兩頁。點右上角的 1／2 就能切換，壽司台在兩頁都看得到。新菜色（唐揚握、炙燒、生魚片、沙拉、甜點）的食材都在第 2 頁。'});
+  st.push({t:'#st-pgbtn',pg:2,h:'第 2 頁：炙燒和唐揚',p:'食材盤有三頁，點右上角的 1／2／3 就能切換。第 2 頁有唐揚雞塊和噴槍，做唐揚握、炙燒握；壽司台在第 1、2 頁都看得到。'});
   for(const k of SU_LESSON_KEYS2){
     const seq=SU_REC[k];
     st.push({t:'#st-'+SU_PIECE_TRAY2[seq[0]],o:k,pg:2,h:dishTitle(k),p:`${T(HOW[k]||'')}<br><small>${T('放的順序：')}${seq.map(p=>T(SU_PNAME[p])).join(' → ')}</small>`});
+  }
+  st.push({t:'#st-pgbtn',pg:3,h:'第 3 頁：沙拉檯',p:'沙拉和生魚片在獨立的沙拉檯上做，不佔壽司台。碗、盤子、生菜、魚片和甜點的食材都在第 3 頁；甜點不用放上檯面，拿起來直接送客人。'});
+  for(const k of SU_LESSON_KEYS3){
+    const seq=SU_REC[k];
+    st.push({t:'#st-'+SU_PIECE_TRAY3[seq[0]],o:k,pg:3,h:dishTitle(k),p:`${T(HOW[k]||'')}<br><small>${T('放的順序：')}${seq.map(p=>T(SU_PNAME[p])).join(' → ')}</small>`});
   }
   st.push({t:null,h:'學會了！',p:'材料一樣，順序不同就是不同的菜。之後想再看，可以到商店的「📖 製作教學」。'});
   return st;
@@ -6020,6 +6063,14 @@ async function cloudUpload(now){
   add("ja",{"點一下<b>冰淇淋</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "<b>アイス</b>をタップして持ち上げます。寿司台に置かなくても、お客さんをタップすればそのまま出せます。食材トレイの<b>2ページ目</b>にあります。", "點一下<b>麻糬</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "<b>もち</b>をタップして持ち上げます。寿司台に置かなくても、お客さんをタップすればそのまま出せます。食材トレイの<b>2ページ目</b>にあります。", "點一下<b>糰子</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "<b>団子</b>をタップして持ち上げます。寿司台に置かなくても、お客さんをタップすればそのまま出せます。食材トレイの<b>2ページ目</b>にあります。"});
   add("ko",{"點一下<b>冰淇淋</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "<b>아이스크림</b>을(를) 눌러 집어 들어요. 초밥대에 올릴 필요 없이 손님을 누르면 바로 내가요. 재료 트레이 <b>2페이지</b>에 있어요.", "點一下<b>麻糬</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "<b>모찌</b>을(를) 눌러 집어 들어요. 초밥대에 올릴 필요 없이 손님을 누르면 바로 내가요. 재료 트레이 <b>2페이지</b>에 있어요.", "點一下<b>糰子</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "<b>당고</b>을(를) 눌러 집어 들어요. 초밥대에 올릴 필요 없이 손님을 누르면 바로 내가요. 재료 트레이 <b>2페이지</b>에 있어요."});
   add("id",{"點一下<b>冰淇淋</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "Ketuk <b>es krim</b> untuk mengambilnya. Tidak perlu ditaruh di meja sushi, langsung ketuk pelanggan untuk menyajikannya. Ada di <b>halaman 2</b> nampan bahan.", "點一下<b>麻糬</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "Ketuk <b>mochi</b> untuk mengambilnya. Tidak perlu ditaruh di meja sushi, langsung ketuk pelanggan untuk menyajikannya. Ada di <b>halaman 2</b> nampan bahan.", "點一下<b>糰子</b>拿起來，不用放上壽司台，直接點客人就送出。食材在食材盤的<b>第 2 頁</b>。": "Ketuk <b>dango</b> untuk mengambilnya. Tidak perlu ditaruh di meja sushi, langsung ketuk pelanggan untuk menyajikannya. Ada di <b>halaman 2</b> nampan bahan."});
+})();
+/* 海風壽司：沙拉檯（第 3 頁）、碗／盤子、沙拉與生魚片新做法、甜點直送的翻譯 (2026-11-11)；只補還沒有的 key */
+(function(){const add=(L,o)=>{const t=I18N[L]=I18N[L]||{};for(const k in o)if(!(k in t))t[k]=o[k]};
+  add("zh-Hans",{"沙拉檯": "沙拉台", "碗": "碗", "盤子": "盘子", "沙拉檯滿了": "沙拉台满了", "沙拉檯要先放碗（做沙拉）或盤子（做生魚片）": "沙拉台要先放碗（做沙拉）或盘子（做生鱼片）", "先放壽司飯或海苔": "先放寿司饭或海苔", "到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再連點兩片<b>同一種魚片</b>，做成生魚片。": "到<b>第 3 页</b>：先点<b>盘子</b>放上<b>沙拉台</b>，再连点两片<b>同一种鱼片</b>，做成生鱼片。", "到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再依序點<b>鮭魚、鮪魚、鯛魚</b>各一片，做成拼盤。": "到<b>第 3 页</b>：先点<b>盘子</b>放上<b>沙拉台</b>，再依次点<b>鲑鱼、金枪鱼、鲷鱼</b>各一片，做成拼盘。", "到<b>第 3 頁</b>：先點<b>碗</b>放上<b>沙拉檯</b>，再點<b>生菜</b>，最後放上<b>配料</b>，做成沙拉。": "到<b>第 3 页</b>：先点<b>碗</b>放上<b>沙拉台</b>，再点<b>生菜</b>，最后放上<b>配料</b>，做成沙拉。", "到<b>第 3 頁</b>點一下<b>冰淇淋</b>拿起來，不用放上任何檯面，直接點客人就送出。": "到<b>第 3 页</b>点一下<b>冰淇淋</b>拿起来，不用放上任何台面，直接点客人就送出。", "到<b>第 3 頁</b>點一下<b>麻糬</b>拿起來，不用放上任何檯面，直接點客人就送出。": "到<b>第 3 页</b>点一下<b>麻糬</b>拿起来，不用放上任何台面，直接点客人就送出。", "到<b>第 3 頁</b>點一下<b>糰子</b>拿起來，不用放上任何檯面，直接點客人就送出。": "到<b>第 3 页</b>点一下<b>团子</b>拿起来，不用放上任何台面，直接点客人就送出。", "新菜色的食材放在營業畫面食材盤的「第 2 頁」（唐揚握、炙燒）和「第 3 頁」（沙拉、生魚片、甜點）。沙拉和生魚片在獨立的沙拉檯上做。買下新菜色，右上角就會出現 1／2／3 切換鈕。": "新菜色的食材放在营业画面食材盘的「第 2 页」（唐扬握、炙烧）和「第 3 页」（沙拉、生鱼片、甜点）。沙拉和生鱼片在独立的沙拉台上做。买下新菜色，右上角就会出现 1／2／3 切换钮。", "第 2 頁：炙燒和唐揚": "第 2 页：炙烧和唐扬", "食材盤有三頁，點右上角的 1／2／3 就能切換。第 2 頁有唐揚雞塊和噴槍，做唐揚握、炙燒握；壽司台在第 1、2 頁都看得到。": "食材盘有三页，点右上角的 1／2／3 就能切换。第 2 页有唐扬鸡块和喷枪，做唐扬握、炙烧握；寿司台在第 1、2 页都看得到。", "第 3 頁：沙拉檯": "第 3 页：沙拉台", "沙拉和生魚片在獨立的沙拉檯上做，不佔壽司台。碗、盤子、生菜、魚片和甜點的食材都在第 3 頁；甜點不用放上檯面，拿起來直接送客人。": "沙拉和生鱼片在独立的沙拉台上做，不占寿司台。碗、盘子、生菜、鱼片和甜点的食材都在第 3 页；甜点不用放上台面，拿起来直接送客人。"});
+  add("en",{"沙拉檯": "Salad counter", "碗": "Bowl", "盤子": "Plate", "沙拉檯滿了": "The salad counter is full", "沙拉檯要先放碗（做沙拉）或盤子（做生魚片）": "Start with a bowl (salad) or a plate (sashimi) on the salad counter", "先放壽司飯或海苔": "Start with sushi rice or nori", "到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再連點兩片<b>同一種魚片</b>，做成生魚片。": "Go to <b>page 3</b>: tap a <b>plate</b> to put it on the <b>salad counter</b>, then tap <b>the same fish</b> twice to make sashimi.", "到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再依序點<b>鮭魚、鮪魚、鯛魚</b>各一片，做成拼盤。": "Go to <b>page 3</b>: tap a <b>plate</b> to put it on the <b>salad counter</b>, then add one slice each of <b>salmon, tuna and sea bream</b> in that order for the platter.", "到<b>第 3 頁</b>：先點<b>碗</b>放上<b>沙拉檯</b>，再點<b>生菜</b>，最後放上<b>配料</b>，做成沙拉。": "Go to <b>page 3</b>: tap a <b>bowl</b> to put it on the <b>salad counter</b>, add <b>lettuce</b>, then finish with a <b>topping</b> for the salad.", "到<b>第 3 頁</b>點一下<b>冰淇淋</b>拿起來，不用放上任何檯面，直接點客人就送出。": "On <b>page 3</b>, tap <b>ice cream</b> to pick it up. No counter needed: just tap the customer to serve it.", "到<b>第 3 頁</b>點一下<b>麻糬</b>拿起來，不用放上任何檯面，直接點客人就送出。": "On <b>page 3</b>, tap <b>mochi</b> to pick it up. No counter needed: just tap the customer to serve the daifuku.", "到<b>第 3 頁</b>點一下<b>糰子</b>拿起來，不用放上任何檯面，直接點客人就送出。": "On <b>page 3</b>, tap <b>dango</b> to pick it up. No counter needed: just tap the customer to serve the skewer.", "新菜色的食材放在營業畫面食材盤的「第 2 頁」（唐揚握、炙燒）和「第 3 頁」（沙拉、生魚片、甜點）。沙拉和生魚片在獨立的沙拉檯上做。買下新菜色，右上角就會出現 1／2／3 切換鈕。": "Ingredients for the new dishes are on page 2 (karaage, seared) and page 3 (salad, sashimi, desserts) of the tray. Salad and sashimi are made on their own salad counter. Once you buy a new dish, a 1/2/3 switch button appears at the top right.", "第 2 頁：炙燒和唐揚": "Page 2: seared and karaage", "食材盤有三頁，點右上角的 1／2／3 就能切換。第 2 頁有唐揚雞塊和噴槍，做唐揚握、炙燒握；壽司台在第 1、2 頁都看得到。": "The ingredient tray has three pages. Tap 1/2/3 at the top right to switch. Page 2 has karaage chicken and the torch for karaage nigiri and seared nigiri; the sushi counter is visible on pages 1 and 2.", "第 3 頁：沙拉檯": "Page 3: salad counter", "沙拉和生魚片在獨立的沙拉檯上做，不佔壽司台。碗、盤子、生菜、魚片和甜點的食材都在第 3 頁；甜點不用放上檯面，拿起來直接送客人。": "Salad and sashimi are made on their own salad counter, so they never take up sushi counter spots. Bowls, plates, lettuce, fish and dessert ingredients are all on page 3; desserts skip the counter and go straight to the customer."});
+  add("ja",{"沙拉檯": "サラダ台", "碗": "ボウル", "盤子": "お皿", "沙拉檯滿了": "サラダ台がいっぱいです", "沙拉檯要先放碗（做沙拉）或盤子（做生魚片）": "サラダ台は、まずボウル（サラダ）かお皿（刺身）を置きます", "先放壽司飯或海苔": "まずシャリか海苔を置きます", "到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再連點兩片<b>同一種魚片</b>，做成生魚片。": "<b>3ページ目</b>で、まず<b>お皿</b>を<b>サラダ台</b>に置き、<b>同じ魚</b>を2枚続けてのせると刺身になります。", "到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再依序點<b>鮭魚、鮪魚、鯛魚</b>各一片，做成拼盤。": "<b>3ページ目</b>で、まず<b>お皿</b>を<b>サラダ台</b>に置き、<b>サーモン、まぐろ、鯛</b>を順に1枚ずつのせて盛り合わせに。", "到<b>第 3 頁</b>：先點<b>碗</b>放上<b>沙拉檯</b>，再點<b>生菜</b>，最後放上<b>配料</b>，做成沙拉。": "<b>3ページ目</b>で、まず<b>ボウル</b>を<b>サラダ台</b>に置き、<b>レタス</b>を入れて、最後に<b>トッピング</b>をのせるとサラダになります。", "到<b>第 3 頁</b>點一下<b>冰淇淋</b>拿起來，不用放上任何檯面，直接點客人就送出。": "<b>3ページ目</b>で<b>アイス</b>をタップして持ち上げ、台に置かずそのままお客さんをタップして出します。", "到<b>第 3 頁</b>點一下<b>麻糬</b>拿起來，不用放上任何檯面，直接點客人就送出。": "<b>3ページ目</b>で<b>もち</b>をタップして持ち上げ、台に置かずそのままお客さんをタップして出します。", "到<b>第 3 頁</b>點一下<b>糰子</b>拿起來，不用放上任何檯面，直接點客人就送出。": "<b>3ページ目</b>で<b>団子</b>をタップして持ち上げ、台に置かずそのままお客さんをタップして出します。", "新菜色的食材放在營業畫面食材盤的「第 2 頁」（唐揚握、炙燒）和「第 3 頁」（沙拉、生魚片、甜點）。沙拉和生魚片在獨立的沙拉檯上做。買下新菜色，右上角就會出現 1／2／3 切換鈕。": "新メニューの材料は、食材トレイの「2ページ目」（唐揚げ・炙り）と「3ページ目」（サラダ・刺身・デザート）にあります。サラダと刺身は専用のサラダ台で作ります。新メニューを買うと、右上に1／2／3の切り替えボタンが出ます。", "第 2 頁：炙燒和唐揚": "2ページ目：炙りと唐揚げ", "食材盤有三頁，點右上角的 1／2／3 就能切換。第 2 頁有唐揚雞塊和噴槍，做唐揚握、炙燒握；壽司台在第 1、2 頁都看得到。": "食材トレイは3ページあります。右上の1／2／3で切り替えます。2ページ目には唐揚げとバーナーがあり、唐揚げ握りと炙り握りを作ります。寿司台は1・2ページ目で見られます。", "第 3 頁：沙拉檯": "3ページ目：サラダ台", "沙拉和生魚片在獨立的沙拉檯上做，不佔壽司台。碗、盤子、生菜、魚片和甜點的食材都在第 3 頁；甜點不用放上檯面，拿起來直接送客人。": "サラダと刺身は専用のサラダ台で作るので、寿司台を使いません。ボウル、お皿、レタス、魚、デザートの材料は3ページ目にあります。デザートは台に置かず、そのままお客さんに出します。"});
+  add("ko",{"沙拉檯": "샐러드대", "碗": "그릇", "盤子": "접시", "沙拉檯滿了": "샐러드대가 가득 찼어요", "沙拉檯要先放碗（做沙拉）或盤子（做生魚片）": "샐러드대에는 먼저 그릇(샐러드)이나 접시(사시미)를 놓아요", "先放壽司飯或海苔": "먼저 초밥이나 김을 놓아요", "到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再連點兩片<b>同一種魚片</b>，做成生魚片。": "<b>3페이지</b>에서 먼저 <b>접시</b>를 눌러 <b>샐러드대</b>에 놓고, <b>같은 생선</b>을 두 번 올리면 사시미가 돼요.", "到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再依序點<b>鮭魚、鮪魚、鯛魚</b>各一片，做成拼盤。": "<b>3페이지</b>에서 먼저 <b>접시</b>를 <b>샐러드대</b>에 놓고, <b>연어, 참치, 도미</b>를 순서대로 한 점씩 올리면 모둠이 돼요.", "到<b>第 3 頁</b>：先點<b>碗</b>放上<b>沙拉檯</b>，再點<b>生菜</b>，最後放上<b>配料</b>，做成沙拉。": "<b>3페이지</b>에서 먼저 <b>그릇</b>을 <b>샐러드대</b>에 놓고, <b>양상추</b>를 넣은 뒤 마지막에 <b>토핑</b>을 올리면 샐러드가 돼요.", "到<b>第 3 頁</b>點一下<b>冰淇淋</b>拿起來，不用放上任何檯面，直接點客人就送出。": "<b>3페이지</b>에서 <b>아이스크림</b>을 눌러 집어 들고, 어느 대에도 놓지 않고 손님을 눌러 바로 내요.", "到<b>第 3 頁</b>點一下<b>麻糬</b>拿起來，不用放上任何檯面，直接點客人就送出。": "<b>3페이지</b>에서 <b>모찌</b>를 눌러 집어 들고, 어느 대에도 놓지 않고 손님을 눌러 바로 내요.", "到<b>第 3 頁</b>點一下<b>糰子</b>拿起來，不用放上任何檯面，直接點客人就送出。": "<b>3페이지</b>에서 <b>당고</b>를 눌러 집어 들고, 어느 대에도 놓지 않고 손님을 눌러 바로 내요.", "新菜色的食材放在營業畫面食材盤的「第 2 頁」（唐揚握、炙燒）和「第 3 頁」（沙拉、生魚片、甜點）。沙拉和生魚片在獨立的沙拉檯上做。買下新菜色，右上角就會出現 1／2／3 切換鈕。": "새 메뉴의 재료는 재료 트레이의 「2페이지」(가라아게·아부리)와 「3페이지」(샐러드·사시미·디저트)에 있어요. 샐러드와 사시미는 전용 샐러드대에서 만들어요. 새 메뉴를 사면 오른쪽 위에 1/2/3 전환 버튼이 나타나요.", "第 2 頁：炙燒和唐揚": "2페이지: 아부리와 가라아게", "食材盤有三頁，點右上角的 1／2／3 就能切換。第 2 頁有唐揚雞塊和噴槍，做唐揚握、炙燒握；壽司台在第 1、2 頁都看得到。": "재료 트레이는 3페이지예요. 오른쪽 위의 1/2/3을 눌러 전환해요. 2페이지에는 가라아게와 토치가 있어 가라아게 니기리와 아부리 니기리를 만들어요. 초밥대는 1·2페이지에서 보여요.", "第 3 頁：沙拉檯": "3페이지: 샐러드대", "沙拉和生魚片在獨立的沙拉檯上做，不佔壽司台。碗、盤子、生菜、魚片和甜點的食材都在第 3 頁；甜點不用放上檯面，拿起來直接送客人。": "샐러드와 사시미는 전용 샐러드대에서 만들어서 초밥대를 차지하지 않아요. 그릇, 접시, 양상추, 생선, 디저트 재료는 모두 3페이지에 있어요. 디저트는 대에 놓지 않고 바로 손님에게 내요."});
+  add("id",{"沙拉檯": "Meja salad", "碗": "Mangkuk", "盤子": "Piring", "沙拉檯滿了": "Meja salad penuh", "沙拉檯要先放碗（做沙拉）或盤子（做生魚片）": "Di meja salad, taruh mangkuk (salad) atau piring (sashimi) dulu", "先放壽司飯或海苔": "Taruh nasi sushi atau nori dulu", "到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再連點兩片<b>同一種魚片</b>，做成生魚片。": "Buka <b>halaman 3</b>: ketuk <b>piring</b> untuk menaruhnya di <b>meja salad</b>, lalu ketuk <b>ikan yang sama</b> dua kali untuk sashimi.", "到<b>第 3 頁</b>：先點<b>盤子</b>放上<b>沙拉檯</b>，再依序點<b>鮭魚、鮪魚、鯛魚</b>各一片，做成拼盤。": "Buka <b>halaman 3</b>: taruh <b>piring</b> di <b>meja salad</b>, lalu tambahkan satu irisan <b>salmon, tuna, dan kakap merah</b> berurutan untuk sashimi campur.", "到<b>第 3 頁</b>：先點<b>碗</b>放上<b>沙拉檯</b>，再點<b>生菜</b>，最後放上<b>配料</b>，做成沙拉。": "Buka <b>halaman 3</b>: taruh <b>mangkuk</b> di <b>meja salad</b>, tambahkan <b>selada</b>, lalu akhiri dengan <b>topping</b> untuk salad.", "到<b>第 3 頁</b>點一下<b>冰淇淋</b>拿起來，不用放上任何檯面，直接點客人就送出。": "Di <b>halaman 3</b>, ketuk <b>es krim</b> untuk mengambilnya. Tidak perlu ditaruh di meja, langsung ketuk pelanggan untuk menyajikan.", "到<b>第 3 頁</b>點一下<b>麻糬</b>拿起來，不用放上任何檯面，直接點客人就送出。": "Di <b>halaman 3</b>, ketuk <b>mochi</b> untuk mengambilnya. Tidak perlu ditaruh di meja, langsung ketuk pelanggan untuk menyajikan.", "到<b>第 3 頁</b>點一下<b>糰子</b>拿起來，不用放上任何檯面，直接點客人就送出。": "Di <b>halaman 3</b>, ketuk <b>dango</b> untuk mengambilnya. Tidak perlu ditaruh di meja, langsung ketuk pelanggan untuk menyajikan.", "新菜色的食材放在營業畫面食材盤的「第 2 頁」（唐揚握、炙燒）和「第 3 頁」（沙拉、生魚片、甜點）。沙拉和生魚片在獨立的沙拉檯上做。買下新菜色，右上角就會出現 1／2／3 切換鈕。": "Bahan menu baru ada di «halaman 2» (karaage, bakar) dan «halaman 3» (salad, sashimi, hidangan penutup) pada nampan bahan. Salad dan sashimi dibuat di meja salad tersendiri. Setelah membeli menu baru, tombol pengalih 1/2/3 muncul di kanan atas.", "第 2 頁：炙燒和唐揚": "Halaman 2: bakar dan karaage", "食材盤有三頁，點右上角的 1／2／3 就能切換。第 2 頁有唐揚雞塊和噴槍，做唐揚握、炙燒握；壽司台在第 1、2 頁都看得到。": "Nampan bahan punya tiga halaman. Ketuk 1/2/3 di kanan atas untuk beralih. Halaman 2 berisi karaage dan obor untuk nigiri karaage dan nigiri bakar; meja sushi terlihat di halaman 1 dan 2.", "第 3 頁：沙拉檯": "Halaman 3: meja salad", "沙拉和生魚片在獨立的沙拉檯上做，不佔壽司台。碗、盤子、生菜、魚片和甜點的食材都在第 3 頁；甜點不用放上檯面，拿起來直接送客人。": "Salad dan sashimi dibuat di meja salad tersendiri, jadi tidak memakai tempat di meja sushi. Mangkuk, piring, selada, ikan, dan bahan hidangan penutup ada di halaman 3; hidangan penutup tidak perlu ditaruh di meja, langsung disajikan ke pelanggan."});
 })();
 /* data tables whose names are shown in many places: read them through T() so every screen (gacha, items, achievements, sushi parts, holiday guests) follows the language */
 (function(){const tr=(o,k,ctx)=>{const raw=o[k];Object.defineProperty(o,k,{get(){return ctx?TX(raw,ctx):T(raw)},enumerable:true,configurable:true})};
