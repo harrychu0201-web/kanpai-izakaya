@@ -3185,8 +3185,8 @@ function step(dt){
   if(!chOn()&&hr>=lastHr()&&!R.lastCall){R.lastCall=true;toast(T('最後點餐！不再接新客人'))}
   evStep(dt,hr);
   R.seats.forEach(c=>{if(!c)return;c.t+=dt;
-    if(c.st==='in'&&c.t>(c.walkT||1.15)){c.st='wait';c.waitAt=c.t;c.sitAt=R.t;c.el.classList.remove('walk')}
-    else if(c.st==='wait'){c.pat-=dt;if(!c.taken&&shopHasStaff()){c.untk=(c.untk||0)+dt;if(c.untk>=AUTOTAKE)autoTake(c)} /* nobody tapped: a working staff member takes the order so staff never sit idle */if(c.pat<=0)leave(c,!!c.tail);c.el.classList.toggle('hurry',!c.tail&&c.tr.pat!=null&&c.pat/c.max<.5)} // c.tail: regular order done, only waiting for the bonus dish -> leaves happy either way
+    if(c.st==='in'&&c.t>(c.walkT||1.15)){c.st='wait';c.waitAt=c.t;c.sitAt=R.t;c.el.classList.remove('walk');if(!shopHasStaff())c.taken=true /* 沒有上班的店員：入座就算已點餐，不會閃一下金色點餐泡泡 */}
+    else if(c.st==='wait'){c.pat-=dt;if(!c.taken){if(!shopHasStaff())c.taken=true /* 沒有上班的店員：客人入座就算已點餐，玩家直接做菜上菜，跟原本一樣不用先點 */;else{c.untk=(c.untk||0)+dt;if(c.untk>=AUTOTAKE)autoTake(c)}} /* nobody tapped: a working staff member takes the order so staff never sit idle */if(c.pat<=0)leave(c,!!c.tail);c.el.classList.toggle('hurry',!c.tail&&c.tr.pat!=null&&c.pat/c.max<.5)} // c.tail: regular order done, only waiting for the bonus dish -> leaves happy either way
   });
   if(R.t>=DAYLEN&&R.seats.every(x=>!x)&&!R.rob&&!R.over){R.over=true;setTimeout(endDay,900)}
 }
