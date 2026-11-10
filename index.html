@@ -3203,7 +3203,7 @@ function spawn(){
   const max=(46+order.length*13)*patMult()*(1+order.reduce((s,k)=>s+lvOf(k.split(':')[0])*.04,0))*Math.max(.7,1-ST.day*.015)*(evNow().ev==='rain'?1.3:1);
   const hv=evNow().hol,hgs=HOLGUESTS[hv]||[],hg=!R.forceLook&&hgs.length&&Math.random()<.45?pick(hgs):null;
   const look=R.forceLook||(hg?pick(MOBS):pickChar());R.forceLook=null;
-  const c={seat:i,look,hg,critic:look.spr==='kuroda'&&evNow().ev==='critic'&&!R.criticDone,order,filled:order.map(()=>false),pat:max,max,st:'in',t:0,fig:'ok',taken:false};
+  const c={seat:i,look,hg,critic:look.spr==='kuroda'&&evNow().ev==='critic'&&!R.criticDone,order,filled:order.map(()=>false),pat:max,max,st:'in',t:0,fig:'ok',taken:true /* 不用接單：客人一來店員就看得到、會自己下廚 */};
   c.tr=TRAITS[look.spr]||{};if(c.tr.pat){c.max*=c.tr.pat;c.pat=c.max}
   R.seats[i]=c;R.spawned++;sfx('door');if(c.look.spr&&PROF[c.look.spr]&&!DEMO){const rr=loadRec();rr.met=rr.met||{};if(!rr.met[c.look.spr]){dxsPrep(rr);rr.met[c.look.spr]=1;saveRec(rr);achSoon()}}
   const el=document.createElement('div');el.className='cust walk';el.dataset.seat=i;el.dataset.m='ok';if(c.look.spr){el.classList.add('sp');el.dataset.c=c.look.spr;if(c.look.mob)el.classList.add('mob')}{const tx=seatX(i,seatsN())-80;el.style.left=tx+'px';el.style.transform=`translateX(${-(tx+170)}px)`}
@@ -3241,8 +3241,8 @@ function step(dt){
   if(!chOn()&&hr>=lastHr()&&!R.lastCall){R.lastCall=true;toast(T('最後點餐！不再接新客人'))}
   evStep(dt,hr);
   R.seats.forEach(c=>{if(!c)return;c.t+=dt;
-    if(c.st==='in'&&c.t>(c.walkT||1.15)){c.st='wait';c.waitAt=c.t;c.sitAt=R.t;c.el.classList.remove('walk');if(!shopHasStaff())c.taken=true /* 沒有上班的店員：入座就算已點餐，不會閃一下金色點餐泡泡 */;else orderSay(c) /* 有店員的店：點單泡泡冒出來的同一刻，客人也在座位上方說出自己點了什麼 */}
-    else if(c.st==='wait'){c.pat-=dt;if(!c.taken){if(!shopHasStaff())c.taken=true /* 沒有上班的店員：客人入座就算已點餐，玩家直接做菜上菜，跟原本一樣不用先點 */;else{c.untk=(c.untk||0)+dt;if(c.untk>=AUTOTAKE)autoTake(c)}} /* nobody tapped: a working staff member takes the order so staff never sit idle */if(c.pat<=0)leave(c,!!c.tail);c.el.classList.toggle('hurry',!c.tail&&c.tr.pat!=null&&c.pat/c.max<.5)} // c.tail: regular order done, only waiting for the bonus dish -> leaves happy either way
+    if(c.st==='in'&&c.t>(c.walkT||1.15)){c.st='wait';c.waitAt=c.t;c.sitAt=R.t;c.el.classList.remove('walk')}
+    else if(c.st==='wait'){c.pat-=dt;if(c.pat<=0)leave(c,!!c.tail);c.el.classList.toggle('hurry',!c.tail&&c.tr.pat!=null&&c.pat/c.max<.5)} // c.tail: regular order done, only waiting for the bonus dish -> leaves happy either way
   });
   if(R.t>=DAYLEN&&R.seats.every(x=>!x)&&!R.rob&&!R.over){R.over=true;setTimeout(endDay,900)}
 }
@@ -3294,7 +3294,7 @@ function rmPop(t){popup(50,KY-218,T(t))}
 function shoPop(t){popup(W-62,KY-218,T(t))}
 /* Yamada: starts food for orders nobody is making yet */
 function rmDemand(){const d={ramen:0,gyoza:0,friedrice:0,oden:0,koro:0,tori:0,katsu:0};
-  for(const c of R.seats){if(!c||c.st!=='wait'||!c.taken)continue;c.order.forEach((k,j)=>{if(c.filled[j])return;const b=k.split(':')[0];if(b in d)d[b]++})
+  for(const c of R.seats){if(!c||(c.st!=='wait'&&c.st!=='in'))continue;c.order.forEach((k,j)=>{if(c.filled[j])return;const b=k.split(':')[0];if(b in d)d[b]++})
     if(c.extra&&c.extra.ok&&!c.extra.done){const b=c.extra.key.split(':')[0];if(b in d)d[b]++}}
   R.mpot.forEach((g,i)=>{if(g&&i<mpotN()&&cookState(g.t,'noodle')!=='burnt')d.ramen--});
   R.bowls.forEach((b,i)=>{if(b&&i<bowlsN()&&b.men)d.ramen--});
@@ -3920,14 +3920,6 @@ function shopHasStaff(){
   if(CUR==='rm')return (rmStaffLv()>0&&on('rmstaff'))||(rmStaff2Lv()>0&&on('rmstaff2'))||(rmFryStaffLv()>0&&on('rmstaff3'));
   return (staffLv('waiter')>0&&on('waiter'))||(staffLv('helper')>0&&on('helper'))||(staffLv('chef')>0&&on('chef'));
 }
-/* 客人入座、點單泡泡出現的同一刻，在他的座位上方說出點了什麼（每位客人點的不一樣，只列前兩樣）；
-   以前是等店員接單才冒出一句每位客人都一樣的「店員點餐」，泡泡先出現、訊息晚到，訊息一出現店員就馬上開做 */
-function orderSay(c){let names=[];try{c.order.forEach(k=>{const n=itemName(k),e=names.find(x=>x.n===n);if(e)e.c++;else names.push({n,c:1})})}catch(e){names=[]}
-  if(!names.length)return;const f=x=>x.n+(x.c>1?'×'+x.c:''),more=names.length>2||(c.extra&&c.extra.ok);
-  let t=names.slice(0,2).map(f).join('、');if(t.length>12||names.length>2&&t.length>9){t=f(names[0]);if(names.length>1||more)t+='…'}else if(more)t+='…';
-  popup(seatX(c.seat,seatsN()),120,t)}
-/* 店員接單：不再另外冒一句每位客人都一樣的訊息（客人入座時已經說過自己點什麼） */
-function autoTake(c){c.taken=true;sfx('pick');renderCust();renderStations()}
 function deliver(seat){
   const c=R.seats[seat];if(!c||c.st!=='wait')return;
   if(!c.taken){
