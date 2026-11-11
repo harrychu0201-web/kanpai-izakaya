@@ -5890,7 +5890,9 @@ async function cloudInit1(){
         const d=await fs.getDoc(fs.doc(db,'saves',uid));return d.exists()?d.data():null},
       getAll:async uid=>{let a=null,b=null,err=null;try{a=await rt((rd,r)=>rd.get(rd.ref(r,'saves/'+uid)).then(s=>s.val()))}catch(e){err=e}
         try{const d=await fs.getDoc(fs.doc(db,'saves',uid));b=d.exists()?d.data():null}catch(e){}return {rt:a,fs:b,err}},
-      put:(uid,d)=>rt((rd,r)=>{const o={at:+d.at||Date.now()};if(d.game)o.game=d.game;if(d.rec)o.rec=d.rec;return rd.set(rd.ref(r,'saves/'+uid),o)}),
+      put:(uid,d)=>rt((rd,r)=>{const o={at:+d.at||Date.now(),game:d.game||null,rec:d.rec||null};return rd.update(rd.ref(r,'saves/'+uid),o)}),
+      /* 點食成金 cloud save lives in saves/$uid/fc; the transaction refuses to replace a copy that has more lifetime earnings (e) than ours */
+      fcPut:(uid,str,e)=>rt((rd,r)=>rd.runTransaction(rd.ref(r,'saves/'+uid+'/fc'),cur=>{let ce=0;try{ce=+JSON.parse(cur).e||0}catch(x){}return ce>e?undefined:str}).then(x=>!!x.committed)),
       top:async(f,dir,n)=>{const asc=dir==='asc';
         const rows=await rt((rd,r)=>rd.get(rd.query(rd.ref(r,'lb'),rd.orderByChild(f),...(asc?[rd.startAt(1),rd.limitToFirst(n)]:[rd.limitToLast(n)]))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({uid:c.key},c.val()))});return a}));
         const all=rows.filter(x=>typeof x[f]==='number'&&(!asc||x[f]>0));
@@ -6061,6 +6063,7 @@ const gDay=g=>{try{const o=JSON.parse(g);return (o.day||0)+(o.pendingNext?1:0)}c
 async function cloudSync(){
   const u=CL.user;if(!u||TEST)return;
   try{const c=await CL.api.get(u.uid);if(CL.user!==u)return;await claimGrants();if(CL.user!==u)return;
+    try{if(window.fcCloud)window.fcCloud.sync(c&&c.fc||null,u.uid)}catch(e){console.warn('fc sync',e)}
     const lg=lsGet(KEY),lr=lsGet(RKEY),cg=c?c.game||null:null,cr=c?c.rec||null:null;
     const rec=(lr||cr)?mergeRec(cr,lr):null;if(rec!==lr)lsSet(RKEY,rec);
     // a newer timestamp alone must never overwrite the cloud: a fresh device (day 1, saved a moment ago) is always "newer" than the phone's last upload
@@ -7631,7 +7634,7 @@ function voLobbyBtns(){return `<button class="btn alt" data-act="coopmic">${VO.o
 <script>/* 拉麵台味噌／擔擔圖下加字 (2026-11-10) */Object.assign(I18N["zh-Hans"],{"味噌":"味噌","擔擔":"担担"});Object.assign(I18N["en"],{"味噌":"Miso","擔擔":"Dan"});Object.assign(I18N["ja"],{"味噌":"味噌","擔擔":"担々"});Object.assign(I18N["ko"],{"味噌":"미소","擔擔":"탄탄"});Object.assign(I18N["id"],{"味噌":"Miso","擔擔":"Dandan"});</script>
 <script>/* 直式擋板：所有畫面（含首頁）直式都擋，補說明 (2026-11-11) */Object.assign(I18N["zh-Hans"],{"轉了沒反應？請確認手機的「自動旋轉」有打開（iPhone 請關掉「直向鎖定」）": "转了没反应？请确认手机的“自动旋转”已打开（iPhone 请关掉“竖排方向锁定”）", "還是轉不過去，請點右上角「⋮」，選「用瀏覽器開啟」": "还是转不过去，请点右上角“⋮”，选“用浏览器打开”", "還是轉不過去，請點右下角「⋯」或分享鈕，選「用 Safari 開啟」": "还是转不过去，请点右下角“⋯”或分享键，选“用 Safari 打开”"});Object.assign(I18N["en"],{"轉了沒反應？請確認手機的「自動旋轉」有打開（iPhone 請關掉「直向鎖定」）": "Nothing happens? Make sure auto-rotate is on (on iPhone, turn off Portrait Orientation Lock).", "還是轉不過去，請點右上角「⋮」，選「用瀏覽器開啟」": "Still stuck? Tap the “⋮” at the top right and choose “Open in browser”.", "還是轉不過去，請點右下角「⋯」或分享鈕，選「用 Safari 開啟」": "Still stuck? Tap “⋯” at the bottom right or the Share button and choose “Open in Safari”."});Object.assign(I18N["ja"],{"轉了沒反應？請確認手機的「自動旋轉」有打開（iPhone 請關掉「直向鎖定」）": "回転しないときは「画面の自動回転」をオンにしてください（iPhone は「画面縦向きのロック」をオフ）", "還是轉不過去，請點右上角「⋮」，選「用瀏覽器開啟」": "それでも回らないときは、右上の「⋮」から「ブラウザで開く」を選んでください", "還是轉不過去，請點右下角「⋯」或分享鈕，選「用 Safari 開啟」": "それでも回らないときは、右下の「⋯」または共有ボタンから「Safari で開く」を選んでください"});Object.assign(I18N["ko"],{"轉了沒反應？請確認手機的「自動旋轉」有打開（iPhone 請關掉「直向鎖定」）": "회전이 안 되면 '자동 회전'을 켜 주세요 (iPhone은 '세로 방향 잠금'을 끄세요)", "還是轉不過去，請點右上角「⋮」，選「用瀏覽器開啟」": "그래도 안 되면 오른쪽 위 '⋮'를 눌러 '브라우저에서 열기'를 선택하세요", "還是轉不過去，請點右下角「⋯」或分享鈕，選「用 Safari 開啟」": "그래도 안 되면 오른쪽 아래 '⋯' 또는 공유 버튼을 눌러 'Safari로 열기'를 선택하세요"});Object.assign(I18N["id"],{"轉了沒反應？請確認手機的「自動旋轉」有打開（iPhone 請關掉「直向鎖定」）": "Tidak berputar? Pastikan putar otomatis aktif (di iPhone, matikan Kunci Orientasi Potret).", "還是轉不過去，請點右上角「⋮」，選「用瀏覽器開啟」": "Masih macet? Ketuk “⋮” di kanan atas lalu pilih “Buka di browser”.", "還是轉不過去，請點右下角「⋯」或分享鈕，選「用 Safari 開啟」": "Masih macet? Ketuk “⋯” di kanan bawah atau tombol Bagikan lalu pilih “Buka di Safari”."});Object.assign(I18N["zh-Hans"],{"請先用 Chrome 打開這個網頁": "请先用 Chrome 打开这个网页", "請先用 Safari 打開這個網頁": "请先用 Safari 打开这个网页", "點右上角的「⋯」，選「用瀏覽器開啟」": "点右上角的“⋯”，选“用浏览器打开”", "點右下角的「⋯」或分享鈕，選「用 Safari 開啟」": "点右下角的“⋯”或分享键，选“用 Safari 打开”", "App 裡面的瀏覽器沒辦法用 Google 登入": "App 里面的浏览器没办法用 Google 登录", "還是轉不過去，請點右上角的選單（「⋯」或「⋮」），選「用瀏覽器開啟」": "还是转不过去，请点右上角的菜单（“⋯”或“⋮”），选“用浏览器打开”"});Object.assign(I18N["en"],{"請先用 Chrome 打開這個網頁": "Please open this page in Chrome first", "請先用 Safari 打開這個網頁": "Please open this page in Safari first", "點右上角的「⋯」，選「用瀏覽器開啟」": "Tap “⋯” at the top right and choose “Open in browser”", "點右下角的「⋯」或分享鈕，選「用 Safari 開啟」": "Tap “⋯” at the bottom right or the Share button and choose “Open in Safari”", "App 裡面的瀏覽器沒辦法用 Google 登入": "Google sign-in doesn't work in an app's built-in browser", "還是轉不過去，請點右上角的選單（「⋯」或「⋮」），選「用瀏覽器開啟」": "Still stuck? Tap the menu at the top right (“⋯” or “⋮”) and choose “Open in browser”."});Object.assign(I18N["ja"],{"請先用 Chrome 打開這個網頁": "まず Chrome でこのページを開いてください", "請先用 Safari 打開這個網頁": "まず Safari でこのページを開いてください", "點右上角的「⋯」，選「用瀏覽器開啟」": "右上の「⋯」から「ブラウザで開く」を選んでください", "點右下角的「⋯」或分享鈕，選「用 Safari 開啟」": "右下の「⋯」または共有ボタンから「Safari で開く」を選んでください", "App 裡面的瀏覽器沒辦法用 Google 登入": "アプリ内ブラウザでは Google ログインができません", "還是轉不過去，請點右上角的選單（「⋯」或「⋮」），選「用瀏覽器開啟」": "それでも回らないときは、右上のメニュー（「⋯」または「⋮」）から「ブラウザで開く」を選んでください"});Object.assign(I18N["ko"],{"請先用 Chrome 打開這個網頁": "먼저 Chrome으로 이 페이지를 열어 주세요", "請先用 Safari 打開這個網頁": "먼저 Safari로 이 페이지를 열어 주세요", "點右上角的「⋯」，選「用瀏覽器開啟」": "오른쪽 위 '⋯'를 눌러 '브라우저에서 열기'를 선택하세요", "點右下角的「⋯」或分享鈕，選「用 Safari 開啟」": "오른쪽 아래 '⋯' 또는 공유 버튼을 눌러 'Safari로 열기'를 선택하세요", "App 裡面的瀏覽器沒辦法用 Google 登入": "앱 안의 브라우저에서는 Google 로그인을 할 수 없어요", "還是轉不過去，請點右上角的選單（「⋯」或「⋮」），選「用瀏覽器開啟」": "그래도 안 되면 오른쪽 위 메뉴('⋯' 또는 '⋮')를 눌러 '브라우저에서 열기'를 선택하세요"});Object.assign(I18N["id"],{"請先用 Chrome 打開這個網頁": "Buka halaman ini di Chrome dulu", "請先用 Safari 打開這個網頁": "Buka halaman ini di Safari dulu", "點右上角的「⋯」，選「用瀏覽器開啟」": "Ketuk “⋯” di kanan atas lalu pilih “Buka di browser”", "點右下角的「⋯」或分享鈕，選「用 Safari 開啟」": "Ketuk “⋯” di kanan bawah atau tombol Bagikan lalu pilih “Buka di Safari”", "App 裡面的瀏覽器沒辦法用 Google 登入": "Browser di dalam aplikasi tidak bisa login dengan Google", "還是轉不過去，請點右上角的選單（「⋯」或「⋮」），選「用瀏覽器開啟」": "Masih macet? Ketuk menu di kanan atas (“⋯” atau “⋮”) lalu pilih “Buka di browser”."});applyLang();</script>
 <script>/* 送錯菜改成客人氣走 (2026-11-11) */(function(){const A={"zh-Hans":["送错菜了！","送错菜了！客人气走了，不会付钱","上错客人（客人会气走）、食物烧焦、客人等太久生气走了。上错客人只算一次失误。"],"en":["Wrong dish!","Wrong dish! The customer stormed off without paying","Serving the wrong customer (they storm off), burning food, or a customer storming off after waiting too long. A wrong serve only counts as one strike."],"ja":["違う料理だ！","違う料理を出してしまい、お客は怒ってお金を払わず帰った","別のお客に出す（お客は怒って帰る）、料理を焦がす、待ちくたびれたお客が怒って帰る。間違いは一回だけ数える。"],"ko":["잘못 나갔어요!","잘못 서빙해서 손님이 화나서 돈도 안 내고 나갔어요","다른 손님에게 서빙(손님이 화나서 나감), 음식 태우기, 오래 기다린 손님이 화나서 나가기. 잘못 서빙은 한 번만 세요."],"id":["Salah menu!","Salah menu! Tamu pergi marah tanpa membayar","Salah antar ke tamu (tamu pergi marah), makanan gosong, atau tamu pergi marah karena menunggu terlalu lama. Salah antar hanya dihitung sekali."]};const K=["送錯菜了！","送錯菜了！客人氣走了，不會付錢","上錯客人（客人會氣走）、食物燒焦、客人等太久生氣走了。上錯客人只算一次失誤。"];for(const L in A){const t=I18N[L]=I18N[L]||{};K.forEach((k,i)=>{t[k]=A[L][i]})}})();</script>
-<script>/* 點食成金：遊戲廳裡的放置點擊小遊戲（獨立貨幣「食券」，只存這台裝置，與店裡的錢、排行榜、雲端存檔完全分開）(2026-11-11；v2：1000 級、30 種幫手、16 種筷子、秘傳升級、成就領獎)
+<script>/* 點食成金：遊戲廳裡的放置點擊小遊戲（獨立貨幣「食券」，只存這台裝置，與店裡的錢、排行榜、雲端存檔完全分開）[2026-11-11 起改為存在帳號雲端 saves/$uid/fc 並跨裝置同步](2026-11-11；v2：1000 級、30 種幫手、16 種筷子、秘傳升級、成就領獎)
    存檔相容原則：只新增欄位，舊欄位（e/c/tp/h/t/col/ach）一律原樣保留，陣列只補長度不截斷 */
 (function(){
 const KEY='izakaya-fc-v1';
@@ -7693,7 +7696,36 @@ function load(){
   }catch(e){}
   return def();
 }
-function save(){const s=FC.s;if(!s)return;s.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
+function save(){const s=FC.s;if(!s)return;s.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}pushSoon()}
+/* cloud sync (2026-11-11): the whole save rides on the Google account in saves/$uid/fc. Merge rule: whichever copy has more lifetime earnings (e, then taps) wins as a whole;
+   the copy that loses is kept on this device in izakaya-fc-bak, never deleted. Nothing is pushed before the first merge of the session, so a fresh device can't overwrite a bigger cloud copy */
+const FCP={uid:null,t:null,at:0,busy:false};
+const pg=o=>o&&typeof o==='object'?{e:+o.e>0?+o.e:0,tp:+o.tp>0?+o.tp:0}:{e:0,tp:0};
+const gt=(a,b)=>a.e>b.e||(a.e===b.e&&a.tp>b.tp);
+function pushSoon(){if(!FCP.uid||FCP.t)return;FCP.t=setTimeout(()=>{FCP.t=null;flush()},Math.max(2000,60000-(Date.now()-FCP.at)))}
+async function flush(){
+  if(FCP.busy||typeof CL==='undefined'||!CL.user||CL.user.uid!==FCP.uid||!CL.api||!CL.api.fcPut)return;
+  let raw=null,o=null;try{raw=localStorage.getItem(KEY);o=JSON.parse(raw)}catch(e){}
+  const p=pg(o);if(!raw||(!p.e&&!p.tp))return;
+  FCP.busy=true;FCP.at=Date.now();
+  try{await CL.api.fcPut(FCP.uid,raw,p.e)}catch(e){console.warn('fc cloud save failed',e);FCP.at=Date.now()}
+  FCP.busy=false;
+}
+window.fcCloud={
+  sync(cs,uid){
+    if(FC.s&&document.getElementById('fcRoot'))save();
+    let lo=null,co=null;
+    try{lo=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+    try{co=cs?JSON.parse(cs):null}catch(e){}
+    const L=pg(lo),C=pg(co);FCP.uid=uid;
+    if(co&&gt(C,L)){
+      if(L.e>0||L.tp>0){try{const b=pg(JSON.parse(localStorage.getItem('izakaya-fc-bak')));if(!gt(b,L))localStorage.setItem('izakaya-fc-bak',localStorage.getItem(KEY))}catch(e){try{localStorage.setItem('izakaya-fc-bak',localStorage.getItem(KEY))}catch(x){}}}
+      co.ts=Date.now();
+      try{localStorage.setItem(KEY,JSON.stringify(co))}catch(e){return}
+      if(FC.s&&document.getElementById('fcRoot')){FC.s=load();calc();FC.lv=level(FC.s.e);checkAchSilent();renderList();tabLabels();upd(false);FC.last=Date.now();say(T('已從雲端同步你的進度'))}
+    }else if((L.e>0||L.tp>0)&&gt(L,C)){flush()}
+  }
+};
 function fmt(n){
   if(!isFinite(n))return '∞';
   const L=LANG;let U,B;
@@ -7938,7 +7970,7 @@ function open(){
 <div class="fc-right"><div class="fc-tabs"><button class="fc-tab" data-act="fctab" data-t="shop">${T('商店')}</button><button class="fc-tab" data-act="fctab" data-t="up" id="fcTup"></button><button class="fc-tab" data-act="fctab" data-t="dex" id="fcTdex"></button><button class="fc-tab" data-act="fctab" data-t="ach" id="fcTach"></button></div>
 <div class="fc-qty" id="fcQty"><button class="fc-q" data-act="fcqty" data-q="1">×1</button><button class="fc-q" data-act="fcqty" data-q="10">×10</button><button class="fc-q" data-act="fcqty" data-q="100">×100</button><button class="fc-q" data-act="fcqty" data-q="max">${T('最多')}</button></div>
 <div class="fc-list" id="fcList"></div></div></div>
-<div class="fc-foot" id="fcFoot"></div><div class="fc-save">${T('食券只存在這台裝置，與店裡的錢完全分開。')}</div></div>`);
+<div class="fc-foot" id="fcFoot"></div><div class="fc-save">${T(typeof CL!=='undefined'&&CL.user?'食券會跟著 Google 帳號同步到其他裝置，與店裡的錢完全分開。':'登入 Google 帳號後，食券會同步到其他裝置，與店裡的錢完全分開。')}</div></div>`);
   const d=document.getElementById('fcDish');
   if(d)d.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();tap(e)});
   renderList();tabLabels();upd(false);
@@ -8070,6 +8102,9 @@ const D={
 '你不在的時候，幫手賺了 {0} 食券':['你不在的时候，帮手赚了 {0} 食券','While you were away, helpers earned {0} tickets','留守中に助っ人が {0} 食券を稼ぎました','자리를 비운 사이 도우미가 {0} 식권을 벌었어요','Saat kamu pergi, pembantu mendapat {0} kupon'],
 '幫手回來工作了！':['帮手回来工作了！','Helpers are back at work!','助っ人が仕事に戻りました！','도우미가 다시 일해요!','Pembantu kembali bekerja!'],
 '幫手休息了，點一下食物就會繼續工作':['帮手休息了，点一下食物就会继续工作','Helpers are resting — tap the food to wake them up','助っ人はお休み中。料理をタップすると再開します','도우미가 쉬고 있어요. 음식을 누르면 다시 일해요','Pembantu istirahat — ketuk makanan untuk melanjutkan'],
+'已從雲端同步你的進度':['已从云端同步你的进度','Progress synced from the cloud','クラウドから進行状況を同期しました','클라우드에서 진행 상황을 동기화했어요','Progres disinkronkan dari cloud'],
+'食券會跟著 Google 帳號同步到其他裝置，與店裡的錢完全分開。':['食券会跟着 Google 账号同步到其他设备，与店里的钱完全分开。','Tickets sync to your other devices through your Google account, separate from your shop money.','食券はGoogleアカウントで他の端末に同期され、お店のお金とは完全に別です。','식권은 Google 계정으로 다른 기기에 동기화되며 가게 돈과 완전히 별개예요.','Kupon disinkronkan ke perangkat lain lewat akun Google, terpisah dari uang toko.'],
+'登入 Google 帳號後，食券會同步到其他裝置，與店裡的錢完全分開。':['登录 Google 账号后，食券会同步到其他设备，与店里的钱完全分开。','Sign in with Google and your tickets sync to other devices, separate from your shop money.','Googleアカウントでログインすると食券が他の端末に同期され、お店のお金とは完全に別です。','Google 계정으로 로그인하면 식권이 다른 기기에 동기화되며 가게 돈과 완전히 별개예요.','Masuk dengan akun Google agar kupon tersinkron ke perangkat lain, terpisah dari uang toko.'],
 '食券只存在這台裝置，與店裡的錢完全分開。':['食券只存在这台设备，与店里的钱完全分开。','Tickets are stored on this device only, separate from your shop money.','食券はこの端末にだけ保存され、お店のお金とは完全に別です。','식권은 이 기기에만 저장되며 가게 돈과 완전히 별개예요.','Kupon hanya disimpan di perangkat ini, terpisah dari uang toko.'],
 // 食物（圖鑑、進化階段）
 '飯糰':['饭团','Onigiri','おにぎり','주먹밥','Onigiri'],

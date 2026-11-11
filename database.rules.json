@@ -78,6 +78,9 @@
         "rec": {
           ".validate": "newData.isString() && newData.val().length <= 50000"
         },
+        "fc": {
+          ".validate": "newData.isString() && newData.val().length <= 100000"
+        },
         "at": {
           ".validate": "newData.isNumber()"
         },
