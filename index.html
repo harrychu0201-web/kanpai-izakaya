@@ -7660,8 +7660,9 @@ TOOLS.forEach((t,j)=>[10,50].forEach(n=>ACH.push({id:'ti'+j+'_'+n,k:'ti',t:'把�
 addA('up','解鎖 {0} 個升級',[1,10,30,60,90,110,140,170,185]);
 const RAR={c:{n:'普通',col:'#8a5a34',w:70},r:{n:'稀有',col:'#2f7fb8',w:25},l:{n:'傳說',col:'#c8891a',w:5}};
 const OFFLINE=0.5; // 離線收益比例（線上 100%）
+const IDLE_CAP=7200; // 秒：離線或沒有任何操作超過 2 小時，幫手就停工，點一下才繼續
 
-const FC={s:null,timer:null,tab:'shop',qty:1,last:0,saveAt:0,dropAt:0,tick:0,lv:0,msgT:null,pt:1,ps:0,mult:1,sig:''};
+const FC={act:0,sleep:false,s:null,timer:null,tab:'shop',qty:1,last:0,saveAt:0,dropAt:0,tick:0,lv:0,msgT:null,pt:1,ps:0,mult:1,sig:''};
 window.FC=FC;
 function arr(a,n){return Array.from({length:n},(_,i)=>{const v=+(a&&a[i]);return isFinite(v)&&v>0?v:0})}
 const obj=o=>o&&typeof o==='object'&&!Array.isArray(o)?o:{};
@@ -7706,6 +7707,7 @@ function dishName(L){
   const nm=T(FOODS[TIERS[ti]][1]);
   return (LANG==='zh-Hant'||LANG==='zh-Hans'||LANG==='ja')?nm+'・'+g+'重':nm+' · '+T('第 {0} 段',g);
 }
+function touch(){FC.act=Date.now();if(FC.sleep){FC.sleep=false;say(T('幫手回來工作了！'))}}
 function say(t){
   const e=document.getElementById('fcMsg');if(!e)return;
   e.textContent=t;e.style.opacity=1;clearTimeout(FC.msgT);FC.msgT=setTimeout(()=>{const x=document.getElementById('fcMsg');if(x)x.style.opacity=0},2600);
@@ -7739,6 +7741,7 @@ function checkAch(){
 }
 function tap(){
   const s=FC.s;if(!s)return;
+  touch();
   const g=FC.pt;s.c+=g;s.e+=g;s.tp++;
   if(Math.random()<0.02)drop();
   const w=document.getElementById('fcWrap'),d=document.getElementById('fcDish');
@@ -7887,9 +7890,15 @@ function upd(light){
 function step(){
   const s=FC.s;
   if(!s||!document.getElementById('fcRoot')){clearInterval(FC.timer);FC.timer=null;if(s)save();return}
-  const now=Date.now(),dt=Math.min(7200,Math.max(0,(now-FC.last)/1000));FC.last=now;
-  const g=FC.ps*dt;s.c+=g;s.e+=g;
-  FC.dropAt+=dt;if(FC.dropAt>=20){FC.dropAt=0;drop()}
+  const now=Date.now(),prev=FC.last,gap=Math.max(0,(now-prev)/1000);FC.last=now;
+  // 距離上次操作最多還能工作 IDLE_CAP 秒；分頁被切到背景或裝置休眠（間隔超過 3 秒）只算離線比例
+  const lim=FC.act+IDLE_CAP*1000;
+  const dt=Math.max(0,(Math.min(now,lim)-prev)/1000),rate=gap>3?OFFLINE:1;
+  if(now>=lim&&dt<=0){if(!FC.sleep){FC.sleep=true;say(T('幫手休息了，點一下食物就會繼續工作'))}}
+  else{
+    const g=FC.ps*dt*rate;s.c+=g;s.e+=g;
+    FC.dropAt+=dt;if(FC.dropAt>=20){FC.dropAt=0;drop()}
+  }
   FC.tick++;
   if(FC.tick%5===0){checkAch();tabLabels();upd(false)}else upd(true);
   if(now-FC.saveAt>5000){FC.saveAt=now;save()}
@@ -7915,7 +7924,7 @@ function open(){
   if(d)d.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();tap(e)});
   renderList();tabLabels();upd(false);
   if(offTxt)say(offTxt);
-  FC.last=Date.now();FC.saveAt=FC.last;
+  FC.last=Date.now();FC.saveAt=FC.last;FC.act=FC.last;FC.sleep=false;
   clearInterval(FC.timer);FC.timer=setInterval(step,100);
 }
 // 開啟時補登舊存檔已達成但新版才有的成就（不提示）
@@ -7925,6 +7934,7 @@ function checkAchSilent(){
   if(hit)calc();
 }
 window.fcAct=function(act,a){
+  if(act!=='fc')touch();
   if(act==='fc')open();
   else if(act==='fcbuy')buy(a.dataset.k,+a.dataset.i);
   else if(act==='fcup')buyUp(a.dataset.id);
@@ -8038,6 +8048,8 @@ const D={
 '總點擊：{0}':['总点击：{0}','Taps: {0}','タップ数：{0}','터치: {0}','Ketukan: {0}'],
 '收益加成：×{0}':['收益加成：×{0}','Bonus: ×{0}','収益ボーナス：×{0}','수익 보너스: ×{0}','Bonus: ×{0}'],
 '你不在的時候，幫手賺了 {0} 食券':['你不在的时候，帮手赚了 {0} 食券','While you were away, helpers earned {0} tickets','留守中に助っ人が {0} 食券を稼ぎました','자리를 비운 사이 도우미가 {0} 식권을 벌었어요','Saat kamu pergi, pembantu mendapat {0} kupon'],
+'幫手回來工作了！':['帮手回来工作了！','Helpers are back at work!','助っ人が仕事に戻りました！','도우미가 다시 일해요!','Pembantu kembali bekerja!'],
+'幫手休息了，點一下食物就會繼續工作':['帮手休息了，点一下食物就会继续工作','Helpers are resting — tap the food to wake them up','助っ人はお休み中。料理をタップすると再開します','도우미가 쉬고 있어요. 음식을 누르면 다시 일해요','Pembantu istirahat — ketuk makanan untuk melanjutkan'],
 '食券只存在這台裝置，與店裡的錢完全分開。':['食券只存在这台设备，与店里的钱完全分开。','Tickets are stored on this device only, separate from your shop money.','食券はこの端末にだけ保存され、お店のお金とは完全に別です。','식권은 이 기기에만 저장되며 가게 돈과 완전히 별개예요.','Kupon hanya disimpan di perangkat ini, terpisah dari uang toko.'],
 // 食物（圖鑑、進化階段）
 '飯糰':['饭团','Onigiri','おにぎり','주먹밥','Onigiri'],
