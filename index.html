@@ -796,7 +796,7 @@ function wishCount(k){return (ST.wish&&ST.wish[k])||0}
 let CUR='iz';
 function rmOwned(){return !!(ST&&ST.rm)}
 function rmUp(k,d){return (ST&&ST.rm&&ST.rm.up&&ST.rm.up[k])||d}
-function seatsN(){return R?R.seats.length:(CUR==='tep'||CUR==='oko'?4:CUR==='sushi'?3:CUR==='rm'&&rmOwned()?rmUp('seats',3):ST.up.seats)}
+function seatsN(){return R?R.seats.length:(CUR==='tep'||CUR==='oko'?4:CUR==='sushi'?suUp('seats',3):CUR==='rm'&&rmOwned()?rmUp('seats',3):ST.up.seats)}
 function rmK2(){return !!(ST&&ST.rm&&ST.rm.k2)}function lamenOn(){return !!(ST&&ST.rm&&ST.rm.lamen)}function rfryN(){return rmUp('fry',3)}function tyakiN(){return rmUp('tai',2)}function gomaOff(){return !!(ST&&ST.rm&&ST.rm.off&&ST.rm.off.goma)}
 function tskOn(){return !!(ST&&ST.rm&&ST.rm.tsk)}
 /* 暫時下架：下架的菜不會再出現在客人點單、加碼、特價、牆上菜單，重新上架即可 */
@@ -1858,6 +1858,7 @@ function makiN(){const n=(ST&&ST.sushi&&ST.sushi.up&&ST.sushi.up.maki)?5:4;SU_LA
 function suUp(k,d){const S=ST||load();return (S&&S.sushi&&S.sushi.up&&S.sushi.up[k])||d}
 function suNv(){const S=ST||load();return !!(S&&S.sushi&&S.sushi.nv)} /* nv=2026/11/09 之後開的海風壽司：店員、保溫台都要另外買；舊存檔沒有這個旗標，維持原本的免費 Lv1 健太郎和共用保溫台，不收回已經拿到的東西 */
 function suStaffLv(){return noStaff()?0:suNv()?suUp('staff',0):Math.max(1,suUp('staff',0))}
+const SU_SEATS=[{n:4,zh:'第四張椅子',d:'同時可以多招待一位客人。',cost:30000},{n:5,zh:'第五張椅子',d:'同時可以再多招待一位客人。',cost:80000},{n:6,zh:'第六張椅子',d:'再擠一張椅子，一次接待六位客人。',cost:180000}];
 const SU_WARM=[{n:5,zh:'加大保溫台',d:'保溫台 3 → 5 格。',cost:3000},{n:7,zh:'長型保溫台',d:'保溫台 5 → 7 格。',cost:12000},{n:9,zh:'特長保溫台',d:'保溫台 7 → 9 格，整排吧台都能保溫。',cost:30000},{n:12,zh:'超大保溫台',d:'保溫台 9 → 12 格，菜色再多也放得下。',cost:65000}];
 function suWages(){const l=suStaffLv();return l?Math.round(SU_STAFF.lv[l-1].wage*dilOf('sushistaff')/100):0}
 function makiG(k,st){const f={kappamaki:'#6fae4a',tekkamaki:'#c8323c',salmonmaki:'#f7904f',ebimaki:'#f4a0a0'}[k]||'#c8323c';
@@ -4562,7 +4563,7 @@ function subTabs(tabs,cur,act,dotf){return `<div class="stabs">${tabs.map(([k,n]
 /* red dot on a 海風壽司 / 炎舞鐵板燒 tab = something in it is affordable right now */
 function suTabDot(k){try{const S=ST||load();if(!S||!S.sushi)return false;const c=S.coins;
   if(k==='menu')return Object.keys(ITEMS).some(x=>ITEMS[x].shop==='sushi'&&!(S.menu&&S.menu[x])&&c>=ITEMS[x].buy);
-  if(k==='kit'){const nx=SU_STAFF.lv[suStaffLv()];const wn=suUp('warm',3),wx=SU_WARM.find(w=>w.n>wn);return !!(nx&&c>=nx.cost)||!!(suNv()&&wx&&c>=wx.cost)||(!suUp('maki',0)&&c>=SU_MAKI5_COST)}
+  if(k==='kit'){const nx=SU_STAFF.lv[suStaffLv()];const wn=suUp('warm',3),wx=SU_WARM.find(w=>w.n>wn);const sx=SU_SEATS.find(w=>w.n>suUp('seats',3));return !!(nx&&c>=nx.cost)||!!(sx&&c>=sx.cost)||!!(suNv()&&wx&&c>=wx.cost)||(!suUp('maki',0)&&c>=SU_MAKI5_COST)}
   if(k==='deco')return SDECOR.some(d=>!(S.sushi.dec&&S.sushi.dec[d.id])&&c>=d.cost);
   return false}catch(e){return false}}
 function tpTabDot(k){try{const S=ST||load();if(!S||!S.tep)return false;const c=S.coins;
@@ -4578,7 +4579,8 @@ function shopSushi(sub){
   const wn=suUp('warm',3),wx=SU_WARM.find(w=>w.n>wn),warm=!suNv()?'':wx?`<div class="up"><b>${T(wx.zh)}</b><p>${T(wx.d)}</p><button class="btn" data-act="suwarm" ${SV.coins<wx.cost?'disabled':''}>${T('買下 {0}',yen(wx.cost))}</button></div>`:`<div class="up done"><b>${T(SU_WARM[SU_WARM.length-1].zh)}</b><p>${T('已購買')}</p></div>`;
   const deco=`<h3 class="sh">${T('店內布置・讓客人更有耐心')}</h3><div class="shop">${SDECOR.map(d=>{const own=sdec(d.id);return `<div class="up ${own?'done':''}"><b>${T(d.zh)}<span class="new" style="background:#5c9a3a">${T('耐心 +{0}%',Math.round(d.b*100))}</span></b><p>${T(d.d)}</p><div class="row"><span class="price">${yen(d.cost)}</span>${own?`<span>${T('已布置')}</span>`:`<button class="btn" data-act="sudec" data-id="${d.id}" ${SV.coins<d.cost?'disabled':''}>${T('購買')}</button>`}</div></div>`}).join('')}</div>`;
   const MENUP=`<h3 class="sh">${T('壽司菜單')}</h3><p class="hint">${T('新菜色的食材放在營業畫面食材盤的「第 2 頁」（唐揚、炙燒、鰻魚、蟹肉、起司、明太子）和「第 3 頁」（沙拉、生魚片、甜點）。沙拉和生魚片在獨立的沙拉檯上做。買下新菜色，右上角就會出現 1／2／3 切換鈕。')}</p><div class="shop">${menu}</div>`;
-  const KITP=`<h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${warm}${suUp('maki',0)?`<div class="up done"><b>${T('壽司台第五格')}</b><p>${T('已擴充，壽司台現在有五個位置。')}</p></div>`:`<div class="up"><b>${T('壽司台第五格')}</b><p>${T('壽司台多一個位置，可以同時做五件壽司。')}</p><button class="btn" data-act="sumaki" ${SV.coins<SU_MAKI5_COST?'disabled':''}>${T('買下 {0}',yen(SU_MAKI5_COST))}</button></div>`}${l?`<div class="up">${dilHTML('sushistaff').split('data-act="dil"').join('data-act="sudil"')}</div>`:''}</div>`;
+  const sn=suUp('seats',3),sx=SU_SEATS.find(w=>w.n>sn),seat=sx?`<div class="up"><b>${T(sx.zh)}</b><p>${T(sx.d)}</p><button class="btn" data-act="suseat" ${SV.coins<sx.cost?'disabled':''}>${T('買下 {0}',yen(sx.cost))}</button></div>`:`<div class="up done"><b>${T(SU_SEATS[SU_SEATS.length-1].zh)}</b><p>${T('已購買')}</p></div>`;
+  const KITP=`<h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${seat}${warm}${suUp('maki',0)?`<div class="up done"><b>${T('壽司台第五格')}</b><p>${T('已擴充，壽司台現在有五個位置。')}</p></div>`:`<div class="up"><b>${T('壽司台第五格')}</b><p>${T('壽司台多一個位置，可以同時做五件壽司。')}</p><button class="btn" data-act="sumaki" ${SV.coins<SU_MAKI5_COST?'disabled':''}>${T('買下 {0}',yen(SU_MAKI5_COST))}</button></div>`}${l?`<div class="up">${dilHTML('sushistaff').split('data-act="dil"').join('data-act="sudil"')}</div>`:''}</div>`;
   const DECOP=deco,TAILB=`<div class="btns"><button class="btn alt" data-act="sugopen">📖 ${T('製作教學')}</button><button class="btn" data-act="susopen">${T('去海風壽司營業')}</button></div>`;
   return sub==='kit'?KITP+TAILB:sub==='deco'?DECOP+TAILB:MENUP+TAILB;
 }
@@ -4864,6 +4866,7 @@ document.addEventListener('click',e=>{
   else if(tepActs(act,a));
   else if(okoActs(act,a));
   else if(act==='sumaki'){const home=!ST;if(home)ST=load();let bought=false;if(ST&&ST.sushi&&!suUp('maki',0)&&ST.coins>=SU_MAKI5_COST){keepScroll();ST.coins-=SU_MAKI5_COST;ST.sushi.up.maki=1;save();bought=true}if(home)ST=null;else{renderHUD();if(bought&&R)chooseLayout(true)}sushiHome()}
+  else if(act==='suseat'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi){const sn=suUp('seats',3),w=SU_SEATS.find(x=>x.n>sn);if(w&&ST.coins>=w.cost){keepScroll();ST.coins-=w.cost;ST.sushi.up=ST.sushi.up||{};ST.sushi.up.seats=w.n;save()}}if(home)ST=null;else renderHUD();sushiHome()}
   else if(act==='suwarm'){const home=!ST;if(home)ST=load();let bought=false;if(ST&&ST.sushi&&ST.sushi.nv){const wn=suUp('warm',3),w=SU_WARM.find(x=>x.n>wn);if(w&&ST.coins>=w.cost){keepScroll();ST.coins-=w.cost;ST.sushi.up.warm=w.n;save();bought=true}}if(home)ST=null;else{renderHUD();if(bought&&R)chooseLayout(true)}sushiHome()}
   else if(act==='suhire'){const home=!ST;if(home)ST=load();if(ST&&ST.sushi){const l=suStaffLv(),nx=SU_STAFF.lv[l];if(nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.sushi.up.staff=l+1;save()}}if(home)ST=null;else renderHUD();sushiHome()}
   else if(act==='rewards'){const inG=!!R&&!R.over&&!R.settled;if(inG)R.paused=true;RWBAG=inG;showRewards()}
