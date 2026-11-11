@@ -3357,7 +3357,7 @@ function rmCookAct(l){
   const d=rmDemand(),hd=(src,i)=>R.held&&R.held.src===src&&R.held.i===i;
   /* 山田收保溫台：煮好、炸好、烤好的菜收進保溫台（不會焦），空出煎台、炸籃、鯛魚燒的位子 */
   const slot=R.warm.findIndex((w,k)=>!w&&k<warmN());
-  if(slot>=0)for(const pn of ['rmpan','rfry','tyaki'])for(let i=0;i<R[pn].length;i++){const g=R[pn][i];if(g&&cookState(g.t,g.kind)==='done'&&!hd(pn,i)){R.warm[slot]={key:g.kind};R[pn][i]=null;rmPop('山田收好了');renderStations();return}}
+  if(slot>=0)for(const pn of ['rmpan','rfry','tyaki','lamen','tsk'])for(let i=0;i<(R[pn]||[]).length;i++){const g=R[pn][i];if(g&&!g.wait&&g.kind!=='rice'&&g.kind!=='asm'&&cookState(g.t,g.kind)==='done'&&!hd(pn,i)){R.warm[slot]={key:g.kind};R[pn][i]=null;rmPop('山田收好了');renderStations();return}}
   /* 山田放配料：先把放好麵的碗配完，碗才會空出來讓小葵撈下一批麵 */
   if(l>=2){const need={chashu:0,egg:0,corn:0};
     for(const c of waiting())c.order.forEach((k,j)=>{if(!c.filled[j]&&k.startsWith('ramen:'))need[k.slice(6)]=(need[k.slice(6)]||0)+1});
@@ -3381,12 +3381,16 @@ function rmHelperAct(l){
       if(j!=null){R.bowls[j].men=1;R.mpot[i]=null;sfx('warm');rmPop('小葵撈麵');renderStations();return}}}
   for(const pn of ['rmpan','rfry','tyaki'])for(let i=0;i<R[pn].length;i++){const g=R[pn][i];if(g&&cookState(g.t,g.kind)==='burnt'&&!hd(pn,i)){R[pn][i]=null;renderStations();return}}
 }
+/* 拉麵台／沾麵台的一格是不是已經煮好可以端（等配料湊齊的叉燒飯、舊存檔的 rice/asm 不算） */
+function rmPanReady(g){return !!g&&!g.wait&&g.kind!=='rice'&&g.kind!=='asm'&&cookState(g.t,g.kind)==='done'}
 function rmServe(){
   const src=[];
   R.bowls.forEach((b,i)=>{if(i<bowlsN()&&bowlDone(i)&&!(R.held&&R.held.src==='bowl'&&R.held.i===i))src.push({src:'bowl',i,key:bowlKey(i)})});
   R.warm.forEach((w,i)=>{if(w&&!(R.held&&R.held.src==='warm'&&R.held.i===i))src.push({src:'warm',i,key:w.key})});
   /* 煎台／炸籃上已經煮好的菜也能直接上菜（不用等山田移到保溫台，避免先煮好的菜卡住） */
   for(const pn of ['rmpan','rfry'])R[pn].forEach((g,i)=>{if(g&&cookState(g.t,g.kind)==='done'&&!(R.held&&R.held.src===pn&&R.held.i===i))src.push({src:pn,i,key:g.kind})});
+  /* 拉麵台（味噌／擔擔／叉燒飯）和沾麵台煮好的菜也要送：之前漏掉，小葵完全不會端這兩台的菜 */
+  for(const pn of ['lamen','tsk'])(R[pn]||[]).forEach((g,i)=>{if(rmPanReady(g)&&!(R.held&&R.held.src===pn&&R.held.i===i))src.push({src:pn,i,key:g.kind})});
   R.taps.slice(0,tapsN()).forEach((t,i)=>{if(t.st==='full'&&!(R.held&&R.held.src==='tap'&&R.held.i===i))src.push({src:'tap',i,key:'beer'})});
   if(R.oden.n>0)src.push({src:'oden',key:'oden'});
   if(unlocked(ST.day,'rm').includes('lsour'))src.push({src:'lsour',key:'lsour',inf:1});
