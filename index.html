@@ -2482,25 +2482,15 @@ function tpAct(l){
     R.tpn[i]={kind:k,t:0,staff:1};const c=srcCenter({src:'tpn',i});charge(p,c.x,c.y-50);popup(c.x,c.y-80,T('阿炎下料'));renderStations();return}}
 /* ---- 背景 ---- */
 function drawTepBg(){
-  const TY=KY<400?38:0;
-  let s=`<defs><linearGradient id="tpwall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a221c"/><stop offset="1" stop-color="#5e3626"/></linearGradient><linearGradient id="tphood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4d8de"/><stop offset="1" stop-color="#8a9098"/></linearGradient><radialGradient id="tpglow" cx=".5" cy="1" r=".75"><stop offset="0" stop-color="#ff8a3a" stop-opacity=".5"/><stop offset="1" stop-color="#ff8a3a" stop-opacity="0"/></radialGradient></defs>
-  <rect width="${W}" height="${KY}" fill="url(#tpwall)"/>`;
-  for(let x=0;x<W;x+=48)s+=`<path d="M${x} 0v${KY}" stroke="#24140e" stroke-width="3" opacity=".45"/>`;
-  s+=`<rect x="0" y="0" width="${W}" height="${22+TY}" fill="#1c100a"/><rect x="0" y="${18+TY}" width="${W}" height="9" fill="#0e0805"/>`;
-  /* 排煙罩 */
-  const hx0=W*.2,hx1=W*.8,hy=KY-236;
-  s+=`<rect x="${W/2-26}" y="0" width="52" height="${hy-20}" fill="url(#tphood)" stroke="${O}" stroke-width="3" opacity=".9"/><path d="M${hx0+40} ${hy-20}H${hx1-40}L${hx1} ${hy+34}H${hx0}Z" fill="url(#tphood)" stroke="${O}" stroke-width="3"/><rect x="${hx0}" y="${hy+34}" width="${hx1-hx0}" height="10" fill="#6a7078" stroke="${O}" stroke-width="3"/>${[0,1,2,3,4,5].map(i=>`<path d="M${hx0+50+i*(hx1-hx0-100)/5} ${hy-10}v38" stroke="#7a8088" stroke-width="3" opacity=".7"/>`).join('')}`;
-  const nw=Math.min(320,W*.32),nx=(W-nw)/2,ny=(TY?30:26)+TY;
-  s+=`<rect x="${nx}" y="${ny}" width="${nw}" height="58" rx="8" fill="#140c08" stroke="#e8b04a" stroke-width="3"/><rect x="${nx+5}" y="${ny+5}" width="${nw-10}" height="48" rx="5" fill="none" stroke="#e8b04a" stroke-width="1.5" opacity=".6"/><text x="${W/2}" y="${ny+41}" text-anchor="middle" font-family="Noto Sans TC,Zen Maru Gothic,sans-serif" font-weight="900" font-size="28" fill="#ffcf6a">${CJK()?T('炎舞鐵板燒'):'炎舞鉄板焼'}</text>`;
-  /* 兩側：酒架 + 木牌 */
-  for(const bx of [W*.07,W*.93]){s+=`<rect x="${bx-34}" y="${KY-170}" width="68" height="10" rx="2" fill="#8a5a34" stroke="${O}" stroke-width="3"/>`;for(let i=0;i<3;i++){const x=bx-28+i*22;s+=`<rect x="${x}" y="${KY-214}" width="14" height="44" rx="5" fill="${['#2f5a3a','#6a2a1a','#c9a040'][i]}" stroke="${O}" stroke-width="2.5"/><rect x="${x+3}" y="${KY-202}" width="8" height="10" rx="2" fill="#f3e6c8" opacity=".85"/>`}}
-  for(const px of [W*.15,W*.85])s+=`<path d="M${px} ${30+TY}v18" stroke="#5a3a24" stroke-width="2"/><rect x="${px-16}" y="${48+TY}" width="32" height="70" rx="3" fill="#d9b27a" stroke="${O}" stroke-width="2.5"/><path d="M${px} ${66+TY}c6 8 10 12 6 22c-2 6-10 6-12 0c-4-10 0-14 6-22z" fill="#e0412c"/><path d="M${px} ${78+TY}c3 4 4 7 2 11c-1 2-3 2-4 0c-1-4 0-7 2-11z" fill="#ffd23a"/>`;
-  s+=`<rect x="0" y="${KY-200}" width="${W}" height="200" fill="url(#tpglow)"/><rect x="0" y="${KY-70}" width="${W}" height="6" fill="#2a180c"/>`;
-  $('bg').innerHTML=s;['bg','counter'].forEach(id=>{const e=$(id);e.setAttribute('viewBox',`0 0 ${W} ${H}`);e.setAttribute('width',W);e.setAttribute('height',H)});
-  $('counter').innerHTML=`<g transform="translate(0 ${KY-400})"><defs><linearGradient id="tpct" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b8bec6"/><stop offset="1" stop-color="#7a8088"/></linearGradient><linearGradient id="tpkit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2e2a28"/><stop offset="1" stop-color="#171412"/></linearGradient></defs>
-  <rect x="-4" y="348" width="${W+8}" height="26" fill="url(#tpct)" stroke="${O}" stroke-width="3"/><path d="M0 353h${W}" stroke="#fff" stroke-width="3" opacity=".45"/>
-  <rect x="-4" y="374" width="${W+8}" height="26" fill="#3a1f14" stroke="${O}" stroke-width="3"/>
-  <rect x="0" y="400" width="${W}" height="${H-KY}" fill="url(#tpkit)"/>${Array.from({length:Math.ceil(W/64)},(_,i)=>`<path d="M${i*64} 400v${H-KY}" stroke="#0c0a09" stroke-width="2" opacity=".6"/>`).join('')}</g>`;
+  /* 2026-11-11 背景改用整張圖（img/bg-tep-*.webp，2576x1238，已去掉角色／食材／鐵板等前景）：
+     上半（牆面，圖的 0~620）畫在 bg 層，下半（檯面＋木板＋地板）畫在 counter 層，客人站在中間被檯面擋住。
+     檯面上緣對齊舞台的 KY-52，橫向最多拉伸／壓縮 12%，再寬的舞台兩側補深棕色。 */
+  const IMG='img/bg-tep-a4f780a7.webp',IW=2576,IH=1238,SPL=620;
+  const ct=KY-52,sy=ct/SPL,sx=Math.min(sy*1.12,Math.max(sy*.88,W/IW)),vw=W/sx,cx0=(IW-vw)/2;
+  const slice=(y,h,vy,vh)=>`<svg x="0" y="${y}" width="${W}" height="${h}" viewBox="${cx0} ${vy} ${vw} ${vh}" preserveAspectRatio="none"><rect x="${cx0}" y="${vy}" width="${vw}" height="${vh}" fill="#2b170f"/><image href="${IMG}" x="0" y="0" width="${IW}" height="${IH}" preserveAspectRatio="none"/></svg>`;
+  ['bg','counter'].forEach(id=>{const e=$(id);e.setAttribute('viewBox',`0 0 ${W} ${H}`);e.setAttribute('width',W);e.setAttribute('height',H)});
+  $('bg').innerHTML=slice(0,ct+1,0,SPL+2);
+  $('counter').innerHTML=slice(ct,H-ct,SPL,IH-SPL);
 }
 /* ---- 版面 ---- */
 const TP_LAND={tap:{x:10,y:406,w:100,h:186},tpn:{x:122,y:410,w:430,h:182},trash2:{x:790,y:346,w:72,h:54},
