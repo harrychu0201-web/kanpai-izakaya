@@ -2875,7 +2875,7 @@ function fillH(ww,stageW,minH){
 }
 function chooseLayout(force){
   const AE=document.activeElement;if(!force&&AE&&/^(INPUT|TEXTAREA)$/.test(AE.tagName))return; // soft keyboard resizes the viewport; re-laying out here would rebuild the home screen and close the open modal (chat / nickname)
-  const OV=document.body.classList.contains('ovl'),ww=(OV?landW():(TOUCH?(landT()?landW():stableWrapW()):$('wrap').clientWidth))-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):24),ah=(OV||TOUCH)?stableVisH():Math.max(300,window.innerHeight-60),want=(!landT()&&ww<760&&ww/ah<1.05)?'port':'land';
+  const OV=document.body.classList.contains('ovl'),ww=(OV?landW():(TOUCH?(landT()?landW():stableWrapW()):$('wrap').clientWidth))-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):24),ah=OV?Math.max(200,stableVisH()-safeBottom()):TOUCH?stableVisH():Math.max(300,window.innerHeight-60),want=(!landT()&&ww<760&&ww/ah<1.05)?'port':'land';
   const lockW=!!R&&LAY==='land'&&want==='land'&&W&&!OV;const nw=want==='port'?600:lockW?W:OV?Math.round(Math.max(960,Math.min(1800,600*ww/ah))):Math.round(Math.max(960,Math.min(1500,600*ww/ah))/10)*10;
   /* 舞台寬度由 nw 決定，高度依照螢幕可用高度拉高，讓畫面上下填滿（平板橫向、手機直向原本底下會留一大塊空白；地板會跟著延伸）。 */
   /* 遊戲中（已開店）且橫向、寬度沒變時，高度只在變動很大時才重算：HUD 的內容（淨利列換行、借款/銀行按鈕出現等）會讓可用高度小幅跳動，
