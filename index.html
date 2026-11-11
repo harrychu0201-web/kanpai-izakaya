@@ -7743,7 +7743,7 @@ function tap(){
   const s=FC.s;if(!s)return;
   touch();
   const g=FC.pt;s.c+=g;s.e+=g;s.tp++;
-  if(Math.random()<0.02)drop();
+  if(s.tp%100===0)drop(); // 每點擊 100 次抽一次圖鑑（用總點擊數計，跨次開啟也累計）
   const w=document.getElementById('fcWrap'),d=document.getElementById('fcDish');
   if(d){try{d.animate([{transform:'scale(1)'},{transform:'scale(.9)'},{transform:'scale(1)'}],{duration:110})}catch(e){}}
   if(w&&w.children.length<16){
@@ -7818,7 +7818,7 @@ function dexHTML(){
   const cells=FOODS.map((f,i)=>{const got=s.col[i];const c=RAR[f[2]].col;
     return got?`<div class="fc-cell" style="border-color:${c}"><div class="fc-ce">${f[0]}</div><div class="fc-cn">${T(f[1])}</div><div class="fc-cr" style="color:${c}">${T(RAR[f[2]].n)}${got>1?' ×'+got:''}</div></div>`
     :`<div class="fc-cell off"><div class="fc-ce">${f[0]}</div><div class="fc-cn">？？？</div><div class="fc-cr">${T(RAR[f[2]].n)}</div></div>`}).join('');
-  return `<p class="fc-note">${T('每收集一種美食，收益 +2%（目前 +{0}%）',nColl()*2)}　${T('點美食或等一等就會掉落新美食。')}</p><div class="fc-dex">${cells}</div>`;
+  return `<p class="fc-note">${T('每收集一種美食，收益 +2%（目前 +{0}%）',nColl()*2)}　${T('每點擊 100 次或等一等就會抽到新美食。')}</p><div class="fc-dex">${cells}</div>`;
 }
 function achHTML(){
   const s=FC.s;
@@ -8034,6 +8034,7 @@ const D={
 '全部領取':['全部领取','Claim all','全部受け取る','모두 수령','Klaim semua'],
 '領取獎勵：{0} 食券':['领取奖励：{0} 食券','Reward claimed: {0} tickets','報酬を受け取り：{0} 食券','보상 수령: {0} 식권','Hadiah diklaim: {0} kupon'],
 '每收集一種美食，收益 +2%（目前 +{0}%）':['每收集一种美食，收益 +2%（目前 +{0}%）','Each food collected gives +2% income (now +{0}%).','料理を1種類集めるごとに収益 +2%（現在 +{0}%）','음식을 하나 모을 때마다 수익 +2% (현재 +{0}%)','Tiap makanan yang dikoleksi: pendapatan +2% (sekarang +{0}%).'],
+'每點擊 100 次或等一等就會抽到新美食。':['每点击 100 次或等一等就会抽到新美食。','Every 100 taps (or a short wait) draws a new food.','100回タップするか少し待つと新しい料理が出ます。','100번 누르거나 잠시 기다리면 새 음식이 나와요.','Tiap 100 ketukan (atau tunggu sebentar) mendapat makanan baru.'],
 '點美食或等一等就會掉落新美食。':['点美食或等一等就会掉落新美食。','Tap the dish or wait a bit to find new foods.','料理をタップするか少し待つと新しい料理が出ます。','음식을 누르거나 잠시 기다리면 새 음식이 나와요.','Ketuk makanan atau tunggu sebentar untuk menemukan makanan baru.'],
 '每個成就收益 +1%（目前 +{0}%），達成後可領取食券獎勵。':['每个成就收益 +1%（目前 +{0}%），达成后可领取食券奖励。','Each goal gives +1% income (now +{0}%) and a ticket reward you can claim.','実績ひとつにつき収益 +1%（現在 +{0}%）。達成後に食券の報酬を受け取れます。','업적 하나당 수익 +1% (현재 +{0}%), 달성하면 식권 보상을 받아요.','Tiap prestasi: pendapatan +1% (sekarang +{0}%) dan hadiah kupon yang bisa diklaim.'],
 '幫手雇得夠多就會解鎖秘傳，讓它的產出倍增。全店與點擊升級會隨進度出現。':['帮手雇得够多就会解锁秘传，让它的产出倍增。全店与点击升级会随进度出现。','Hire enough of a helper to unlock secret techniques that multiply its output. Shop-wide and tap upgrades appear as you progress.','助っ人を十分に雇うと秘伝が解放され、産出が倍増します。全店・タップ強化は進行に応じて登場します。','도우미를 충분히 고용하면 비전이 열려 산출이 배가돼요. 전체·터치 강화는 진행에 따라 나타나요.','Pekerjakan cukup banyak pembantu untuk membuka teknik rahasia yang melipatgandakan hasilnya. Upgrade seluruh toko dan ketukan muncul seiring kemajuan.'],
