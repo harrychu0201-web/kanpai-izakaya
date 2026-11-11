@@ -737,7 +737,7 @@ const ITEMS={
   vanillaice:{tag:'バニラアイス',tz:'香草冰淇淋',jp:'バニラアイス',zh:'香草冰淇淋',price:1500,cost:150,w:3,shop:'sushi',buy:5000,st:'壽司台'},
   daifuku:{tag:'大福',tz:'紅豆大福',jp:'あんこ大福',zh:'紅豆大福',price:1600,cost:170,w:3,shop:'sushi',buy:8000,st:'壽司台'},
   dango:{tag:'三色だんご',tz:'三色糰子',jp:'三色団子',zh:'三色糰子',price:2000,cost:240,w:2,shop:'sushi',buy:16000,st:'壽司台'},
-  /* 炎舞鐵板燒（作者＋管理員測試中） */
+  /* 炎舞鐵板燒（2026-11-12 起開放給所有玩家） */
   tpgarlic:{tag:'ガーリックライス',tz:'蒜香炒飯',jp:'ガーリックライス',zh:'蒜香炒飯',price:1200,cost:150,w:3,shop:'tep',buy:3000,st:'大鐵板'},
   tpcabbage:{tag:'キャベツ焼',tz:'鐵板高麗菜',jp:'鉄板キャベツ',zh:'鐵板高麗菜',price:1000,cost:120,w:3,shop:'tep',buy:6000,st:'大鐵板'},
   tpchicken:{tag:'チキンステーキ',tz:'雞腿排',jp:'チキンステーキ',zh:'鐵板雞腿排',price:1600,cost:220,w:2,shop:'tep',buy:12000,st:'大鐵板'},
@@ -2228,11 +2228,11 @@ function suAct(l){suSettle();
     if(pay){const p=srcCenter({src:stn,i});charge(pay,p.x,p.y-50);shoPop(T('健太郎做好了{0}',JP(k)))}
     renderStations();return}
 }
-/* ===== 炎舞鐵板燒：只有作者和管理員（admins/）看得到，玩家視角下也關閉（2026-11-05） =====
+/* ===== 炎舞鐵板燒：2026-11-05 做好（當時只有作者和管理員看得到），2026-11-12 開放給所有玩家 =====
    玩法：食材下到大鐵板，煎到一半會跳出 翻炒／翻面／刷醬／點火，沒點就失敗；
    提示剛跳出（標籤還是金色）時點下去算「完美」，連續完美 TPSHOW 次就來一場火焰秀：全場等餐的客人耐心回滿、每位多給一筆賞錢 */
 const TEP_PRICE=2500000,TP_SLOT6_COST=50000,TPGRACE=4.5,TPPERF=1.4,TPAUTO=2,TPSHOW=6;
-function tepDev(){try{return !pview()&&canView()}catch(e){return false}}
+function tepDev(){return true} /* 炎舞鐵板燒：2026-11-12 開放給所有玩家 */
 const TPKEYS=TPP1.concat(TPP2,TPP3);
 const TPS={tpgarlic:['stir','stir'],tpcabbage:['stir'],tpchicken:['flip'],tpshrimp:['flip'],tpscallop:['flip'],tpwagyu:['flip','fire'],tplobster:['fire','flip','fire'],tpfilet:['flip'],tpsirloin:['flip'],tprib:['flip','sauce'],tpmatsu:['flip'],tpsnow:['flip'],tpsalt:['flip'],tppbeef:['stir','sauce'],tponbeef:['stir','fire'],tponpork:['stir','stir'],tpmackerel:['flip'],tpmilkfish:['flip','sauce'],tpbream:['flip'],tpabalone:['sauce','fire'],tpsanxian:['stir','stir'],tpseashrimp:['flip','sauce'],tpsprout:['stir'],tpmushroom:['stir','stir'],tpscalegg:['flip'],tpfriedegg:['flip'],tpcheeseroll:['flip','flip'],tpgoldegg:['flip','sauce'],tptofu:['flip','sauce'],tpredtofu:['sauce','stir']};
 const TPLBL={stir:'翻炒！',flip:'翻面！',sauce:'刷醬！',fire:'點火！'},TPOK={stir:'炒起來了！',flip:'翻面了！',sauce:'刷好醬了！',fire:'火焰燒！'},TPSTAFFLBL={stir:'阿炎翻炒',flip:'阿炎翻面',sauce:'阿炎刷醬',fire:'阿炎點火'};
@@ -2785,7 +2785,7 @@ const TP_PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},tpn:{x:123.5,y:418,w:410,h:182
 /* ---- 商店 ---- */
 function shopTep(sub){
   const SV=ST||load()||{coins:0},own=k=>!!(SV.menu&&SV.menu[k]);
-  const lock=`<p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`;
+  const lock='';
   if(!SV.tep)return `<h3 class="sh">${T('炎舞鐵板燒・花錢解鎖')}</h3><div class="shop"><div class="up"><b>🔥 ${T('開一家炎舞鐵板燒')}</b><p>${T('一家鐵板燒店：食材下到大鐵板上，煎到一半要翻炒、翻面、刷醬，還有帥氣的點火。抓準時機連續完美，就能來一場火焰秀，全場客人都會為你歡呼。解鎖送蒜香炒飯。')}</p>${lock}<button class="btn" data-act="buytep" ${SV.coins<TEP_PRICE?'disabled':''}>${T('花 {0} 解鎖',yen(TEP_PRICE))}</button></div></div>`;
   const l=tpStaffLv(),nx=TP_STAFF.lv[l];
   const card=k=>`<div class="up" style="display:grid;grid-template-columns:64px 1fr;column-gap:10px;align-items:center"><div style="grid-row:span 3;width:64px;height:64px">${sv(tpIcon(k))}</div><b>${dishTitle(k)}</b><p>${T('售價 {0}・食材 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}<br><small>${TPS[k].map(s=>T(TPLBL[s])).join(' → ')}</small></p>${own(k)?`<p>${T('已購買')}</p>${ST?`<div style="grid-column:1/-1;white-space:nowrap">${offBtn(k)}</div>`:''}`:`<button class="btn" data-act="tpbuy" data-id="${k}" ${SV.coins<ITEMS[k].buy?'disabled':''}>${T('買下 {0}',yen(ITEMS[k].buy))}</button>`}</div>`;
@@ -2817,7 +2817,7 @@ function tepActs(act,a){
    平價庶民鐵板，沿用炎舞鐵板燒的鐵板格子；每道菜一步一步自己做，到提示點就停下等你點，等太久就失敗。
    四道：大阪燒／廣島燒／文字燒／摩登燒（2026-11-10 起；炎舞的大阪燒已移到這裡） */
 const OKO_PRICE=1200000;
-function okoDev(){return tepDev()}
+function okoDev(){try{return !pview()&&canView()}catch(e){return false}} /* 御好燒店仍然只有作者和管理員（原本跟 tepDev 共用，鐵板燒開放後獨立） */
 const OKKEYS=['okosaka','okhiro','okmoji','okmoder'];
 TPS.okosaka=['mix','pork','lid','flip','flip2','sauce','top'];
 TPS.okhiro=['spread','pile','pork','flip','noodle','egg','stack','top'];
@@ -6717,7 +6717,8 @@ const NOTICE_ART={id:"2026-10-24-art",at:"2026-10-24T18:10:00+08:00",title:"更�
 const NOTICE_TRACK={id:"2026-10-24-music",at:"2026-10-24T03:17:00+08:00",title:"公告",text:"各位老闆與老闆娘們大家好！\n感謝大家這陣子的熱情遊玩和回饋，看到大家在店裡忙進忙出，真的很開心~~~\n\n目前我們正在製作額外的新場景，同時也在優化美術設計，讓各間店的風格更統一，食物和介面也會更醒目。這部分需要一點時間，請大家耐心等待，完成後會第一時間通知大家。\n\n另外先告訴大家一個小更新：「音效設定」裡新增了「🎼 配樂」，除了可以背景bgm調音量大小之外，可以用 ◀ ▶ 切換五首背景音樂，你選的曲目會自動記住。\n\n謝謝大家的支持 !",sign:"作者敬上"};
 const NOTICE_FR={id:"2026-10-24-friends",at:"2026-10-24T23:10:00+08:00",title:"好友系統上線！",text:"各位老闆與老闆娘們大家好！\n\n很多人說想跟朋友一起玩，所以先做了好友系統～\n\n首頁「繼續營業」左邊多了「好友」按鈕（排行榜裡也有好友分頁）：\n・好友碼：每個人有一組好友碼，按「分享」傳給朋友，對方輸入就能互加好友（最多 20 位）\n・好友排行榜：只跟朋友比單日淨利或累計營收\n・參觀：看朋友的營業天數、成績、有沒有屋台和二號廚房、裝飾有幾件\n・送禮物：每位好友每天可以送一次 ¥1,000，對方進好友分頁就能領\n\n要先登入 Google 並取好暱稱，朋友才看得到你。朋友的店面資訊要等他們更新到新版、同步雲端之後才會出現，剛開始可能顯示不完整，請大家多包涵。\n\n目前還不能同時在同一間店裡一起煮，這個比較難，之後再研究。有其他想法歡迎從意見反映告訴我！",sign:'作者敬上'};
 const NOTICE_DAYS={id:"2026-10-25-days",at:"2026-10-25T00:50:00+08:00",title:"排行榜新增「最長營業」！",text:"各位老闆與老闆娘們大家好！\n\n很多人想比誰撐得最久，所以排行榜多了一個新分頁「最長營業」，比的是你歷史上最遠撐到第幾天，破產重來也不會歸零。\n\n要上榜的話：\n・先登入 Google 並取好暱稱\n・重新整理頁面，或按更新提示更新到新版\n・你以前玩過的天數遊戲有記著，登入同步之後會自動補上，不用重玩\n\n剛更新完可能要等一下才會看到自己的名字，沒出現的話重新開一次遊戲就好。另外排行榜的分頁變多了，可以左右滑動。\n\n看看誰是最能撐的老闆吧😆 有其他想法歡迎從意見反映告訴我！",sign:'作者敬上'};
-const NOTICES=[NOTICE_DAYS,NOTICE_FR,NOTICE_ART,NOTICE_TRACK,NOTICE_K2,NOTICE_RMX,NOTICE_AOI,NOTICE_GUN,NOTICE_NEW,NOTICE_OLD],NOTICE_BUILTIN=NOTICES[0];
+const NOTICE_TEP={id:"2026-11-12-tep",at:"2026-11-12T02:25:00+08:00",title:"新店開張：炎舞鐵板燒！",text:"各位老闆與老闆娘們大家好！\n\n第四家店「🔥 炎舞鐵板燒」開張囉！可以在商店，或是今天畫面的分店按鈕解鎖（¥2,500,000，會送蒜香炒飯）～\n\n【怎麼玩】\n食材下到大鐵板上，煎到一半會跳出「翻炒、翻面、刷醬、點火」，跳出來就要點一下，等太久會失敗！提示剛跳出、標籤還是金色的時候點下去算「完美」，那一格鐵板還會噴火🔥 連續完美 6 次就會來一場火焰秀：全場客人耐心回滿，每位還會多給賞錢！失手或煎焦連擊就歸零\n\n【有什麼】\n・30 道菜：肉類、海鮮、鐵板青菜、蛋與豆腐，分成一、二、三號廚房，共用同一塊大鐵板\n・設備升級：座位最多 6 張、保溫台最多 12 格、大鐵板可以加長\n・鐵板師傅「阿炎」可以雇用，共三級：Lv.2 會幫你翻面刷醬，Lv.3 連點火都敢，還會幫忙上菜（他處理過的料就算煎焦了，也不會中斷連擊）\n\n【先跟大家說一聲】\n因為人力不足，加上想盡量滿足大家的期待，最近很多新東西其實都沒有經過完整的測試，就先直接上線了，想說邊做邊改～這也是為什麼大家常常會遇到各種 bug，真的很不好意思，請大家見諒🙏\n\n如果玩到哪裡怪怪的、卡住或是不合理，麻煩從「意見反映」告訴我，我會盡快修！記得先登入帳號再送出，我才回覆得到你喔～\n\n謝謝大家的支持與包容！",sign:'作者敬上'};
+const NOTICES=[NOTICE_TEP,NOTICE_DAYS,NOTICE_FR,NOTICE_ART,NOTICE_TRACK,NOTICE_K2,NOTICE_RMX,NOTICE_AOI,NOTICE_GUN,NOTICE_NEW,NOTICE_OLD],NOTICE_BUILTIN=NOTICES[0];
 let NOTICE_REMOTE=false,NOTICE_HIST={},NOTICE_DEL={},NOTICE_LOADED=false,NSHOW=null,NAUTO=false,NAUTOREQ=false;
 /* deleted announcements: a built-in one cannot be removed from the code, so deleting it leaves a marker in the database (notice/del/<key>);
    the markers are also kept on this device so a deleted built-in notice does not flash up before the database answers */
