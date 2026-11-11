@@ -2743,7 +2743,7 @@ function tpShow(){R.tpShows=(R.tpShows||0)+1;sfx('star');const ws=waiting(),add=
 function tpHudPills(){const l=tpStaffLv();return (l?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${T('阿炎')}${'★'.repeat(l-1)}</b></div>`:'')+(R&&!R.over?`<div class="pill staff">🔥 ${T('火焰秀')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${(R.tpc||0)%TPSHOW}/${TPSHOW}</b>${(R.tpc||0)>1?` <small>${T('連擊 ×{0}',R.tpc)}</small>`:''}</div>`:'')}
 /* ---- 每格的時間：到提示點就停下等你點，等太久就失敗；放著不拿會焦 ---- */
 function tpTick(cdt){if(!R.tpn)return;R.tpn.forEach((g,i)=>{if(!g)return;const d=TPS[g.kind],s=g.s||0;
-  if(d&&s<d.length&&g.t>=tpAt(g.kind,s)){g.t=tpAt(g.kind,s);g.w=(g.w||0)+cdt;
+  if(d&&s<d.length&&!g.bad&&g.t>=tpAt(g.kind,s)){g.t=tpAt(g.kind,s);g.w=(g.w||0)+cdt;
     if(g.w>TPGRACE){if(R.fxNb){g.s=s+1;g.w=0}else{g.t=burnAt(g.kind)+.1;g.bad=1;g.cb=1;const c=srcCenter({src:'tpn',i});popup(c.x,c.y-90,T('沒{0}，失敗了',T(TPLBL[d[s]]).replace('！','')),true);tpCombo(false,c.x,c.y)}}}
   else{g.t+=cdt;if(!g.cb&&cookState(g.t,g.kind)==='burnt'){g.cb=1;if(!g.staff&&!g.sa){const c=srcCenter({src:'tpn',i});tpCombo(false,c.x,c.y)}}}})}
 /* ---- 阿炎 ---- */
