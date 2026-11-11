@@ -8202,11 +8202,12 @@ function renderList(reset){
   const el=document.getElementById('fcList');if(!el)return;
   const sy=reset?0:el.scrollTop;
   el.innerHTML=FC.tab==='shop'?shopHTML():FC.tab==='up'?upHTML():FC.tab==='dex'?dexHTML():achHTML();
-  el.scrollTop=sy;
   const q=document.getElementById('fcQty');if(q)q.style.display=FC.tab==='shop'?'flex':'none';
   document.querySelectorAll('.fc-tab').forEach(b=>b.classList.toggle('on',b.dataset.t===FC.tab));
   document.querySelectorAll('.fc-q').forEach(b=>b.classList.toggle('on',String(FC.qty)===b.dataset.q));
+  /* 先把每列的文字、價錢填完、列高定下來，再還原捲動位置；否則列還是空的時候列表比較矮，捲動位置會被夾回上面（升級幫手後畫面跳到鐵板燒師傅） */
   if(FC.tab==='shop')updShop();else if(FC.tab==='up')updUp();
+  el.scrollTop=sy;
 }
 function tabLabels(){
   const set=(id,t)=>{const e=document.getElementById(id);if(e)e.textContent=t};
