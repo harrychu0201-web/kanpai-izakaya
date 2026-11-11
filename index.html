@@ -2516,7 +2516,7 @@ function shopTep(sub){
 }
 function tepHome(){const kp=shopKeep,sy=shopScroll;const bk=SUBACK?'shopback':ST&&!R&&!HOME?'back':'closem';const TS=ST||load();const tabs=TS&&TS.tep?subTabs([['menu','菜單'],['kit','設備・店員']],TPTAB,'tptab',tpTabDot):'';modal(`<h2>🔥 ${T('炎舞鐵板燒')}</h2>${tabs}${shopTep(TPTAB)}<div class="btns"><button class="btn" data-act="${bk}">${T(SUBACK?'回到商店':ST&&!R&&!HOME?'回到今天':'關閉')}</button></div>`);{const c=document.querySelector('.card');if(c&&kp)c.scrollTop=sy;shopKeep=false}}
 function tepActs(act,a){
-  if(act==='tephome'){if(!tepDev())return true;SUBACK=!!a.closest('.shopsw');TPTAB='menu';tepHome();return true}
+  if(act==='tephome'){if(!tepDev())return true;SUBACK=!!a.closest('.shopsw,.brpick');TPTAB='menu';tepHome();return true}
   const home=()=>{const h=!ST;if(h)ST=load();return h},done=h=>{if(h)ST=null;else if(!HOME)renderHUD();tepHome()};
   if(act==='buytep'){if(!tepDev())return true;const h=home();if(ST&&!ST.tep&&ST.coins>=TEP_PRICE){keepScroll();ST.coins-=TEP_PRICE;ST.tep={up:{}};ST.menu=ST.menu||{};ST.menu.tpgarlic=1;save();toast(T('炎舞鐵板燒開張了！'))}done(h);return true}
   if(act==='tpbuy'){const k=a.dataset.id,h=home();if(ST&&ST.tep&&ITEMS[k]&&ITEMS[k].shop==='tep'&&!has(k)&&ST.coins>=ITEMS[k].buy){keepScroll();ST.coins-=ITEMS[k].buy;ST.menu=ST.menu||{};ST.menu[k]=1;save()}done(h);return true}
@@ -2702,7 +2702,7 @@ function shopOko(){
 }
 function okoHome(){const kp=shopKeep,sy=shopScroll;const bk=SUBACK?'shopback':ST&&!R&&!HOME?'back':'closem';modal(`<h2>🥞 ${T('御好燒店')}</h2>${shopOko()}<div class="btns"><button class="btn" data-act="${bk}">${T(SUBACK?'回到商店':ST&&!R&&!HOME?'回到今天':'關閉')}</button></div>`);{const c=document.querySelector('.card');if(c&&kp)c.scrollTop=sy;shopKeep=false}}
 function okoActs(act,a){
-  if(act==='okohome'){if(!okoDev())return true;SUBACK=!!a.closest('.shopsw');okoHome();return true}
+  if(act==='okohome'){if(!okoDev())return true;SUBACK=!!a.closest('.shopsw,.brpick');okoHome();return true}
   const home=()=>{const h=!ST;if(h)ST=load();return h},done=h=>{if(h)ST=null;else if(!HOME)renderHUD();okoHome()};
   if(act==='buyoko'){if(!okoDev())return true;const h=home();if(ST&&!ST.oko&&ST.coins>=OKO_PRICE){keepScroll();ST.coins-=OKO_PRICE;ST.oko={up:{}};ST.menu=ST.menu||{};ST.menu.okosaka=1;save();toast(T('御好燒店開張了！'))}done(h);return true}
   if(act==='okbuy'){const k=a.dataset.id,h=home();if(ST&&ST.oko&&ITEMS[k]&&ITEMS[k].shop==='oko'&&!has(k)&&ST.coins>=ITEMS[k].buy){keepScroll();ST.coins-=ITEMS[k].buy;ST.menu=ST.menu||{};ST.menu[k]=1;save()}done(h);return true}
@@ -4078,7 +4078,7 @@ document.addEventListener('click',e=>{if(!HOME)return;const m=e.target.closest('
 
 function branchPick(){const o=load()||{},cur=o.where==='oko'&&o.oko&&okoDev()?'oko':o.where==='tep'&&o.tep&&tepDev()?'tep':o.where==='sushi'&&o.sushi?'sushi':o.where==='rm'&&o.rm?'rm':'iz';
   const btn=(id,name,sub,ok)=>`<button class="btn ${cur===id?'':'alt'}" data-act="pickbranch" data-id="${id}" ${ok?'':'disabled'}>${T(name)}${cur===id?` · ${T('目前')}`:''}<small>${T(sub)}</small></button>`;
-  modal(`<h2>${T('分店')}</h2><p class="hint">${T('選一家店，下次營業就在那裡開門。')}</p><div class="pickrow">${btn('iz','🏮 居酒屋本店','',true)}${o.rm?btn('rm','🍜 深夜拉麵屋台','',true):`<button class="btn alt" data-act="rmhome">🍜 ${T('深夜拉麵屋台')}<small>${T('花錢解鎖')}</small></button>`}${sushiDev()?(o.sushi?btn('sushi','🍣 海風壽司','',true):`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖')}</small></button>`):''}${tepDev()?(o.tep?btn('tep','🔥 炎舞鐵板燒','',true):`<button class="btn alt" data-act="tephome">🔥 ${T('炎舞鐵板燒')}<small>${T('花錢解鎖')}</small></button>`):''}${okoDev()?(o.oko?btn('oko','🥞 御好燒店','',true):`<button class="btn alt" data-act="okohome">🥞 ${T('御好燒店')}<small>${T('花錢解鎖')}</small></button>`):''}</div><div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
+  modal(`<h2>${T('分店')}</h2><p class="hint">${T('選一家店，下次營業就在那裡開門。')}</p><div class="pickrow brpick">${btn('iz','🏮 居酒屋本店','',true)}${o.rm?btn('rm','🍜 深夜拉麵屋台','',true):`<button class="btn alt" data-act="rmhome">🍜 ${T('深夜拉麵屋台')}<small>${T('花錢解鎖')}</small></button>`}${sushiDev()?(o.sushi?btn('sushi','🍣 海風壽司','',true):`<button class="btn alt" data-act="sushihome">🍣 ${T('海風壽司')}<small>${T('花錢解鎖')}</small></button>`):''}${tepDev()?(o.tep?btn('tep','🔥 炎舞鐵板燒','',true):`<button class="btn alt" data-act="tephome">🔥 ${T('炎舞鐵板燒')}<small>${T('花錢解鎖')}</small></button>`):''}${okoDev()?(o.oko?btn('oko','🥞 御好燒店','',true):`<button class="btn alt" data-act="okohome">🥞 ${T('御好燒店')}<small>${T('花錢解鎖')}</small></button>`):''}</div><div class="btns"><button class="btn" data-act="shopback">${T('關閉')}</button></div>`)}
 function showHome(){if(CHG)chQuit();LB.ch=0;CHEND='';if(RP.on)abandonReplay();
   if(CUR!=='iz'){CUR='iz';chooseLayout(true)}SHOPHOME=false;DEMO=false;if(TUT){TUT=null;tutLayer().innerHTML=''}const wasPlay=!HOME;HOME=true;R=null;ST=null;closeModal();if(wasPlay){PLAYT=0;STAB={o:'',h:0};STABW={o:'',w:0};LANDW={o:'',w:0};refitBurst()}setTimeout(fit,0);renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
   const saved=load();
@@ -4835,7 +4835,7 @@ document.addEventListener('click',e=>{
   else if(act==='gun'&&R)toggleGun();
   else if(act==='buysushi'){if(!sushiDev())return;const home=!ST;if(home)ST=load();if(ST&&!ST.sushi&&ST.coins>=SUSHI_PRICE){keepScroll();ST.coins-=SUSHI_PRICE;ST.sushi={up:{},seen:false,nv:1};ST.menu=ST.menu||{};ST.menu.tamagonigiri=1;save();toast(T('海風壽司開張了！'))}if(ST&&ST.sushi){if(home)ST=null;if(!home)renderHUD();sushiHome();return}if(home)ST=null;if(!home)renderHUD();sushiHome()}
   else if(act==='buyrm'){RMBACK=false;const home=!ST;if(home)ST=load();if(ST&&!ST.rm&&ST.coins>=RM_PRICE){ST.coins-=RM_PRICE;ST.rm={up:{},dec:{},seen:false};ST.where='rm';save();toast(T('深夜拉麵屋台開張了！今天就能在屋台開店'));if(home){ST=null;branchPick();return}renderHUD();achSoon();showDayIntro()}else if(home){ST=null}}
-  else if(act==='rmhome'){RMBACK=!!a.closest('.shopsw');rmHome()}
+  else if(act==='rmhome'){RMBACK=!!a.closest('.shopsw,.brpick');rmHome()}
   else if(act==='dayshop'){SHOPTAB=CUR==='rm'&&ST.rm?(RMTABS.includes(SHOPTAB)?SHOPTAB:'rmenu'):(RMTABS.includes(SHOPTAB)?'menu':SHOPTAB);showShop()}
   else if(act==='buyk2'){if(ST.rm&&!rmK2()&&ST.coins>=K2_PRICE){keepScroll();ST.coins-=K2_PRICE;ST.rm.k2=1;ST.menu=ST.menu||{};ST.menu.koro=true;ST.fresh=(ST.fresh||[]).concat('koro');save();drawBg();showShop();renderHUD();toast(T('二號廚房擴建好了！開店時點吧台右邊的按鈕切換廚房'))}}
   else if(act==='offtog'){const k=a.dataset.id;if(ST&&ITEMS[k]){const shp=ITEMS[k].shop,sush=shp==='sushi'||shp==='tep'||shp==='oko';const pool=(sush?Object.keys(ITEMS).filter(x=>ITEMS[x].shop===shp&&has(x)):unlocked(ST.day)).filter(x=>x!=='beer'&&!isOff(x));if(!isOff(k)&&pool.length<=3){toast(T('至少要留 3 道菜在賣'));return}keepScroll();ST.soff=ST.soff||{};if(ST.soff[k])delete ST.soff[k];else ST.soff[k]=1;save();drawBg();if(shp==='tep')tepHome();else if(shp==='oko')okoHome();else if(sush)sushiHome();else showShop()}}
@@ -4850,7 +4850,7 @@ document.addEventListener('click',e=>{
   else if(act==='where'){ST.where=a.dataset.id==='oko'&&ST.oko&&okoDev()?'oko':a.dataset.id==='tep'&&ST.tep&&tepDev()?'tep':a.dataset.id==='rm'&&ST.rm?'rm':a.dataset.id==='sushi'&&ST.sushi?'sushi':'iz';setCur(ST.where);if(ST.today&&ST.today.ev==='sale'){const c=unlocked(ST.day).filter(k=>ITEMS[k].cost&&k!=='beer');ST.today.sale=pick(c.length?c:['beer'])}save();showDayIntro()}
   else if(act==='buy'){const u=UPS.find(x=>x.id===a.dataset.id);if(u&&u.ok()&&ST.coins>=u.cost){keepScroll();ST.coins-=u.cost;u.go();save();drawBg();showShop();renderHUD()}}
   else if(act==='pause'&&R)pause();
-  else if(act==='sushihome'){SUBACK=!!a.closest('.shopsw');SUTAB='menu';sushiHome()}
+  else if(act==='sushihome'){SUBACK=!!a.closest('.shopsw,.brpick');SUTAB='menu';sushiHome()}
   else if(act==='sutab'){SUTAB=a.dataset.id;sushiHome();const cd=document.querySelector('.card');if(cd)cd.scrollTop=0}
   else if(act==='tptab'){TPTAB=a.dataset.id;tepHome();const cd=document.querySelector('.card');if(cd)cd.scrollTop=0}
   else if(act==='shopback'){SUBACK=RMBACK=false;if(!ST)ST=load();if(!ST){showHome();return}showShop()}
