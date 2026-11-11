@@ -7943,20 +7943,23 @@ const FI=n=>FOODS.findIndex(f=>f[1]===n);
 const TIERS=(()=>{const rk={c:0,r:1,l:2};const o=FOODS.map((f,i)=>i).sort((x,y)=>rk[FOODS[x][2]]-rk[FOODS[y][2]]||x-y);const w=FI('白飯');return [w].concat(o.filter(i=>i!==w))})();
 const MAXLV=1000,LV0=100,LVR=1.117,PER=10;
 // 廚具（每次點擊）：第 j 件 +10^j、基礎價 50×100^j
-const TNAMES=[['🥄','湯匙'],['🍴','叉子'],['🥢','筷子'],['🍳','鍋鏟'],['🔪','菜刀'],['🥣','飯碗'],['🥘','鐵鍋'],['🍲','湯鍋'],['🧂','調味罐組'],['🏺','陶甕'],['🧺','竹蒸籠'],['🔥','瓦斯爐'],['⚙️','全自動料理機'],['🤖','機器人主廚'],['💎','鑽石廚具組'],['✨','神之廚房'],['🥖','擀麵棍'],['☕','茶壺'],['🍽️','餐盤組'],['⚖️','電子秤'],['🌡️','料理溫度計'],['⏲️','計時器'],['🧤','隔熱手套'],['🥫','開罐器'],['🧴','調味噴瓶'],['🧊','急速冷凍櫃'],['🍾','開瓶器'],['🔦','炙燒噴槍'],['🛒','專業廚房推車'],['🏭','工業級攪拌機'],['🛰️','衛星料理系統'],['🌌','次元廚具']];
+const TNAMES=[['🥄','湯匙'],['🍴','叉子'],['🥢','筷子'],['🍳','鍋鏟'],['🔪','菜刀'],['🥣','飯碗'],['🥘','鐵鍋'],['🍲','湯鍋'],['🧂','調味罐組'],['🏺','陶甕'],['🧺','竹蒸籠'],['🔥','瓦斯爐'],['⚙️','全自動料理機'],['🤖','機器人主廚'],['💎','鑽石廚具組'],['✨','神之廚房'],['🥖','擀麵棍'],['☕','茶壺'],['🍽️','餐盤組'],['⚖️','電子秤'],['🌡️','料理溫度計'],['⏲️','計時器'],['🧤','隔熱手套'],['🥫','開罐器'],['🧴','調味噴瓶'],['🧊','急速冷凍櫃'],['🍾','開瓶器'],['🔦','炙燒噴槍'],['🛒','專業廚房推車'],['🏭','工業級攪拌機'],['🛰️','衛星料理系統'],['🌌','次元廚具'],["🍢","烤肉叉"],["🥡","外帶餐盒機"],["🧈","奶油刀"],["🥄","銀湯勺"],["🍳","不沾平底鍋"],["🫕","火鍋組"],["🥘","砂鍋"],["🍖","炭火烤架"],["🔥","窯烤爐"],["🧑‍🍳","副廚搭檔"],["🍽️","銀質餐具組"],["🏺","古董茶器"],["⚱️","百年醃漬缸"],["🧂","黃金鹽罐"],["🌶️","魔王辣椒研磨器"],["🔮","水晶火候球"],["⚡","電磁加速爐"],["🧲","磁力攪拌棒"],["🔭","遠望選材鏡"],["🧿","慧眼調味秤"],["🪄","魔法鍋鏟"],["🗡️","傳說菜刀"],["🛡️","不滅鐵板"],["🐉","龍息噴火槍"],["🌋","火山熔岩灶"],["🌀","時間加速鍋"],["🌠","流星料理棒"],["🪐","行星級大鍋"],["☀️","恆星烤箱"],["🕳️","黑洞吸塵廚房"],["⏳","時光倒流料理機"],["🌈","萬能神級廚具"]];
 const TOOLS=TNAMES.map(([e,n],j)=>({e,n,inc:Math.pow(10,j),base:j<16?50*Math.pow(100,j):5e31*Math.pow(30,j-15),r:Math.min(1.25+0.05*j,1.5)}));
 // 幫手（每秒）：前 8 個是舊版數值（不可改），後面每個價格 ×12.5、產出 ×7.5
 const H0=[['🍢','烤串爐',0.1,15],['🍤','天婦羅炸鍋',1,100],['🍣','壽司職人',8,1100],['🍜','拉麵屋台',47,12000],['🥩','鐵板燒師傅',260,130000],['🍱','鰻魚專門店',1400,1.4e6],['🏮','居酒屋分店',7800,2e7],['⭐','米其林餐廳',44000,3.3e8]];
 const H1=[['🍶','酒藏職人'],['🔪','板前師傅'],['🍵','茶室茶師'],['🍡','和菓子工房'],['🐟','築地漁獲'],['🚃','駅弁專賣'],['🏯','老舖暖簾'],['🎏','祭典攤販'],['🛍️','商店街'],['🚄','美食特急列車'],['🌸','花見宴會'],['♨️','溫泉旅館'],['⛩️','神社供饌'],['🚢','漁船船隊'],['🌾','稻田農場'],['🏭','食品工廠'],['🚀','太空廚房'],['🌕','月面料亭'],['🌠','星海食堂'],['🐉','龍宮料理'],['🌀','時空居酒屋'],['👑','神明的晚餐'],['🏝️','無人島食堂'],['🚁','空中廚房'],['🗼','展望台餐廳'],['🌋','火山岩燒烤場'],['🧊','冰河冷藏庫'],['🌊','深海養殖場'],['🏰','城堡宴會廳'],['🪐','土星環餐廳'],['☄️','彗星外送'],['🛸','外星食材採購團'],['🕰️','時光料理人'],['🌈','彩虹食堂'],['🎇','煙火大廚'],['🔮','預言者的菜單'],['🌟','宇宙美食聯盟']];
 const HELPERS=H0.map(([e,n,p,base])=>({e,n,p,base}));
 H1.forEach(([e,n])=>{const q=HELPERS[HELPERS.length-1];HELPERS.push({e,n,p:q.p*7.5,base:q.base*12.5})});
+const NH0=HELPERS.length,NT0=32; /* 舊版幫手 45 個、工具 32 個：之後新增的只往後接，編號和價格公式不動 */
+const H2=[["🍙","飯糰協會"],["🥢","筷子工坊"],["🍱","便當連鎖"],["🚚","美食餐車隊"],["🏪","24小時便利店"],["🍻","啤酒花園"],["🎪","美食嘉年華"],["🏔️","高山牧場"],["🐄","和牛牧場"],["🍇","葡萄酒莊"],["🍯","養蜂場"],["🧀","起司工坊"],["🥖","麵包烘焙坊"],["🍫","巧克力工廠"],["🍦","冰淇淋車隊"],["☕","咖啡莊園"],["🍵","抹茶茶園"],["🦞","龍蝦養殖場"],["🐙","章魚漁場"],["🏖️","海灘燒烤派對"],["⛺","露營美食營地"],["🚂","蒸汽美食列車"],["✈️","頭等艙機上餐"],["🛳️","豪華郵輪自助餐"],["🏙️","摩天樓空中餐廳"],["🎡","摩天輪餐車"],["🏛️","美食殿堂"],["📺","美食節目製作"],["📖","美食指南編輯部"],["🧑‍🍳","名廚學院"],["🤖","機器人料理軍團"],["🧪","分子料理實驗室"],["🔬","味覺研究所"],["🧬","美味基因工程"],["⚛️","原子火鍋"],["🌞","太陽能烤爐"],["🌩️","雷電炸物鍋"],["🌪️","龍捲風翻炒"],["🏜️","沙漠綠洲餐廳"],["❄️","極地冰屋食堂"],["🌴","熱帶島嶼宴席"],["🗻","富士山頂茶屋"],["🏯","天守閣料亭"],["🦊","稻荷狐狸食堂"],["🐲","神龍外賣"],["🦄","獨角獸甜點屋"],["🧚","精靈食材採集隊"],["🧙","魔法廚師塔"],["🪄","魔法調味工坊"],["🌙","月兔搗麻糬"],["☀️","太陽神御膳"],["🌌","銀河美食帝國"],["🕳️","黑洞吃到飽"],["♾️","無限次元食堂"],["🏆","萬物皆可成金"]];
+H2.forEach(([e,n])=>{const q=HELPERS[HELPERS.length-1];HELPERS.push({e,n,p:q.p*7.5,base:q.base*12.5})});
 const HR=1.15;
 // 秘傳（每種幫手 3 段：擁有數量達標後解鎖，該幫手產出倍增）
 const SEC_REQ=[10,50,150],SEC_MUL=[2,3,5],SEC_COST=[20,500,25000];
 const NSEC=HELPERS.length*3;
 // 全店升級：全店收益 ×1.5（30 期）；點擊升級：每次點擊 ×2（20 式）。前 15 期／10 式的價格沿用舊版
-const GL=Array.from({length:30},(_,i)=>({id:'g'+i,cost:i<15?1e4*Math.pow(100,i):1e4*Math.pow(100,14)*Math.pow(10,1.5*(i-14)),m:1.5}));
-const PL=Array.from({length:20},(_,i)=>({id:'p'+i,cost:i<10?500*Math.pow(1000,i):500*Math.pow(1000,9)*Math.pow(10,2*(i-9)),m:2}));
+const GL=Array.from({length:60},(_,i)=>({id:'g'+i,cost:i<15?1e4*Math.pow(100,i):1e4*Math.pow(100,14)*Math.pow(10,1.5*(i-14)),m:1.5}));
+const PL=Array.from({length:40},(_,i)=>({id:'p'+i,cost:i<10?500*Math.pow(1000,i):500*Math.pow(1000,9)*Math.pow(10,2*(i-9)),m:2}));
 // 成就（編號沿用舊版：tp100、e1000000、h25、col18、lv40…）
 const ACH=[];
 const addA=(k,t,vs,x)=>vs.forEach(v=>ACH.push({id:k+v,k,t,v,x}));
@@ -7965,9 +7968,14 @@ addA('e','累計賺取 {0} 食券',[1e3,1e6,1e9,1e12,1e15,1e18,1e21,1e24,1e27,1e
 addA('h','雇用 {0} 位幫手',[1,25,100,300,1000,3000,10000,30000,100000]);
 addA('col','收集 {0} 種美食',[6,18,36,50,75,100]);
 addA('lv','進化到第 {0} 級',[10,25,40,50,80,100,120,150,200,250,300,400,500,600,700,800,900,1000]);
-HELPERS.forEach((h,i)=>[10,50,100,200].forEach(n=>ACH.push({id:'hi'+i+'_'+n,k:'hi',t:'雇用 {1} 位「{0}」',v:n,x:i})));
-TOOLS.forEach((t,j)=>[10,50].forEach(n=>ACH.push({id:'ti'+j+'_'+n,k:'ti',t:'把「{0}」升到 {1} 級',v:n,x:j})));
+HELPERS.slice(0,NH0).forEach((h,i)=>[10,50,100,200].forEach(n=>ACH.push({id:'hi'+i+'_'+n,k:'hi',t:'雇用 {1} 位「{0}」',v:n,x:i})));
+TOOLS.slice(0,NT0).forEach((t,j)=>[10,50].forEach(n=>ACH.push({id:'ti'+j+'_'+n,k:'ti',t:'把「{0}」升到 {1} 級',v:n,x:j})));
 addA('up','解鎖 {0} 個升級',[1,10,30,60,90,110,140,170,185]);
+/* 擴充內容的新成就一律接在最後，舊成就的編號和順序不動 */
+HELPERS.forEach((h,i)=>{if(i>=NH0)[10,50,100,200].forEach(n=>ACH.push({id:'hi'+i+'_'+n,k:'hi',t:'雇用 {1} 位「{0}」',v:n,x:i}))});
+TOOLS.forEach((t,j)=>{if(j>=NT0)[10,50].forEach(n=>ACH.push({id:'ti'+j+'_'+n,k:'ti',t:'把「{0}」升到 {1} 級',v:n,x:j}))});
+addA('up','解鎖 {0} 個升級',[220,260,300,350,400]);
+addA('e','累計賺取 {0} 食券',[1e51,1e54,1e57,1e60,1e63,1e66,1e69,1e72,1e75,1e78,1e81,1e84,1e87,1e90,1e93,1e96,1e99]);
 const RAR={c:{n:'普通',col:'#8a5a34',w:70},r:{n:'稀有',col:'#2f7fb8',w:25},l:{n:'傳說',col:'#c8891a',w:5}};
 const OFFLINE=0.5; // 離線收益比例（線上 100%）
 const IDLE_CAP=7200; // 秒：離線或沒有任何操作超過 2 小時，幫手就停工，點一下才繼續
@@ -8034,13 +8042,13 @@ window.fcCloud={
 function fmt(n){
   if(!isFinite(n))return '∞';
   const L=LANG;let U,B;
-  if(L==='zh-Hant'||L==='ja'){U=['','萬','億','兆','京','垓','秭','穰','溝','澗','正','載','極','恆河沙'];B=1e4}
-  else if(L==='zh-Hans'){U=['','万','亿','兆','京','垓','秭','穰','沟','涧','正','载','极','恒河沙'];B=1e4}
-  else if(L==='ko'){U=['','만','억','조','경','해','자','양','구','간','정','재','극','항하사'];B=1e4}
-  else{U=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','Dd','Td','Qad','Qid','Sxd'];B=1e3}
+  if(L==='zh-Hant'||L==='ja'){U=['','萬','億','兆','京','垓','秭','穰','溝','澗','正','載','極','恆河沙','阿僧祇','那由他','不可思議','無量大數'];B=1e4}
+  else if(L==='zh-Hans'){U=['','万','亿','兆','京','垓','秭','穰','沟','涧','正','载','极','恒河沙','阿僧祇','那由他','不可思议','无量大数'];B=1e4}
+  else if(L==='ko'){U=['','만','억','조','경','해','자','양','구','간','정','재','극','항하사','아승기','나유타','불가사의','무량대수'];B=1e4}
+  else{U=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','Dd','Td','Qad','Qid','Sxd','Spd','Ocd','Nod','Vg','Uvg','Dvg','Tvg','Qavg','Qivg','Sxvg','Spvg','Ocvg','Novg','Tg','Utg','Dtg','Ttg','Qatg'];B=1e3}
   if(n<B){return n<10?String(Math.round(n*100)/100):n<100?String(Math.round(n*10)/10):Math.round(n).toLocaleString('en-US')}
-  let i=0;while(n>=B&&i<U.length-1){n/=B;i++}
-  if(n>=B)return n.toExponential(2);
+  const o=n;let i=0;while(n>=B&&i<U.length-1){n/=B;i++}
+  if(n>=B)return o.toExponential(2); /* 超過最大單位：直接用科學記號（以前會把除過的數字配錯單位） */
   const d=n>=100?0:n>=10?1:2;
   return String(parseFloat(n.toFixed(d)))+U[i];
 }
@@ -8608,6 +8616,93 @@ const D={
 '普通':['普通','Common','ノーマル','일반','Biasa'],
 '稀有':['稀有','Rare','レア','희귀','Langka']
 };
+Object.assign(D,{"飯糰協會":["饭团协会", "Onigiri guild", "おにぎり協会", "주먹밥 협회", "Serikat onigiri"],
+"筷子工坊":["筷子工坊", "Chopstick workshop", "箸工房", "젓가락 공방", "Bengkel sumpit"],
+"便當連鎖":["便当连锁", "Bento chain", "弁当チェーン", "도시락 체인", "Jaringan bento"],
+"美食餐車隊":["美食餐车队", "Food truck fleet", "キッチンカー隊", "푸드트럭 부대", "Armada food truck"],
+"24小時便利店":["24小时便利店", "24-hour konbini", "24時間コンビニ", "24시간 편의점", "Konbini 24 jam"],
+"啤酒花園":["啤酒花园", "Beer garden", "ビアガーデン", "비어 가든", "Taman bir"],
+"美食嘉年華":["美食嘉年华", "Food carnival", "グルメカーニバル", "푸드 카니발", "Karnaval kuliner"],
+"高山牧場":["高山牧场", "Alpine ranch", "高原牧場", "고산 목장", "Peternakan pegunungan"],
+"和牛牧場":["和牛牧场", "Wagyu ranch", "和牛牧場", "와규 목장", "Peternakan wagyu"],
+"葡萄酒莊":["葡萄酒庄", "Winery", "ワイナリー", "와이너리", "Kebun anggur"],
+"養蜂場":["养蜂场", "Apiary", "養蜂場", "양봉장", "Peternakan lebah"],
+"起司工坊":["奶酪工坊", "Cheese atelier", "チーズ工房", "치즈 공방", "Bengkel keju"],
+"麵包烘焙坊":["面包烘焙坊", "Bakery", "ベーカリー", "베이커리", "Toko roti"],
+"巧克力工廠":["巧克力工厂", "Chocolate factory", "チョコレート工場", "초콜릿 공장", "Pabrik cokelat"],
+"冰淇淋車隊":["冰淇淋车队", "Ice cream trucks", "アイスクリーム隊", "아이스크림 트럭대", "Armada es krim"],
+"咖啡莊園":["咖啡庄园", "Coffee estate", "コーヒー農園", "커피 농장", "Perkebunan kopi"],
+"抹茶茶園":["抹茶茶园", "Matcha plantation", "抹茶茶園", "말차 다원", "Kebun matcha"],
+"龍蝦養殖場":["龙虾养殖场", "Lobster farm", "ロブスター養殖場", "랍스터 양식장", "Tambak lobster"],
+"章魚漁場":["章鱼渔场", "Octopus grounds", "タコ漁場", "문어 어장", "Perairan gurita"],
+"海灘燒烤派對":["海滩烧烤派对", "Beach BBQ party", "ビーチBBQパーティー", "해변 바비큐 파티", "Pesta BBQ pantai"],
+"露營美食營地":["露营美食营地", "Camping cookout", "キャンプ飯", "캠핑 요리장", "Kemah kuliner"],
+"蒸汽美食列車":["蒸汽美食列车", "Steam gourmet train", "SLグルメ列車", "증기 미식 열차", "Kereta uap kuliner"],
+"頭等艙機上餐":["头等舱机上餐", "First-class in-flight meals", "ファーストクラス機内食", "퍼스트클래스 기내식", "Makanan kelas satu pesawat"],
+"豪華郵輪自助餐":["豪华邮轮自助餐", "Luxury cruise buffet", "豪華客船ビュッフェ", "호화 크루즈 뷔페", "Prasmanan kapal pesiar"],
+"摩天樓空中餐廳":["摩天楼空中餐厅", "Skyscraper sky restaurant", "摩天楼スカイレストラン", "마천루 스카이 레스토랑", "Restoran langit pencakar langit"],
+"摩天輪餐車":["摩天轮餐车", "Ferris wheel diner", "観覧車ダイナー", "대관람차 식당", "Restoran bianglala"],
+"美食殿堂":["美食殿堂", "Hall of gastronomy", "美食の殿堂", "미식의 전당", "Aula gastronomi"],
+"美食節目製作":["美食节目制作", "Food TV studio", "グルメ番組スタジオ", "미식 방송 스튜디오", "Studio acara kuliner"],
+"美食指南編輯部":["美食指南编辑部", "Gourmet guide editors", "グルメガイド編集部", "미식 가이드 편집부", "Redaksi panduan kuliner"],
+"名廚學院":["名厨学院", "Chef academy", "料理学院", "요리 학원", "Akademi chef"],
+"機器人料理軍團":["机器人料理军团", "Robot chef legion", "ロボット料理軍団", "로봇 요리 군단", "Legiun robot koki"],
+"分子料理實驗室":["分子料理实验室", "Molecular lab", "分子ガストロノミー研究所", "분자 요리 연구소", "Lab gastronomi molekuler"],
+"味覺研究所":["味觉研究所", "Taste institute", "味覚研究所", "미각 연구소", "Institut rasa"],
+"美味基因工程":["美味基因工程", "Flavor gene lab", "美味遺伝子工学", "맛 유전자 공학", "Rekayasa gen rasa"],
+"原子火鍋":["原子火锅", "Atomic hotpot", "原子ホットポット", "원자 훠궈", "Hotpot atom"],
+"太陽能烤爐":["太阳能烤炉", "Solar grill", "太陽光グリル", "태양광 그릴", "Panggangan surya"],
+"雷電炸物鍋":["雷电炸物锅", "Lightning fryer", "雷の揚げ鍋", "번개 튀김솥", "Penggorengan petir"],
+"龍捲風翻炒":["龙卷风翻炒", "Tornado stir-fry", "竜巻炒め", "토네이도 볶음", "Tumis tornado"],
+"沙漠綠洲餐廳":["沙漠绿洲餐厅", "Oasis restaurant", "オアシス食堂", "오아시스 식당", "Restoran oasis"],
+"極地冰屋食堂":["极地冰屋食堂", "Polar igloo diner", "極地イグルー食堂", "극지 이글루 식당", "Restoran iglo kutub"],
+"熱帶島嶼宴席":["热带岛屿宴席", "Tropical island feast", "南国アイランド宴", "열대 섬 연회", "Pesta pulau tropis"],
+"富士山頂茶屋":["富士山顶茶屋", "Mt. Fuji teahouse", "富士山頂の茶屋", "후지산 정상 찻집", "Kedai teh puncak Fuji"],
+"天守閣料亭":["天守阁料亭", "Castle keep ryotei", "天守閣料亭", "천수각 요정", "Ryotei menara kastil"],
+"稻荷狐狸食堂":["稻荷狐狸食堂", "Inari fox diner", "お稲荷さん食堂", "이나리 여우 식당", "Warung rubah Inari"],
+"神龍外賣":["神龙外卖", "Dragon delivery", "神龍デリバリー", "신룡 배달", "Pengantaran naga"],
+"獨角獸甜點屋":["独角兽甜点屋", "Unicorn dessert shop", "ユニコーンスイーツ", "유니콘 디저트", "Toko dessert unicorn"],
+"精靈食材採集隊":["精灵食材采集队", "Fairy foragers", "妖精の食材採集隊", "요정 채집대", "Peri pencari bahan"],
+"魔法廚師塔":["魔法厨师塔", "Wizard chef tower", "魔法料理人の塔", "마법 요리사의 탑", "Menara koki sihir"],
+"魔法調味工坊":["魔法调味工坊", "Magic seasoning workshop", "魔法調味料工房", "마법 양념 공방", "Bengkel bumbu sihir"],
+"月兔搗麻糬":["月兔捣麻糬", "Moon rabbit mochi", "月うさぎの餅つき", "달토끼 떡방아", "Mochi kelinci bulan"],
+"太陽神御膳":["太阳神御膳", "Sun god's feast", "太陽神の御膳", "태양신의 수라상", "Hidangan dewa matahari"],
+"銀河美食帝國":["银河美食帝国", "Galactic food empire", "銀河グルメ帝国", "은하 미식 제국", "Kekaisaran kuliner galaksi"],
+"黑洞吃到飽":["黑洞吃到饱", "Black hole buffet", "ブラックホール食べ放題", "블랙홀 뷔페", "Prasmanan lubang hitam"],
+"無限次元食堂":["无限次元食堂", "Infinite dimension diner", "無限次元食堂", "무한 차원 식당", "Restoran dimensi tak terbatas"],
+"萬物皆可成金":["万物皆可成金", "Everything turns to gold", "すべてを黄金に", "모든 것이 황금으로", "Segalanya jadi emas"],
+"烤肉叉":["烤肉叉", "Skewer", "串", "꼬치", "Tusuk sate"],
+"外帶餐盒機":["外带餐盒机", "Takeout packer", "テイクアウト機", "포장 용기기", "Mesin kotak bawa pulang"],
+"奶油刀":["奶油刀", "Butter knife", "バターナイフ", "버터 나이프", "Pisau mentega"],
+"銀湯勺":["银汤勺", "Silver ladle", "銀のお玉", "은 국자", "Sendok sup perak"],
+"不沾平底鍋":["不粘平底锅", "Non-stick pan", "フライパン", "논스틱 팬", "Wajan antilengket"],
+"火鍋組":["火锅组", "Hotpot set", "鍋セット", "훠궈 세트", "Set hotpot"],
+"砂鍋":["砂锅", "Clay pot", "土鍋", "뚝배기", "Periuk tanah"],
+"炭火烤架":["炭火烤架", "Charcoal grill", "炭火グリル", "숯불 그릴", "Panggangan arang"],
+"窯烤爐":["窑烤炉", "Stone oven", "石窯", "화덕", "Oven batu"],
+"副廚搭檔":["副厨搭档", "Sous-chef partner", "スーシェフ", "부주방장", "Wakil koki"],
+"銀質餐具組":["银质餐具组", "Silver cutlery", "銀食器セット", "은 식기 세트", "Alat makan perak"],
+"古董茶器":["古董茶器", "Antique tea set", "骨董の茶器", "골동 다기", "Perangkat teh antik"],
+"百年醃漬缸":["百年腌渍缸", "Century pickling jar", "百年漬け壺", "백년 절임 항아리", "Guci acar seabad"],
+"黃金鹽罐":["黄金盐罐", "Golden salt shaker", "黄金の塩壺", "황금 소금통", "Garam emas"],
+"魔王辣椒研磨器":["魔王辣椒研磨器", "Demon chili grinder", "魔王唐辛子ミル", "마왕 고추 분쇄기", "Penggiling cabai iblis"],
+"水晶火候球":["水晶火候球", "Crystal heat orb", "火加減の水晶玉", "불조절 수정구", "Bola kristal api"],
+"電磁加速爐":["电磁加速炉", "Electromagnetic stove", "電磁加速コンロ", "전자기 가속로", "Kompor elektromagnetik"],
+"磁力攪拌棒":["磁力搅拌棒", "Magnetic stirrer", "磁力かくはん棒", "자력 교반기", "Pengaduk magnet"],
+"遠望選材鏡":["远望选材镜", "Ingredient telescope", "食材望遠鏡", "식재료 망원경", "Teleskop bahan"],
+"慧眼調味秤":["慧眼调味秤", "Wise-eye scale", "慧眼の調味秤", "혜안 저울", "Timbangan mata bijak"],
+"魔法鍋鏟":["魔法锅铲", "Magic spatula", "魔法のフライ返し", "마법 뒤집개", "Spatula sihir"],
+"傳說菜刀":["传说菜刀", "Legendary knife", "伝説の包丁", "전설의 식칼", "Pisau legendaris"],
+"不滅鐵板":["不灭铁板", "Eternal griddle", "不滅の鉄板", "불멸의 철판", "Griddle abadi"],
+"龍息噴火槍":["龙息喷火枪", "Dragon-breath torch", "竜の息バーナー", "용의 숨결 토치", "Obor napas naga"],
+"火山熔岩灶":["火山熔岩灶", "Lava stove", "溶岩かまど", "용암 화로", "Tungku lava"],
+"時間加速鍋":["时间加速锅", "Time-warp pot", "時間加速鍋", "시간 가속 냄비", "Panci percepat waktu"],
+"流星料理棒":["流星料理棒", "Meteor whisk", "流星の泡立て器", "유성 거품기", "Pengocok meteor"],
+"行星級大鍋":["行星级大锅", "Planet-size cauldron", "惑星級の大鍋", "행성급 가마솥", "Kuali sebesar planet"],
+"恆星烤箱":["恒星烤箱", "Star oven", "恒星オーブン", "항성 오븐", "Oven bintang"],
+"黑洞吸塵廚房":["黑洞吸尘厨房", "Black hole kitchen", "ブラックホール厨房", "블랙홀 주방", "Dapur lubang hitam"],
+"時光倒流料理機":["时光倒流料理机", "Time-reverse cooker", "時間逆行調理機", "시간 역행 조리기", "Pemasak putar balik waktu"],
+"萬能神級廚具":["万能神级厨具", "Omni god-tier tool", "万能神級調理器具", "만능 신급 조리도구", "Alat dewa serbaguna"]});
 for(const k in D)D[k].forEach((v,i)=>{const t=I18N[L[i]]=I18N[L[i]]||{};if(!(k in t))t[k]=v});
 })();
 </script>
