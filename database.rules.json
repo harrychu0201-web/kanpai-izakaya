@@ -99,7 +99,8 @@
         "days",
         "dex",
         "chal",
-        "chalh"
+        "chalh",
+        "fc"
       ],
       "$uid": {
         ".write": "auth != null && auth.uid === $uid",
@@ -127,6 +128,9 @@
         },
         "chalh": {
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+        },
+        "fc": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1e300"
         },
         "at": {
           ".validate": "newData.isNumber()"

@@ -4973,7 +4973,7 @@ document.addEventListener('click',e=>{
   else if(act==='replayok')startReplay(+$('rpday').value);
   else if(act==='rpagain')startReplay(+a.dataset.id);
   else if(act==='arcade')showArcade();
-  else if(/^fc(buy|tab|qty|up|claim|claimall|cloud)?$/.test(act))fcAct(act,a);
+  else if(/^fc(buy|tab|qty|up|claim|claimall|cloud|lb)?$/.test(act))fcAct(act,a);
   else if(act==='arcslot')showArcSlot();
   else if(act==='arcpin')showArcPin();
   else if(act==='omk')showOmikuji();
@@ -4988,7 +4988,7 @@ document.addEventListener('click',e=>{
   else if(act==='arcdrop')arcDrop();
   else if(act==='lang')showLang();
   else if(act==='update')doUpdate();
-  else if(act==='lb'){LB.ch=0;showLB()}
+  else if(act==='lb'){LB.ch=0;LB.fcb=0;showLB()}
   else if(act==='lbman')showLbMan();
   else if(act==='lbmansave')saveLbMan();
   else if(act==='lbmandel')delLbMan(a.dataset.id);
@@ -6514,7 +6514,7 @@ function cloudAsk(){const c=CL.pick;if(!c||!HOME)return;
   modal(`<h2>${T('選擇要用哪一份存檔')}</h2><p>${T('這台裝置和雲端各有一份不同的存檔，要用哪一份？另一份會被覆蓋。')}</p>
   <div class="pickrow"><button class="btn" data-act="pickcloud">${T('雲端存檔')}<small>${saveSummary(c.game)}</small></button><button class="btn alt" data-act="picklocal">${T('這台裝置')}<small>${saveSummary(lsGet(KEY))}</small></button></div>`)}
 /* ===== leaderboard: one public doc per player in lb/{uid}; written only by its owner, readable by all ===== */
-const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['chal','無限挑戰','desc','店不打烊一直營業，三次失誤就結束，比誰的營業時間長（暫停不算）。'],['chalh','極限挑戰','desc','禁用店員和道具的無限挑戰，比誰的營業時間長。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
+const LBT=[['best','單日淨利','desc','單一天打烊時的最高淨利。'],['earned','累計營收','desc','所有天數加起來的總營收。'],['days','最長營業','desc','玩到最遠的天數，天數越多越前面。'],['chal','無限挑戰','desc','店不打烊一直營業，三次失誤就結束，比誰的營業時間長（暫停不算）。'],['chalh','極限挑戰','desc','禁用店員和道具的無限挑戰，比誰的營業時間長。'],['fc','點食成金','desc','遊戲廳「點食成金」累計賺到的食券，越多越前面。'],['fr','好友','desc','和好友比一比，每天還能互送一份小禮物。']];
 const LB={tab:'best',cache:{},last:null,ch:0};let CHEND='';
 /* nicknames with these words are rejected by database.rules.json (chat/lb/lbx name), so block them here too instead of failing silently; the owner account is exempt like in the rules */
 const NICK_BAD=/作者|站長|站长|客服|官方|admin/i;
@@ -6526,14 +6526,14 @@ const nickBad=v=>!!v&&NICK_BAD.test(v)&&!(CL.user&&CL.user.email===ADMIN_EMAIL);
 'id':['Nama panggilan "{0}" mengandung kata terlarang (admin, penulis, resmi, dll.), jadi tidak bisa masuk papan peringkat atau chat. Silakan ganti nama.','Nama panggilan tidak boleh mengandung kata terlarang seperti "admin", "penulis", atau "resmi".','Gagal mengunggah ke papan peringkat: {0}','Simpanan ini pernah memakai fitur panel tes, jadi tidak masuk papan peringkat.','Penulis sudah memulihkan hakmu masuk papan peringkat!']};
 for(const l in A){if(I18N[l])Object.assign(I18N[l],{'你的暱稱「{0}」含有保留字（作者、官方、admin 等），無法上榜或聊天，請改個名字。':A[l][0],'排行榜上傳失敗：{0}':A[l][2],'作者已幫你恢復上排行榜的資格！':A[l][4],'這個存檔用過測試面板的功能，不會上排行榜。':A[l][3],'暱稱不能包含「作者」「官方」「admin」等保留字':A[l][1]})}})();
 function lbEntry(){const r=loadRec();
-  if(!r.nick||nickBad(r.nick))return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.maxDay>0&&!isAdmin())d.days=Math.round(r.maxDay); /* the author's test runs (1000+ days) stay off the 最長營業 board */if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;return d}
+  if(!r.nick||nickBad(r.nick))return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.maxDay>0&&!isAdmin())d.days=Math.round(r.maxDay); /* the author's test runs (1000+ days) stay off the 最長營業 board */if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;{let fe=0;try{fe=+JSON.parse(localStorage.getItem('izakaya-fc-v1')||'null').e||0}catch(e){}if(fe>=1&&isFinite(fe))d.fc=Math.round(fe)}return d} /* 點食成金累計賺取（只讀、不改它的存檔）*/
 async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return} /* a save touched by the author test tools never goes on the leaderboard */
   const k=JSON.stringify(d);if(LB.last===u.uid+k)return;
   const put=async dd=>{try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},dd))}
-    catch(e){const d2=Object.assign({},dd);delete d2.dex;delete d2.chal;delete d2.chalh;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}}}; /* rules not updated yet: still keep the rest of the entry */
+    catch(e){const d2=Object.assign({},dd);delete d2.dex;delete d2.chal;delete d2.chalh;delete d2.fc;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}}}; /* rules not updated yet: still keep the rest of the entry */
   try{await put(d)}catch(e){const nn=String(d.name).replace(/管理[員员]/g,'').trim();if(nn===d.name)throw e;await put(Object.assign({},d,{name:nn||'玩家'}))} /* published rules may still reject 管理員 in names: show the name without it instead of not showing him at all */
   LB.last=u.uid+k;LB.cache={}}
-const lbVal=(t,v)=>t==='chal'||t==='chalh'?chTime(v):t==='dex'?T('{0} 種',v):t==='days'?T('{0} 天',v):yen(v);
+const lbVal=(t,v)=>t==='fc'?(window.fcFmt?window.fcFmt(v):String(v)):t==='chal'||t==='chalh'?chTime(v):t==='dex'?T('{0} 種',v):t==='days'?T('{0} 天',v):yen(v);
 const lbHead=tb=>`<h2>${T('排行榜')}</h2><div class="lbtabs">${LBT.filter(x=>!(LB.ch&&x[0]==='fr')).map(([k,n])=>`<button class="stab ${LB.tab===k?'on':''}" data-act="lbtab" data-id="${k}">${T(n)}</button>`).join('')}</div><p class="lbdesc">${T(tb[3])}</p>`;
 /* ===== manual scores (owner only): for a player whose own upload keeps failing. Stored in notice/lbman/<name>, merged into the board;
    hidden again once the player's own upload under the same name (with or without 管理員) reaches that score ===== */
@@ -6596,8 +6596,8 @@ async function showLB(){if(!LBT.some(x=>x[0]===LB.tab))LB.tab='best';if(!CL.api&
   const rkTxt=x=>!x?'':x.total<2?T('目前只有你一位上榜。'):x.all?T('第 {0} 名（共 {1} 人），超過全部其他玩家！',x.rank,x.total):T('第 {0} 名（共 {1} 人），超過 {2}% 的玩家',x.rank,x.total,x.pct);
   const mineRk=()=>{const x=LB.cache[f]&&rk(LB.cache[f].rows,LB.cache[f].rows.length);return x};
   const foot0=foot;
-  const btns=`<div class="btns"><button class="btn" data-act="${LB.ch?'chback':'closem'}">${T('返回')}</button>${isAdmin()&&!LB.ch?'<button class="btn alt" data-act="lbman">✏️ 手動登錄成績</button>':''}</div>`;
-  const draw=body=>{if((HOME||LB.ch)&&LB.tab===f){const x=mineRk();const ft=x&&mine&&!chs&&!LB.err?foot0.replace('</span>',`<br><small>${rkTxt(x)}</small></span>`):foot0;modal(head+`<div class="lblist">${body}</div>`+ft+btns)}};
+  const btns=`<div class="btns"><button class="btn" data-act="${LB.fcb?'fc':LB.ch?'chback':'closem'}">${T('返回')}</button>${isAdmin()&&!LB.ch?'<button class="btn alt" data-act="lbman">✏️ 手動登錄成績</button>':''}</div>`;
+  const draw=body=>{if((HOME||LB.ch)&&LB.tab===f){const x=mineRk();const ft=x&&mine&&!chs&&!LB.err?foot0.replace('</span>',`<br><small>${rkTxt(x)}</small></span>`):foot0;modal(head+`<div class="lblist">${body}</div>`+ft+btns);{const tb=document.querySelector('.lbtabs'),on=tb&&tb.querySelector('.stab.on');if(on)tb.scrollLeft=on.offsetLeft-(tb.clientWidth-on.offsetWidth)/2}}};
   const c=LB.cache[f];
   if(!c||Date.now()-c.t>60000){draw(`<p>${T('載入中…')}</p>`);
     try{if(!CL.api)throw 0;LB.cache[f]={t:Date.now(),rows:await lbWithMan(f,tb[2])}}catch(e){console.warn('lb',e);draw(`<p>${T('排行榜載入失敗，請稍後再試。')}</p><p style="font-size:12px;color:#8a5a34;word-break:break-all">${esc(String((e&&(e.code||e.message))||e))}</p>`);return}}
@@ -6627,7 +6627,7 @@ function shopRate(g){const ks=Object.keys(g.stars||{}).map(Number).sort((a,b)=>a
 const rtTag=rt=>{const t=RT.find(x=>x[1]===rt);return t?` <small class="rtag r${rt}">${TX(t[2],'rate')}</small>`:''};
 const rtFull=rt=>{const t=RT.find(x=>x[1]===rt);return t?`${TX(t[2],'rate')}<br><small>${T(t[3])}${t[4]?` <b>${T(t[4])}</b>`:''}</small>`:T('還沒評價（至少營業 3 天）')};
 function lbxEntry(){const d=lbEntry();if(!d)return null;let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(!g)return null;
-  delete d.days;delete d.dex;delete d.chal;delete d.chalh; /* lbx rules reject any other key ($other:false): dex/chal/chalh made every snapshot write fail, so friends saw no name */
+  delete d.days;delete d.dex;delete d.chal;delete d.chalh;delete d.fc; /* lbx rules reject any other key ($other:false): dex/chal/chalh made every snapshot write fail, so friends saw no name */
   d.day=Math.max(1,(g.day||1)+(g.pendingNext?1:0));d.ya=g.rm?1:0;d.k2=g.rm&&g.rm.k2?1:0;let c=0;for(const k in(g.dec||{}))if(g.dec[k])c++;if(g.rm&&g.rm.dec)for(const k in g.rm.dec)if(g.rm.dec[k])c++;d.dc=c;const sr=shopRate(g);if(sr)d.rt=sr.rt;return d}
 async function lbxPush(u){try{if(!CL.api.putLbx)return;let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return;const d=lbxEntry();if(!d)return;
   const k=JSON.stringify(d);if(LB.lastx===u.uid+k)return;try{await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d))}catch(e){if(d.name&&/管理[員员]/.test(d.name)){await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d,{name:d.name.replace(/管理[員员]/g,'').trim()||'玩家'}))}else{if(!d.rt)throw e;const d2=Object.assign({},d);delete d2.rt;await CL.api.putLbx(u.uid,Object.assign({at:Date.now()},d2))}} /* rules not updated yet: keep the rest of the snapshot */
@@ -8002,7 +8002,7 @@ async function flush(force){
   let raw=null,o=null;try{raw=localStorage.getItem(KEY);o=JSON.parse(raw)}catch(e){}
   const p=pg(o);if(!raw||(!p.e&&!p.tp)){FCP.st='ok';cloudBadge();return}
   FCP.busy=true;FCP.at=Date.now();FCP.st='sync';cloudBadge();
-  try{await CL.api.fcPut(FCP.uid,raw,p.e);FCP.st='ok';FCP.err='';FCP.n=0}
+  try{await CL.api.fcPut(FCP.uid,raw,p.e);FCP.st='ok';FCP.err='';FCP.n=0;try{if(typeof lbPush==='function')lbPush(CL.user).catch(()=>{})}catch(e2){}}
   catch(e){console.warn('fc cloud save failed',e);FCP.st='err';FCP.err=String((e&&(e.code||e.message))||e).slice(0,80);FCP.at=Date.now();
     if(FCP.n<5){FCP.n++;clearTimeout(FCP.rt);FCP.rt=setTimeout(()=>flush(),20000*FCP.n)}}
   FCP.busy=false;cloudBadge();
@@ -8015,6 +8015,7 @@ async function manual(){
     if(FCP.st==='err')say(T('同步失敗：{0}',FCP.err));else say(T('已同步'))}
   catch(e){FCP.st='err';FCP.err=String((e&&(e.code||e.message))||e).slice(0,80);cloudBadge();say(T('同步失敗：{0}',FCP.err))}
 }
+window.fcFmt=n=>fmt(n);
 window.fcCloud={
   sync(cs,uid){
     if(FC.s&&document.getElementById('fcRoot'))save();
@@ -8260,6 +8261,7 @@ function step(){
   if(now-FC.saveAt>5000){FC.saveAt=now;save()}
 }
 function open(){
+  if(typeof LB!=='undefined')LB.fcb=0;
   FC.s=load();FC.tab='shop';FC.tick=0;FC.dropAt=0;FC.upIds='';
   const s=FC.s;
   const off=Math.min(7200,Math.max(0,(Date.now()-s.ts)/1000));
@@ -8268,7 +8270,7 @@ function open(){
   if(off>=30&&FC.ps>0){const g=FC.ps*off*OFFLINE;s.c+=g;s.e+=g;offTxt=T('你不在的時候，幫手賺了 {0} 食券',fmt(g));calc();FC.lv=level(s.e)}
   checkAchSilent();
   const v=visCounts();FC.sig=v.vh+','+v.vt;
-  modal(`<style>${CSS}</style><div id="fcRoot" class="fc"><div class="fc-top"><h2>🍙 ${T('點食成金')}</h2><span class="fc-cl" id="fcCl" data-act="fccloud"></span><button class="btn alt fc-x" data-act="arcade">${T('返回')}</button></div>
+  modal(`<style>${CSS}</style><div id="fcRoot" class="fc"><div class="fc-top"><h2>🍙 ${T('點食成金')}</h2><span class="fc-cl" id="fcCl" data-act="fccloud"></span><button class="btn alt fc-x" data-act="fclb">🏆 ${T('排行榜')}</button><button class="btn alt fc-x" data-act="arcade">${T('返回')}</button></div>
 <div class="fc-grid"><div class="fc-left"><div class="fc-coinrow"><b id="fcCoin">0</b><small>${T('食券')}</small></div><div class="fc-rate"><span id="fcPT"></span><span id="fcPS"></span></div>
 <div class="fc-wrap" id="fcWrap"><div class="fc-dish" id="fcDish">🍚</div><div class="fc-msg" id="fcMsg"></div></div>
 <div class="fc-name" id="fcName"></div><div class="fc-bar"><i id="fcBar"></i></div><div class="fc-next" id="fcNext"></div></div>
@@ -8297,6 +8299,7 @@ window.fcAct=function(act,a){
   else if(act==='fcclaim')claim(a.dataset.id);
   else if(act==='fcclaimall')claimAll();
   else if(act==='fccloud')manual();
+  else if(act==='fclb'){save();LB.tab='fc';LB.ch=0;LB.fcb=1;showLB()}
   else if(act==='fctab'){FC.tab=a.dataset.t;renderList(true)}
   else if(act==='fcqty'){FC.qty=a.dataset.q==='max'?'max':+a.dataset.q;renderList()}
 };
@@ -8358,6 +8361,8 @@ const CSS=`.fc{display:flex;flex-direction:column;gap:8px;color:var(--soot)}
 const L=['zh-Hans','en','ja','ko','id'];
 const D={
 '點食成金':['点食成金','Tap Tap Tasty','点食成金','점식성금','Ketuk Jadi Emas'],
+'遊戲廳「點食成金」累計賺到的食券，越多越前面。':['游戏厅“点食成金”累计赚到的食券，越多越靠前。','Total meal tickets earned in the arcade game "Tap Tap Tasty" — the more, the higher.','ゲームコーナー「点食成金」で稼いだ食券の累計。多いほど上位！','게임장 "점식성금"에서 모은 식권 누적량이에요. 많을수록 높은 순위!','Total kupon makan dari game "Ketuk Jadi Emas" — makin banyak, makin tinggi.'],
+'排行榜':['排行榜','Leaderboard','ランキング','랭킹','Peringkat'],
 '食券':['食券','Meal tickets','食券','식권','Kupon makan'],
 '每次點擊 {0}':['每次点击 {0}','Per tap {0}','タップ毎 {0}','터치당 {0}','Per ketuk {0}'],
 '每秒 {0}':['每秒 {0}','Per sec {0}','毎秒 {0}','초당 {0}','Per detik {0}'],
