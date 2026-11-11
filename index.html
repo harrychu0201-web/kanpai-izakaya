@@ -4687,7 +4687,7 @@ document.addEventListener('click',e=>{
   else if(act==='replayok')startReplay(+$('rpday').value);
   else if(act==='rpagain')startReplay(+a.dataset.id);
   else if(act==='arcade')showArcade();
-  else if(/^fc(buy|tab|qty|up|claim|claimall)?$/.test(act))fcAct(act,a);
+  else if(/^fc(buy|tab|qty|up|claim|claimall|cloud)?$/.test(act))fcAct(act,a);
   else if(act==='arcslot')showArcSlot();
   else if(act==='arcpin')showArcPin();
   else if(act==='omk')showOmikuji();
@@ -7699,17 +7699,33 @@ function load(){
 function save(){const s=FC.s;if(!s)return;s.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}pushSoon()}
 /* cloud sync (2026-11-11): the whole save rides on the Google account in saves/$uid/fc. Merge rule: whichever copy has more lifetime earnings (e, then taps) wins as a whole;
    the copy that loses is kept on this device in izakaya-fc-bak, never deleted. Nothing is pushed before the first merge of the session, so a fresh device can't overwrite a bigger cloud copy */
-const FCP={uid:null,t:null,at:0,busy:false};
+const FCP={uid:null,t:null,at:0,busy:false,st:'',err:'',n:0,rt:null};
 const pg=o=>o&&typeof o==='object'?{e:+o.e>0?+o.e:0,tp:+o.tp>0?+o.tp:0}:{e:0,tp:0};
 const gt=(a,b)=>a.e>b.e||(a.e===b.e&&a.tp>b.tp);
 function pushSoon(){if(!FCP.uid||FCP.t)return;FCP.t=setTimeout(()=>{FCP.t=null;flush()},Math.max(2000,60000-(Date.now()-FCP.at)))}
-async function flush(){
+function cloudBadge(){
+  const el=document.getElementById('fcCl');if(!el)return;
+  const on=typeof CL!=='undefined'&&CL.user;
+  const m=!on?'☁️ '+T('未登入'):FCP.st==='ok'?'☁️ '+T('已同步'):FCP.st==='err'?'☁️ '+T('同步失敗，點一下重試'):'☁️ '+T('同步中…');
+  el.textContent=m;el.className='fc-cl'+(!on?' off':FCP.st==='ok'?' ok':FCP.st==='err'?' err':'');
+}
+async function flush(force){
   if(FCP.busy||typeof CL==='undefined'||!CL.user||CL.user.uid!==FCP.uid||!CL.api||!CL.api.fcPut)return;
   let raw=null,o=null;try{raw=localStorage.getItem(KEY);o=JSON.parse(raw)}catch(e){}
-  const p=pg(o);if(!raw||(!p.e&&!p.tp))return;
-  FCP.busy=true;FCP.at=Date.now();
-  try{await CL.api.fcPut(FCP.uid,raw,p.e)}catch(e){console.warn('fc cloud save failed',e);FCP.at=Date.now()}
-  FCP.busy=false;
+  const p=pg(o);if(!raw||(!p.e&&!p.tp)){FCP.st='ok';cloudBadge();return}
+  FCP.busy=true;FCP.at=Date.now();FCP.st='sync';cloudBadge();
+  try{await CL.api.fcPut(FCP.uid,raw,p.e);FCP.st='ok';FCP.err='';FCP.n=0}
+  catch(e){console.warn('fc cloud save failed',e);FCP.st='err';FCP.err=String((e&&(e.code||e.message))||e).slice(0,80);FCP.at=Date.now();
+    if(FCP.n<5){FCP.n++;clearTimeout(FCP.rt);FCP.rt=setTimeout(()=>flush(),20000*FCP.n)}}
+  FCP.busy=false;cloudBadge();
+}
+async function manual(){
+  if(typeof CL==='undefined'||!CL.user){say(T('請先到首頁登入 Google 帳號，才能雲端同步'));return}
+  if(!CL.api){say(T('登入服務還沒準備好，稍後再試'));return}
+  FCP.st='sync';cloudBadge();
+  try{const c=await CL.api.get(CL.user.uid);window.fcCloud.sync(c&&c.fc||null,CL.user.uid);FCP.n=0;await flush(true);
+    if(FCP.st==='err')say(T('同步失敗：{0}',FCP.err));else say(T('已同步'))}
+  catch(e){FCP.st='err';FCP.err=String((e&&(e.code||e.message))||e).slice(0,80);cloudBadge();say(T('同步失敗：{0}',FCP.err))}
 }
 window.fcCloud={
   sync(cs,uid){
@@ -7963,7 +7979,7 @@ function open(){
   if(off>=30&&FC.ps>0){const g=FC.ps*off*OFFLINE;s.c+=g;s.e+=g;offTxt=T('你不在的時候，幫手賺了 {0} 食券',fmt(g));calc();FC.lv=level(s.e)}
   checkAchSilent();
   const v=visCounts();FC.sig=v.vh+','+v.vt;
-  modal(`<style>${CSS}</style><div id="fcRoot" class="fc"><div class="fc-top"><h2>🍙 ${T('點食成金')}</h2><button class="btn alt fc-x" data-act="arcade">${T('返回')}</button></div>
+  modal(`<style>${CSS}</style><div id="fcRoot" class="fc"><div class="fc-top"><h2>🍙 ${T('點食成金')}</h2><span class="fc-cl" id="fcCl" data-act="fccloud"></span><button class="btn alt fc-x" data-act="arcade">${T('返回')}</button></div>
 <div class="fc-grid"><div class="fc-left"><div class="fc-coinrow"><b id="fcCoin">0</b><small>${T('食券')}</small></div><div class="fc-rate"><span id="fcPT"></span><span id="fcPS"></span></div>
 <div class="fc-wrap" id="fcWrap"><div class="fc-dish" id="fcDish">🍚</div><div class="fc-msg" id="fcMsg"></div></div>
 <div class="fc-name" id="fcName"></div><div class="fc-bar"><i id="fcBar"></i></div><div class="fc-next" id="fcNext"></div></div>
@@ -7973,7 +7989,7 @@ function open(){
 <div class="fc-foot" id="fcFoot"></div><div class="fc-save">${T(typeof CL!=='undefined'&&CL.user?'食券會跟著 Google 帳號同步到其他裝置，與店裡的錢完全分開。':'登入 Google 帳號後，食券會同步到其他裝置，與店裡的錢完全分開。')}</div></div>`);
   const d=document.getElementById('fcDish');
   if(d)d.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();tap(e)});
-  renderList();tabLabels();upd(false);
+  renderList();tabLabels();upd(false);cloudBadge();
   if(offTxt)say(offTxt);
   FC.last=Date.now();FC.saveAt=FC.last;FC.act=FC.last;FC.sleep=false;
   clearInterval(FC.timer);FC.timer=setInterval(step,100);
@@ -7991,6 +8007,7 @@ window.fcAct=function(act,a){
   else if(act==='fcup')buyUp(a.dataset.id);
   else if(act==='fcclaim')claim(a.dataset.id);
   else if(act==='fcclaimall')claimAll();
+  else if(act==='fccloud')manual();
   else if(act==='fctab'){FC.tab=a.dataset.t;renderList(true)}
   else if(act==='fcqty'){FC.qty=a.dataset.q==='max'?'max':+a.dataset.q;renderList()}
 };
@@ -7998,7 +8015,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&FC.s&&docu
 window.addEventListener('pagehide',()=>{if(FC.s&&document.getElementById('fcRoot'))save()});
 const CSS=`.fc{display:flex;flex-direction:column;gap:8px;color:var(--soot)}
 .fc-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.fc-top h2{font-size:30px}
-.fc-x{font-size:15px;padding:6px 16px}
+.fc-x{font-size:15px;padding:6px 16px}.fc-cl{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;border:2px solid #b49a70;color:#7a4a2a;background:#fff8e6;cursor:pointer;margin-left:auto;margin-right:8px;white-space:nowrap}.fc-cl.ok{border-color:#4a9a5a;color:#2f7a3f}.fc-cl.err{border-color:#c0452e;color:#c0452e}.fc-cl.off{opacity:.75}
 .fc-grid{display:grid;grid-template-columns:196px minmax(0,1fr);gap:14px;height:372px}
 .fc-left{display:flex;flex-direction:column;align-items:center;gap:4px;background:#fff8e6;border:3px solid var(--soot);border-radius:16px;padding:10px 8px;min-width:0}
 .fc-coinrow{display:flex;align-items:baseline;gap:6px;max-width:100%}.fc-coinrow b{font-family:var(--f-disp);font-size:30px;color:#b8741a;line-height:1.1;white-space:nowrap}.fc-coinrow small{font-size:13px;font-weight:700}
@@ -8102,6 +8119,13 @@ const D={
 '你不在的時候，幫手賺了 {0} 食券':['你不在的时候，帮手赚了 {0} 食券','While you were away, helpers earned {0} tickets','留守中に助っ人が {0} 食券を稼ぎました','자리를 비운 사이 도우미가 {0} 식권을 벌었어요','Saat kamu pergi, pembantu mendapat {0} kupon'],
 '幫手回來工作了！':['帮手回来工作了！','Helpers are back at work!','助っ人が仕事に戻りました！','도우미가 다시 일해요!','Pembantu kembali bekerja!'],
 '幫手休息了，點一下食物就會繼續工作':['帮手休息了，点一下食物就会继续工作','Helpers are resting — tap the food to wake them up','助っ人はお休み中。料理をタップすると再開します','도우미가 쉬고 있어요. 음식을 누르면 다시 일해요','Pembantu istirahat — ketuk makanan untuk melanjutkan'],
+'未登入':['未登录','Signed out','未ログイン','로그아웃됨','Belum masuk'],
+'已同步':['已同步','Synced','同期済み','동기화됨','Tersinkron'],
+'同步失敗，點一下重試':['同步失败，点一下重试','Sync failed — tap to retry','同期失敗・タップで再試行','동기화 실패 — 눌러서 재시도','Gagal sinkron — ketuk untuk coba lagi'],
+'同步中…':['同步中…','Syncing…','同期中…','동기화 중…','Menyinkronkan…'],
+'請先到首頁登入 Google 帳號，才能雲端同步':['请先到首页登录 Google 账号，才能云端同步','Sign in with Google on the home screen first to sync','先にホーム画面でGoogleログインしてください','먼저 홈 화면에서 Google 로그인을 해 주세요','Masuk dengan Google di layar utama dulu'],
+'登入服務還沒準備好，稍後再試':['登录服务还没准备好，稍后再试','Sign-in service is not ready yet, try again shortly','ログインサービスの準備中です。少し待ってください','로그인 서비스가 아직 준비 중이에요. 잠시 후 다시 시도해 주세요','Layanan masuk belum siap, coba lagi sebentar'],
+'同步失敗：{0}':['同步失败：{0}','Sync failed: {0}','同期失敗：{0}','동기화 실패: {0}','Gagal sinkron: {0}'],
 '已從雲端同步你的進度':['已从云端同步你的进度','Progress synced from the cloud','クラウドから進行状況を同期しました','클라우드에서 진행 상황을 동기화했어요','Progres disinkronkan dari cloud'],
 '食券會跟著 Google 帳號同步到其他裝置，與店裡的錢完全分開。':['食券会跟着 Google 账号同步到其他设备，与店里的钱完全分开。','Tickets sync to your other devices through your Google account, separate from your shop money.','食券はGoogleアカウントで他の端末に同期され、お店のお金とは完全に別です。','식권은 Google 계정으로 다른 기기에 동기화되며 가게 돈과 완전히 별개예요.','Kupon disinkronkan ke perangkat lain lewat akun Google, terpisah dari uang toko.'],
 '登入 Google 帳號後，食券會同步到其他裝置，與店裡的錢完全分開。':['登录 Google 账号后，食券会同步到其他设备，与店里的钱完全分开。','Sign in with Google and your tickets sync to other devices, separate from your shop money.','Googleアカウントでログインすると食券が他の端末に同期され、お店のお金とは完全に別です。','Google 계정으로 로그인하면 식권이 다른 기기에 동기화되며 가게 돈과 완전히 별개예요.','Masuk dengan akun Google agar kupon tersinkron ke perangkat lain, terpisah dari uang toko.'],
