@@ -822,7 +822,7 @@ function wishCount(k){return (ST.wish&&ST.wish[k])||0}
 let CUR='iz';
 function rmOwned(){return !!(ST&&ST.rm)}
 function rmUp(k,d){return (ST&&ST.rm&&ST.rm.up&&ST.rm.up[k])||d}
-function seatsN(){return R?R.seats.length:(CUR==='tep'||CUR==='oko'?4:CUR==='sushi'?suUp('seats',3):CUR==='rm'&&rmOwned()?rmUp('seats',3):ST.up.seats)}
+function seatsN(){return R?R.seats.length:(CUR==='tep'?tpUp('seats',4):CUR==='oko'?4:CUR==='sushi'?suUp('seats',3):CUR==='rm'&&rmOwned()?rmUp('seats',3):ST.up.seats)}
 function rmK2(){return !!(ST&&ST.rm&&ST.rm.k2)}function lamenOn(){return !!(ST&&ST.rm&&ST.rm.lamen)}function rfryN(){return rmUp('fry',3)}function tyakiN(){return rmUp('tai',2)}function gomaOff(){return !!(ST&&ST.rm&&ST.rm.off&&ST.rm.off.goma)}
 function tskOn(){return !!(ST&&ST.rm&&ST.rm.tsk)}
 /* 暫時下架：下架的菜不會再出現在客人點單、加碼、特價、牆上菜單，重新上架即可 */
@@ -2243,6 +2243,8 @@ const TP_STAFF={zh:'鐵板師傅・阿炎',lv:[
   {cost:50000,wage:900,d:'能做：有客人點鐵板料理時，照先來的客人順序把食材下到大鐵板上（食材錢照付）。不會翻面，也不會送餐。'},
   {cost:100000,wage:1400,d:'能做：上一級的全部，加上翻炒、翻面、刷醬：提示跳出約 2 秒你還沒點，他就幫你做（他做的不算完美，不會累積連擊）。他怕火，「點火！」還是要你自己來。'},
   {cost:170000,wage:2000,d:'能做：上一級的全部，練到不怕火了，「點火！」也會幫忙；還會把做好的菜（鐵板上和保溫台上的）送給等待中的客人，先來的先送。'}]};
+const TP_SEATS=[{n:5,zh:'第五張椅子',d:'同時可以再多招待一位客人。',cost:80000},{n:6,zh:'第六張椅子',d:'再擠一張椅子，一次接待六位客人。',cost:200000}];
+const TP_WARM=[{n:5,zh:'加大保溫台',d:'保溫台 3 → 5 格。',cost:10000},{n:7,zh:'長型保溫台',d:'保溫台 5 → 7 格。',cost:30000},{n:9,zh:'特長保溫台',d:'保溫台 7 → 9 格，整排吧台都能保溫。',cost:70000},{n:12,zh:'超大保溫台',d:'保溫台 9 → 12 格，菜色再多也放得下。',cost:150000}];
 function tpUp(k,d){const S=ST||load();return (S&&S.tep&&S.tep.up&&S.tep.up[k])||d}
 function tpnN(){if(CUR==='oko')return 3;return tpUp('slot6',0)?6:5}
 function tpStaffLv(){return noStaff()?0:tpUp('staff',0)}
@@ -2785,8 +2787,10 @@ function shopTep(sub){
   const menu=[['一號廚房・肉類與主食',TPP1],['二號廚房・海鮮',TPP2],['三號廚房・青菜、蛋與豆腐',TPP3]].map(([t,ks])=>`<h3 class="sh">${T(t)}</h3><div class="shop">${ks.map(card).join('')}</div>`).join('');
   const staff=`<div class="up"><b>${T(TP_STAFF.zh)}${l?' Lv'+l:''}</b><p>${l?T('目前雇用中，日薪 {0}',yen(TP_STAFF.lv[l-1].wage)):T('還沒雇用')}</p>${staffLvList(TP_STAFF,l,'tepstaff')}${nx?`<button class="btn" data-act="tphire" ${SV.coins<nx.cost?'disabled':''}>${T(l?'升級 {0}':'雇用 {0}',yen(nx.cost))}</button>`:`<p>${T('已經是最高等級。')}</p>`}</div>`;
   const slot=tpUp('slot6',0)?`<div class="up done"><b>${T('大鐵板加長')}</b><p>${T('已加長，大鐵板現在有六個位置。')}</p></div>`:`<div class="up"><b>${T('大鐵板加長')}</b><p>${T('大鐵板多一個位置，可以同時煎六份。')}</p><button class="btn" data-act="tpslot" ${SV.coins<TP_SLOT6_COST?'disabled':''}>${T('買下 {0}',yen(TP_SLOT6_COST))}</button></div>`;
+  const sx=TP_SEATS.find(w=>w.n>tpUp('seats',4)),seat=sx?`<div class="up"><b>${T(sx.zh)}</b><p>${T(sx.d)}</p><button class="btn" data-act="tpseat" ${SV.coins<sx.cost?'disabled':''}>${T('買下 {0}',yen(sx.cost))}</button></div>`:`<div class="up done"><b>${T(TP_SEATS[TP_SEATS.length-1].zh)}</b><p>${T('已購買')}</p></div>`;
+  const wx=TP_WARM.find(w=>w.n>tpUp('warm',3)),warm=wx?`<div class="up"><b>${T(wx.zh)}</b><p>${T(wx.d)}</p><button class="btn" data-act="tpwarm" ${SV.coins<wx.cost?'disabled':''}>${T('買下 {0}',yen(wx.cost))}</button></div>`:`<div class="up done"><b>${T(TP_WARM[TP_WARM.length-1].zh)}</b><p>${T('已購買')}</p></div>`;
   const MENUP=`${lock}${menu}`;
-  const KITP=`${lock}<h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${slot}${l?`<div class="up">${dilHTML('tepstaff').split('data-act="dil"').join('data-act="tpdil"')}</div>`:''}</div></div>`;
+  const KITP=`${lock}<h3 class="sh">${T('設備・店員')}</h3><div class="shop">${staff}${seat}${warm}${slot}${l?`<div class="up">${dilHTML('tepstaff').split('data-act="dil"').join('data-act="tpdil"')}</div>`:''}</div></div>`;
   const TAILT=`<div class="btns"><button class="btn" data-act="tpopen">${T('去炎舞鐵板燒營業')}</button></div>`;
   return sub==='kit'?KITP+TAILT:MENUP+TAILT;
 }
@@ -2797,6 +2801,8 @@ function tepActs(act,a){
   if(act==='buytep'){if(!tepDev())return true;const h=home();if(ST&&!ST.tep&&ST.coins>=TEP_PRICE){keepScroll();ST.coins-=TEP_PRICE;ST.tep={up:{}};ST.menu=ST.menu||{};ST.menu.tpgarlic=1;save();toast(T('炎舞鐵板燒開張了！'))}done(h);return true}
   if(act==='tpbuy'){const k=a.dataset.id,h=home();if(ST&&ST.tep&&ITEMS[k]&&ITEMS[k].shop==='tep'&&!has(k)&&ST.coins>=ITEMS[k].buy){keepScroll();ST.coins-=ITEMS[k].buy;ST.menu=ST.menu||{};ST.menu[k]=1;save()}done(h);return true}
   if(act==='tphire'){const h=home();if(ST&&ST.tep){const l=tpStaffLv(),nx=TP_STAFF.lv[l];if(nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.tep.up.staff=l+1;save()}}done(h);return true}
+  if(act==='tpseat'){const h=home();if(ST&&ST.tep){const w=TP_SEATS.find(x=>x.n>tpUp('seats',4));if(w&&ST.coins>=w.cost){keepScroll();ST.coins-=w.cost;ST.tep.up.seats=w.n;save()}}done(h);return true}
+  if(act==='tpwarm'){const h=home();let b=false;if(ST&&ST.tep){const w=TP_WARM.find(x=>x.n>tpUp('warm',3));if(w&&ST.coins>=w.cost){keepScroll();ST.coins-=w.cost;ST.tep.up.warm=w.n;save();b=true}}if(b&&!h&&R&&CUR==='tep')chooseLayout(true);done(h);return true}
   if(act==='tpslot'){const h=home();let b=false;if(ST&&ST.tep&&!tpUp('slot6',0)&&ST.coins>=TP_SLOT6_COST){keepScroll();ST.coins-=TP_SLOT6_COST;ST.tep.up.slot6=1;save();b=true}if(b&&!h&&R&&R.tpn){while(R.tpn.length<tpnN())R.tpn.push(null);if(CUR==='tep')chooseLayout(true)}done(h);return true}
   if(act==='tpdil'){keepScroll();const h=home();if(ST&&ST.tep){ST.dil=ST.dil||{};ST.dil.tepstaff=+a.dataset.v;save()}done(h);return true}
   if(act==='tpopen'){closeHome();ST=load();if(!ST||!ST.tep||!tepDev()){ST=null;showHome();return true}ST.where='tep';setCur('tep');save();advance();return true}
@@ -3213,7 +3219,7 @@ function stHTML(name){
       return `<div class="st" data-ing="${g.id}" style="position:relative;inset:auto;background:#f1e2c2;border:2px solid ${O};border-radius:8px;opacity:${lk?.3:1};${lk?'cursor:default':''}">${sv(ingArt(g.id))}${(()=>{const t=T(g.zh),cjk=t.charCodeAt(0)>=0x2e80,n=[...t].length,big=cjk?n<=3:n<=5;return `<span class="lbl" style="font-size:${big?(cjk?(n===3?13:16):14):11}px;font-weight:${big?800:400};padding:0 ${big?3:4}px${big?'':';white-space:normal;text-align:center;line-height:1.15;width:94%;border-radius:8px'}">${t}</span>`})()}</div>`}).join('')}</div>`}
   return '';
 }
-function warmN(){return CUR==='rm'&&rmOwned()?rmUp('warm',3):CUR==='sushi'&&suNv()?suUp('warm',3):ST.up.warmN||3}
+function warmN(){return CUR==='tep'?tpUp('warm',3):CUR==='rm'&&rmOwned()?rmUp('warm',3):CUR==='sushi'&&suNv()?suUp('warm',3):ST.up.warmN||3}
 function tapsN(){return ST.up.taps||1}
 function boardsN(){return ST.up.boards||1}
 const LVN={beer:['生啤酒','精選麥芽','職人精釀','限定黑啤'],edamame:['毛豆','有機毛豆','黑毛豆','丹波黑豆'],negima:['蔥雞肉串','放山雞','名古屋交趾雞','比內地雞'],
@@ -4853,7 +4859,7 @@ function suTabDot(k){try{const S=ST||load();if(!S||!S.sushi)return false;const c
   return false}catch(e){return false}}
 function tpTabDot(k){try{const S=ST||load();if(!S||!S.tep)return false;const c=S.coins;
   if(k==='menu')return TPKEYS.some(x=>!(S.menu&&S.menu[x])&&c>=ITEMS[x].buy);
-  if(k==='kit'){const nx=TP_STAFF.lv[tpStaffLv()];return !!(nx&&c>=nx.cost)||(!tpUp('slot6',0)&&c>=TP_SLOT6_COST)}
+  if(k==='kit'){const nx=TP_STAFF.lv[tpStaffLv()];const sx=TP_SEATS.find(w=>w.n>tpUp('seats',4)),wx=TP_WARM.find(w=>w.n>tpUp('warm',3));return !!(nx&&c>=nx.cost)||!!(sx&&c>=sx.cost)||!!(wx&&c>=wx.cost)||(!tpUp('slot6',0)&&c>=TP_SLOT6_COST)}
   return false}catch(e){return false}}
 function shopSushi(sub){
   const SV=ST||load()||{coins:0};
