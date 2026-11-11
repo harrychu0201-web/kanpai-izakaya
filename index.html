@@ -450,6 +450,7 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 .slrow{display:flex;align-items:center;gap:8px;border:3px solid var(--soot);border-radius:12px;padding:8px 10px;background:#fffaf0}.slrow .si{flex:1;min-width:0;font-weight:700;font-size:16px}.slrow .si small{display:block;font-size:12.5px;opacity:.7;font-weight:600}.slrow .btn{font-size:14px;padding:6px 12px}.slh{font-weight:900;font-size:15px;margin-top:2px}
 .stab .dot,.shopsw .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#d63a2a;margin-left:5px;vertical-align:super}.shopnav{position:sticky;top:0;z-index:4;background:var(--paper);padding-top:6px}.shopcard{padding-top:0!important}.shoptop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:14px}.xbtn{width:44px;height:44px;flex-shrink:0;border-radius:50%;border:3px solid var(--soot);background:var(--noren);color:var(--paper);font-size:26px;font-weight:900;line-height:1;cursor:pointer;padding:0;box-shadow:0 3px 0 var(--soot)}.xbtn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--soot)}.shopcard>h2:first-child{margin-top:22px}#game .shopcard>h2:first-child{margin-top:calc(22px*var(--fz,1)*.8)}.shopsw{margin:6px 0 2px}.shopsw .btn{flex-direction:row!important;justify-content:center;font-size:15px!important;padding:5px 6px}.pickrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pickrow .btn{display:flex;flex-direction:column;gap:2px;font-size:17px}.pickrow .btn small{font-size:13px;opacity:.85;font-weight:700}
 @media (max-height:560px) and (orientation:landscape){.topr,.topl{top:6px}.acct{font-size:12px;padding:2px 10px 2px 3px}.acct .g,.acct img{width:18px;height:18px}.acct .g svg{width:13px;height:13px}}
+.tpspout{position:absolute;width:96px;height:124px;margin:-104px 0 0 -48px;pointer-events:none;z-index:7;transform-origin:50% 100%;filter:drop-shadow(0 0 10px #ff8a2a);animation:tpspout .8s ease-out forwards}.tpspout .a{animation:tpflick .18s steps(2) infinite}.tpspout .b{animation:tpflick .22s steps(2) infinite reverse}@keyframes tpspout{0%{opacity:0;transform:scale(.3,.08)}18%{opacity:1;transform:scale(1,1.08)}55%{opacity:1;transform:scale(.92,1.18)}100%{opacity:0;transform:scale(.7,1.5) translateY(-14px)}}@keyframes tpflick{0%{transform:translateY(0) scaleY(1)}100%{transform:translateY(-4px) scaleY(1.06)}}
 .tpshow{position:absolute;left:50%;top:36%;transform:translate(-50%,-50%);z-index:40;pointer-events:none;text-align:center;color:#fff3c4;text-shadow:0 3px 0 #7a1a08,0 0 18px #ff6a1a;white-space:nowrap;animation:tpshow 1.8s ease-out forwards}.tpshow b{display:block;font-size:56px;font-weight:900;letter-spacing:4px}.tpshow small{display:block;font-size:18px;font-weight:900;margin-top:4px}.tpshow::before{content:'';position:absolute;left:-320px;right:-320px;top:-60px;bottom:-60px;background:radial-gradient(ellipse at center,#ff7a1acc,#ff3a0000 65%);z-index:-1}@keyframes tpshow{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}14%{opacity:1;transform:translate(-50%,-50%) scale(1.18)}28%{transform:translate(-50%,-50%) scale(1)}78%{opacity:1}100%{opacity:0;transform:translate(-50%,-75%) scale(1)}}
 .tkflip{position:absolute;left:50%;top:-4px;transform:translateX(-50%);background:#e0412c;color:#fff;font-size:13px;font-weight:900;line-height:1;padding:4px 9px;border-radius:999px;border:2px solid #fff1cf;white-space:nowrap;pointer-events:none;z-index:3;animation:tkp .45s infinite alternate}@keyframes tkp{to{transform:translateX(-50%) scale(1.14)}}
 .updbar{position:absolute;left:50%;top:max(10px,env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;background:#b8372a;border:2px solid #fff1cf;color:#fff;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 4px 12px #0008;white-space:nowrap;animation:updpulse 1.6s infinite ease-in-out}@keyframes updpulse{50%{transform:translateX(-50%) scale(1.05)}}
@@ -2241,7 +2242,7 @@ Object.assign(RAWMAP,TP_TRAY);TPKEYS.forEach(k=>{STN[k]='tpn'});
 Object.assign(HOW,Object.fromEntries(TPKEYS.map(k=>[k,`點<b>${TP_RAWN[k]}</b>下到<b>大鐵板</b>，煎到一半依序會跳出 ${TPS[k].map(s=>`<b>${TPLBL[s]}</b>`).join(' → ')}，跳出來就點一下（金色時點是完美）。煎好再點起來送。`])));
 const TP_STAFF={zh:'鐵板師傅・阿炎',lv:[
   {cost:50000,wage:900,d:'能做：有客人點鐵板料理時，照先來的客人順序把食材下到大鐵板上（食材錢照付）。不會翻面，也不會送餐。'},
-  {cost:100000,wage:1400,d:'能做：上一級的全部，加上翻炒、翻面、刷醬：提示跳出約 2 秒你還沒點，他就幫你做（他做的不算完美，不會累積連擊）。他怕火，「點火！」還是要你自己來。'},
+  {cost:100000,wage:1400,d:'能做：上一級的全部，加上翻炒、翻面、刷醬：提示跳出約 2 秒你還沒點，他就幫你做（他做的不算完美，不會累積連擊，也不會中斷連擊；他處理過的料就算煎焦了，也不會中斷連擊）。他怕火，「點火！」還是要你自己來。'},
   {cost:170000,wage:2000,d:'能做：上一級的全部，練到不怕火了，「點火！」也會幫忙；還會把做好的菜（鐵板上和保溫台上的）送給等待中的客人，先來的先送。'}]};
 const TP_SEATS=[{n:5,zh:'第五張椅子',d:'同時可以再多招待一位客人。',cost:80000},{n:6,zh:'第六張椅子',d:'再擠一張椅子，一次接待六位客人。',cost:200000}];
 const TP_WARM=[{n:5,zh:'加大保溫台',d:'保溫台 3 → 5 格。',cost:10000},{n:7,zh:'長型保溫台',d:'保溫台 5 → 7 格。',cost:30000},{n:9,zh:'特長保溫台',d:'保溫台 7 → 9 格，整排吧台都能保溫。',cost:70000},{n:12,zh:'超大保溫台',d:'保溫台 9 → 12 格，菜色再多也放得下。',cost:150000}];
@@ -2720,12 +2721,16 @@ function clickTpn(i,el){const g=R.tpn[i];if(!g)return;const s=cookState(g.t,g.ki
   if(s==='raw'){
     if(needTp(g)){const n=g.s||0,step=TPS[g.kind][n],perf=(g.w||0)<=TPPERF;g.s=n+1;g.w=0;sfx('pick');
       if(step==='fire'){g.fx=R.t;if(Math.random()<1/20)setTimeout(()=>{if(R)popup(c.x,c.y-110,T('火太大，瀏海燒焦了！'),true)},250)}
-      toast(TPOK[step]);tpCombo(perf,c.x,c.y)}
+      toast(TPOK[step]);if(perf)tpSpout(c.x,c.y);tpCombo(perf,c.x,c.y)}
     else if((g.s||0)<TPS[g.kind].length){nope(el);toast('還不到時候，再等一下')}
     else{nope(el);toast('還沒煎好')}}
   else if(s==='done')R.held={src:'tpn',i,key:g.kind};
   else{R.tpn[i]=null;if(R.held&&R.held.src==='tpn'&&R.held.i===i)R.held=null;toast(g.bad?'失手的丟掉了':'焦掉的丟掉了')}
   renderStations()}
+/* ---- 完美點到：那一格鐵板噴火（疊在 fx 層，不受格子重畫影響） ---- */
+function tpSpout(x,y){if(CUR!=='tep')return;const fx=$('fx');if(!fx)return;const d=document.createElement('div');d.className='tpspout';d.style.left=x+'px';d.style.top=y+'px';
+  d.innerHTML='<svg viewBox="0 0 100 130" width="100%" height="100%"><path class="a" d="M50 2C62 26 82 38 76 70C72 96 28 96 24 70C18 40 40 28 50 2Z" fill="#ff7a1a"/><path class="b" d="M22 40C28 56 36 62 32 80C30 92 12 92 10 80C8 64 18 56 22 40Z" fill="#ff5a14"/><path class="b" d="M80 34C86 52 94 60 90 80C88 92 70 92 68 80C66 64 76 52 80 34Z" fill="#ff5a14"/><path d="M50 40C58 56 66 62 62 82C60 94 40 94 38 82C34 66 44 56 50 40Z" fill="#ffd23a"/></svg>';
+  fx.appendChild(d);setTimeout(()=>d.remove(),850)}
 /* ---- 連擊與火焰秀 ---- */
 function tpCombo(ok,x,y){if(!R||CUR==='oko')return;
   if(!ok){if((R.tpc||0)>=2)popup(x,y-70,T('連擊中斷'),true);R.tpc=0;renderHUD();return}
@@ -2740,12 +2745,12 @@ function tpHudPills(){const l=tpStaffLv();return (l?`<div class="pill staff">${T
 function tpTick(cdt){if(!R.tpn)return;R.tpn.forEach((g,i)=>{if(!g)return;const d=TPS[g.kind],s=g.s||0;
   if(d&&s<d.length&&g.t>=tpAt(g.kind,s)){g.t=tpAt(g.kind,s);g.w=(g.w||0)+cdt;
     if(g.w>TPGRACE){if(R.fxNb){g.s=s+1;g.w=0}else{g.t=burnAt(g.kind)+.1;g.bad=1;g.cb=1;const c=srcCenter({src:'tpn',i});popup(c.x,c.y-90,T('沒{0}，失敗了',T(TPLBL[d[s]]).replace('！','')),true);tpCombo(false,c.x,c.y)}}}
-  else{g.t+=cdt;if(!g.cb&&cookState(g.t,g.kind)==='burnt'){g.cb=1;const c=srcCenter({src:'tpn',i});tpCombo(false,c.x,c.y)}}})}
+  else{g.t+=cdt;if(!g.cb&&cookState(g.t,g.kind)==='burnt'){g.cb=1;if(!g.staff&&!g.sa){const c=srcCenter({src:'tpn',i});tpCombo(false,c.x,c.y)}}}})}
 /* ---- 阿炎 ---- */
 function tpDemand(){const d={};for(const c of R.seats){if(!c||c.st!=='wait')continue;c.order.forEach((k,j)=>{if(!c.filled[j])d[k]=(d[k]||0)+1});if(c.extra&&c.extra.ok&&!c.extra.done)d[c.extra.key]=(d[c.extra.key]||0)+1}
   R.tpn.forEach(g=>{if(g&&!g.bad&&cookState(g.t,g.kind)!=='burnt')d[g.kind]=(d[g.kind]||0)-1});R.warm.forEach(w=>{if(w)d[w.key]=(d[w.key]||0)-1});return d}
 function tpStaffStep(dt){const l=tpStaffLv();if(!l||!R.tpn)return;const m=dilMul('tepstaff');if(!m)return;
-  if(l>=2)R.tpn.forEach((g,i)=>{if(!needTp(g)||(g.w||0)<TPAUTO/m)return;const step=TPS[g.kind][g.s||0];if(step==='fire'&&l<3)return;g.s=(g.s||0)+1;g.w=0;if(step==='fire')g.fx=R.t;sfx('pick');const c=srcCenter({src:'tpn',i});popup(c.x,c.y-60,T(TPSTAFFLBL[step]));renderStations()});
+  if(l>=2)R.tpn.forEach((g,i)=>{if(!needTp(g)||(g.w||0)<TPAUTO/m)return;const step=TPS[g.kind][g.s||0];if(step==='fire'&&l<3)return;g.s=(g.s||0)+1;g.w=0;g.sa=1;if(step==='fire')g.fx=R.t;sfx('pick');const c=srcCenter({src:'tpn',i});popup(c.x,c.y-60,T(TPSTAFFLBL[step]));renderStations()});
   R.tpT=(R.tpT??1)-dt*m;if(R.tpT<=0){R.tpT=l>=3?.4:l>=2?.6:1;tpAct(l)}}
 function tpAct(l){
   if(l>=3){const src=[];R.tpn.forEach((g,i)=>{if(g&&cookState(g.t,g.kind)==='done'&&!(R.held&&R.held.src==='tpn'&&R.held.i===i))src.push({src:'tpn',i,key:g.kind})});
@@ -4726,7 +4731,7 @@ function showDayIntro(){
   ${TD.rob?`<p class="hint">${T('聽說附近最近不太平靜……')}${ST.weapon?'':T('（商店「武器」分頁有賣防身用品）')}</p>`:''}
   <p>${rentOf()?T('今天店租 {0}（每週調漲），打烊時會從淨利扣掉。',yen(rentOf()))+T('存到 {0} 後，到商店按「買下店面」就不用再付房租。',yen(GOAL)):''}${T('營業時間 16:00 到凌晨 00:30，晚餐（18–20 點）和續攤（21–22 點）客人最多，00:20 最後點餐，之後不再接新客人。淨利（營收扣掉食材成本）越高星星越多，拿到一顆星就能進到下一天。')}</p>
   ${CUR==='oko'?`<p style="font-size:14px;line-height:1.6">${T('御好燒店的菜在<b>鐵板</b>上一步一步做。點<b>大阪燒料、廣島燒料、文字燒料、摩登燒料</b>下到鐵板，煎到一半會依序跳出<b>拌勻、鋪肉、翻面、炒麵、疊起來、擠醬撒料</b>之類的提示（每道菜不一樣），跳出來就點一下，等太久就失敗。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
-  ${CUR==='tep'?`<p style="font-size:14px;line-height:1.6">${T('炎舞鐵板燒的菜在<b>大鐵板</b>上煎。煎到一半會跳出<b>翻炒／翻面／刷醬／點火</b>，一定要點，等太久就失敗。提示剛跳出、標籤還是<b>金色</b>時點下去就是<b>完美</b>；連續完美 6 次會來一場<b>🔥 火焰秀</b>：全場等餐的客人耐心回滿，每位還多給一筆賞錢。失手或煎焦會讓連擊歸零。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
+  ${CUR==='tep'?`<p style="font-size:14px;line-height:1.6">${T('炎舞鐵板燒的菜在<b>大鐵板</b>上煎。煎到一半會跳出<b>翻炒／翻面／刷醬／點火</b>，一定要點，等太久就失敗。提示剛跳出、標籤還是<b>金色</b>時點下去就是<b>完美</b>；連續完美 6 次會來一場<b>🔥 火焰秀</b>：全場等餐的客人耐心回滿，每位還多給一筆賞錢。每次點到完美，那一格鐵板還會噴火。失手或煎焦會讓連擊歸零（店員處理過的料煎焦不算）。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
   ${CUR==='sushi'?`<p style="font-size:14px;line-height:1.6">${T('海風壽司的菜是在<b>壽司台</b>上一層一層疊出來的，<b>順序很重要</b>：先放的材料在下面，後放的在上面，每一種壽司的順序都不一樣，照下面的製作教學來。')}</p>`:''}
   ${show.length?`<details class="howwrap"${howOpen()?' open':''} ontoggle="howSave(this.open)"><summary class="howsum">${T('📖 製作做法（點一下收起／展開）')}</summary><div class="how">${show.map(k=>`<div class="how-row">${icon(k==='chazuke'?'chazuke:salmon':k==='sashimi'?'sashimi:maguro+tai':k)}<div><b>${dishTitle(k)}</b>${ST.day>1?`<span class="new">${T('新菜')}</span>`:''}<br>${T(HOW[k])}</div></div>`).join('')}</div></details>`:''}
   ${ST.day===1?`<p style="font-size:14px">${T('忙不過來的時候，<b>快速點兩下</b>烤好的串燒、炸物或做好的砧板，就會自動放進吧台上的<b>保溫台</b>，不會焦，之後再從保溫台拿去送。每用一份食材都會扣成本，烤焦丟掉的就白花了。')}</p>`:''}
