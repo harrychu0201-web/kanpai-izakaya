@@ -7629,8 +7629,8 @@ const FI=n=>FOODS.findIndex(f=>f[1]===n);
 // 進化階段：36 種食物由平價到高級，1000 級平均分給 36 階
 const TIERS=['白飯','飯糰','烤茄子','醃黃瓜','花生','烤地瓜','味噌湯','熱茶','魚板','三色糰子','仙貝','炸蝦','烤串','煎餃','生啤酒','溫泉蛋','刨冰','檸檬沙瓦','拉麵','握壽司','咖哩飯','玉子燒','關東煮','日式炸雞','鯛魚燒','草莓蛋糕','壽喜燒','炭火烤肉','鰻魚飯','純米清酒','活龍蝦','松葉蟹','河豚','夕張哈密瓜','A5和牛','主廚特選懷石'].map(FI);
 const MAXLV=1000,LV0=100,LVR=1.0667,PER=28;
-// 工具（每次點擊）：第 j 把 +10^j、基礎價 50×100^j
-const TNAMES=[['🥢','竹筷'],['🥢','黑檀筷'],['🥇','金箸'],['✨','神之箸'],['🔮','魔法箸'],['⚡','雷神箸'],['🔥','炎之箸'],['❄️','冰結箸'],['🌈','虹彩箸'],['🌙','月光箸'],['☀️','太陽箸'],['🌟','流星箸'],['🌌','銀河箸'],['🐲','龍鱗箸'],['🕳️','黑洞箸'],['♾️','無限箸']];
+// 廚具（每次點擊）：第 j 件 +10^j、基礎價 50×100^j
+const TNAMES=[['🥄','湯匙'],['🍴','叉子'],['🥢','筷子'],['🍳','鍋鏟'],['🔪','菜刀'],['🥣','飯碗'],['🥘','鐵鍋'],['🍲','湯鍋'],['🧂','調味罐組'],['🏺','陶甕'],['🧺','竹蒸籠'],['🔥','瓦斯爐'],['⚙️','全自動料理機'],['🤖','機器人主廚'],['💎','鑽石廚具組'],['✨','神之廚房']];
 const TOOLS=TNAMES.map(([e,n],j)=>({e,n,inc:Math.pow(10,j),base:50*Math.pow(100,j),r:Math.min(1.25+0.05*j,1.5)}));
 // 幫手（每秒）：前 8 個是舊版數值（不可改），後面每個價格 ×12.5、產出 ×7.5
 const H0=[['🍢','烤串爐',0.1,15],['🍤','天婦羅炸鍋',1,100],['🍣','壽司職人',8,1100],['🍜','拉麵屋台',47,12000],['🥩','鐵板燒師傅',260,130000],['🍱','鰻魚專門店',1400,1.4e6],['🏮','居酒屋分店',7800,2e7],['⭐','米其林餐廳',44000,3.3e8]];
@@ -7768,7 +7768,7 @@ function buy(kind,i){
 function shopHTML(){
   const v=visCounts();
   const row=(kind,it,i)=>`<div class="fc-it"><div class="fc-ie">${it.e}</div><div class="fc-info"><div class="fc-nm">${T(it.n)} <em id="fco${kind}${i}"></em></div><small id="fcd${kind}${i}"></small></div><button class="fc-buy" data-act="fcbuy" data-k="${kind}" data-i="${i}" id="fcb${kind}${i}"></button></div>`;
-  return `<div class="fc-h">🥢 ${T('工具')}</div>${TOOLS.slice(0,v.vt).map((t,i)=>row('t',t,i)).join('')}<div class="fc-h">👨‍🍳 ${T('幫手')}</div>${HELPERS.slice(0,v.vh).map((h,i)=>row('h',h,i)).join('')}`;
+  return `<div class="fc-h">🍳 ${T('工具')}</div>${TOOLS.slice(0,v.vt).map((t,i)=>row('t',t,i)).join('')}<div class="fc-h">👨‍🍳 ${T('幫手')}</div>${HELPERS.slice(0,v.vh).map((h,i)=>row('h',h,i)).join('')}`;
 }
 function updShop(){
   const s=FC.s;
@@ -7790,7 +7790,7 @@ function upList(){
       break}
   });
   const g=GL.find(x=>!s.g[x.id]);if(g&&s.e>=g.cost/5)out.push({id:g.id,e:'🏮',name:T('店面改裝 第 {0} 期',+g.id.slice(1)+1),desc:T('全店收益 ×{0}',g.m),cost:g.cost,kind:'g'});
-  const p=PL.find(x=>!s.g[x.id]);if(p&&s.e>=p.cost/5)out.push({id:p.id,e:'🥢',name:T('箸法精進 第 {0} 式',+p.id.slice(1)+1),desc:T('每次點擊 ×{0}',p.m),cost:p.cost,kind:'g'});
+  const p=PL.find(x=>!s.g[x.id]);if(p&&s.e>=p.cost/5)out.push({id:p.id,e:'👨‍🍳',name:T('廚藝精進 第 {0} 式',+p.id.slice(1)+1),desc:T('每次點擊 ×{0}',p.m),cost:p.cost,kind:'g'});
   return out.sort((a,b)=>a.cost-b.cost);
 }
 function buyUp(id){
@@ -8029,7 +8029,7 @@ const D={
 '{0} 產出 ×{1}':['{0} 产出 ×{1}','{0} output ×{1}','{0} の産出 ×{1}','{0} 산출 ×{1}','Hasil {0} ×{1}'],
 '店面改裝 第 {0} 期':['店面改装 第 {0} 期','Shop renovation {0}','店舗改装 第{0}期','가게 리모델링 {0}차','Renovasi toko {0}'],
 '全店收益 ×{0}':['全店收益 ×{0}','All income ×{0}','全店収益 ×{0}','전체 수익 ×{0}','Semua pendapatan ×{0}'],
-'箸法精進 第 {0} 式':['箸法精进 第 {0} 式','Chopstick mastery {0}','箸さばき 第{0}式','젓가락 수련 {0}식','Latihan sumpit {0}'],
+'廚藝精進 第 {0} 式':['厨艺精进 第 {0} 式','Culinary mastery {0}','料理の腕前 第{0}段','요리 수련 {0}단','Latihan memasak {0}'],
 '每次點擊 ×{0}':['每次点击 ×{0}','Per-tap ×{0}','タップ毎 ×{0}','터치당 ×{0}','Per ketuk ×{0}'],
 '累計賺取：{0}':['累计赚取：{0}','Total earned: {0}','累計：{0}','누적: {0}','Total: {0}'],
 '總點擊：{0}':['总点击：{0}','Taps: {0}','タップ数：{0}','터치: {0}','Ketukan: {0}'],
@@ -8073,23 +8073,23 @@ const D={
 'A5和牛':['A5和牛','A5 Wagyu','A5和牛','A5 와규','Wagyu A5'],
 '夕張哈密瓜':['夕张哈密瓜','Yubari melon','夕張メロン','유바리 멜론','Melon Yubari'],
 '主廚特選懷石':['主厨特选怀石',"Chef's kaiseki",'おまかせ懐石','오마카세 가이세키','Kaiseki pilihan chef'],
-// 工具
-'竹筷':['竹筷','Bamboo chopsticks','竹の箸','대나무 젓가락','Sumpit bambu'],
-'黑檀筷':['乌木筷','Ebony chopsticks','黒檀の箸','흑단 젓가락','Sumpit eboni'],
-'金箸':['金箸','Gold chopsticks','金の箸','금 젓가락','Sumpit emas'],
-'神之箸':['神之箸','Divine chopsticks','神の箸','신의 젓가락','Sumpit dewa'],
-'魔法箸':['魔法箸','Magic chopsticks','魔法の箸','마법 젓가락','Sumpit sihir'],
-'雷神箸':['雷神箸','Thunder chopsticks','雷神の箸','뇌신 젓가락','Sumpit petir'],
-'炎之箸':['炎之箸','Flame chopsticks','炎の箸','불꽃 젓가락','Sumpit api'],
-'冰結箸':['冰结箸','Frost chopsticks','氷結の箸','빙결 젓가락','Sumpit es'],
-'虹彩箸':['虹彩箸','Rainbow chopsticks','虹色の箸','무지개 젓가락','Sumpit pelangi'],
-'月光箸':['月光箸','Moonlight chopsticks','月光の箸','달빛 젓가락','Sumpit cahaya bulan'],
-'太陽箸':['太阳箸','Sun chopsticks','太陽の箸','태양 젓가락','Sumpit matahari'],
-'流星箸':['流星箸','Meteor chopsticks','流星の箸','유성 젓가락','Sumpit meteor'],
-'銀河箸':['银河箸','Galaxy chopsticks','銀河の箸','은하 젓가락','Sumpit galaksi'],
-'龍鱗箸':['龙鳞箸','Dragon-scale chopsticks','竜鱗の箸','용비늘 젓가락','Sumpit sisik naga'],
-'黑洞箸':['黑洞箸','Black hole chopsticks','ブラックホールの箸','블랙홀 젓가락','Sumpit lubang hitam'],
-'無限箸':['无限箸','Infinity chopsticks','無限の箸','무한 젓가락','Sumpit tak terbatas'],
+// 廚具
+'湯匙':['勺子','Spoon','スプーン','숟가락','Sendok'],
+'叉子':['叉子','Fork','フォーク','포크','Garpu'],
+'筷子':['筷子','Chopsticks','お箸','젓가락','Sumpit'],
+'鍋鏟':['锅铲','Spatula','フライ返し','뒤집개','Spatula'],
+'菜刀':['菜刀','Kitchen knife','包丁','식칼','Pisau dapur'],
+'飯碗':['饭碗','Rice bowl','お茶碗','밥그릇','Mangkuk nasi'],
+'鐵鍋':['铁锅','Iron pan','鉄鍋','철냄비','Wajan besi'],
+'湯鍋':['汤锅','Soup pot','スープ鍋','국솥','Panci sup'],
+'調味罐組':['调味罐组','Seasoning set','調味料セット','양념통 세트','Set bumbu'],
+'陶甕':['陶瓮','Clay jar','陶器の甕','도자기 항아리','Guci tanah liat'],
+'竹蒸籠':['竹蒸笼','Bamboo steamer','竹の蒸籠','대나무 찜기','Kukusan bambu'],
+'瓦斯爐':['燃气灶','Gas stove','ガスコンロ','가스레인지','Kompor gas'],
+'全自動料理機':['全自动料理机','Auto cooker','全自動調理機','전자동 조리기','Mesin masak otomatis'],
+'機器人主廚':['机器人主厨','Robot chef','ロボットシェフ','로봇 셰프','Koki robot'],
+'鑽石廚具組':['钻石厨具组','Diamond cookware','ダイヤの調理器具','다이아 조리도구','Peralatan dapur berlian'],
+'神之廚房':['神之厨房','Divine kitchen','神の厨房','신의 주방','Dapur dewa'],
 // 幫手
 '烤串爐':['烤串炉','Yakitori grill','焼き鳥コンロ','꼬치 화로','Pemanggang yakitori'],
 '天婦羅炸鍋':['天妇罗炸锅','Tempura fryer','天ぷら鍋','튀김 솥','Penggorengan tempura'],
