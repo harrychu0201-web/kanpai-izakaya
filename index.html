@@ -1329,27 +1329,21 @@ function sushiLantern(cx,y0,ty){
   return g;
 }
 function drawSushiBg(){
-  const TY=KY<400?38:0;
-  const shelfY=KY-152;
-  let s=`<defs><linearGradient id="sswall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7ecd3"/><stop offset="1" stop-color="#e3c99b"/></linearGradient><linearGradient id="ssshelf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9a86f"/><stop offset="1" stop-color="#9e6a38"/></linearGradient><radialGradient id="sllan" cx="0.42" cy="0.38" r="0.75"><stop offset="0" stop-color="#ff8a66"/><stop offset="0.6" stop-color="#c8321f"/><stop offset="1" stop-color="#8e1d14"/></radialGradient></defs>
-  <rect width="${W}" height="${KY}" fill="url(#sswall)"/>`;
-  for(let x=0;x<W;x+=42)s+=`<path d="M${x} 0v${KY}" stroke="#b98d55" stroke-width="2" opacity=".22"/>`;
-  s+=`<rect x="0" y="0" width="${W}" height="${22+TY}" fill="#4a2e18"/><rect x="0" y="${18+TY}" width="${W}" height="9" fill="#2e1b0c"/>`;
-  const nw=Math.min(300,W*.3),nx=(W-nw)/2,ny=(TY?30:26)+TY;
+  /* 2026-11-12 背景改用整張圖（img/bg-sushi-*.webp，2576x1238，已去掉角色／招牌／UI／食材等前景），做法同炎舞鐵板燒：
+     上半（牆面，圖的 0~608）畫在 bg 層，下半（檯面＋木板＋榻榻米）畫在 counter 層，客人站在中間被檯面擋住。
+     烹飪台（壽司台、食材格、保溫台、啤酒機）是獨立元件，位置完全沒動；圖裡已經有紅白旗幟和紅提燈，所以這兩樣不再另外用程式畫（購買效果照舊）。
+     店名牌、木頭小方桌、木頭高腳椅仍用程式畫在圖上。 */
+  const IMG='img/bg-sushi-b2a51cbc.webp',IW=2576,IH=1238,SPL=608;
+  const ct=KY-52,sy=ct/SPL,sx=Math.min(sy*1.12,Math.max(sy*.88,W/IW)),vw=W/sx,cx0=(IW-vw)/2;
+  const slice=(y,h,vy,vh)=>`<svg x="0" y="${y}" width="${W}" height="${h}" viewBox="${cx0} ${vy} ${vw} ${vh}" preserveAspectRatio="none"><rect x="${cx0}" y="${vy}" width="${vw}" height="${vh}" fill="#2b170f"/><image href="${IMG}" x="0" y="0" width="${IW}" height="${IH}" preserveAspectRatio="none"/></svg>`;
+  ['bg','counter'].forEach(id=>{const e=$(id);e.setAttribute('viewBox',`0 0 ${W} ${H}`);e.setAttribute('width',W);e.setAttribute('height',H)});
+  let s=slice(0,ct+1,0,SPL+2);
+  const nw=Math.min(300,W*.26),nx=(W-nw)/2,ny=Math.round(ct*.215);
   s+=`<rect x="${nx}" y="${ny}" width="${nw}" height="56" rx="8" fill="#a3261c" stroke="${O}" stroke-width="3"/><text x="${W/2}" y="${ny+40}" text-anchor="middle" font-family="Noto Sans TC,Zen Maru Gothic,sans-serif" font-weight="900" font-size="28" fill="#fbf3e0">${CJK()?T('海風壽司'):'海風寿司'}</text>`;
-  for(const bx of [W*.05,W*.95]){s+=`<rect x="${bx-30}" y="${shelfY-70}" width="60" height="10" rx="2" fill="#9e6a38" stroke="${O}" stroke-width="3"/>`;for(let i=0;i<3;i++){const x=bx-24+i*22;s+=`<rect x="${x}" y="${shelfY-112}" width="14" height="42" rx="5" fill="${i%2?'#3f6b3a':'#6a3a1f'}" stroke="${O}" stroke-width="2.5"/>`}}
-  s+=`<rect x="${W*.1}" y="${shelfY}" width="${W*.8}" height="12" rx="3" fill="url(#ssshelf)" stroke="${O}" stroke-width="3"/>`;
-  if(sdec('sflags'))for(const fx of [W*.035,W*.965-22]){const fy=24+TY;s+=`<rect x="${fx+9}" y="${fy}" width="4" height="${Math.min(KY*.5,200)}" fill="#5a3a24"/><path d="M${fx} ${fy}h22v120l-11-12l-11 12z" fill="#a3261c" stroke="${O}" stroke-width="2.5"/><path d="M${fx+4} ${fy+40}h14" stroke="#fbf3e0" stroke-width="4"/>`}
-  if(sdec('slantern'))for(const lx of [W*.16,W*.84])s+=sushiLantern(lx,27+TY,27+TY+18);
   if(sdec('stable'))s+=`<rect x="${W*.5-50}" y="${KY-112}" width="100" height="12" rx="3" fill="#b67d47" stroke="${O}" stroke-width="3"/><path d="M${W*.5-38} ${KY-100}v48M${W*.5+38} ${KY-100}v48" stroke="${O}" stroke-width="5" stroke-linecap="round"/><circle cx="${W*.5+20}" cy="${KY-118}" r="5" fill="#fdfbf4" stroke="${O}" stroke-width="2"/>`;
   if(sdec('schairs'))for(const cx of [W*.24,W*.76])s+=`<rect x="${cx-24}" y="${KY-122}" width="48" height="10" rx="3" fill="#9e6a38" stroke="${O}" stroke-width="2.5"/><path d="M${cx-17} ${KY-112}l-5 60M${cx+17} ${KY-112}l5 60" stroke="${O}" stroke-width="4" stroke-linecap="round"/>`;
-  s+=`<rect x="0" y="${KY-70}" width="${W}" height="6" fill="#8a5a34"/>`;
-  s+=`<rect width="${W}" height="${KY}" fill="none"/>`;
-  $('bg').innerHTML=s;['bg','counter'].forEach(id=>{const e=$(id);e.setAttribute('viewBox',`0 0 ${W} ${H}`);e.setAttribute('width',W);e.setAttribute('height',H)});
-  $('counter').innerHTML=`<g transform="translate(0 ${KY-400})"><defs><linearGradient id="sct" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9c48e"/><stop offset="1" stop-color="#b67d47"/></linearGradient><linearGradient id="skit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b4226"/><stop offset="1" stop-color="#3b2314"/></linearGradient></defs>
-  <rect x="-4" y="348" width="${W+8}" height="26" fill="url(#sct)" stroke="${O}" stroke-width="3"/><path d="M0 353h${W}" stroke="#fff3d6" stroke-width="3" opacity=".5"/>
-  <rect x="-4" y="374" width="${W+8}" height="26" fill="#4a2e18" stroke="${O}" stroke-width="3"/>
-  <rect x="0" y="400" width="${W}" height="${H-KY}" fill="url(#skit)"/>${Array.from({length:Math.ceil(W/64)},(_,i)=>`<path d="M${i*64} 400v${H-KY}" stroke="#2a180c" stroke-width="2" opacity=".6"/>`).join('')}</g>`;
+  $('bg').innerHTML=s;
+  $('counter').innerHTML=slice(ct,H-ct,SPL,IH-SPL);
 }
 /* ================= 裝飾品細緻重畫：暖色漸層、細輪廓、高光、接觸陰影，與新畫風背景同調 ================= */
 const DKO='#2e170c';
