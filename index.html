@@ -6182,8 +6182,16 @@ let STAB={o:'',h:0},STABGROW=false,STABJ=false;
 function pinLand(){return TOUCH&&innerWidth>innerHeight}
 function stableVisH(){
   const o=innerWidth>innerHeight?'l':'p',v=visH();
-  if(STAB.o!==o||!STAB.h){STAB={o,h:v};return v}
-  if(pinLand()){const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');if(!PTR&&!typing&&v<STAB.h)STAB.h=v;return STAB.h}
+  if(STAB.o!==o||!STAB.h){STAB={o,h:v,m:v};return v}
+  if(pinLand()){const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');
+    if(!PTR&&!typing){
+      if(!(STAB.m>=v))STAB.m=v; /* 同一方向內見過的最大可見高度 */
+      if(v<STAB.h)STAB.h=v;
+      /* 進店瞬間若量到還沒收好的工具列（較矮的值），舞台會被永久縮小（變成約四分之一大）。
+         這裡：可見高度回到見過的最大值並穩定 0.9 秒，就把舞台放回去；小幅抖動不會觸發。 */
+      else if(v>STAB.h&&v>=STAB.m-4&&!STABGROW){STABGROW=true;setTimeout(()=>{STABGROW=false;const v2=visH();if(!PTR&&!/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'')&&v2>STAB.h&&Math.abs(v2-v)<4){STAB.h=v2;if(!(STAB.m>=v2))STAB.m=v2;fit()}},900)}
+    }
+    return STAB.h}
   /* 同一方向內突然跳超過 120px（例如導覽列或網址列瞬間滑出、或 Android 還沒量完的中間值）：先不採用，
      等它持續 0.7 秒才接受。以前會立刻重設，結果遊戲在「放大」和「縮小」兩個尺寸之間來回跳，客人點錯菜。 */
   if(Math.abs(v-STAB.h)>120){
