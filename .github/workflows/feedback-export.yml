@@ -33,11 +33,13 @@ jobs:
           npm init -y >/dev/null
           npm install --silent firebase-admin@12
           printf '%s' "$FIREBASE_SA" > sa.json
+          echo "secret length=${#FIREBASE_SA} first_byte=$(head -c1 sa.json | od -An -c | tr -d ' ') last_byte=$(tail -c1 sa.json | od -An -c | tr -d ' ')"
           cat > export.mjs <<'JS'
           import { readFileSync, writeFileSync } from 'node:fs';
           import { initializeApp, cert } from 'firebase-admin/app';
           import { getDatabase } from 'firebase-admin/database';
-          const sa = JSON.parse(readFileSync('sa.json', 'utf8'));
+          let sa;
+          try { sa = JSON.parse(readFileSync('sa.json', 'utf8')); } catch (e) { console.error('FIREBASE_SA is not valid JSON:', e.name); process.exit(1); }
           initializeApp({
             credential: cert(sa),
             databaseURL: 'https://kanpai-izakaya-default-rtdb.firebaseio.com',
