@@ -640,7 +640,9 @@ const detectLang=()=>{const ls=(navigator.languages&&navigator.languages.length?
 let LANG=(()=>{try{const v=localStorage.getItem('izakaya-lang');if(v&&LANGS.some(l=>l[0]===v))return v}catch(e){}return detectLang()})();
 const LSHORT={'zh-Hant':'中','zh-Hans':'简','en':'EN','ja':'日','ko':'한','id':'ID'};
 let I18N={};
-function T(s,...a){let r=(LANG!=='zh-Hant'&&I18N[LANG]&&I18N[LANG][s])||s;return a.length?r.replace(/\{(\d)\}/g,(_,i)=>a[i]):r}
+/* 美術工坊「改字」：作者在遊戲裡改的繁中文字（artov/tx，玩家開遊戲時同步到這裡） */
+let TXOV=(()=>{try{return JSON.parse(localStorage.getItem('izakaya-txov')||'{}')||{}}catch(e){return {}}})();
+function T(s,...a){let r=(LANG!=='zh-Hant'&&I18N[LANG]&&I18N[LANG][s])||(LANG==='zh-Hant'&&TXOV[s])||s;return a.length?r.replace(/\{(\d)\}/g,(_,i)=>a[i]):r}
 /* same word, different meaning in different places (普通 = normal effort / common rarity / average rating): look up "word@ctx" first */
 function TX(s,c){return (LANG!=='zh-Hant'&&I18N[LANG]&&I18N[LANG][s+'@'+c])||T(s)}
 const LFONT={'zh-Hans':'Noto+Sans+SC:wght@500;700;900','ko':'Noto+Sans+KR:wght@500;700;900'};
@@ -6579,7 +6581,7 @@ async function coopLeave(){const me=CL.user.uid,code=COOP.code;if(!code)return;c
 /* the sign-in SDK is loaded from gstatic; if that download fails (bad signal right after tapping 更新, in-app browsers),
    the old code gave up for good: no sign-in button, no leaderboard until the page was reopened. Now it retries on its own
    (3s/10s/30s, when back online or back in the app) and the sign-in button stays on screen and retries when tapped. */
-function cloudInit(){if(!FB_CONFIG||CL.api)return Promise.resolve();if(!CL.initP)CL.initP=cloudInit1().finally(()=>{CL.initP=null});return CL.initP}
+function cloudInit(){if(!FB_CONFIG||CL.api)return Promise.resolve();if(!CL.initP)CL.initP=cloudInit1().finally(()=>{CL.initP=null;if(CL.api&&typeof artSyncSoon==='function')setTimeout(artSyncSoon,1500)});return CL.initP}
 function cloudRetryLater(){if(CL.api||CL.retryT)return;const w=[3000,10000,30000][Math.min(CL.tries||0,2)];CL.tries=(CL.tries||0)+1;CL.retryT=setTimeout(()=>{CL.retryT=null;cloudInit()},w)}
 window.addEventListener('online',()=>{if(!CL.api)cloudInit()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!CL.api&&CL.initFail)cloudInit()});
@@ -6690,6 +6692,7 @@ async function cloudInit1(){
       addFb:d=>rt((rd,r)=>{const id=rd.push(rd.ref(r,'fb')).key,ts=rd.serverTimestamp();
         // the private record keeps uid/contact; the public board (fbpub) only gets what every player may see
         return rd.update(rd.ref(r),{['fb/'+id]:Object.assign({},d,{t:ts}),['fbpub/'+id]:{cat:d.cat,text:d.text,t:ts}})}),
+      rtx:f=>rt(f), /* 美術工坊用 */
       isStaff:uid=>rt((rd,r)=>rd.get(rd.ref(r,'admins/'+uid)).then(s=>s.val()===true)),
       logAdd:d=>rt((rd,r)=>rd.push(rd.ref(r,'log'),Object.assign({},d,{t:rd.serverTimestamp()}))),
       logList:n=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'log'),rd.orderByChild('t'),rd.limitToLast(n))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.reverse()})),
@@ -7533,7 +7536,7 @@ function tstBtn(){
   if(!can&&!TEST)return '';
   const vb=can?`<button class="langbtn tstbtn ${pv?'on':''}" data-act="pvtoggle">${pv?'👤 玩家視角':'🎭 作者視角'}${pv&&TEST?'・測試存檔':''}</button>`:'';
   if(pv)return vb;
-  return vb+(isTester()?`<button class="langbtn tstbtn ${TEST?'on':''}" data-act="tstpanel">🧪 ${TEST?'測試中':'測試'}</button>`:'');
+  return vb+(isTester()?`<button class="langbtn tstbtn ${TEST?'on':''}" data-act="tstpanel">🧪 ${TEST?'測試中':'測試'}</button><button class="langbtn tstbtn" data-ast="open">🎨 美術工坊</button>`:'');
 }
 /* 玩家視角切換：不走 tst 開頭的按鈕（玩家視角下 tst 按鈕會被擋） */
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act="pvtoggle"]');if(!a||!canView())return;
@@ -7573,6 +7576,7 @@ function tstPanel(){
   <div class="tstr"><b>拉麵店</b>${o&&o.rm?`<button class="btn alt" disabled>屋台已開張</button>`:`<button class="btn" data-act="tstrm">買店面＋開屋台</button>`}${o&&o.rm&&!o.rm.k2?`<button class="btn" data-act="tstk2">擴建二號廚房</button>`:''}<span style="font-size:13px">${!o?'':o.rm?(o.rm.k2?'屋台＋二號廚房都有了':'已有屋台，還沒擴建'):o.owned?'已買店面，還沒開屋台':'還沒買店面'}・不扣錢</span></div>
   <div class="tstr"><b>屋台炸物</b><button class="btn alt" data-act="tstfried">賣出 +50</button><span style="font-size:13px">${o&&o.rm?`目前 ${o.rm.fried||0} 份`:'還沒開屋台'}</span></div>
     ${isAdmin()?`<div class="tstr"><b>補發道具</b><button class="btn" data-act="tstgrant">補發給玩家</button></div>`:''}
+    <div class="tstr"><b>美術工坊</b><button class="btn" data-ast="open">🎨 自己畫圖／換圖／改字</button></div>
     <div class="tstr"><b>營業速度</b>${[1,2,4].map(n=>`<button class="btn ${TSPD===n?'':'alt'}" data-act="tstspd" data-id="${n}">${n}x</button>`).join('')}</div>
   </div><div class="btns">${TEST?`<button class="btn alt" data-act="tstreset">清空測試存檔</button><button class="btn alt" data-act="tstoff">離開測試模式</button>`:`<button class="btn alt" data-act="tstcopy">另開獨立測試存檔</button>`}<button class="btn" data-act="closem">關閉</button></div>`)}
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act^="tst"]');if(!a)return;const act=a.dataset.act;
@@ -9199,6 +9203,310 @@ Object.assign(D,{"飯糰協會":["饭团协会", "Onigiri guild", "おにぎり�
 "萬能神級廚具":["万能神级厨具", "Omni god-tier tool", "万能神級調理器具", "만능 신급 조리도구", "Alat dewa serbaguna"]});
 for(const k in D)D[k].forEach((v,i)=>{const t=I18N[L[i]]=I18N[L[i]]||{};if(!(k in t))t[k]=v});
 })();
+</script>
+<script>/* ===== 🎨 美術工坊（2026-11-12）：作者自己畫／匯入圖片換掉遊戲裡的圖，自己改介面文字，按發布就套用給所有玩家（不用改程式、不用推版本）
+   資料：Realtime Database artov/i（索引：版本、路徑）、artov/d/<id>（圖片 dataURL）、artov/tx/<hash>（文字 {s 原文, t 新文}）
+   玩家端：開遊戲時讀索引，有新版本才下載那張圖一次；圖檔類（img/…）放進 sw.js 的 izakaya-img 快取、同網址蓋掉原圖（sw 先讀快取，所以 CSS、<img>、SVG <image> 都會換）；
+   菜色圖示放在同一個快取的 img/~ov/ 假網址，載進記憶體給 icon() 用；文字存 localStorage izakaya-txov，給 T() 用（只換繁中，其他語言照舊）
+   作者「試看」只存在自己這台（izakaya-artdraft），發布後才給玩家 */
+const AST={on:false,tab:'chr',q:'',slot:null,map:null,draft:null};
+const AST_LS='izakaya-artov',AST_DR='izakaya-artdraft',AST_IMGC='izakaya-img';
+const DISHOV={};
+function astJ(k){try{return JSON.parse(localStorage.getItem(k)||'{}')||{}}catch(e){return {}}}
+function astJS(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+const astAbs=p=>new URL(p,location.href).href;
+const astId=s=>s.k==='dish'?'d_'+s.key.replace(/[^A-Za-z0-9_-]/g,'_'):'i_'+s.p.replace(/^img\//,'').replace(/[^A-Za-z0-9_-]/g,'_');
+const astDishUrl=id=>'img/~ov/'+id;
+function astHash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return 'h'+(h>>>0).toString(36)+s.length.toString(36)}
+async function astCache(){return ('caches' in window)?caches.open(AST_IMGC):null}
+function astDataBlob(d){const m=/^data:([^;,]+)(;base64)?,(.*)$/.exec(d);if(!m)return null;const b=m[2]?atob(m[3]):decodeURIComponent(m[3]);const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:m[1]})}
+/* 把一張圖存成本機覆蓋（玩家下載的、作者試看的都走這裡） */
+async function astStore(meta,blob){const c=await astCache();if(!c)return false;
+  const url=meta.k==='dish'?astDishUrl(meta.id):meta.p;
+  await c.put(new Request(astAbs(url)),new Response(blob,{headers:{'Content-Type':blob.type||'image/webp'}}));
+  if(meta.k==='dish'){if(DISHOV[meta.key])URL.revokeObjectURL(DISHOV[meta.key]);DISHOV[meta.key]=URL.createObjectURL(blob)}
+  else astSwapDom(meta.p,URL.createObjectURL(blob));
+  return true}
+async function astUnstore(meta){const c=await astCache();if(c){const url=meta.k==='dish'?astDishUrl(meta.id):meta.p;await c.delete(new Request(astAbs(url)))}
+  if(meta.k==='dish'){if(DISHOV[meta.key])URL.revokeObjectURL(DISHOV[meta.key]);delete DISHOV[meta.key]}
+  else astSwapDom(meta.p,meta.p+'?r='+Date.now())}
+/* 這次開遊戲已經畫在畫面上的舊圖，能換的先換掉（CSS 背景要下次開遊戲才換） */
+function astSwapDom(p,u){try{document.querySelectorAll('img').forEach(e=>{const s=e.getAttribute('src')||'';if(s===p||s.split('?')[0]===p)e.src=u});
+  document.querySelectorAll('image').forEach(e=>{const s=e.getAttribute('href')||'';if(s===p||s.split('?')[0]===p)e.setAttribute('href',u)})}catch(e){}}
+/* 開遊戲先把已經下載過的菜色圖示載進記憶體 */
+(async()=>{try{const L=astJ(AST_LS),c=await astCache();if(!c)return;for(const id in L){const m=L[id];if(m.k!=='dish')continue;const r=await c.match(new Request(astAbs(astDishUrl(id))));if(r)DISHOV[m.key]=URL.createObjectURL(await r.blob())}}catch(e){console.warn('artov load',e)}})();
+const _astIcon=icon;
+icon=function(key){const b=String(key).split(':')[0],u=DISHOV[key]||DISHOV[b];
+  if(u)return sv(`<image href="${u}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>`);return _astIcon(key)};
+/* 玩家端同步：每次開遊戲一次 */
+let astSynced=false;
+function artSyncSoon(){if(astSynced||!CL.api||!CL.api.rtx)return;astSynced=true;artSync().catch(e=>console.warn('artov sync',e))}
+async function artSync(){const api=CL.api;if(!api||!api.rtx)return;
+  const [idx,tx]=await Promise.all([api.rtx((rd,r)=>rd.get(rd.ref(r,'artov/i')).then(s=>s.val()||{})).catch(()=>null),
+    api.rtx((rd,r)=>rd.get(rd.ref(r,'artov/tx')).then(s=>s.val()||{})).catch(()=>null)]);
+  if(tx){const o={};for(const h in tx){const x=tx[h];if(x&&typeof x.s==='string'&&typeof x.t==='string')o[x.s]=x.t}
+    TXOV=o;astJS('izakaya-txov',o)}
+  if(!idx)return;
+  const L=astJ(AST_LS),D=astJ(AST_DR);
+  for(const id in idx){if(D[id])continue;const m=idx[id];if(!m||!m.v)continue;if(L[id]&&L[id].v===m.v)continue;
+    try{const d=await api.rtx((rd,r)=>rd.get(rd.ref(r,'artov/d/'+id)).then(s=>s.val()));const b=d&&astDataBlob(d);if(!b)continue;
+      const meta={id,k:m.k,p:m.p,key:m.key,v:m.v,n:m.n};if(await astStore(meta,b)){L[id]=meta;astJS(AST_LS,L)}}catch(e){console.warn('artov get',id,e)}}
+  for(const id in L){if(idx[id]||D[id])continue;try{await astUnstore(L[id])}catch(e){}delete L[id];astJS(AST_LS,L)}}
+
+/* ---------- 美術工坊介面 ---------- */
+const AST_CATS=[['chr','👤 客人・店員'],['food','🍢 食物・器具'],['bg','🏮 背景・裝潢'],['dish','🍱 菜色圖示'],['stk','💬 貼圖'],['txt','✏️ 改字']];
+const AST_ART={beermug:'啤酒杯',beertap:'啤酒機',board:'砧板',bowl:'碗',box:'食材箱',edamame:'毛豆',fryer:'炸鍋',ftray:'炸物盤',grill:'烤架',karaage:'唐揚雞',negima:'蔥肉串',tsukune:'雞肉丸串',kitchen:'廚房背景',maguro:'鮪魚',rice:'白飯',sake:'清酒',salmon:'鮭魚',tai:'鯛魚',tea:'茶',trash:'垃圾桶',tray:'托盤',tsalmon:'鮭魚生魚片',tume:'鮪魚生魚片'};
+const AST_MOOD={ok:'平常',happy:'開心',worry:'擔心',angry:'生氣',walk:'走路',hit:'被打'};
+function astSlots(){if(AST.map)return AST.map;const all={},html=document.documentElement.innerHTML;
+  (html.match(/img\/[A-Za-z0-9_\/-]+\.(?:webp|png|jpg)/g)||[]).forEach(p=>{if(!p.includes('~ov'))all[p]=1});
+  for(let i=1;i<=90;i++)all[stkSrc(i)]=1;
+  const cn={};CHARS.forEach(c=>cn[c.spr]=c.name);
+  const out=[];
+  Object.keys(all).sort().forEach(p=>{const f=p.replace(/^img\//,'').replace(/\.\w+$/,''),parts=f.split('-');let cat='chr',name=f;
+    if(f.startsWith('stk/')){cat='stk';name='貼圖 '+f.slice(8)}
+    else if(f.startsWith('art-')){const a=parts[1];cat=a==='kitchen'?'bg':'food';name=(AST_ART[a]||a)+(parts[2]==='raw'?'（生）':parts[2]==='done'?'（熟）':parts[2]==='burnt'?'（焦）':'')}
+    else if(/^(bg|home|logo)$/.test(parts[0])){cat='bg';name={bg:'背景 '+(parts[1]==='sushi'?'海風壽司':parts[1]==='tep'?'炎舞鐵板燒':parts[1]),home:'首頁圖',logo:'標題 logo'}[parts[0]]}
+    else{const who=cn[parts[0]]||(parts[0].startsWith('mob')?'路人 '+(+parts[0].slice(3)+1):parts[0]==='robot'?'機器人':parts[0]==='oji'?'阿伯':/staff|yatai/.test(f)?'店員':parts[0]);
+      const md=AST_MOOD[parts[1]];name=who+(md?'・'+md:/staff|yatai/.test(f)?' '+f:'')}
+    const s={k:'img',p,cat,name};s.id=astId(s);out.push(s)});
+  const keys=[];Object.keys(ITEMS).forEach(k=>{if(k==='ramen')RTOPS.forEach(t=>keys.push(['ramen:'+t,T(TOPR[t])]));else if(k==='chazuke')[['salmon','鮭魚茶泡飯'],['ume','梅子茶泡飯']].forEach(([v,n])=>keys.push(['chazuke:'+v,n]));else keys.push([k,ITEMS[k].zh||k])});
+  keys.forEach(([key,name])=>{const s={k:'dish',key,cat:'dish',name};s.id=astId(s);out.push(s)});
+  return AST.map=out}
+function astDishSvg(key){try{const k=key==='sashimi'?'sashimi:'+Object.keys(FISH).slice(0,2).join('+'):key;return _astIcon(k)||''}catch(e){return ''}}
+function astThumb(s){if(s.k==='dish'){const u=DISHOV[s.key];return u?`<img src="${u}">`:astDishSvg(s.key)}return `<img src="${s.p}" loading="lazy">`}
+function astOpen(){if(!isTester())return;AST.on=true;let el=$('ast');if(!el){el=document.createElement('div');el.id='ast';document.body.appendChild(el)}el.style.display='flex';astList()}
+function astClose(){AST.on=false;const el=$('ast');if(el){el.style.display='none';el.innerHTML=''}AST.ed=null;try{if(HOME)showHome()}catch(e){}}
+function astHead(extra){return `<div class="asth"><b>🎨 美術工坊</b>${extra||''}<button data-ast="close">✕ 關閉</button></div>`}
+function astList(){const el=$('ast');if(!el)return;AST.ed=null;const L=astJ(AST_LS),D=astJ(AST_DR);
+  const tabs=AST_CATS.map(([k,n])=>`<button class="${AST.tab===k?'on':''}" data-ast="tab" data-id="${k}">${n}</button>`).join('');
+  if(AST.tab==='txt')return astTxt();
+  const q=AST.q.trim(),list=astSlots().filter(s=>s.cat===AST.tab&&(!q||s.name.includes(q)||(s.p||s.key).includes(q)));
+  el.innerHTML=astHead(`<div class="astt">${tabs}</div>`)+`<div class="astb"><div class="astq"><input id="astq" placeholder="搜尋名字…" value="${esc(AST.q)}"><span>點一張圖就能畫／換圖・<i class="pub">已發布</i> <i class="dr">試看中（只有你）</i></span></div>
+   <div class="astg">${list.map(s=>`<button class="astc" data-ast="edit" data-id="${s.id}">${D[s.id]?'<i class="dr">試看中</i>':L[s.id]?'<i class="pub">已發布</i>':''}<span class="ti">${astThumb(s)}</span><small>${esc(s.name)}</small></button>`).join('')||'<p>沒有符合的</p>'}</div></div>`;
+  const qi=$('astq');qi.oninput=()=>{AST.q=qi.value;const p=qi.selectionStart;astList();const n=$('astq');n.focus();n.setSelectionRange(p,p)}}
+/* ---------- 改字 ---------- */
+function astTxt(){const el=$('ast');const tabs=AST_CATS.map(([k,n])=>`<button class="${AST.tab===k?'on':''}" data-ast="tab" data-id="${k}">${n}</button>`).join('');
+  const keys=Object.keys(Object.assign({},I18N.en||{},I18N['zh-Hans']||{})),q=AST.q.trim();
+  let list=q?keys.filter(s=>s.includes(q)||(TXOV[s]||'').includes(q)):keys.filter(s=>TXOV[s]!=null);
+  const n=list.length;list=list.slice(0,120);
+  el.innerHTML=astHead(`<div class="astt">${tabs}</div>`)+`<div class="astb"><div class="astq"><input id="astq" placeholder="搜尋要改的文字（輸入畫面上看到的字）…" value="${esc(AST.q)}"><span>${q?`找到 ${n} 筆${n>120?'（只列前 120 筆，打更多字縮小範圍）':''}`:'下面是已經改過的；要改新的先搜尋'}・只改繁體中文，其他語言照舊</span></div>
+   <div class="astx">${list.map(s=>{const h=astHash(s),ov=TXOV[s];return `<div class="astxr"><div class="o">${esc(s)}</div><input data-h="${h}" value="${esc(ov!=null?ov:s)}"><button data-ast="txpub" data-id="${h}">發布</button>${ov!=null?`<button class="alt" data-ast="txdel" data-id="${h}">還原</button>`:''}</div>`}).join('')}</div></div>`;
+  AST.txk={};list.forEach(s=>AST.txk[astHash(s)]=s);
+  const qi=$('astq');qi.oninput=()=>{AST.q=qi.value;const p=qi.selectionStart;astTxt();const n2=$('astq');n2.focus();n2.setSelectionRange(p,p)}}
+async function astTxPub(h,del){const s=AST.txk&&AST.txk[h];if(!s)return;const inp=document.querySelector(`#ast input[data-h="${h}"]`);let t=del?null:(inp?inp.value:'');
+  if(!del){const ph=x=>(x.match(/\{\d\}/g)||[]).sort().join();if(ph(s)!==ph(t)){toast('原文裡的 {0} {1} 這種記號要保留（遊戲會把數字或名字填進去）');return}if(!t.trim()){toast('不能是空的');return}if(t===s)del=true}
+  if(!(await astReady()))return;
+  try{await CL.api.rtx((rd,r)=>rd.set(rd.ref(r,'artov/tx/'+h),del?null:{s,t}));
+    if(del)delete TXOV[s];else TXOV[s]=t;astJS('izakaya-txov',TXOV);toast(del?'已還原，玩家下次開遊戲生效':'已發布，玩家下次開遊戲生效');astTxt()}
+  catch(e){astErr(e)}}
+async function astReady(){if(!CL.api){await cloudInit()}if(!CL.api||!CL.api.rtx){toast('連不上資料庫，稍後再試');return false}if(!CL.user){toast('要先登入作者帳號');return false}return true}
+function astErr(e){console.warn('artov',e);const c=String(e&&(e.code||e.message)||e);
+  if(/permission/i.test(c))astMsg('發布失敗：資料庫還沒開放這個功能','要先把 repo 裡最新的 <b>database.rules.json</b> 整份貼到 Firebase 主控台 → Realtime Database → 規則 → 發布，之後就能用了。');else toast('發布失敗：'+c)}
+function astMsg(h,p){const el=$('ast');const d=document.createElement('div');d.className='astm';d.innerHTML=`<div><h3>${h}</h3><p>${p}</p><button data-ast="msgx">知道了</button></div>`;el.appendChild(d)}
+
+/* ---------- 畫圖編輯器 ---------- */
+const AST_PAL=['#3a2414','#000000','#ffffff','#f6d2b0','#eec09a','#c0392b','#e8873a','#f2c44a','#7cc04a','#3aa39b','#2b3b6e','#8e5ac8','#f3a0b8','#9a948a','#6b4a2e','#fbf1dc'];
+async function astEdit(id){const s=astSlots().find(x=>x.id===id);if(!s)return;
+  const E=AST.ed={s,tool:'brush',col:'#3a2414',size:6,alpha:1,zoom:1,undo:[],redo:[],dirty:false,refOn:false,refOp:.35,bgm:0,tol:40,adj:null};
+  let w=300,h=300;
+  if(s.k==='img'){const im=await astLoadImg(s.p+'?orig');if(im){w=im.naturalWidth;h=im.naturalHeight}E.orig=im;E.cur=await astLoadImg(s.p)}
+  else{E.orig=await astSvgImg(astDishSvg(s.key),w,h);E.cur=DISHOV[s.key]?await astLoadImg(DISHOV[s.key]):E.orig}
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;E.cv=cv;E.cx=cv.getContext('2d',{willReadFrequently:true});
+  if(E.cur)astDrawFit(E.cur,true);
+  E.maxUndo=Math.max(4,Math.min(30,Math.floor(160e6/(w*h*4))));
+  astEdRender();requestAnimationFrame(()=>astFitView())}
+function astLoadImg(src){return new Promise(res=>{if(!src)return res(null);const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src})}
+async function astSvgImg(svg,w,h){if(!svg)return null;let s=svg.replace('<svg ',`<svg width="${w}" height="${h}" `);if(!/xmlns=/.test(s))s=s.replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ');
+  return astLoadImg('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s))}
+function astDrawFit(im,exact){const E=AST.ed,c=E.cx,W=E.cv.width,H=E.cv.height;c.clearRect(0,0,W,H);
+  const iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height;if(exact&&iw===W&&ih===H){c.drawImage(im,0,0);return}
+  const k=Math.min(W/iw,H/ih);c.drawImage(im,(W-iw*k)/2,(H-ih*k)/2,iw*k,ih*k)}
+function astPush(){const E=AST.ed;E.undo.push(E.cx.getImageData(0,0,E.cv.width,E.cv.height));if(E.undo.length>E.maxUndo)E.undo.shift();E.redo=[];E.dirty=true}
+function astUndo(r){const E=AST.ed,a=r?E.redo:E.undo,b=r?E.undo:E.redo;if(!a.length)return;b.push(E.cx.getImageData(0,0,E.cv.width,E.cv.height));E.cx.putImageData(a.pop(),0,0);E.dirty=true}
+const AST_TOOLS=[['brush','🖌️','筆'],['eraser','🧽','橡皮擦'],['fill','🪣','填色'],['pick','💧','吸顏色'],['pan','✋','拖畫面'],['adj','🔧','縮放移動']];
+function astEdRender(){const E=AST.ed,el=$('ast'),s=E.s;
+  const tools=AST_TOOLS.map(([k,i,n])=>`<button class="${E.tool===k?'on':''}" data-ast="tool" data-id="${k}">${i}<small>${n}</small></button>`).join('')+`<button data-ast="undo">↩️<small>上一步</small></button><button data-ast="redo">↪️<small>下一步</small></button>`;
+  const L=astJ(AST_LS),D=astJ(AST_DR);
+  el.innerHTML=astHead(`<span class="astn">${esc(s.name)}・${E.cv.width}×${E.cv.height}${D[s.id]?' <i class="dr">試看中</i>':L[s.id]?' <i class="pub">已發布</i>':''}</span><button data-ast="back">← 回列表</button><button class="hd" data-ast="try">👀 試看</button><button class="go hd" data-ast="pub">🚀 發布</button>`)+
+  `<div class="aste"><div class="astl">${tools}</div>
+   <div class="asts bg${E.bgm}" id="asts"><div class="astw" id="astw">${E.orig&&E.refOn?`<img class="ref" src="${E.orig.src}" style="opacity:${E.refOp}">`:''}</div></div>
+   <div class="astr" id="astr"></div></div>`;
+  $('astw').appendChild(E.cv);E.cv.className='astcv';astView();astSide();astBindCanvas()}
+function astSide(){const E=AST.ed,r=$('astr');if(!r)return;
+  if(E.tool==='adj'&&E.adj){const a=E.adj;r.innerHTML=`<h4>🔧 縮放移動</h4>
+    <label>大小 <b id="ava">${Math.round(a.sc*100)}%</b><input type="range" min="10" max="300" value="${Math.round(a.sc*100)}" data-adj="sc"></label>
+    <label>左右<input type="range" min="-100" max="100" value="${Math.round(a.x*100)}" data-adj="x"></label>
+    <label>上下<input type="range" min="-100" max="100" value="${Math.round(a.y*100)}" data-adj="y"></label>
+    <label>旋轉 <b id="avr">${a.rot}°</b><input type="range" min="-180" max="180" value="${a.rot}" data-adj="rot"></label>
+    <div class="row"><button data-ast="flip">↔ 左右翻轉</button></div>
+    <p class="tip">也可以直接在圖上拖曳移動、兩指縮放</p>
+    <div class="row"><button class="go" data-ast="adjok">✓ 確定</button><button data-ast="adjno">取消</button></div>`;
+    r.querySelectorAll('input[data-adj]').forEach(i=>i.oninput=()=>{const k=i.dataset.adj,v=+i.value;a[k]=k==='sc'?v/100:k==='rot'?v:v/100;if(k==='sc')$('ava').textContent=v+'%';if(k==='rot')$('avr').textContent=v+'°';astAdjDraw()});return}
+  r.innerHTML=`<h4>顏色</h4><div class="pal">${AST_PAL.map(c=>`<button style="background:${c}" class="${E.col===c?'on':''}" data-ast="col" data-id="${c}"></button>`).join('')}</div>
+   <div class="row"><input type="color" id="astcol" value="${E.col}"><span class="tip">自選顏色</span></div>
+   <label>筆刷粗細 <b id="asz">${E.size}</b><input type="range" min="1" max="120" value="${E.size}" id="astsz"></label>
+   <label>筆刷透明度 <b id="aal">${Math.round(E.alpha*100)}%</b><input type="range" min="5" max="100" value="${Math.round(E.alpha*100)}" id="astal"></label>
+   <label>填色／去背容許差 <b id="atl">${E.tol}</b><input type="range" min="0" max="120" value="${E.tol}" id="asttl"></label>
+   <h4>畫面</h4><div class="row"><button data-ast="zoom" data-id="-1">－</button><button data-ast="zoom" data-id="0">適合</button><button data-ast="zoom" data-id="1">＋</button></div>
+   <div class="row"><button data-ast="bgm">底色：${['格子','白','深'][E.bgm]}</button><button data-ast="ref" class="${E.refOn?'on':''}">原圖疊影${E.refOn?'：開':''}</button></div>
+   ${E.refOn?`<label>疊影深淺<input type="range" min="5" max="100" value="${Math.round(E.refOp*100)}" id="astrop"></label>`:''}
+   <h4>圖</h4><div class="col">
+   <button data-ast="fromorig">從原圖重新開始</button><button data-ast="clear">清空畫布</button>
+   <button data-ast="import">📷 匯入圖片（手機相簿／Gemini 圖）</button><button data-ast="debg">✂️ 去背景（去掉邊緣的底色）</button>
+   ${astJ(AST_DR)[E.s.id]?'<button data-ast="untry">取消試看（換回已發布／原本的圖）</button>':''}${astJ(AST_LS)[E.s.id]&&!astJ(AST_DR)[E.s.id]?'<button class="warn" data-ast="revert">↺ 還原成原本的圖（取消發布）</button>':''}
+   <button data-ast="dl">⬇️ 下載這張圖</button></div><input type="file" id="astfile" accept="image/*" style="display:none">`;
+  const g=(id,f)=>{const i=$(id);if(i)i.oninput=()=>f(i.value)};
+  g('astcol',v=>{E.col=v;r.querySelectorAll('.pal button').forEach(b=>b.classList.remove('on'))});
+  g('astsz',v=>{E.size=+v;$('asz').textContent=v});g('astal',v=>{E.alpha=v/100;$('aal').textContent=v+'%'});g('asttl',v=>{E.tol=+v;$('atl').textContent=v});
+  g('astrop',v=>{E.refOp=v/100;const im=document.querySelector('#astw .ref');if(im)im.style.opacity=E.refOp});
+  const f=$('astfile');f.onchange=()=>{const fl=f.files&&f.files[0];if(fl)astImport(fl);f.value=''}}
+function astView(){const E=AST.ed,w=$('astw');if(!w)return;const W=Math.round(E.cv.width*E.zoom),H=Math.round(E.cv.height*E.zoom);w.style.width=W+'px';w.style.height=H+'px'}
+function astFitView(){const E=AST.ed,s=$('asts');if(!E||!s)return;E.zoom=Math.max(.05,Math.min((s.clientWidth-16)/E.cv.width,(s.clientHeight-16)/E.cv.height,8));astView()}
+function astZoomAt(nz,cxp,cyp){const E=AST.ed,s=$('asts');nz=Math.max(.05,Math.min(16,nz));const r=s.getBoundingClientRect(),w=$('astw').getBoundingClientRect();
+  const px=(cxp-w.left)/E.zoom,py=(cyp-w.top)/E.zoom;E.zoom=nz;astView();const w2=$('astw').getBoundingClientRect();s.scrollLeft+=(w2.left+px*nz)-cxp;s.scrollTop+=(w2.top+py*nz)-cyp}
+function astPt(e){const E=AST.ed,r=E.cv.getBoundingClientRect();return [(e.clientX-r.left)*E.cv.width/r.width,(e.clientY-r.top)*E.cv.height/r.height]}
+function astBindCanvas(){const E=AST.ed,cv=E.cv,s=$('asts');const P=new Map();let st=null,pin=null;
+  const down=e=>{if(!AST.ed||AST.ed!==E)return;e.preventDefault();P.set(e.pointerId,{x:e.clientX,y:e.clientY});try{s.setPointerCapture(e.pointerId)}catch(x){}
+    if(P.size===2){/* 第二根手指：取消這一筆，改成兩指縮放＋拖畫面 */if(st&&st.snap){E.cx.putImageData(st.snap,0,0);E.undo.pop();E.dirty=st.dirty0}st=null;
+      const [a,b]=[...P.values()];pin={d:Math.hypot(a.x-b.x,a.y-b.y),z:E.zoom,mx:(a.x+b.x)/2,my:(a.y+b.y)/2,sc:E.adj?E.adj.sc:0};return}
+    if(P.size>2)return;
+    const [x,y]=astPt(e),t=E.tool;
+    if(t==='pan'||(e.button===1)){st={pan:1,sx:e.clientX,sy:e.clientY,l:s.scrollLeft,t:s.scrollTop};return}
+    if(t==='adj'){if(!E.adj)return;st={adj:1,sx:e.clientX,sy:e.clientY,ax:E.adj.x,ay:E.adj.y};return}
+    if(t==='pick'){const p=E.cx.getImageData(Math.floor(x),Math.floor(y),1,1).data;if(p[3]){E.col='#'+[p[0],p[1],p[2]].map(v=>v.toString(16).padStart(2,'0')).join('');E.tool='brush';astEdRender()}else toast('這裡是透明的');return}
+    if(t==='fill'){astPush();astFlood([[Math.floor(x),Math.floor(y)]],astRGBA(E.col,E.alpha));return}
+    if(t==='brush'||t==='eraser'){const d0=E.dirty;astPush();st={draw:1,snap:E.undo[E.undo.length-1],dirty0:d0,lx:x,ly:y};astLine(x,y,x,y)}};
+  const move=e=>{if(!P.has(e.pointerId))return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pin&&P.size>=2){const [a,b]=[...P.values()],d=Math.hypot(a.x-b.x,a.y-b.y),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+      if(E.tool==='adj'&&E.adj){E.adj.sc=Math.max(.1,Math.min(3,pin.sc*d/pin.d));astAdjDraw();const v=$('ava');if(v)v.textContent=Math.round(E.adj.sc*100)+'%';return}
+      s.scrollLeft-=mx-pin.mx;s.scrollTop-=my-pin.my;pin.mx=mx;pin.my=my;astZoomAt(pin.z*d/pin.d,mx,my);return}
+    if(!st)return;
+    if(st.pan){s.scrollLeft=st.l-(e.clientX-st.sx);s.scrollTop=st.t-(e.clientY-st.sy);return}
+    if(st.adj){const r=cv.getBoundingClientRect();E.adj.x=st.ax+(e.clientX-st.sx)/r.width;E.adj.y=st.ay+(e.clientY-st.sy)/r.height;astAdjDraw();return}
+    if(st.draw){const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];for(const ev of (evs.length?evs:[e])){const [x,y]=astPt(ev);astLine(st.lx,st.ly,x,y);st.lx=x;st.ly=y}}};
+  const up=e=>{P.delete(e.pointerId);if(P.size<2)pin=null;if(!P.size)st=null;if(E.tool==='adj'&&E.adj)astSide()};
+  s.onpointerdown=down;s.onpointermove=move;s.onpointerup=up;s.onpointercancel=up;
+  s.onwheel=e=>{if(e.ctrlKey||e.metaKey||E.tool==='pan'){e.preventDefault();astZoomAt(E.zoom*(e.deltaY<0?1.15:1/1.15),e.clientX,e.clientY)}}}
+function astLine(x0,y0,x1,y1){const E=AST.ed,c=E.cx;c.save();c.globalCompositeOperation=E.tool==='eraser'?'destination-out':'source-over';
+  c.strokeStyle=E.tool==='eraser'?'#000':E.col;c.globalAlpha=E.tool==='eraser'?1:E.alpha;c.lineWidth=E.size;c.lineCap='round';c.lineJoin='round';
+  c.beginPath();c.moveTo(x0,y0);c.lineTo(x1+(x0===x1&&y0===y1?.01:0),y1);c.stroke();c.restore()}
+function astRGBA(hex,a){const n=parseInt(hex.slice(1),16);return [n>>16&255,n>>8&255,n&255,Math.round(a*255)]}
+/* 填色：從起點往外擴，顏色差在容許範圍內的連在一起的格子都換掉；col 為 null 時改成透明（去背景用） */
+function astFlood(seeds,col){const E=AST.ed,W=E.cv.width,H=E.cv.height,img=E.cx.getImageData(0,0,W,H),d=img.data,tol=E.tol;
+  const sd=seeds.filter(([x,y])=>x>=0&&y>=0&&x<W&&y<H);if(!sd.length)return 0;
+  const i0=(sd[0][1]*W+sd[0][0])*4,r0=d[i0],g0=d[i0+1],b0=d[i0+2],a0=d[i0+3];
+  const near=i=>{const a=d[i+3];if(a0<16)return a<16+tol;if(a<16)return false;return Math.abs(d[i]-r0)+Math.abs(d[i+1]-g0)+Math.abs(d[i+2]-b0)+Math.abs(a-a0)<=tol*3};
+  const seen=new Uint8Array(W*H),stack=[];let n=0;
+  for(const [x,y] of sd){const p=y*W+x;if(!seen[p]&&near(p*4)){seen[p]=1;stack.push(p)}}
+  while(stack.length){const p=stack.pop(),i=p*4;n++;
+    if(col){const sa=col[3]/255;d[i]=Math.round(col[0]*sa+d[i]*(1-sa));d[i+1]=Math.round(col[1]*sa+d[i+1]*(1-sa));d[i+2]=Math.round(col[2]*sa+d[i+2]*(1-sa));d[i+3]=Math.max(d[i+3],col[3])}
+    const x=p%W,y=(p-x)/W;
+    if(x>0&&!seen[p-1]&&near((p-1)*4)){seen[p-1]=1;stack.push(p-1)}if(x<W-1&&!seen[p+1]&&near((p+1)*4)){seen[p+1]=1;stack.push(p+1)}
+    if(y>0&&!seen[p-W]&&near((p-W)*4)){seen[p-W]=1;stack.push(p-W)}if(y<H-1&&!seen[p+W]&&near((p+W)*4)){seen[p+W]=1;stack.push(p+W)}}
+  if(!col){/* 去背景：選到的格子變透明，邊緣再柔化一圈 */for(let p=0;p<W*H;p++)if(seen[p])d[p*4+3]=0;
+    for(let p=0;p<W*H;p++){if(seen[p])continue;const x=p%W,y=(p-x)/W;if((x>0&&seen[p-1])||(x<W-1&&seen[p+1])||(y>0&&seen[p-W])||(y<H-1&&seen[p+W]))d[p*4+3]=Math.round(d[p*4+3]*.55)}}
+  E.cx.putImageData(img,0,0);return n}
+function astDebg(){const E=AST.ed,W=E.cv.width,H=E.cv.height,d=E.cx.getImageData(0,0,W,H).data;
+  /* 用四個角裡最常見、不透明的顏色當底色，從整圈邊緣往內去掉 */
+  const cs=[[0,0],[W-1,0],[0,H-1],[W-1,H-1]].filter(([x,y])=>d[(y*W+x)*4+3]>16);if(!cs.length){toast('邊緣已經是透明的了');return}
+  const key=([x,y])=>{const i=(y*W+x)*4;return [d[i]>>4,d[i+1]>>4,d[i+2]>>4].join()};const cnt={};cs.forEach(c=>cnt[key(c)]=(cnt[key(c)]||0)+1);
+  const best=cs.slice().sort((a,b)=>cnt[key(b)]-cnt[key(a)])[0],bk=key(best);
+  const seeds=[best];for(let x=0;x<W;x+=1){seeds.push([x,0],[x,H-1])}for(let y=0;y<H;y+=1){seeds.push([0,y],[W-1,y])}
+  astPush();const sd=[best].concat(seeds.filter(p=>key(p)===bk));const n=astFlood(sd,null);if(!n){E.undo.pop();toast('找不到可以去掉的底色')}else toast('去掉了，不滿意可以按上一步，或調「容許差」再試')}
+async function astImport(file){const E=AST.ed;let im=null;try{im=await createImageBitmap(file)}catch(e){im=await astLoadImg(URL.createObjectURL(file))}if(!im){toast('這張圖讀不出來');return}
+  astPush();E.cx.clearRect(0,0,E.cv.width,E.cv.height);astStartAdj(im,true)}
+function astStartAdj(src,fresh){const E=AST.ed,W=E.cv.width,H=E.cv.height;let im=src;
+  if(!im){im=document.createElement('canvas');im.width=W;im.height=H;im.getContext('2d').drawImage(E.cv,0,0);if(!fresh)astPush()}
+  const iw=im.width,ih=im.height,k=fresh?Math.min(W/iw,H/ih):1;
+  E.adj={im,base:k,sc:1,x:0,y:0,rot:0,flip:false};E.tool='adj';astEdRender();astAdjDraw()}
+function astAdjDraw(){const E=AST.ed,a=E.adj;if(!a)return;const c=E.cx,W=E.cv.width,H=E.cv.height,iw=a.im.width*a.base*a.sc,ih=a.im.height*a.base*a.sc;
+  c.clearRect(0,0,W,H);c.save();c.translate(W/2+a.x*W,H/2+a.y*H);c.rotate(a.rot*Math.PI/180);if(a.flip)c.scale(-1,1);c.imageSmoothingQuality='high';c.drawImage(a.im,-iw/2,-ih/2,iw,ih);c.restore()}
+function astAdjEnd(ok){const E=AST.ed;if(!E.adj)return;if(!ok){const u=E.undo.pop();if(u)E.cx.putImageData(u,0,0)}E.adj=null;E.tool='brush';E.dirty=true;astEdRender()}
+/* 輸出：webp（Safari 不支援就 png），太大就縮小一點 */
+async function astExport(){const E=AST.ed;let cv=E.cv,sc=1;
+  for(let i=0;i<6;i++){const b=await new Promise(r=>cv.toBlob(r,'image/webp',.88));let blob=b&&b.type==='image/webp'?b:await new Promise(r=>cv.toBlob(r,'image/png'));
+    if(blob&&blob.size<1.2e6)return blob;sc*=.8;const c2=document.createElement('canvas');c2.width=Math.round(E.cv.width*sc);c2.height=Math.round(E.cv.height*sc);c2.getContext('2d').drawImage(E.cv,0,0,c2.width,c2.height);cv=c2}
+  return null}
+const astB64=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+function astMeta(v){const s=AST.ed.s;return {id:s.id,k:s.k,p:s.p||null,key:s.key||null,v,n:s.name}}
+async function astTry(){const E=AST.ed;if(E.adj)astAdjEnd(true);const b=await astExport();if(!b){toast('圖太大了');return}
+  const m=astMeta('draft'),L=astJ(AST_LS),D=astJ(AST_DR);await astStore(m,b);L[m.id]=m;D[m.id]=1;astJS(AST_LS,L);astJS(AST_DR,D);E.dirty=false;
+  astEdRender();if(m.k==='dish')toast('已套用到你這台，點餐泡泡和菜單會用這張');
+  else astMsg('已套用到你這台（玩家看不到）','重新整理遊戲後，所有用到這張圖的地方都會換成新的。滿意再回來按「發布給所有玩家」。<br><br><button data-ast="reload">現在重新整理</button>')}
+async function astUntry(){const s=AST.ed.s,L=astJ(AST_LS),D=astJ(AST_DR);if(L[s.id])await astUnstore(L[s.id]);delete L[s.id];delete D[s.id];astJS(AST_LS,L);astJS(AST_DR,D);await artSync().catch(()=>{});toast('已取消試看');astEdRender()}
+async function astPub(){const E=AST.ed;if(E.adj)astAdjEnd(true);if(!(await astReady()))return;const b=await astExport();if(!b){toast('圖太大了，縮小一點再試');return}
+  const d=await astB64(b),m=astMeta(Date.now());toast('發布中…');
+  try{await CL.api.rtx((rd,r)=>rd.update(rd.ref(r,'artov'),{['d/'+m.id]:d,['i/'+m.id]:{v:m.v,k:m.k,p:m.p,key:m.key,n:m.n,sz:d.length}}));
+    const L=astJ(AST_LS),D=astJ(AST_DR);delete D[m.id];await astStore(m,b);L[m.id]=m;astJS(AST_LS,L);astJS(AST_DR,D);E.dirty=false;
+    astEdRender();astMsg('🚀 已發布','玩家下次開遊戲就會自動下載這張新圖（每張只下載一次）。你自己重新整理就看得到。'+(m.k==='img'?'<br><br><button data-ast="reload">現在重新整理</button>':''))}
+  catch(e){astErr(e)}}
+async function astRevert(){const s=AST.ed.s;if(!confirm(`把「${s.name}」還原成原本的圖？所有玩家下次開遊戲會換回原圖。`))return;if(!(await astReady()))return;
+  try{await CL.api.rtx((rd,r)=>rd.update(rd.ref(r,'artov'),{['d/'+s.id]:null,['i/'+s.id]:null}));const L=astJ(AST_LS);if(L[s.id])await astUnstore(L[s.id]);delete L[s.id];astJS(AST_LS,L);
+    if(AST.ed.orig)astDrawFit(AST.ed.orig,true);AST.ed.undo=[];AST.ed.dirty=false;astEdRender();toast('已還原成原圖')}catch(e){astErr(e)}}
+document.addEventListener('click',async e=>{const a=e.target.closest('[data-ast]');if(!a||!AST.on&&a.dataset.ast!=='open')return;const k=a.dataset.ast,id=a.dataset.id,E=AST.ed;
+  if(k==='open'){astOpen();return}
+  if(k==='close'){if(E&&E.dirty&&!confirm('畫的東西還沒試看或發布，確定要關掉？'))return;astClose()}
+  else if(k==='msgx'){a.closest('.astm').remove()}
+  else if(k==='reload'){location.reload()}
+  else if(k==='tab'){AST.tab=id;AST.q='';astList()}
+  else if(k==='edit'){astEdit(id)}
+  else if(k==='txpub')astTxPub(id,false);else if(k==='txdel')astTxPub(id,true);
+  if(!E)return;
+  if(k==='back'){if(E.dirty&&!confirm('畫的東西還沒試看或發布，確定要回列表？'))return;astList()}
+  else if(k==='tool'){if(E.adj&&id!=='adj')astAdjEnd(true);if(id==='adj'){if(!E.adj)astStartAdj(null,false)}else{E.tool=id;astEdRender()}}
+  else if(k==='undo'||k==='redo'){if(E.adj)astAdjEnd(false);astUndo(k==='redo')}
+  else if(k==='col'){E.col=id;if(E.tool!=='fill')E.tool='brush';astEdRender()}
+  else if(k==='zoom'){const s=$('asts').getBoundingClientRect();if(id==='0')astFitView();else astZoomAt(E.zoom*(id==='1'?1.4:1/1.4),s.left+s.width/2,s.top+s.height/2)}
+  else if(k==='bgm'){E.bgm=(E.bgm+1)%3;$('asts').className='asts bg'+E.bgm;astSide()}
+  else if(k==='ref'){if(!E.orig){toast('這張沒有原圖');return}E.refOn=!E.refOn;astEdRender()}
+  else if(k==='fromorig'){if(!E.orig)return;astPush();astDrawFit(E.orig,true)}
+  else if(k==='clear'){astPush();E.cx.clearRect(0,0,E.cv.width,E.cv.height)}
+  else if(k==='import'){$('astfile').click()}
+  else if(k==='debg'){astDebg()}
+  else if(k==='flip'){if(E.adj){E.adj.flip=!E.adj.flip;astAdjDraw()}}
+  else if(k==='adjok')astAdjEnd(true);else if(k==='adjno')astAdjEnd(false);
+  else if(k==='try')astTry();else if(k==='untry')astUntry();
+  else if(k==='pub')astPub();else if(k==='revert')astRevert();
+  else if(k==='dl'){const b=await astExport();if(!b)return;const u=URL.createObjectURL(b),l=document.createElement('a');l.href=u;l.download=(E.s.p?E.s.p.split('/').pop().replace(/\.\w+$/,''):E.s.key.replace(/\W/g,'_'))+(b.type==='image/png'?'.png':'.webp');document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+});
+window.addEventListener('resize',()=>{if(AST.ed&&$('asts'))astFitView()});
+document.addEventListener('keydown',e=>{if(!AST.on||!AST.ed||/INPUT|TEXTAREA/.test(document.activeElement&&document.activeElement.tagName))return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();astUndo(e.shiftKey)}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();astUndo(true)}});
+(()=>{const st=document.createElement('style');st.textContent=`
+#ast{position:fixed;inset:0;z-index:2147482000;display:none;flex-direction:column;background:#1b120c;color:#f3dfb4;font:14px/1.4 "Noto Sans TC","Zen Maru Gothic",sans-serif;-webkit-user-select:none;user-select:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+#ast button{font:inherit;color:#2a170d;background:#f3dfb4;border:0;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:700}
+#ast button.on{background:#e8873a;color:#fff}#ast button.go{background:#c0392b;color:#fff}#ast button.warn{background:#6b4a2e;color:#fff}#ast button.alt{background:#6b4a2e;color:#fff}
+#ast i.pub,#ast i.dr{font-style:normal;font-size:11px;padding:1px 6px;border-radius:6px;background:#3aa39b;color:#fff}#ast i.dr{background:#8e5ac8}
+.asth{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#2a170d;border-bottom:2px solid #4a2c19;flex:none;overflow-x:auto}
+.asth>b{white-space:nowrap;font-size:16px}.asth>button:last-child{margin-left:auto}.asth>button{white-space:nowrap}.asth .hd{margin-left:4px}.astn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-left:6px;min-width:0;flex:0 1 auto}
+.astt{display:flex;gap:4px;overflow-x:auto}.astt button{white-space:nowrap;padding:5px 8px;font-size:13px}
+.astb{flex:1;min-height:0;display:flex;flex-direction:column;padding:6px 8px;gap:6px}
+.astq{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.astq input{flex:1;min-width:180px;font:inherit;padding:6px 10px;border-radius:8px;border:0;user-select:text;-webkit-user-select:text}.astq span{font-size:12px;opacity:.85}
+.astg{flex:1;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;align-content:start;-webkit-overflow-scrolling:touch}
+.astc{position:relative;display:flex!important;flex-direction:column;align-items:center;gap:2px;background:#3a2414!important;color:#f3dfb4!important;padding:4px!important;font-weight:400!important}
+.astc i{position:absolute;top:3px;left:3px;z-index:1}.astc small{font-size:11px;line-height:1.2;text-align:center;word-break:break-all}
+.astc .ti{width:84px;height:84px;display:flex;align-items:center;justify-content:center;background:repeating-conic-gradient(#5a4232 0 25%,#4a3426 0 50%) 0 0/16px 16px;border-radius:6px;overflow:hidden}
+.astc .ti img,.astc .ti svg{max-width:100%;max-height:100%;width:auto;height:auto}.astc .ti svg{width:84px;height:84px}
+.astx{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.astxr{display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:#2a170d;border-radius:8px;padding:6px}.astxr .o{flex:1 1 220px;font-size:12px;opacity:.8;word-break:break-all}
+.astxr input{flex:2 1 260px;font:inherit;padding:5px 8px;border-radius:6px;border:0;user-select:text;-webkit-user-select:text}
+.aste{flex:1;min-height:0;display:flex}
+.astl{flex:none;width:64px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding:6px 4px;background:#2a170d}
+.astl button{display:flex;flex-direction:column;align-items:center;padding:4px 2px!important;font-size:18px;line-height:1.1}.astl small{font-size:10px}
+.asts{flex:1;min-width:0;overflow:auto;position:relative;display:flex;touch-action:none;overscroll-behavior:contain}
+.asts.bg0{background:repeating-conic-gradient(#7a6656 0 25%,#6a5646 0 50%) 0 0/24px 24px}.asts.bg1{background:#fff}.asts.bg2{background:#120a06}
+.astw{position:relative;margin:auto;flex:none;box-shadow:0 0 0 1px #0008,0 0 0 3px #f3dfb455}
+.astw .ref{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.astcv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;image-rendering:auto}
+.astr{flex:none;width:200px;overflow-y:auto;padding:6px 8px;background:#2a170d;display:flex;flex-direction:column;gap:6px}
+.astr h4{margin:4px 0 0;font-size:13px;color:#e8b07a}.astr label{display:flex;flex-direction:column;font-size:12px;gap:2px}.astr input[type=range]{width:100%;accent-color:#e8873a}
+.astr .row{display:flex;gap:4px;flex-wrap:wrap;align-items:center}.astr .col{display:flex;flex-direction:column;gap:4px}.astr .col button{text-align:left;font-size:13px}
+.astr .tip{font-size:11px;opacity:.8;margin:0}.astr input[type=color]{width:44px;height:30px;border:0;padding:0;background:none}
+.pal{display:grid;grid-template-columns:repeat(8,1fr);gap:3px}.pal button{aspect-ratio:1;padding:0!important;border:2px solid #0006!important}.pal button.on{outline:3px solid #fff}
+.astm{position:absolute;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;z-index:5}.astm>div{background:#fbf1dc;color:#2a170d;border-radius:12px;padding:14px 18px;max-width:420px}.astm h3{margin:0 0 6px}
+.astm button{background:#c0392b!important;color:#fff!important}
+@media (max-height:430px){.astr{width:178px}.astl{width:56px}.astl button{font-size:16px}.asth{padding:3px 6px}}
+`;document.head.appendChild(st)})();
 </script>
 </body>
 </html>
