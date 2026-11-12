@@ -76,7 +76,7 @@
           ".validate": "newData.isString() && newData.val().length <= 300000"
         },
         "rec": {
-          ".validate": "newData.isString() && newData.val().length <= 50000"
+          ".validate": "newData.isString() && newData.val().length <= 200000"
         },
         "fc": {
           ".validate": "newData.isString() && newData.val().length <= 100000"
