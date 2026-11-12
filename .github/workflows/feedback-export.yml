@@ -1,0 +1,63 @@
+name: Export feedback
+
+# Reads the latest player feedback (fb node only) and stores it as a private
+# workflow artifact. Repo is public, so the data is never committed or published.
+on:
+  schedule:
+    - cron: '17 */2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Export feedback
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_SA" ]; then
+            echo "FIREBASE_SA secret is missing" >&2
+            exit 1
+          fi
+          WORK="$RUNNER_TEMP/fbexport"
+          mkdir -p "$WORK" && cd "$WORK"
+          npm init -y >/dev/null
+          npm install --silent firebase-admin@12
+          printf '%s' "$FIREBASE_SA" > sa.json
+          cat > export.mjs <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { initializeApp, cert } from 'firebase-admin/app';
+          import { getDatabase } from 'firebase-admin/database';
+          const sa = JSON.parse(readFileSync('sa.json', 'utf8'));
+          initializeApp({
+            credential: cert(sa),
+            databaseURL: 'https://kanpai-izakaya-default-rtdb.firebaseio.com',
+          });
+          const snap = await getDatabase().ref('fb').orderByChild('t').limitToLast(1000).once('value');
+          const items = [];
+          snap.forEach(c => { items.push({ id: c.key, ...c.val() }); });
+          items.reverse();
+          writeFileSync('feedback.json', JSON.stringify({ exportedAt: new Date().toISOString(), count: items.length, items }, null, 2));
+          console.log('exported', items.length, 'items');
+          process.exit(0);
+          JS
+          node export.mjs
+          rm -f sa.json
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp feedback.json "$GITHUB_WORKSPACE/out/feedback.json"
+
+      - name: Upload private artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: feedback-export
+          path: out/feedback.json
+          retention-days: 14
