@@ -817,8 +817,8 @@ function teppanOn(){return ['buta','gyu','ika','hotate'].some(has)}
 function tempuraOn(){return ['ebiten','kakifry'].some(has)}
 /* 炎舞鐵板燒三個廚房：一號＝肉類＋主食、二號＝海鮮、三號＝青菜・蛋・豆腐（2026-11-12） */
 const TPP1=['tpgarlic','tpchicken','tponpork','tpsalt','tppbeef','tponbeef','tpsnow','tpmatsu','tpsirloin','tpwagyu','tpfilet','tprib'],TPP2=['tpmackerel','tpmilkfish','tpseashrimp','tpshrimp','tpscallop','tpbream','tpsanxian','tpabalone','tplobster'],TPP3=['tpfriedegg','tpsprout','tpscalegg','tpcabbage','tpmushroom','tptofu','tpcheeseroll','tpredtofu','tpgoldegg'];
-function page2On(){return CUR==='sushi'?SUKEYS2.some(k=>!SU_SALK.includes(k)&&!SU_SWEET.includes(k)&&has(k)):CUR==='tep'?TPP2.some(has):CUR==='oko'||CUR==='bar'?false:CUR==='rm'?rmK2():NEWD.some(has)}
-function page3On(){if(CUR==='sushi')return SU_SALK.concat(SU_SWEET).some(has);if(CUR==='tep')return TPP3.some(has);if(CUR==='rm')return lamenOn()||tskOn()||has('oolong')||has('cola')||has('menma')||has('kyuri');return CUR!=='sushi'&&CUR!=='tep'&&CUR!=='oko'&&CUR!=='bar'&&NEWD3.some(has)}
+function page2On(){return CUR==='sushi'?SUKEYS2.some(k=>!SU_SALK.includes(k)&&!SU_SWEET.includes(k)&&has(k)):CUR==='tep'?true:CUR==='oko'||CUR==='bar'?false:CUR==='rm'?rmK2():NEWD.some(has)}
+function page3On(){if(CUR==='sushi')return SU_SALK.concat(SU_SWEET).some(has);if(CUR==='tep')return true;if(CUR==='rm')return lamenOn()||tskOn()||has('oolong')||has('cola')||has('menma')||has('kyuri');return CUR!=='sushi'&&CUR!=='tep'&&CUR!=='oko'&&CUR!=='bar'&&NEWD3.some(has)}
 function pages(){const a=[1];if(page2On())a.push(2);if(page3On())a.push(3);return a}
 function nextPage(){const a=pages();return a[(a.indexOf(KP)+1)%a.length]}
 /* bonus add-on order (加碼點單): some customers also want ONE extra dish from the menu, whether or not you own it yet.
