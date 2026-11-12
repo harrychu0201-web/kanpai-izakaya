@@ -6840,7 +6840,7 @@ async function cloudInit1(){
       idle:()=>rtIdle(),
       chatSub:(cb,err,pre)=>{let off=null,dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
         const lo=pre||'-'; /* 每個語言聊天室 = chat 底下 key 的前綴（繁中沿用原本的 push id，開頭都是 '-'），用 orderByKey 範圍查詢，不用改 Firebase 規則 */
-        off=rd.onValue(rd.query(rd.ref(r,'chat'),rd.orderByKey(),rd.startAt(lo),rd.endAt(lo+'\uf8ff'),rd.limitToLast(100)),snap=>{const a=[];snap.forEach(c=>{const x=c.val()||{};a.push({id:c.key,uid:x.uid,name:x.name,text:x.text,adm:x.adm===true,t:typeof x.t==='number'?x.t:Date.now(),likes:x.likes||{},rp:x.rp||null})});cb(a.reverse())},err)}).catch(err);
+        off=rd.onValue(rd.query(rd.ref(r,'chat'),rd.orderByKey(),rd.startAt(lo),rd.endAt(lo+'\uf8ff'),rd.limitToLast(50)),snap=>{const a=[];snap.forEach(c=>{const x=c.val()||{};a.push({id:c.key,uid:x.uid,name:x.name,text:x.text,adm:x.adm===true,t:typeof x.t==='number'?x.t:Date.now(),likes:x.likes||{},rp:x.rp||null})});cb(a.reverse())},err)}).catch(err);
         return ()=>{dead=true;if(off)off()}},
       chatSend:(uid,name,text,adm,rp,pre)=>rt((rd,r)=>{const id=(pre||'')+rd.push(rd.ref(r,'chat')).key;
         const m={uid,name,text,t:rd.serverTimestamp()};if(adm)m.adm=true;if(rp)m.rp=rp; /* rp: snapshot of the message being replied to */ /* adm: the rules only accept it from the author's verified Google account, so players can't fake the 👑 mark */
@@ -7161,7 +7161,7 @@ async function showLB(){if(!LBT.some(x=>x[0]===LB.tab))LB.tab='best';if(!CL.api&
   const btns=`<div class="btns"><button class="btn" data-act="${LB.fcb?'fc':LB.ch?'chback':'closem'}">${T('返回')}</button>${isAdmin()&&!LB.ch?'<button class="btn alt" data-act="lbman">✏️ 手動登錄成績</button>':''}</div>`;
   const draw=body=>{if((HOME||LB.ch)&&LB.tab===f){const x=mineRk();const ft=x&&mine&&!chs&&!LB.err?foot0.replace('</span>',`<br><small>${rkTxt(x)}</small></span>`):foot0;modal(head+`<div class="lblist">${body}</div>`+ft+btns);{const tb=document.querySelector('.lbtabs'),on=tb&&tb.querySelector('.stab.on');if(on)tb.scrollLeft=on.offsetLeft-(tb.clientWidth-on.offsetWidth)/2}}};
   const c=LB.cache[f];
-  if(!c||Date.now()-c.t>60000){draw(`<p>${T('載入中…')}</p>`);
+  if(!c||Date.now()-c.t>180000){draw(`<p>${T('載入中…')}</p>`);
     try{if(!CL.api)throw 0;LB.cache[f]={t:Date.now(),rows:await lbWithMan(f,tb[2])}}catch(e){console.warn('lb',e);draw(`<p>${T('排行榜載入失敗，請稍後再試。')}</p><p style="font-size:12px;color:#8a5a34;word-break:break-all">${esc(String((e&&(e.code||e.message))||e))}</p>`);return}}
   const all=LB.cache[f].rows,rows=all.slice(0,50);
   let body=rows.length?rows.map((r,i)=>`<div class="lbrow ${me&&r.uid===me.uid?'me':''}"><b>${i<3?['🥇','🥈','🥉'][i]:i+1}</b><span>${esc(r.name||'?')}</span><em>${lbVal(f,r[f])}</em></div>`).join(''):`<p>${T('還沒有人上榜，快來搶第一！')}</p>`;
