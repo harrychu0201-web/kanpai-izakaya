@@ -790,7 +790,7 @@ const ITEMS={
   brmojito:{tag:'モヒート',tz:'莫希托',jp:'モヒート',zh:'莫希托',price:1200,cost:180,w:2,shop:'bar',buy:12000,st:'吧台'},
   brgimlet:{tag:'ギムレット',tz:'琴蕾',jp:'ギムレット',zh:'琴蕾',price:1300,cost:190,w:2,shop:'bar',buy:15000,st:'吧台'},
   brmarg:{tag:'マルガリータ',tz:'瑪格麗特',jp:'マルガリータ',zh:'瑪格麗特',price:1400,cost:200,w:2,shop:'bar',buy:18000,st:'吧台'},
-  brmanh:{tag:'マンハッタン',tz:'曼哈頓',jp:'マンハッタン',zh:'曼哈頓',price:1600,cost:240,w:2,shop:'bar',buy:22000,st:'吧台'},
+  brmanh:{tag:'マンハッタン',tz:'曼哈頓',jp:'マンハッタン',zh:'曼哈頓',price:1600,cost:130,w:2,shop:'bar',buy:22000,st:'吧台'},
   bryuki:{tag:'雪国',tz:'雪國',jp:'雪国',zh:'雪國',price:1800,cost:260,w:2,shop:'bar',buy:28000,st:'吧台'},
 };
 const FISH={maguro:'鮪魚',salmon:'鮭魚',tai:'鯛魚'};
@@ -829,7 +829,7 @@ const WISHN=5,BONUSP=.3,BONUSTAIL=12,BONUSTIP=.1,BONUSPAT=1.5;
 function bonusKey(k){if(k==='chazuke')return 'chazuke:'+pick(['salmon','ume']);if(k==='ramen')return 'ramen:'+pick(RTOPS.filter(topOn));if(k==='sashimi')return 'sashimi:'+['maguro','salmon','tai'].sort(()=>Math.random()-.5).slice(0,2).sort().join('+');return k}
 function bonusPick(order){
   if(DEMO||TUT||!ST||ST.day<2)return null;
-  const used=order.map(k=>k.split(':')[0]),inShop=k=>{const s=ITEMS[k].shop||'iz';return s==='both'||s===CUR};
+  const used=order.map(k=>k.split(':')[0]),inShop=k=>{const s=ITEMS[k].shop||'iz';return (s==='both'&&CUR!=='bar')||s===CUR};
   const okp=unlocked(ST.day).filter(k=>!used.includes(k)&&!isOff(k));
   const lkp=Object.keys(ITEMS).filter(k=>ITEMS[k].buy&&!has(k)&&inShop(k)&&!used.includes(k));
   const locked=lkp.length&&(!okp.length||Math.random()<.3),pool=locked?lkp:okp;
@@ -1035,7 +1035,7 @@ function loadRec(){try{return JSON.parse(localStorage.getItem(RKEY))||{}}catch(e
 function saveRec(r){try{const old=localStorage.getItem(RKEY);if(old){try{JSON.parse(old)}catch(e){localStorage.setItem(RKEY+'-bad',old)}}localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}touchLocal()}
 function load(){try{const v=localStorage.getItem(KEY);const o=v?JSON.parse(v):null;if(o&&!o.up)o.up=fresh().up;if(o&&o.inter&&o.inter.neon){delete o.inter.neon;o.coins=(o.coins||0)+20000;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}if(o&&o.thOwn&&!o.thRefund){let r=0;Object.keys(o.thOwn).forEach(id=>{Object.values(THEMES).forEach(g=>g.list.forEach(t=>{if(t.id===id)r+=t.cost||0}))});o.coins=(o.coins||0)+r;delete o.thOwn;o.th={};o.thRefund=true;try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}return o}catch(e){return null}}
 const UDAY=()=>RP.on?RP.mainDay:(CHG&&CHG.on)?999:(ST?ST.day:1); /* endless challenge: every day-locked station is open from the start */ /* unlock/shop state follows the main save even while replaying an earlier day */
-const unlocked=(d,sh)=>{sh=sh||CUR;if(RP.on)d=Math.max(d,RP.mainDay);if(CHG&&CHG.on)d=999;return Object.keys(ITEMS).filter(k=>{const it=ITEMS[k],s0=it.shop||'iz';if(s0!=='both'&&s0!==sh)return false;return it.buy?has(k)&&!(k==='goma'&&gomaOff()):(s0==='rm'||it.day<=d)})};
+const unlocked=(d,sh)=>{sh=sh||CUR;if(RP.on)d=Math.max(d,RP.mainDay);if(CHG&&CHG.on)d=999;return Object.keys(ITEMS).filter(k=>{const it=ITEMS[k],s0=it.shop||'iz';if(s0!=='both'&&s0!==sh)return false;if(s0==='both'&&sh==='bar')return false;return it.buy?has(k)&&!(k==='goma'&&gomaOff()):(s0==='rm'||it.day<=d)})};
 /* ===== daily events (from day 4) + robbery (from day 5); picked once per day in showDayIntro ===== */
 const EVS={rain:['🌧','雨天','客人少三成，但耐心 +30%。'],fest:['🏮','附近有祭典','客人多六成，小費 +20%！'],group:['👥','團體客','營業中會有一群客人一次坐滿。'],
   sale:['🏷','食材特價','{0}的食材今天半價，點的人也變多。'],critic:['📝','美食評論家來訪','黑田今天一定會來。他坐下後 10 秒內送齊整張單，有獎金！']};
@@ -2723,7 +2723,7 @@ function tpFlameG(a){const k=1+a*.7,op=Math.max(0,1-a/.9);return `<g opacity="${
 function tpPlate(){return `<ellipse cx="50" cy="70" rx="46" ry="20" fill="#7a4a2a" stroke="${O}" stroke-width="3"/><ellipse cx="50" cy="66" rx="40" ry="16" fill="#3a3d42" stroke="${O}" stroke-width="2.5"/>`}
 function tpIcon(k){return tpPlate()+`<g transform="translate(5 -2) scale(.9)">${tpArt(k,'done',9)}</g>`}
 /* ---- 大鐵板 ---- */
-function tpnHTML(){const n=tpnN(),bw=L.tpn?L.tpn.w:430,SW=(bw-20)/n;
+function tpnHTML(){if(CUR==='bar')return barHTML();const n=tpnN(),bw=L.tpn?L.tpn.w:430,SW=(bw-20)/n;
   let s=CUR==='bar'?`<svg viewBox="0 0 ${bw} 182" style="position:absolute;inset:0"><rect x="2" y="8" width="${bw-4}" height="166" rx="12" fill="#3a2014" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="${bw-20}" height="150" rx="6" fill="#1d2622"/>${Array.from({length:Math.floor((bw-30)/12)},(_,i)=>`<path d="M${18+i*12} 22v138" stroke="#2c3a33" stroke-width="5" stroke-linecap="round"/>`).join('')}<rect x="10" y="16" width="${bw-20}" height="150" rx="6" fill="none" stroke="#c9a24a" stroke-width="2" opacity=".6"/>${Array.from({length:n-1},(_,i)=>`<path d="M${10+(i+1)*SW} 24v134" stroke="#0e1411" stroke-width="3" opacity=".8"/>`).join('')}</svg>`:`<svg viewBox="0 0 ${bw} 182" style="position:absolute;inset:0"><defs><linearGradient id="tpsteel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#666a72"/><stop offset="1" stop-color="#34373c"/></linearGradient></defs><rect x="2" y="8" width="${bw-4}" height="166" rx="12" fill="#1e1f22" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="${bw-20}" height="150" rx="6" fill="url(#tpsteel)"/><rect x="10" y="136" width="${bw-20}" height="30" rx="6" fill="#ff6a1a" opacity=".2"/><path d="M40 26l40 126M${bw*.55} 22l40 132" stroke="#fff" stroke-width="8" opacity=".06"/>${Array.from({length:n-1},(_,i)=>`<path d="M${10+(i+1)*SW} 24v134" stroke="#24262a" stroke-width="2" opacity=".5"/>`).join('')}</svg>`;
   for(let i=0;i<n;i++){const x=10+i*SW,g=R.tpn[i];let inner='',bar='',st='',need=false,perf=false;
     if(g){st=cookState(g.t,g.kind);need=needTp(g);perf=need&&(g.w||0)<=TPPERF;
@@ -2734,10 +2734,10 @@ function tpnHTML(){const n=tpnN(),bw=L.tpn?L.tpn.w:430,SW=(bw-20)/n;
     else inner=`<div style="opacity:.22;width:100%;height:100%">${sv(`<ellipse cx="50" cy="62" rx="34" ry="18" fill="none" stroke="#14151a" stroke-width="5" stroke-dasharray="7 6"/>`)}</div>`;
     s+=`<div class="st slot" data-tpn="${i}" style="left:${x}px;top:18px;width:${SW-4}px;height:146px;${st==='done'?'box-shadow:0 0 0 3px #ffc65a inset;background:#ffc65a22':need?`box-shadow:0 0 0 3px ${perf?'#ffd23a':'#ff5a3c'} inset;background:${perf?'#ffd23a33':'#ff5a3c22'}`:''}"><div style="position:absolute;left:-4px;right:-4px;top:${CUR==='oko'||CUR==='bar'?26:34}px;height:${CUR==='oko'||CUR==='bar'?Math.min(Math.round(SW+8),124):Math.round(SW+8)}px">${inner}</div>${need?`<span class="tkflip" style="${perf?'background:#f0a818;color:#2a1608':''}">${T(TPLBL[TPS[g.kind][g.s||0]])}${TPS[g.kind][g.s||0]==='bshake'&&g.sk?` ${g.sk}/${BSHAKE}`:''}</span>`:''}${bar}</div>`}
   if(CUR==='oko')return s+`<span class="lbl" style="white-space:nowrap">${T('御好燒鐵板')}</span>`;const cn=(R.tpc||0)%TPSHOW;return s+`<span class="lbl" style="white-space:nowrap">${CUR==='bar'?T('吧台')+'　🍸 '+T('調酒秀'):T('大鐵板')+'　🔥 '+T('火焰秀')} <span style="color:#ffb02e;letter-spacing:1px">${'●'.repeat(cn)}</span><span style="opacity:.45;letter-spacing:1px">${'○'.repeat(TPSHOW-cn)}</span>${(R.tpc||0)>1?` ${T('連擊 ×{0}',R.tpc)}`:''}</span>`}
-function tpStHTML(name){if(CUR!=='tep'&&CUR!=='oko'&&CUR!=='bar')return null;const k=TP_TRAY[name];if(!k)return null;
+function tpStHTML(name){if(CUR==='bar')return barStHTML(name);if(CUR!=='tep'&&CUR!=='oko')return null;const k=TP_TRAY[name];if(!k)return null;
   return sv(`<rect x="4" y="10" width="64" height="72" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/><rect x="8" y="14" width="56" height="8" rx="4" fill="#fff" opacity=".35"/><g transform="${k==='okosaka'?'translate(4 14) scale(.64)':BRDEF[k]?'translate(4 12) scale(.64)':'translate(2 9) scale(.7)'}">${tpArt(k,'raw',0,false,'tray')}</g>`,'0 0 72 90')+`<span class="lbl" style="white-space:nowrap;font-size:11px">${T(TP_RAWN[k])}</span>`+(has(k)?'':`<div class="locked">${T('商店<br>購買')}</div>`)}
 /* ---- 點鐵板上的格子 ---- */
-function clickTpn(i,el){const g=R.tpn[i];if(!g)return;const s=cookState(g.t,g.kind),c=srcCenter({src:'tpn',i});
+function clickTpn(i,el){if(CUR==='bar')return barSlot(i,el);const g=R.tpn[i];if(!g)return;const s=cookState(g.t,g.kind),c=srcCenter({src:'tpn',i});
   if(s==='raw'){
     if(needTp(g)){const n=g.s||0,step=TPS[g.kind][n];if(step==='bshake'&&(g.sk||0)<BSHAKE-1){g.sk=(g.sk||0)+1;sfx('pick');popup(c.x,c.y-80,T('搖！{0}/{1}',g.sk,BSHAKE));renderStations();return}
       const perf=(g.w||0)<=(step==='bshake'?TPPERF+1.6:TPPERF);g.s=n+1;g.w=0;g.sk=0;sfx('pick');
@@ -2763,7 +2763,7 @@ function tpShow(){R.tpShows=(R.tpShows||0)+1;sfx('star');const ws=waiting(),add=
   renderCust()}
 function tpHudPills(){const l=tpStaffLv();return (l?`<div class="pill staff">${T('店員')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${T('阿炎')}${'★'.repeat(l-1)}</b></div>`:'')+(R&&!R.over?`<div class="pill staff">🔥 ${T('火焰秀')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${(R.tpc||0)%TPSHOW}/${TPSHOW}</b>${(R.tpc||0)>1?` <small>${T('連擊 ×{0}',R.tpc)}</small>`:''}</div>`:'')}
 /* ---- 每格的時間：到提示點就停下等你點，等太久就失敗；放著不拿會焦 ---- */
-function tpTick(cdt){if(!R.tpn)return;R.tpn.forEach((g,i)=>{if(!g)return;const d=TPS[g.kind],s=g.s||0;
+function tpTick(cdt){if(!R.tpn||CUR==='bar')return;R.tpn.forEach((g,i)=>{if(!g)return;const d=TPS[g.kind],s=g.s||0;
   if(d&&s<d.length&&!g.bad&&g.t>=tpAt(g.kind,s)){g.t=tpAt(g.kind,s);g.w=(g.w||0)+cdt;
     if(g.w>TPGRACE){if(R.fxNb){g.s=s+1;g.w=0}else{g.t=burnAt(g.kind)+.1;g.bad=1;g.cb=1;const c=srcCenter({src:'tpn',i});popup(c.x,c.y-90,T('沒{0}，失敗了',T(TPLBL[d[s]]).replace('！','')),true);tpCombo(false,c.x,c.y)}}}
   else{g.t+=cdt;if(!g.cb&&cookState(g.t,g.kind)==='burnt'){g.cb=1;if(!g.staff&&!g.sa){const c=srcCenter({src:'tpn',i});tpCombo(false,c.x,c.y)}}}})}
@@ -3018,111 +3018,152 @@ function okoActs(act,a){
   return false}
 
 /* ===== 月影酒吧（2026-11-12）：日式調酒吧，只有作者和管理員（admins/）看得到（測試中） =====
-   沿用鐵板燒的「格子＋提示」引擎（R.tpn），做的是調酒：吧台上一格一個杯子，依序跳出 加冰／倒酒／加蘇打／攪拌／搖盪／濾進杯／裝飾。
-   搖盪要連點 5 下才算搖好；調好的酒放太久冰塊會化掉（＝鐵板的「焦」），只能倒掉。連續完美 6 次＝🍸 花式調酒秀（跟炎舞的火焰秀一樣）。 */
-const BAR_PRICE=3000000,BSHAKE=5,BARSEATS=4,BARN=4;
+   2026-11-12 改版（照使用者要求）：全手動調酒，沒有時間提示、不會融化、沒有啤酒機。
+   流程：點杯子（放上吧台）→ 點酒瓶再點杯子（倒酒）→ 點材料再點杯子（加料，要自己加）→ 點搖酒器／攪拌匙再點杯子。
+   杯子＋酒＋材料＋手法跟酒譜（BRREC）完全一樣就算調好，可以一直放著。配錯了：點垃圾桶再點那杯倒掉。
+   調酒秀：送酒會累積「氣氛」（送得越快漲越多），滿了以後玩家自己按「開秀」決定什麼時候放（不是連續完美）。
+   吧台格子沿用 R.tpn（送餐、保溫台、垃圾桶都走原本 src:'tpn' 的流程）；調到一半的杯子 kind='brwip'。 */
+const BAR_PRICE=3000000,BSHAKE=3,BARSEATS=4,BARN=4;
 function barDev(){try{return !pview()&&canView()}catch(e){return false}}
 const BRKEYS=['brhigh','brume','bryuzu','brmojito','brgimlet','brmarg','brmanh','bryuki'];
-Object.assign(TPS,{brhigh:['bice','bpour','bsoda','bstir'],brume:['bice','bpour','bsoda','bgarn'],bryuzu:['bice','bpour','bsqz','bsoda'],brmojito:['bmud','bice','bpour','bsoda','bgarn'],
-  brgimlet:['bice','bpour','bshake','bstrain'],brmarg:['brim','bice','bpour','bshake','bstrain'],brmanh:['bice','bpour','bstir','bstrain','bgarn'],bryuki:['brim','bice','bpour','bshake','bstrain','bgarn']});
-Object.assign(TPLBL,{bice:'加冰！',bpour:'倒酒！',bsoda:'加蘇打！',bstir:'攪拌！',bshake:'搖盪！',bstrain:'濾進杯！',bsqz:'擠柚子！',bmud:'搗薄荷！',brim:'沾杯緣！',bgarn:'放裝飾！'});
-Object.assign(TPOK,{bice:'冰塊加好了！',bpour:'酒倒好了！',bsoda:'蘇打加好了！',bstir:'攪拌均勻了！',bshake:'搖好了！',bstrain:'濾進杯子了！',bsqz:'柚子汁擠好了！',bmud:'薄荷搗出香味了！',brim:'杯緣沾好了！',bgarn:'裝飾放好了！'});
-Object.assign(COOK,{brhigh:9,brume:9,bryuzu:11,brmojito:14,brgimlet:12,brmarg:14,brmanh:14,bryuki:17});
-const BR_TRAY={rawBrHigh:'brhigh',rawBrUme:'brume',rawBrYuzu:'bryuzu',rawBrMojito:'brmojito',rawBrGimlet:'brgimlet',rawBrMarg:'brmarg',rawBrManh:'brmanh',rawBrYuki:'bryuki'};
-Object.assign(TP_TRAY,BR_TRAY);Object.assign(RAWMAP,BR_TRAY);
-Object.assign(TP_RAWN,{brhigh:'威士忌',brume:'梅酒',bryuzu:'柚子燒酎',brmojito:'白蘭姆酒',brgimlet:'琴酒',brmarg:'龍舌蘭',brmanh:'裸麥威士忌',bryuki:'伏特加'});
-BRKEYS.forEach(k=>{STN[k]='tpn'});
-Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,`點<b>${TP_RAWN[k]}</b>放上<b>吧台</b>，依序會跳出 ${TPS[k].map(s=>`<b>${TPLBL[s]}</b>`).join(' → ')}，跳出來就點一下（金色時點是完美；<b>搖盪</b>要連點 ${BSHAKE} 下）。調好再點起來送，放太久冰會化掉。`])));
-/* ---- 調酒的圖：一律正面平視，深棕描邊、平塗＋高光；三種杯：高球杯／淺碟杯／V 型雞尾酒杯 ---- */
+const BRG={high:'高球杯',coupe:'淺碟杯',vee:'馬丁尼杯'};
+const BRL={whisky:{n:'威士忌',c:'#c8781e',ch:'威',cost:100,sq:1},ume:{n:'梅酒',c:'#d08a2a',ch:'梅',cost:100,jar:1},shochu:{n:'燒酎',c:'#eeeadc',ch:'酎',cost:80},rum:{n:'蘭姆酒',c:'#eef2e4',ch:'蘭',cost:120},gin:{n:'琴酒',c:'#dcefc0',ch:'琴',cost:170},tequila:{n:'龍舌蘭',c:'#f2eeb0',ch:'龍',cost:170},vodka:{n:'伏特加',c:'#f4f0c0',ch:'伏',cost:200}};
+const BRA={ice:{n:'冰塊',cost:0},soda:{n:'蘇打水',cost:20},lime:{n:'萊姆',cost:20},mint:{n:'薄荷',cost:20},yuzu:{n:'柚子',cost:30},rim:{n:'沾杯緣',cost:10},cherry:{n:'櫻桃',cost:30}};
+const BRM={shake:{n:'搖酒器',v:'搖盪'},stir:{n:'攪拌匙',v:'攪拌'}};
+const BRREC={brhigh:{g:'high',l:'whisky',a:['ice','soda'],m:'stir'},brume:{g:'high',l:'ume',a:['ice','soda'],m:null},bryuzu:{g:'high',l:'shochu',a:['ice','soda','yuzu'],m:null},brmojito:{g:'high',l:'rum',a:['mint','lime','ice','soda'],m:'stir'},
+  brgimlet:{g:'coupe',l:'gin',a:['lime','ice'],m:'shake'},brmarg:{g:'coupe',l:'tequila',a:['rim','lime','ice'],m:'shake'},brmanh:{g:'vee',l:'whisky',a:['ice','cherry'],m:'stir'},bryuki:{g:'vee',l:'vodka',a:['rim','lime','cherry'],m:'shake'}};
+const BRDEF=BRREC;
+COOK.brwip=1e9;BRKEYS.forEach(k=>{COOK[k]=1;STN[k]='tpn'});
+/* 吧台上的站：杯子 3、酒 7＋搖酒器、材料 7＋攪拌匙 */
+const BAR_ST={};Object.keys(BRG).forEach(id=>{BAR_ST['brG'+id]={t:'g',id}});Object.keys(BRL).forEach(id=>{BAR_ST['brL'+id]={t:'l',id}});Object.keys(BRA).forEach(id=>{BAR_ST['brA'+id]={t:'a',id}});Object.keys(BRM).forEach(id=>{BAR_ST['brM'+id]={t:'m',id}});
+function barUses(d){return BRKEYS.some(k=>{if(!has(k))return false;const r=BRREC[k];return d.t==='g'?r.g===d.id:d.t==='l'?r.l===d.id:d.t==='a'?r.a.includes(d.id):r.m===d.id})}
+function barStName(d){return d.t==='g'?BRG[d.id]:d.t==='l'?BRL[d.id].n:d.t==='a'?BRA[d.id].n:BRM[d.id].n}
+function barRecParts(k){const r=BRREC[k];return [BRG[r.g],BRL[r.l].n].concat(r.a.map(x=>BRA[x].n),r.m?[BRM[r.m].v]:[])}
+function barRecText(k){return barRecParts(k).map(x=>T(x)).join(' → ')}
+Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,`<b>${barRecParts(k).join('</b> → <b>')}</b>。先點杯子放上吧台，再點酒瓶或材料、然後點那個杯子加進去；搖盪要拿搖酒器連點杯子 ${BSHAKE} 下。忘了做法可以點吧台上的「📖 酒譜」。`])));
+/* ---- 圖：一律正面平視，深棕描邊、平塗＋高光。杯子裡畫的就是玩家實際加進去的東西 ---- */
 const BRC={};
-const BRDEF={
-  brhigh:{g:'high',pour:'#c8781e',mix:'#eab25a',lv:26,ch:'威',bot:'#b8661a'},
-  brume:{g:'high',pour:'#d08a2a',mix:'#f0c46a',lv:26,ch:'梅',bot:'#e0a43a'},
-  bryuzu:{g:'high',pour:'#eeeadc',mix:'#f7e690',lv:26,ch:'柚',bot:'#dfe9e6'},
-  brmojito:{g:'high',pour:'#eef2e4',mix:'#dcefcc',lv:26,ch:'蘭',bot:'#e8efe6'},
-  brgimlet:{g:'coupe',pour:'#e6f2cc',mix:'#d6eca8',ch:'琴',bot:'#cfe6f0',v:'shaker'},
-  brmarg:{g:'coupe',pour:'#f2eec0',mix:'#eef2b0',ch:'龍',bot:'#f0e2a0',v:'shaker',rim:'#ffffff'},
-  brmanh:{g:'vee',pour:'#a8401e',mix:'#b4461f',ch:'裸',bot:'#9c3e1a',v:'mix'},
-  bryuki:{g:'vee',pour:'#f4f0c8',mix:'#f2e79a',ch:'伏',bot:'#e9f1f6',v:'shaker',rim:'#fffdf2'}};
-function brMixC(h,f){return tpShade(h,f)}
-function brWash(h){const n=parseInt(h.slice(1),16),m=(v,w)=>Math.round(v+(w-v)*.65).toString(16).padStart(2,'0');return '#'+m(n>>16&255,226)+m(n>>8&255,238)+m(n&255,242)}
 function brIce(x,y,z,rot,op){z=z||12;return `<g transform="translate(${x} ${y}) rotate(${rot||0})"><rect x="${-z/2}" y="${-z/2}" width="${z}" height="${z}" rx="${z*.22}" fill="#eef9ff" fill-opacity="${op||.82}" stroke="${O}" stroke-width="1.8"/><path d="M${-z*.3} ${-z*.18}h${z*.34}" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>`}
 function brBubbles(x0,x1,y0,y1,n,seed){const r=okRng(seed);let o='';for(let i=0;i<n;i++){const x=x0+r()*(x1-x0),y=y0+r()*(y1-y0),rr=1+r()*1.6;o+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rr.toFixed(1)}" fill="none" stroke="#fff" stroke-width="1.1" opacity=".85"/>`}return o}
 function brLime(x,y,r,c){c=c||'#8cc43c';const i=c==='#f5c518'?'#fff0a0':'#d9f08e';return `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="${O}" stroke-width="2"/><circle cx="${x}" cy="${y}" r="${r*.72}" fill="${i}"/>${[0,60,120].map(a=>`<path d="M${x} ${y}l${(Math.cos(a*Math.PI/180)*r*.72).toFixed(1)} ${(Math.sin(a*Math.PI/180)*r*.72).toFixed(1)}M${x} ${y}l${(-Math.cos(a*Math.PI/180)*r*.72).toFixed(1)} ${(-Math.sin(a*Math.PI/180)*r*.72).toFixed(1)}" stroke="${c}" stroke-width="1.2"/>`).join('')}`}
-function brLeaf(x,y,rot,s){s=s||1;return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})"><path d="M0 0Q6 -9 0 -18Q-6 -9 0 0Z" fill="#3fae4a" stroke="${O}" stroke-width="1.6"/><path d="M0 -2V-15" stroke="#2a7a32" stroke-width="1"/></g>`}
-function brCherry(x,y,c){return `<path d="M${x} ${y-4}q2 -9 8 -12" stroke="#5a3a1a" stroke-width="1.8" fill="none"/><circle cx="${x}" cy="${y}" r="5" fill="${c}" stroke="${O}" stroke-width="2"/><circle cx="${x-1.6}" cy="${y-1.8}" r="1.4" fill="#fff" opacity=".7"/>`}
-/* 高球杯 */
+function brWedge(x,y,rot,c,i){return `<g transform="rotate(${rot} ${x} ${y})"><path d="M${x-10} ${y}a10 10 0 0 0 20 0z" fill="${c}" stroke="${O}" stroke-width="2"/><path d="M${x-8} ${y}a8 7 0 0 0 16 0" fill="${i}"/></g>`}
+function brLeaf(x,y,rot,s){s=s||1;return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})"><path d="M0 0Q6 -9 0 -18Q-6 -9 0 0Z" fill="#3fae4a" stroke="${O}" stroke-width="${(1.6/s).toFixed(2)}"/><path d="M0 -2V-15" stroke="#2a7a32" stroke-width="${(1/s).toFixed(2)}"/></g>`}
+function brCherry(x,y,c,r){r=r||5;return `<path d="M${x} ${y-r*.8}q${r*.4} ${-r*1.8} ${r*1.6} ${-r*2.4}" stroke="#5a3a1a" stroke-width="1.8" fill="none"/><circle cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="${O}" stroke-width="2"/><circle cx="${x-r*.32}" cy="${y-r*.36}" r="${r*.28}" fill="#fff" opacity=".7"/>`}
+function brShakerG(x,y,rot,k){return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${k})"><path d="M-13 -6L-10 30H10L13 -6Z" fill="#c9ced6" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M-11 -6L-9 -26H9L11 -6Z" fill="#b8bec8" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><rect x="-5" y="-35" width="10" height="9" rx="3" fill="#b8bec8" stroke="${O}" stroke-width="2.4"/><path d="M-8 0L-6.5 24" stroke="#fff" stroke-width="3" opacity=".6" stroke-linecap="round"/><path d="M-12.5 2H12.5" stroke="#8e959e" stroke-width="2"/></g>`}
 const brHx=y=>33+2*(y-16)/72;
-function brHigh(k,done,B,bad,F){const d=BRDEF[k],has=s=>done.includes(s);let o='';
-  const lv=has('bsoda')?d.lv:has('bpour')?(k==='brhigh'?70:k==='brume'?66:68):null;
-  let col=has('bsoda')?d.mix:has('bsqz')?brMixC(d.pour,-.06):d.pour;if(k==='bryuzu'&&has('bsqz')&&!has('bsoda'))col='#f4e7a6';if(B||bad)col=brWash(col);
+function brArtHigh(s){const has=x=>s.a.includes(x),Lq=s.l&&BRL[s.l],soda=has('soda');let o='';
+  const lv=Lq?(soda?26:64):soda?48:null,col=Lq?(soda?tpShade(Lq.c,.28):Lq.c):'#e4f4f8';
   o+=`<path d="M33 16L35 88Q35.5 92 39 92H61Q64.5 92 65 88L67 16Z" fill="#dff1f5" fill-opacity=".5"/>`;
-  if(has('bmud')){o+=brLeaf(42,88,-40,.7)+brLeaf(56,88,40,.7)+brLeaf(49,86,5,.6)+`<path d="M38 90q6-8 12 0z" fill="#8cc43c" stroke="${O}" stroke-width="1.5"/><path d="M50 90q6-8 12 0z" fill="#8cc43c" stroke="${O}" stroke-width="1.5"/>`}
-  if(lv!=null){const L=bad?Math.max(lv,62):lv;o+=`<path d="M${brHx(L).toFixed(1)} ${L}L35.3 88Q35.7 91 39 91H61Q64.3 91 64.7 88L${(100-brHx(L)).toFixed(1)} ${L}Z" fill="${col}" fill-opacity="${B||bad?.55:.9}"/><path d="M${brHx(L).toFixed(1)} ${L}H${(100-brHx(L)).toFixed(1)}" stroke="${tpShade(col,.35)}" stroke-width="2"/>`}
-  if(has('bice')&&!B&&!bad)[[44,82,8],[56,74,-10],[45,63,14],[56,52,-6],[45,41,10],[55,30,-12]].forEach(([x,y,r])=>o+=brIce(x,y,12,r,lv!=null&&y>lv?.55:.85));
-  if(has('bice')&&(B||bad))o+=brIce(50,(lv||60)+4,6,20,.5);
-  if(has('bsoda')&&!B&&!bad)o+=brBubbles(37,63,d.lv+4,88,has('bstir')?16:9,k.length*31);
-  if(has('bstir'))o+=`<path d="M58 6L52 82" stroke="#2a1b14" stroke-width="3.2" stroke-linecap="round"/><circle cx="58" cy="6" r="3" fill="#2a1b14"/>`;
-  if(k==='bryuzu'&&has('bsqz'))o+=`<g transform="rotate(18 66 18)"><path d="M56 18a10 10 0 0 0 20 0z" fill="#f5c518" stroke="${O}" stroke-width="2"/><path d="M58 18a8 7 0 0 0 16 0" fill="#fff0a0"/></g>`;
-  if(k==='brume'&&has('bgarn'))o+=`<circle cx="49" cy="83" r="7" fill="#c4a536" stroke="${O}" stroke-width="2"/><circle cx="46.5" cy="80.5" r="2" fill="#fff" opacity=".6"/>`;
-  if(k==='brmojito'&&has('bgarn'))o+=`<path d="M60 4L54 70" stroke="#e8423a" stroke-width="4" stroke-linecap="round"/>`+brLeaf(44,20,-30,1)+brLeaf(50,18,10,1.1)+brLeaf(56,21,40,.9);
+  if(lv!=null)o+=`<path d="M${brHx(lv).toFixed(1)} ${lv}L35.3 88Q35.7 91 39 91H61Q64.3 91 64.7 88L${(100-brHx(lv)).toFixed(1)} ${lv}Z" fill="${col}" fill-opacity=".9"/><path d="M${brHx(lv).toFixed(1)} ${lv}H${(100-brHx(lv)).toFixed(1)}" stroke="${s.m==='shake'?'#fff':tpShade(col,.35)}" stroke-width="${s.m==='shake'?5:2}"/>`;
+  if(has('mint'))o+=brLeaf(42,89,-40,.7)+brLeaf(57,89,40,.7)+brLeaf(49,88,5,.65);
+  if(has('ice'))[[44,82,8],[56,74,-10],[45,63,14],[56,52,-6],[45,41,10],[55,30,-12]].forEach(([x,y,r])=>o+=brIce(x,y,12,r,lv!=null&&y>lv?.55:.85));
+  if(soda)o+=brBubbles(37,63,(lv||30)+4,88,s.m?16:10,97);
+  if(has('cherry'))o+=brCherry(50,84,'#c8102e');
+  if(s.m==='stir')o+=`<path d="M58 6L52 82" stroke="#2a1b14" stroke-width="3.2" stroke-linecap="round"/><circle cx="58" cy="6" r="3" fill="#2a1b14"/>`;
   o+=`<path d="M33 16L35 88Q35.5 92 39 92H61Q64.5 92 65 88L67 16" fill="none" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><ellipse cx="50" cy="16" rx="17" ry="2.6" fill="none" stroke="${O}" stroke-width="2.4"/><path d="M38 24L39.5 84" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".55"/>`;
+  if(has('rim'))o+=`<ellipse cx="50" cy="16" rx="17" ry="2.6" fill="none" stroke="#fff" stroke-width="4.5" stroke-dasharray="2 2"/>`;
+  if(has('mint'))o+=brLeaf(45,19,-28,1)+brLeaf(51,18,12,1.05);
+  if(has('lime'))o+=brLime(34,17,8);
+  if(has('yuzu'))o+=brWedge(66,18,18,'#f5c518','#fff0a0');
   return o}
-/* 淺碟杯／V 型杯（x0,y0 平移、s 縮放：還在搖酒時杯子先縮在左邊） */
-function brCup(k,done,B,bad,filled){const d=BRDEF[k],has=s=>done.includes(s),V=d.g==='vee';let o='';
-  let col=d.mix;if(B||bad)col=brWash(col);
-  if(V){o+=`<path d="M16 30L50 64L84 30Z" fill="#dff1f5" fill-opacity=".5"/>`;if(filled)o+=`<path d="M${bad?32:22} ${bad?48:36}L50 62L${bad?68:78} ${bad?48:36}Z" fill="${col}" fill-opacity="${B||bad?.6:.92}"/><path d="M${bad?32:22} ${bad?48:36}H${bad?68:78}" stroke="${tpShade(col,.35)}" stroke-width="2"/>`;
-    if(k==='bryuki'&&has('bgarn'))o+=`<circle cx="50" cy="55" r="4.5" fill="#5fbf3a" stroke="${O}" stroke-width="2"/><circle cx="48.6" cy="53.6" r="1.3" fill="#fff" opacity=".7"/>`;
-    o+=`<rect x="48" y="63" width="4" height="25" fill="#e8f4f8" stroke="${O}" stroke-width="2"/><ellipse cx="50" cy="89" rx="16" ry="4" fill="#e8f4f8" stroke="${O}" stroke-width="2.4"/><path d="M16 30L50 64L84 30" fill="none" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><ellipse cx="50" cy="30" rx="34" ry="4" fill="none" stroke="${O}" stroke-width="2.4"/><path d="M26 36L44 54" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".55"/>`;
-    if(has('brim'))o+=`<ellipse cx="50" cy="30" rx="34" ry="4" fill="none" stroke="${d.rim}" stroke-width="4.5" stroke-dasharray="2 2"/>`;
-    if(k==='brmanh'&&has('bgarn'))o+=`<path d="M64 20L50 50" stroke="#5a3a1a" stroke-width="1.8"/>`+brCherry(53,45,'#c8102e');}
-  else{o+=`<path d="M18 40Q20 64 50 66Q80 64 82 40Z" fill="#dff1f5" fill-opacity=".5"/>`;if(filled)o+=`<path d="M${bad?28:21} ${bad?52:45}Q24 62 50 63Q76 62 ${bad?72:79} ${bad?52:45}Z" fill="${col}" fill-opacity="${B||bad?.6:.92}"/><path d="M${bad?28:21} ${bad?52:45}H${bad?72:79}" stroke="${tpShade(col,.35)}" stroke-width="2"/>`;
-    if(filled&&!B&&!bad&&k==='brgimlet')o+=`<g transform="translate(0 -1)"><ellipse cx="60" cy="46" rx="7" ry="2.6" fill="#8cc43c" stroke="${O}" stroke-width="1.6"/><ellipse cx="60" cy="45.6" rx="5" ry="1.6" fill="#d9f08e"/></g>`;
-    o+=`<rect x="48" y="65" width="4" height="23" fill="#e8f4f8" stroke="${O}" stroke-width="2"/><ellipse cx="50" cy="89" rx="16" ry="4" fill="#e8f4f8" stroke="${O}" stroke-width="2.4"/><path d="M18 40Q20 64 50 66Q80 64 82 40" fill="none" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><ellipse cx="50" cy="40" rx="32" ry="4" fill="none" stroke="${O}" stroke-width="2.4"/><path d="M26 47Q30 58 40 61" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none" opacity=".55"/>`;
-    if(has('brim'))o+=`<ellipse cx="50" cy="40" rx="32" ry="4" fill="none" stroke="${d.rim}" stroke-width="4.5" stroke-dasharray="2 2"/>`;
-    if(filled&&!B&&!bad&&k==='brmarg')o+=`<g transform="rotate(-25 80 38)"><path d="M70 38a10 10 0 0 0 20 0z" fill="#8cc43c" stroke="${O}" stroke-width="2"/><path d="M72 38a8 7 0 0 0 16 0" fill="#d9f08e"/></g>`}
+function brArtCup(s,V){const has=x=>s.a.includes(x),Lq=s.l&&BRL[s.l],soda=has('soda'),fill=Lq||soda;let o='';
+  const col=Lq?(soda?tpShade(Lq.c,.28):Lq.c):'#e4f4f8',ty=V?36:45,foam=s.m==='shake';
+  if(V){o+=`<path d="M16 30L50 64L84 30Z" fill="#dff1f5" fill-opacity=".5"/>`;if(fill)o+=`<path d="M22 36L50 62L78 36Z" fill="${col}" fill-opacity=".92"/>`}
+  else{o+=`<path d="M18 40Q20 64 50 66Q80 64 82 40Z" fill="#dff1f5" fill-opacity=".5"/>`;if(fill)o+=`<path d="M21 45Q24 62 50 63Q76 62 79 45Z" fill="${col}" fill-opacity=".92"/>`}
+  if(fill)o+=`<path d="M${V?22:21} ${ty}H${V?78:79}" stroke="${foam?'#fff':tpShade(col,.35)}" stroke-width="${foam?4.5:2}"/>`;
+  if(has('ice'))o+=brIce(41,ty+7,9,12,.85)+brIce(57,ty+6,9,-10,.85);
+  if(soda)o+=brBubbles(36,64,ty+2,ty+14,6,53);
+  if(has('cherry'))o+=brCherry(50,V?53:56,s.l==='vodka'?'#5fbf3a':'#c8102e',4.5);
+  if(s.m==='stir')o+=`<path d="M72 8L53 ${V?54:58}" stroke="#c9a24a" stroke-width="2.8" stroke-linecap="round"/><circle cx="72" cy="8" r="2.6" fill="#c9a24a"/>`;
+  o+=`<rect x="48" y="${V?63:65}" width="4" height="${V?25:23}" fill="#e8f4f8" stroke="${O}" stroke-width="2"/><ellipse cx="50" cy="89" rx="16" ry="4" fill="#e8f4f8" stroke="${O}" stroke-width="2.4"/>`;
+  o+=V?`<path d="M16 30L50 64L84 30" fill="none" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><ellipse cx="50" cy="30" rx="34" ry="4" fill="none" stroke="${O}" stroke-width="2.4"/><path d="M26 36L44 54" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".55"/>`
+    :`<path d="M18 40Q20 64 50 66Q80 64 82 40" fill="none" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><ellipse cx="50" cy="40" rx="32" ry="4" fill="none" stroke="${O}" stroke-width="2.4"/><path d="M26 47Q30 58 40 61" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none" opacity=".55"/>`;
+  if(has('rim'))o+=`<ellipse cx="50" cy="${V?30:40}" rx="${V?34:32}" ry="4" fill="none" stroke="#fff" stroke-width="4.5" stroke-dasharray="2 2"/>`;
+  if(has('mint'))o+=brLeaf(38,V?33:43,-30,1)+brLeaf(44,V?32:42,8,1);
+  if(has('lime'))o+=brWedge(V?82:80,V?28:38,-25,'#8cc43c','#d9f08e');
+  if(has('yuzu'))o+=brWedge(V?18:20,V?28:38,25,'#f5c518','#fff0a0');
   return o}
-/* 搖酒器／攪拌杯（還沒濾進杯之前畫在右邊） */
-function brVessel(k,done,need,sk,B){const d=BRDEF[k],has=s=>done.includes(s);let o='';
-  if(d.v==='shaker'){const shook=has('bshake'),cap=shook||(need==='bshake'&&sk>0),rot=need==='bshake'&&sk>0?(sk%2?-16:16):0;
-    o+=`<g transform="rotate(${rot} 77 62)">`;
-    o+=`<path d="M64 44L67 90H87L90 44Z" fill="#c9ced6" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M68 50L70 86" stroke="#fff" stroke-width="3" opacity=".6" stroke-linecap="round"/><path d="M64.5 52H89.5" stroke="#8e959e" stroke-width="2"/>`;
-    if(!cap){o+=`<ellipse cx="77" cy="44" rx="13" ry="3.6" fill="${has('bpour')?d.pour:'#3a3f46'}" stroke="${O}" stroke-width="2.4"/>`;if(has('bice'))o+=brIce(72,42,8,15,.9)+brIce(81,41,8,-12,.9)}
-    else o+=`<path d="M66 44L68 24H86L88 44Z" fill="#b8bec8" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><rect x="72" y="16" width="10" height="9" rx="3" fill="#b8bec8" stroke="${O}" stroke-width="2.4"/><path d="M70 28L71 40" stroke="#fff" stroke-width="2.5" opacity=".6" stroke-linecap="round"/>`;
-    if(shook&&!B)o+=[[70,60],[80,70],[74,78],[84,56],[72,34],[82,30]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.4" fill="#fff" opacity=".9"/>`).join('');
-    o+=`</g>`;if(rot)o+=`<path d="M58 40q-6 10 0 20M96 40q6 10 0 20" stroke="#fff" stroke-width="2.5" fill="none" opacity=".7" stroke-linecap="round"/>`}
-  else{o+=`<path d="M63 40L65 90H89L91 40Z" fill="#dff1f5" fill-opacity=".4"/>`;
-    if(has('bpour'))o+=`<path d="M64.2 58L65.4 89H88.6L89.8 58Z" fill="${d.pour}" fill-opacity=".9"/>`;
-    if(has('bice'))[[71,80,8],[83,74,-12],[72,64,16],[83,54,-6]].forEach(([x,y,r])=>o+=brIce(x,y,10,r,.75));
-    if(has('bstir'))o+=`<path d="M94 22L72 84" stroke="#c9a24a" stroke-width="2.6" stroke-linecap="round"/><path d="M68 66q9 5 18 0M68 74q9 5 18 0" stroke="#fff" stroke-width="1.6" fill="none" opacity=".7"/>`;
-    o+=`<path d="M63 40L65 90H89L91 40" fill="none" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><ellipse cx="77" cy="40" rx="14" ry="2.6" fill="none" stroke="${O}" stroke-width="2.2"/><path d="M67 46L68 84" stroke="#fff" stroke-width="2.5" opacity=".55" stroke-linecap="round"/>`}
-  return o}
-/* 吧台食材盤：酒瓶（＋代表的配料） */
-function brBottle(k){const d=BRDEF[k];let o='';
-  if(k==='brume'){o+=`<path d="M28 34Q24 36 24 48V84Q24 92 32 92H68Q76 92 76 84V48Q76 36 72 34Z" fill="${d.bot}" fill-opacity=".85" stroke="${O}" stroke-width="3"/><rect x="30" y="22" width="40" height="13" rx="4" fill="#8a5a2a" stroke="${O}" stroke-width="2.5"/>`+[[38,74],[52,80],[62,70],[44,60],[58,56]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="7" fill="#c4a536" stroke="${O}" stroke-width="1.8"/>`).join('')}
-  else{const sq=k==='brhigh'||k==='brmanh';o+=sq?`<rect x="32" y="36" width="36" height="56" rx="5" fill="${d.bot}" stroke="${O}" stroke-width="3"/>`:`<path d="M34 40Q34 34 42 32H58Q66 34 66 40V88Q66 92 62 92H38Q34 92 34 88Z" fill="${d.bot}" stroke="${O}" stroke-width="3"/>`;
-    o+=`<rect x="44" y="12" width="12" height="24" rx="3" fill="${d.bot}" stroke="${O}" stroke-width="2.6"/><rect x="43" y="8" width="14" height="8" rx="2" fill="#2a1b14"/><path d="M38 44V84" stroke="#fff" stroke-width="3" opacity=".45" stroke-linecap="round"/>`}
-  o+=`<rect x="38" y="54" width="24" height="22" rx="3" fill="#fff6e0" stroke="${O}" stroke-width="2"/><text x="50" y="71" text-anchor="middle" font-family="Noto Sans TC,Zen Maru Gothic,sans-serif" font-weight="900" font-size="15" fill="#3a2318">${d.ch}</text>`;
-  if(k==='bryuzu')o+=brLime(74,82,11,'#f5c518');
-  if(k==='brmojito')o+=brLeaf(76,92,30,1.1)+brLeaf(68,92,-10,1)+brLime(26,84,9);
-  if(k==='brgimlet'||k==='brmarg')o+=brLime(76,84,10);
-  if(k==='bryuki')o+=brCherry(76,84,'#5fbf3a');
-  if(k==='brmanh')o+=brCherry(76,84,'#c8102e');
-  return o}
-function barArt(k,st,s,bad,mode,sk){
-  if(mode==='tray')return BRC['t'+k]||(BRC['t'+k]=brBottle(k));
-  const B=st==='burnt',D=st==='done',steps=TPS[k],n=D?steps.length:Math.max(0,Math.min(steps.length,s||0)),done=steps.slice(0,n),need=!D&&!B&&n<steps.length?steps[n]:null,d=BRDEF[k];
-  const key=k+'|'+st+'|'+n+'|'+(bad?1:0)+'|'+(need==='bshake'?(sk||0):0);if(BRC[key])return BRC[key];
-  let o='';
-  if(B||bad)o+=`<ellipse cx="50" cy="94" rx="${bad?34:26}" ry="3.6" fill="#9fd3e6" opacity=".6"/>`;
-  if(d.g==='high')o+=brHigh(k,done,B,bad);
-  else if(d.v&&!done.includes('bstrain')&&!D)o+=`<g transform="translate(-2 22) scale(.66)">${brCup(k,done,B,bad,false)}</g>`+brVessel(k,done,need,sk||0,B);
-  else o+=brCup(k,done,B,bad,true);
-  if(D&&!B&&!bad)o+=`<path d="M86 14l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#fff6c0" stroke="${O}" stroke-width="1.2"/>`;
+function brMixArt(s,sk){const key=s.g+'|'+(s.l||'')+'|'+s.a.join(',')+'|'+(s.m||'')+'|'+(sk||0);if(BRC[key])return BRC[key];
+  let o=s.g==='high'?brArtHigh(s):brArtCup(s,s.g==='vee');
+  if(sk)o+=brShakerG(78,34,sk%2?-22:22,.8)+`<path d="M60 22q-5 9 0 18M96 22q5 9 0 18" stroke="#fff" stroke-width="2.5" fill="none" opacity=".75" stroke-linecap="round"/>`;
   return BRC[key]=o}
-function brIcon(k){return `<ellipse cx="50" cy="90" rx="40" ry="8" fill="#5a3418" stroke="${O}" stroke-width="3"/><ellipse cx="50" cy="88" rx="32" ry="5.5" fill="#7a4a24"/><g transform="translate(5 -3) scale(.9)">${barArt(k,'done',9,false)}</g>`}
-/* ---- 調酒秀 HUD ---- */
-function barHudPills(){return R&&!R.over?`<div class="pill staff">🍸 ${T('調酒秀')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${(R.tpc||0)%TPSHOW}/${TPSHOW}</b>${(R.tpc||0)>1?` <small>${T('連擊 ×{0}',R.tpc)}</small>`:''}</div>`:''}
+function barArt(k,st,s,bad,mode,sk){const r=BRREC[k];return brMixArt({g:r.g,l:r.l,a:r.a,m:r.m},0)+`<path d="M88 12l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#fff6c0" stroke="${O}" stroke-width="1.2"/>`}
+function brIcon(k){return `<ellipse cx="50" cy="90" rx="40" ry="8" fill="#5a3418" stroke="${O}" stroke-width="3"/><ellipse cx="50" cy="88" rx="32" ry="5.5" fill="#7a4a24"/><g transform="translate(5 -3) scale(.9)">${barArt(k,'done')}</g>`}
+/* 食材盤上的圖 */
+function brBottle(id){const d=BRL[id];let o='';
+  if(d.jar)o+=`<path d="M28 34Q24 36 24 48V84Q24 92 32 92H68Q76 92 76 84V48Q76 36 72 34Z" fill="#e0a43a" fill-opacity=".85" stroke="${O}" stroke-width="3"/><rect x="30" y="22" width="40" height="13" rx="4" fill="#8a5a2a" stroke="${O}" stroke-width="2.5"/>`+[[38,82],[62,82],[50,44]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="7" fill="#c4a536" stroke="${O}" stroke-width="1.8"/>`).join('');
+  else{const c=d.sq?'#b8661a':tpShade(d.c,.25);o+=d.sq?`<rect x="30" y="36" width="40" height="56" rx="5" fill="${c}" stroke="${O}" stroke-width="3"/>`:`<path d="M32 40Q32 34 40 32H60Q68 34 68 40V88Q68 92 64 92H36Q32 92 32 88Z" fill="${c}" stroke="${O}" stroke-width="3"/>`;
+    o+=`<rect x="44" y="12" width="12" height="24" rx="3" fill="${c}" stroke="${O}" stroke-width="2.6"/><rect x="43" y="8" width="14" height="8" rx="2" fill="#2a1b14"/><path d="M37 44V84" stroke="#fff" stroke-width="3" opacity=".45" stroke-linecap="round"/>`}
+  return o+`<rect x="36" y="52" width="28" height="26" rx="3" fill="#fff6e0" stroke="${O}" stroke-width="2"/><text x="50" y="72" text-anchor="middle" font-family="Noto Sans TC,Zen Maru Gothic,sans-serif" font-weight="900" font-size="19" fill="#3a2318">${d.ch}</text>`}
+function brTrayArt(d){const k=d.t+d.id;if(BRC['t'+k])return BRC['t'+k];let o='';
+  if(d.t==='g')o=brMixArt({g:d.id,l:null,a:[],m:null},0);
+  else if(d.t==='l')o=brBottle(d.id);
+  else if(d.t==='m')o=d.id==='shake'?brShakerG(50,58,0,1.25):`<path d="M74 10L34 78" stroke="#c9a24a" stroke-width="5" stroke-linecap="round"/><circle cx="74" cy="10" r="5" fill="#c9a24a" stroke="${O}" stroke-width="2"/><ellipse cx="30" cy="84" rx="9" ry="12" transform="rotate(30 30 84)" fill="#e0c060" stroke="${O}" stroke-width="2.5"/>`;
+  else if(d.id==='ice')o=brIce(36,66,30,-8,.95)+brIce(66,68,30,10,.95)+brIce(50,40,30,4,.95);
+  else if(d.id==='soda')o=`<path d="M34 38Q34 30 42 28H58Q66 30 66 38V86Q66 92 60 92H40Q34 92 34 86Z" fill="#bfe6f5" stroke="${O}" stroke-width="3"/><rect x="43" y="10" width="14" height="20" rx="3" fill="#bfe6f5" stroke="${O}" stroke-width="2.6"/><rect x="41" y="6" width="18" height="8" rx="2" fill="#3a8fc0" stroke="${O}" stroke-width="2"/><rect x="34" y="50" width="32" height="18" fill="#3a8fc0" stroke="${O}" stroke-width="2"/>`+brBubbles(38,62,72,88,5,5)+brBubbles(38,62,34,46,3,9);
+  else if(d.id==='lime')o=brLime(50,54,30);
+  else if(d.id==='mint')o=brLeaf(50,90,0,3.6)+brLeaf(48,90,-48,2.8)+brLeaf(52,90,48,2.8);
+  else if(d.id==='yuzu')o=`<circle cx="50" cy="58" r="30" fill="#f5c518" stroke="${O}" stroke-width="3"/><path d="M34 46q6-8 14-9" stroke="#fff3a0" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M50 28q2-10 12-14q2 10-12 14z" fill="#3fae4a" stroke="${O}" stroke-width="2"/>`+[[42,66],[58,60],[52,76],[64,72]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.6" fill="#c99a10"/>`).join('');
+  else if(d.id==='rim')o=`<ellipse cx="50" cy="70" rx="40" ry="14" fill="#e8f4f8" stroke="${O}" stroke-width="3"/><ellipse cx="50" cy="67" rx="31" ry="9" fill="#cfe0e6"/><path d="M26 66Q50 34 74 66Q50 74 26 66Z" fill="#fff" stroke="${O}" stroke-width="2.5"/>`+[[40,58],[52,52],[60,60],[46,64]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.5" fill="#c9d6dc"/>`).join('');
+  else if(d.id==='cherry')o=`<path d="M36 66Q40 34 60 20M66 62Q64 36 60 20" stroke="#5a3a1a" stroke-width="3" fill="none"/><circle cx="36" cy="70" r="16" fill="#c8102e" stroke="${O}" stroke-width="3"/><circle cx="66" cy="68" r="16" fill="#c8102e" stroke="${O}" stroke-width="3"/><circle cx="31" cy="64" r="4" fill="#fff" opacity=".7"/><circle cx="61" cy="62" r="4" fill="#fff" opacity=".7"/>`;
+  return BRC['t'+k]=o}
+/* ---- 食材盤／酒譜鈕／開秀鈕 ---- */
+function barStHTML(name){
+  const bs='position:absolute;inset:0;width:100%;height:100%;padding:2px 4px;border:3px solid #5a3420;border-radius:10px;font:900 13px/1.15 system-ui,-apple-system,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 3px 0 #0006;';
+  if(name==='brbook')return `<button class="ordst" data-act="barbook" aria-label="${T('酒譜')}" style="${bs}background:#1a0e08;color:#f3dfb4"><span style="font-size:18px;line-height:1">📖</span><span>${T('酒譜')}</span></button>`;
+  if(name==='brshow'){const m=Math.floor((R&&R.bmood)||0),full=m>=100;return `<button class="ordst" data-act="barshow" aria-label="${T('調酒秀')}" style="${bs}background:${full?'#f0a818':'#1a0e08'};color:${full?'#2a1608':'#f3dfb4'};overflow:hidden"><i style="position:absolute;left:0;bottom:0;height:5px;width:${m}%;background:#f0a818"></i><span style="font-size:18px;line-height:1">🍸</span><span style="white-space:nowrap">${full?T('開秀！'):T('氣氛 {0}%',m)}</span></button>`}
+  if(name==='trash2'&&R&&R.bsel==='trash')return null; /* 垃圾桶本體照原本的畫，選取框在 barSelRing 補 */
+  const d=BAR_ST[name];if(!d)return null;const sel=R&&R.bsel===name,ok=barUses(d);
+  return sv(`<rect x="4" y="${d.t==='g'?4:10}" width="64" height="${d.t==='g'?52:72}" rx="8" fill="${d.t==='m'?'#e2c9a0':d.t==='g'?'#b9c6cf':'#c9ced4'}" stroke="${sel?'#ffd23a':O}" stroke-width="${sel?5:3}"/><g transform="${d.t==='g'?'translate(14 3) scale(.44 .5)':'translate(6 14) scale(.6 .64)'}">${brTrayArt(d)}</g>`,d.t==='g'?'0 0 72 60':'0 0 72 90')+`<span class="lbl" style="white-space:nowrap;font-size:11px;${sel?'background:#f0a818;color:#2a1608':''}">${T(barStName(d))}</span>`+(ok?'':`<div class="locked">${T('商店<br>購買')}</div>`)}
+/* ---- 吧台 ---- */
+function barRecOf(g){return BRKEYS.find(k=>{if(!has(k))return false;const r=BRREC[k];return r.g===g.g&&r.l===g.l&&(r.m||null)===(g.m||null)&&r.a.length===g.a.length&&r.a.every(x=>g.a.includes(x))})||null}
+function barFix(g){const k=barRecOf(g);if(k){g.kind=k;g.t=COOK[k]}else{g.kind='brwip';g.t=0}return k}
+function barHint(g){const c=BRKEYS.filter(k=>{if(!has(k))return false;const r=BRREC[k];return r.g===g.g&&(!g.l||r.l===g.l)&&g.a.every(x=>r.a.includes(x))&&(!g.m||r.m===g.m)});
+  if(!g.l&&!g.a.length)return T('先點酒瓶，再點這個杯子把酒倒進去');
+  if(!c.length)return T('這杯配錯了，點垃圾桶再點這杯倒掉');
+  const miss=k=>{const r=BRREC[k];return (g.l?[]:[BRL[r.l].n]).concat(r.a.filter(x=>!g.a.includes(x)).map(x=>BRA[x].n),r.m&&!g.m?[BRM[r.m].v]:[])};
+  const k=c.sort((a,b)=>miss(a).length-miss(b).length)[0];return T('{0}還差：{1}',T(ITEMS[k].zh),miss(k).map(x=>T(x)).join('、'))}
+function barHTML(){const n=tpnN(),bw=L.tpn?L.tpn.w:400,SW=(bw-20)/n;
+  let s=`<svg viewBox="0 0 ${bw} 182" style="position:absolute;inset:0"><rect x="2" y="8" width="${bw-4}" height="166" rx="12" fill="#3a2014" stroke="${O}" stroke-width="4"/><rect x="10" y="16" width="${bw-20}" height="150" rx="6" fill="#1d2622"/>${Array.from({length:Math.floor((bw-30)/12)},(_,i)=>`<path d="M${18+i*12} 22v138" stroke="#2c3a33" stroke-width="5" stroke-linecap="round"/>`).join('')}<rect x="10" y="16" width="${bw-20}" height="150" rx="6" fill="none" stroke="#c9a24a" stroke-width="2" opacity=".6"/>${Array.from({length:n-1},(_,i)=>`<path d="M${10+(i+1)*SW} 24v134" stroke="#0e1411" stroke-width="3" opacity=".8"/>`).join('')}</svg>`;
+  for(let i=0;i<n;i++){const x=10+i*SW,g=R.tpn[i];let inner='',tag='',done=false;
+    if(g){done=g.kind!=='brwip';inner=sv(brMixArt(g,g.sk||0)+(done?`<path d="M88 12l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#fff6c0" stroke="${O}" stroke-width="1.2"/>`:''));
+      tag=done?`<span class="tkflip" style="background:#f0a818;color:#2a1608;animation:none">${T(ITEMS[g.kind].zh)}</span>`:g.sk?`<span class="tkflip">${T('搖！{0}/{1}',g.sk,BSHAKE)}</span>`:''}
+    else inner=`<div style="opacity:.3;width:100%;height:100%">${sv(`<ellipse cx="50" cy="84" rx="24" ry="8" fill="none" stroke="#c9a24a" stroke-width="4" stroke-dasharray="7 6"/>`)}</div>`;
+    s+=`<div class="st slot" data-tpn="${i}" style="left:${x}px;top:18px;width:${SW-4}px;height:146px;${done?'box-shadow:0 0 0 3px #ffc65a inset;background:#ffc65a22':''}"><div style="position:absolute;left:-4px;right:-4px;top:26px;height:${Math.min(Math.round(SW+8),116)}px">${inner}</div>${tag}</div>`}
+  return s+`<span class="lbl" style="white-space:nowrap">${T('吧台')}</span>`}
+function barSelName(){const d=R&&R.bsel&&BAR_ST[R.bsel];return R&&R.bsel==='trash'?T('垃圾桶'):d?T(barStName(d)):''}
+function barHudPills(){if(!R||R.over)return '';const m=Math.floor(R.bmood||0),sn=barSelName();
+  return `<div class="pill staff">🍸 ${T('氣氛')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${m}%</b></div>`+(sn?`<div class="pill staff">${T('手上')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${sn}</b></div>`:'')}
+/* 點食材盤：杯子直接放上吧台；酒／材料／工具／垃圾桶是「拿在手上」，再點杯子才加進去（可以連續加好幾杯，再點一次同一個就放下） */
+function barPick(k,el){if(CUR!=='bar'||!R)return false;
+  if(k==='trash2'){if(R.held)return false;R.bsel=R.bsel==='trash'?null:'trash';if(R.bsel)toast(T('點要倒掉的那一杯'));renderStations();renderHUD();return true}
+  const d=BAR_ST[k];if(!d)return false;
+  if(!barUses(d)){nope(el);toast(T('這個要先在商店買用得到它的酒'));return true}
+  if(d.t==='g'){const i=R.tpn.findIndex((x,j)=>!x&&j<tpnN());if(i<0){nope(el);toast(T('吧台滿了'))}else{R.tpn[i]={kind:'brwip',t:0,g:d.id,l:null,a:[],m:null,sk:0};R.held=null;sfx('pick')}}
+  else{R.bsel=R.bsel===k?null:k;R.held=null;sfx('pick')}
+  renderStations();renderHUD();return true}
+/* 點吧台上的杯子 */
+function barSlot(i,el){const g=R.tpn[i];if(!g){if(R.bsel&&R.bsel!=='trash'){nope(el);toast(T('先點左邊的杯子放上吧台'))}return}
+  const c=srcCenter({src:'tpn',i}),sel=R.bsel,d=sel&&BAR_ST[sel],done=g.kind!=='brwip';
+  if(sel==='trash'){R.tpn[i]=null;if(R.held&&R.held.src==='tpn'&&R.held.i===i)R.held=null;R.bsel=null;toast(T('倒掉了'));sfx('pick')}
+  else if(done||!d){if(done){R.held={src:'tpn',i,key:g.kind};R.bsel=null}else{nope(el);toast(barHint(g))}}
+  else if(d.t==='l'){if(g.l){nope(el);toast(T('這杯已經倒過酒了'))}else if(canPay(BRL[d.id].cost)){g.l=d.id;charge(BRL[d.id].cost,c.x,c.y-50);sfx('pick');popup(c.x,c.y-80,T('倒{0}',T(BRL[d.id].n)))}}
+  else if(d.t==='a'){if(g.a.includes(d.id)){nope(el);toast(T('這杯已經加過{0}了',T(BRA[d.id].n)))}else if(canPay(BRA[d.id].cost)){g.a.push(d.id);charge(BRA[d.id].cost,c.x,c.y-50);sfx('pick');popup(c.x,c.y-80,T('加{0}',T(BRA[d.id].n)))}}
+  else if(d.t==='m'){if(!g.l){nope(el);toast(T('先倒酒才能{0}',T(BRM[d.id].v)))}else if(g.m){nope(el);toast(T('這杯已經{0}過了',T(BRM[g.m].v)))}
+    else if(d.id==='shake'){g.sk=(g.sk||0)+1;sfx('pick');if(g.sk>=BSHAKE){g.sk=0;g.m='shake';popup(c.x,c.y-80,T('搖好了！'))}}
+    else{g.m='stir';sfx('pick');popup(c.x,c.y-80,T('攪拌好了！'))}}
+  const g2=R.tpn[i];if(g2&&g2.kind==='brwip'&&barFix(g2)){sfx('star');popup(c.x,c.y-110,T('{0}調好了！',T(ITEMS[g2.kind].zh)))}
+  renderStations();renderHUD()}
+/* ---- 氣氛與調酒秀：送酒漲氣氛（客人耐心剩越多漲越多），滿了由玩家自己按「開秀」 ---- */
+function barServed(c){if(!R)return;const was=(R.bmood||0)>=100;R.bmood=Math.min(100,(R.bmood||0)+6+Math.round(8*Math.max(0,Math.min(1,c.pat/c.max))));
+  if(R.bmood>=100&&!was){sfx('star');toast(T('氣氛炒熱了！點吧台上的「開秀」來一場花式調酒秀'))}}
+function barShow(){if(!R||R.over||CUR!=='bar')return;if((R.bmood||0)<100){toast(T('氣氛還不夠：多送幾杯酒就會漲，送得越快漲越多'));return}
+  R.bmood=0;tpShow();renderStations();renderHUD()}
+/* ---- 酒譜（開著會暫停營業，跟壽司店的順序提示一樣） ---- */
+function barBook(){if(R&&!R.over&&!R.paused){R.paused=true;SUORDPAUSE=true}
+  const chip=t=>`<span style="display:inline-block;padding:2px 8px;border:2px solid #5a3420;border-radius:8px;background:#fcf8ee;color:#2a1608;font-weight:700;font-size:13px">${T(t)}</span>`;
+  const rows=BRKEYS.filter(has).map(k=>`<div style="display:flex;align-items:center;gap:10px;margin:8px 0"><div style="width:52px;height:52px;flex:none">${sv(brIcon(k))}</div><div style="min-width:0"><b>${dishTitle(k)}</b><div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:4px">${barRecParts(k).map(chip).join('<span>→</span>')}</div></div></div>`).join('');
+  modal(`<h2>📖 ${T('酒譜')}</h2><p class="hint">${T('先點杯子放上吧台，再點酒瓶或材料、然後點那個杯子加進去，順序不拘。搖盪要拿搖酒器連點杯子 {0} 下。配錯了就點垃圾桶再點那杯倒掉。',BSHAKE)}</p>${rows}<div class="btns"><button class="btn" data-act="suordx">${T('關閉')}</button></div>`)}
 /* ---- 背景：深色木頭酒櫃、背光酒瓶、圓窗月亮、吊燈 ---- */
 function drawBarBg(){
   const TY=KY<400?38:0,r=okRng(4242);
@@ -3149,20 +3190,23 @@ function drawBarBg(){
   <rect x="-4" y="374" width="${W+8}" height="26" fill="#2a160e" stroke="${O}" stroke-width="3"/><rect x="-4" y="381" width="${W+8}" height="5" rx="2" fill="#c9a24a" stroke="${O}" stroke-width="1.5"/>
   <rect x="0" y="400" width="${W}" height="${H-KY}" fill="url(#brkit)"/>${Array.from({length:Math.ceil(W/64)},(_,i)=>`<path d="M${i*64} 400v${H-KY}" stroke="#0a0604" stroke-width="2" opacity=".6"/>`).join('')}</g>`;
 }
-/* ---- 版面：吧台 4 格；酒瓶 8 格（2 排 × 4） ---- */
-const BR_LAND={tap:{x:10,y:406,w:100,h:186},tpn:{x:122,y:410,w:520,h:182},trash2:{x:790,y:346,w:72,h:54},warmT:{x:262,y:346,w:440,h:54},pgbtn:{x:880,y:354,w:166,h:44,pg:0}};
-const BR_PORT={tap:{x:10,y:418,w:96,h:186,k:1.12},tpn:{x:123.5,y:418,w:410,h:182,k:1.12},trash2:{x:402,y:340,w:72,h:54,k:1.12},warmT:{x:8,y:340,w:360,h:54,k:1.12},pgbtn:{x:482,y:350,w:174,h:46,pg:0}};
-Object.keys(BR_TRAY).forEach((n,i)=>{const r=i<4?0:1,c=i%4;BR_LAND[n]={x:654+c*66,y:406+r*94,w:64,h:90};BR_PORT[n]={x:8+c*92,y:640+r*112,w:78,h:100,k:1.12}});
+/* ---- 版面：左邊三種杯子、中間吧台 4 格、右邊 8×2 格（上排酒＋搖酒器、下排材料＋攪拌匙）。沒有啤酒機 ---- */
+const BR_LAND={tpn:{x:90,y:410,w:400,h:182},trash2:{x:790,y:346,w:72,h:54},warmT:{x:262,y:346,w:440,h:54},pgbtn:{x:880,y:354,w:166,h:44,pg:0}};
+const BR_PORT={tpn:{x:100,y:418,w:400,h:182,k:1.12},trash2:{x:402,y:340,w:72,h:54,k:1.12},warmT:{x:8,y:340,w:360,h:54,k:1.12},pgbtn:{x:482,y:350,w:174,h:46,pg:0}};
+Object.keys(BRG).forEach((id,i)=>{BR_LAND['brG'+id]={x:10,y:406+i*62,w:70,h:58};BR_PORT['brG'+id]={x:8,y:418+i*70,w:78,h:64,k:1.12}});
+[Object.keys(BRL).map(id=>'brL'+id).concat('brMshake'),Object.keys(BRA).map(id=>'brA'+id).concat('brMstir')].forEach((row,r)=>row.forEach((n,c)=>{BR_LAND[n]={x:502+c*57,y:406+r*94,w:54,h:90};BR_PORT[n]={x:8+c*70,y:640+r*112,w:64,h:100,k:1.12}}));
 /* ---- 商店 ---- */
 function shopBar(){
   const SV=ST||load()||{coins:0},own=k=>!!(SV.menu&&SV.menu[k]);
   const lock=`<p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`;
-  if(!SV.bar)return `<h3 class="sh">${T('月影酒吧・花錢解鎖')}</h3><div class="shop"><div class="up"><b>🍸 ${T('開一家月影酒吧')}</b><p>${T('日式調酒吧：每杯酒都在吧台上一步一步調，加冰、倒酒、加蘇打、攪拌、搖盪（要連點）、濾進杯、放裝飾。賣嗨棒、梅酒蘇打、柚子沙瓦、莫希托、琴蕾、瑪格麗特、曼哈頓、雪國八種，解鎖送威士忌嗨棒。')}</p>${lock}<button class="btn" data-act="buybar" ${SV.coins<BAR_PRICE?'disabled':''}>${T('花 {0} 解鎖',yen(BAR_PRICE))}</button></div></div>`;
-  const menu=BRKEYS.map(k=>`<div class="up" style="display:grid;grid-template-columns:64px 1fr;column-gap:10px;align-items:center"><div style="grid-row:span 3;width:64px;height:64px">${sv(brIcon(k))}</div><b>${dishTitle(k)}</b><p>${T('售價 {0}・食材 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}<br><small>${TPS[k].map(s=>T(TPLBL[s])).join(' → ')}</small></p>${own(k)?`<p>${T('已購買')}</p>${ST?`<div style="grid-column:1/-1;white-space:nowrap">${offBtn(k)}</div>`:''}`:`<button class="btn" data-act="brbuy" data-id="${k}" ${SV.coins<ITEMS[k].buy?'disabled':''}>${T('買下 {0}',yen(ITEMS[k].buy))}</button>`}</div>`).join('');
+  if(!SV.bar)return `<h3 class="sh">${T('月影酒吧・花錢解鎖')}</h3><div class="shop"><div class="up"><b>🍸 ${T('開一家月影酒吧')}</b><p>${T('日式調酒吧：每杯酒都自己動手調，先選杯子、倒酒，再自己拿冰塊、蘇打、萊姆這些材料加進去，最後搖一搖或攪拌。調好的酒可以一直放著。賣嗨棒、梅酒蘇打、柚子沙瓦、莫希托、琴蕾、瑪格麗特、曼哈頓、雪國八種，解鎖送威士忌嗨棒。')}</p>${lock}<button class="btn" data-act="buybar" ${SV.coins<BAR_PRICE?'disabled':''}>${T('花 {0} 解鎖',yen(BAR_PRICE))}</button></div></div>`;
+  const menu=BRKEYS.map(k=>`<div class="up" style="display:grid;grid-template-columns:64px 1fr;column-gap:10px;align-items:center"><div style="grid-row:span 3;width:64px;height:64px">${sv(brIcon(k))}</div><b>${dishTitle(k)}</b><p>${T('售價 {0}・食材 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}<br><small>${barRecText(k)}</small></p>${own(k)?`<p>${T('已購買')}</p>${ST?`<div style="grid-column:1/-1;white-space:nowrap">${offBtn(k)}</div>`:''}`:`<button class="btn" data-act="brbuy" data-id="${k}" ${SV.coins<ITEMS[k].buy?'disabled':''}>${T('買下 {0}',yen(ITEMS[k].buy))}</button>`}</div>`).join('');
   return `${lock}<h3 class="sh">${T('酒單')}</h3><div class="shop">${menu}</div><div class="btns"><button class="btn" data-act="baropen">${T('去月影酒吧營業')}</button></div>`;
 }
 function barHome(){const kp=shopKeep,sy=shopScroll;const bk=SUBACK?'shopback':ST&&!R&&!HOME?'back':'closem';modal(`<h2>🍸 ${T('月影酒吧')}</h2>${shopBar()}<div class="btns"><button class="btn" data-act="${bk}">${T(SUBACK?'回到商店':ST&&!R&&!HOME?'回到今天':'關閉')}</button></div>`);{const c=document.querySelector('.card');if(c&&kp)c.scrollTop=sy;shopKeep=false}}
 function barActs(act,a){
+  if(act==='barbook'){barBook();return true}
+  if(act==='barshow'){barShow();return true}
   if(act==='barhome'){if(!barDev())return true;SUBACK=!!a.closest('.shopsw,.brpick');barHome();return true}
   const home=()=>{const h=!ST;if(h)ST=load();return h},done=h=>{if(h)ST=null;else if(!HOME)renderHUD();barHome()};
   if(act==='buybar'){if(!barDev())return true;const h=home();if(ST&&!ST.bar&&ST.coins>=BAR_PRICE){keepScroll();ST.coins-=BAR_PRICE;ST.bar={up:{}};ST.menu=ST.menu||{};ST.menu.brhigh=1;save();toast(T('月影酒吧開張了！'))}done(h);return true}
@@ -3355,7 +3399,7 @@ function ingArt(id){
   if(id==='boat')return sashimiG([]);
   return `<rect x="10" y="30" width="80" height="42" rx="10" fill="${FISHC[id][0]}" stroke="${O}" stroke-width="4"/><path d="M20 42h60" stroke="${FISHC[id][1]}" stroke-width="5" opacity=".8"/>`;
 }
-function burnAt(kind){if(kind==='rice'||kind==='chashurice')return 1e9;if(SUKEYS.includes(kind))return 1e9;let b=COOK[kind]+12+(ST.up.warm?6:0);if(CUR==='rm'){if(kind==='noodle'&&rmUp('firm',0))b+=6;if((kind==='gyoza'||kind==='friedrice')&&rmUp('iron',0))b+=5;if(RFK.includes(kind)&&rmUp('oil',0))b+=5}return R&&R.fxNb?b+9999:b}
+function burnAt(kind){if(BRREC[kind]||kind==='brwip')return 1e9;if(kind==='rice'||kind==='chashurice')return 1e9;if(SUKEYS.includes(kind))return 1e9;let b=COOK[kind]+12+(ST.up.warm?6:0);if(CUR==='rm'){if(kind==='noodle'&&rmUp('firm',0))b+=6;if((kind==='gyoza'||kind==='friedrice')&&rmUp('iron',0))b+=5;if(RFK.includes(kind)&&rmUp('oil',0))b+=5}return R&&R.fxNb?b+9999:b}
 function cookState(t,kind){if(t<COOK[kind])return 'raw';if(ITEMS[kind]&&ITEMS[kind].shop==='sushi')return 'done';return t<burnAt(kind)?'done':'burnt'}
 const lockDiv=d=>UDAY()<d?`<div class="locked">${T('第 {0} 天<br>開放',d)}</div>`:'';
 function stHTML(name){
@@ -3559,6 +3603,7 @@ function buildStations(){
     L.warmT=Object.assign({},L.warmT,{w:ww,x})}
   /* 海風壽司：順序提示做成檯面上的按鈕，放在槍的左邊（沒有槍時，也留出槍的位置再往左放），手指比較好按 */
   delete L.suord;if(CUR==='sushi'){const sk=L.warmT.k||1,ow=84,bx=(L.gunT?L.gunT.x:L.warmT.x-GUNW*sk-64)-ow-8;if(bx>=8)L.suord={x:bx,y:L.warmT.y,w:ow,h:54,k:sk}}
+  delete L.brbook;delete L.brshow;if(CUR==='bar'&&LAY!=='port'){const sk=L.warmT.k||1,bx=L.warmT.x-84*sk-12;if(bx>=8)L.brbook={x:bx,y:L.warmT.y,w:84,h:54,k:sk};if(L.trash2)L.brshow={x:L.trash2.x+(L.trash2.w+14)*sk,y:L.warmT.y,w:92,h:54,k:sk}}
   const host=$('stations');host.innerHTML='';cache.clear();
   for(const k in L){const r=L[k],el=document.createElement('div');el.className=k==='pgbtn'?'pgbtn':'st'+(['grill','fryer','ing','warmT','tap','board','teppan','tempura','deco2','rmpan','maki','sal','mpot','bowls','rmtop','rfry','tyaki','lamen','tsk','tako','tama','onig','tpn'].includes(k)?' host':'');el.id='st-'+k;if(k!=='pgbtn')el.dataset.st=k;
     Object.assign(el.style,{left:r.x+'px',top:r.y+'px',width:r.w+'px',height:r.h+'px'});el.style.setProperty('--k',r.k||1);
@@ -3573,7 +3618,8 @@ function renderStations(){
     if(el.hidden&&k!=='pgbtn')continue;
     setHTML(el,k==='gunT'?gunStandHTML():k==='grill'?grillHTML():k==='fryer'?fryerHTML():k==='warmT'?warmHTML():k==='teppan'?teppanHTML():k==='tempura'?tempuraHTML():k==='maki'?makiHTML():k==='sal'?salHTML():k==='tpn'?tpnHTML():k==='rmpan'?rmpanHTML():k==='rfry'?rfryHTML():k==='tyaki'?tyakiHTML():k==='tako'?takoHTML():k==='lamen'?lamenHTML():k==='tsk'?tskHTML():k==='tama'?stepHTML('tama'):k==='onig'?stepHTML('onig'):k==='mpot'?mpotHTML():k==='pgbtn'?pgHTML():k==='suord'?suOrdHTML():stHTML(k));
     el.classList.toggle('held',!!R.held&&R.held.src===k&&R.held.i==null);
-    if(k==='gunT')el.classList.toggle('alert',gunAlert());}
+    if(k==='gunT')el.classList.toggle('alert',gunAlert());
+    if(CUR==='bar'&&k==='trash2')el.style.outline=R.bsel==='trash'?'3px solid #ffd23a':'';}
   document.querySelectorAll('[data-grill]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='grill'&&R.held.i==+e.dataset.grill));
   document.querySelectorAll('[data-tap]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='tap'&&R.held.i==+e.dataset.tap));
   document.querySelectorAll('[data-board]').forEach(e=>e.classList.toggle('held',!!R.held&&R.held.src==='board'&&R.held.i==+e.dataset.board));
@@ -3714,7 +3760,7 @@ function spawn(){
 }
 function step(dt){
   R.t+=dt;if(chOn()){CHG.sec+=dt;if(hourNow()>=24)chCycle()}
-  R.taps.slice(0,tapsN()).forEach((tp,i)=>{
+  R.taps.slice(0,CUR==='bar'?0:tapsN()).forEach((tp,i)=>{
     if(tp.st==='empty'&&live()>=costOf('beer')){R.taps[i]={st:'filling',t:0};sfx('pour');charge(costOf('beer'),L.tap.x+(tapsN()===1?50:25+i*50),L.tap.y+60)}
     else if(tp.st==='filling'){tp.t+=dt;if(tp.t>=tapTime())tp.st='full'}});
   if(CUR==='sushi')suStaffStep(dt);else if(CUR==='tep')tpStaffStep(dt);else if(CUR==='oko'||CUR==='bar'){}else if(CUR!=='rm')staffStep(dt);else{rmStaffStep(dt);rmCookStep(dt);rmFryStep(dt)}
@@ -4310,6 +4356,7 @@ function onTap(e){
   const tpe=t.closest('[data-tap]');if(tpe){const i=+tpe.dataset.tap;if(R.taps[i].st==='full')R.held={src:'tap',i,key:'beer'};else{nope(tpe);toast('還在裝…')}renderStations();return}
   const bde=t.closest('[data-board]');if(bde){const i=+bde.dataset.board;if(boardDone(i))R.held={src:'board',i,key:boardKey(i)};else{nope(bde);if(R.boards[i].base)toast('還沒做完喔');else toast('從右邊的食材開始做')}renderStations();return}
   const st=t.closest('[data-st]');if(!st)return;const k=st.dataset.st;
+  if(CUR==='bar'&&barPick(k,st))return;
   if(INSTANT.includes(k)){if(k==='ramune'&&!has('ramune'))return;if(k==='oolong'&&!has('oolong'))return;if(k==='cola'&&!has('cola'))return;if(k==='menma'&&!has('menma'))return;if(k==='kyuri'&&!has('kyuri'))return;if(k==='goma'&&(!has('goma')||gomaOff()))return;if(canPay(costOf(k)))R.held={src:k,key:k}}
   else if(k==='rawMen'){const i=R.mpot.findIndex((x,j)=>!x&&j<mpotN());if(i<0){nope(st);toast('麵鍋滿了')}else if(canPay(costOf('ramen'))){R.mpot[i]={kind:'noodle',t:0};const c=srcCenter({src:'mpot',i});charge(costOf('ramen'),c.x,c.y-50)}}
   else if(k==='odenRaw'){if(!has('oden'))return;const c1=costOf('oden'),k0=odenCap()-R.oden.n-R.oden.cook.reduce((s,b)=>s+(b.n||2),0);if(k0<=0){nope(st);toast('關東煮鍋滿了')}else{if(live()<c1)canPay(c1);else{R.oden.cook.push({t:0,n:1});const c=srcCenter({src:'oden'});charge(c1,c.x,c.y-50)}}}
@@ -4536,6 +4583,7 @@ function giveTo(c,j,h,byPlayer){
   if(j==='wrong'){const wx=seatX(c.seat,seatsN());popup(wx,120,T('送錯菜了！'),true);toast(T('送錯菜了！客人氣走了，不會付錢'));if(chOn()){c.chMis=1;chStrike('上錯客人')}leave(c,false);renderStations();return true}
   const ex=j==='x';
   if(ex){c.extra.done=true;popup(seatX(c.seat,seatsN()),120,T('加碼點單！小費 +10%'));sfx('star')}else{c.filled[j]=true;c.lastKey=h.key}
+  if(CUR==='bar')barServed(c);
   c.pat=Math.min(c.max,c.pat+3);
   if(R.where==='rm'&&ST.rm&&RFK.includes(h.key)&&!DEMO){ST.rm.fried=(ST.rm.fried||0)+1;if(ST.rm.fried===TAI_NEED&&!has('taiyaki'))setTimeout(()=>toast('二號廚房好像可以做新甜點了…打烊後去商店看看！'),500)}
   if(!ex&&c.filled.every(Boolean)&&!c.critic&&c.tr.reorder&&!c.reordered&&Math.random()<c.tr.reorder){c.reordered=1;c.order.push(c.lastKey);c.filled.push(false);popup(seatX(c.seat,seatsN()),120,T('再來一份！'))}
@@ -5132,7 +5180,7 @@ function showDayIntro(arrive){
   ${TD.rob?`<p class="hint">${T('聽說附近最近不太平靜……')}${ST.weapon?'':T('（商店「武器」分頁有賣防身用品）')}</p>`:''}
   <p>${rentOf()?T('今天店租 {0}（每週調漲），打烊時會從淨利扣掉。',yen(rentOf()))+T('存到 {0} 後，到商店按「買下店面」就不用再付房租。',yen(GOAL)):''}${T('營業時間 16:00 到凌晨 00:30，晚餐（18–20 點）和續攤（21–22 點）客人最多，00:20 最後點餐，之後不再接新客人。淨利（營收扣掉食材成本）越高星星越多，拿到一顆星就能進到下一天。')}</p>
   ${CUR==='oko'?`<p style="font-size:14px;line-height:1.6">${T('御好燒店的菜在<b>鐵板</b>上一步一步做。點<b>大阪燒料、廣島燒料、文字燒料、摩登燒料</b>下到鐵板，煎到一半會依序跳出<b>拌勻、鋪肉、翻面、炒麵、疊起來、擠醬撒料</b>之類的提示（每道菜不一樣），跳出來就點一下，等太久就失敗。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
-  ${CUR==='bar'?`<p style="font-size:14px;line-height:1.6">${T('月影酒吧的酒在<b>吧台</b>上一杯一杯調。點右邊的<b>酒瓶</b>放上吧台，會依序跳出<b>加冰、倒酒、加蘇打、攪拌、搖盪、濾進杯、放裝飾</b>之類的提示（每杯不一樣），跳出來就點一下，等太久就失敗。<b>搖盪</b>要連點 5 下才算搖好。提示剛跳出、標籤是<b>金色</b>時點下去是<b>完美</b>，連續完美 6 次來一場<b>🍸 花式調酒秀</b>：全場客人耐心回滿，每位多給一筆賞錢。調好的酒放太久冰塊會化掉，只能倒掉。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
+  ${CUR==='bar'?`<p style="font-size:14px;line-height:1.6">${T('月影酒吧的酒要<b>自己動手調</b>：先點左邊的<b>杯子</b>放上吧台，再點<b>酒瓶</b>、然後點那個杯子把酒倒進去；<b>冰塊、蘇打、萊姆</b>這些材料也一樣，先拿再點杯子加進去。需要<b>搖盪</b>的酒，拿<b>搖酒器</b>連點杯子 3 下；需要<b>攪拌</b>的拿攪拌匙點一下。配方對了就算調好，可以一直放著不會壞。忘了做法點吧台上的<b>📖 酒譜</b>，配錯了點<b>垃圾桶</b>再點那杯倒掉。送酒會累積<b>氣氛</b>，滿了可以自己挑時機按<b>🍸 開秀</b>：全場客人耐心回滿，每位多給一筆賞錢。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
   ${CUR==='tep'?`<p style="font-size:14px;line-height:1.6">${T('炎舞鐵板燒的菜在<b>大鐵板</b>上煎。煎到一半會跳出<b>翻炒／翻面／刷醬／點火</b>，一定要點，等太久就失敗。提示剛跳出、標籤還是<b>金色</b>時點下去就是<b>完美</b>；連續完美 6 次會來一場<b>🔥 火焰秀</b>：全場等餐的客人耐心回滿，每位還多給一筆賞錢。每次點到完美，那一格鐵板還會噴火。失手或煎焦會讓連擊歸零（店員處理過的料煎焦不算）。')}</p>`:''}
   ${CUR==='sushi'?`<p style="font-size:14px;line-height:1.6">${T('海風壽司的菜是在<b>壽司台</b>上一層一層疊出來的，<b>順序很重要</b>：先放的材料在下面，後放的在上面，每一種壽司的順序都不一樣，照下面的製作教學來。')}</p>`:''}
   ${show.length?`<details class="howwrap"${howOpen()?' open':''} ontoggle="howSave(this.open)"><summary class="howsum">${T('📖 製作做法（點一下收起／展開）')}</summary><div class="how">${show.map(k=>`<div class="how-row">${icon(k==='chazuke'?'chazuke:salmon':k==='sashimi'?'sashimi:maguro+tai':k)}<div><b>${dishTitle(k)}</b>${ST.day>1?`<span class="new">${T('新菜')}</span>`:''}<br>${T(HOW[k])}</div></div>`).join('')}</div></details>`:''}
