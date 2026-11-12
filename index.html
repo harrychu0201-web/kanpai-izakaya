@@ -591,7 +591,7 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 .mwbox{margin:6px 0 4px;display:flex;flex-direction:column;gap:8px}.mwtipbox{background:#fff6e0;border:2px dashed #d9a441;border-radius:12px;padding:8px 10px;cursor:pointer;user-select:none;line-height:1.4;color:#5a3a1a}.mwtipbox small{display:block;opacity:.6;font-size:11px;margin-top:2px}.mwtipbox:active{transform:scale(.98)}.mwgame{background:#3a2418;color:#f3dfb4;border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;align-items:center;gap:6px}.mwhead{display:flex;justify-content:space-between;width:100%;font-size:13px}.mwhud{font-size:13px;min-height:18px}.mwgrid{display:grid;grid-template-columns:repeat(3,52px);gap:6px}.mwc{width:52px;height:52px;border-radius:10px;border:2px solid #6b4a32;background:#24150e;font-size:28px;line-height:1;padding:0;touch-action:manipulation}.mwc.on{background:#5a3a22;border-color:#d9a441}.mwc:active{transform:scale(.92)}.modal.townm{padding:0!important}.card.towncard{width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;padding:0!important;border:0!important;border-radius:0!important;overflow:hidden!important;position:relative;background:#141235;gap:0!important;box-shadow:none!important}
 .tw3load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff3d6;font-size:18px;background:#140f2e}.town{position:absolute;inset:0}.twcv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block;cursor:pointer}
 .twtop{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:10px;padding:8px max(10px,env(safe-area-inset-right)) 18px max(10px,env(safe-area-inset-left));background:linear-gradient(#000000b0,#0000);color:#fff3d6;pointer-events:none}.twtop>*{pointer-events:auto}
-.twtop b{font-family:var(--f-disp);font-weight:400;font-size:20px;white-space:nowrap}.twhint{flex:1;font-size:13px;opacity:.85;min-width:0;line-height:1.25}.twtop .twlist{padding:6px 12px;font-size:14px;margin:0;min-height:0;flex:none}.twtop .xbtn{flex:none}body.ovl #modalLayer .twtop{top:30px;padding-top:6px}.pickrow .twgo{background:#2a2350;color:#fff3d6;border-color:#140f2e}
+.twtop b{font-family:var(--f-disp);font-weight:400;font-size:20px;white-space:nowrap}.twhint{flex:1;font-size:13px;opacity:.85;min-width:0;line-height:1.25}.twtop .twlist{padding:6px 12px;font-size:14px;margin:0;min-height:0;flex:none}.twtop .xbtn{flex:none}body.ovl #modalLayer .twtop{top:30px;padding-top:6px}.twday{font-family:var(--f-disp);font-size:26px;white-space:nowrap;color:#ffd98a;line-height:1}.twday small{font-size:18px;opacity:.85;font-family:inherit}.twev{flex:none;border:0;border-radius:16px;padding:5px 12px;font-size:17px;font-weight:700;background:#fff3d6;color:#5a2a14;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis;cursor:pointer}.twhint2{display:none}.twevtip{position:absolute;left:max(12px,env(safe-area-inset-left));top:64px;max-width:min(420px,70vw);background:#fff3d6;color:#4a2412;border:3px solid #3a2418;border-radius:14px;padding:10px 14px;font-size:17px;line-height:1.4;z-index:5;box-shadow:0 4px 0 #3a2418;display:flex;flex-direction:column;gap:8px}.twevtip b{font-size:18px}.pickrow .twgo{background:#2a2350;color:#fff3d6;border-color:#140f2e}
 </style>
 <style>html,body{margin:0;overscroll-behavior:none}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 <script data-goatcounter="https://kanpai-izakaya.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
@@ -4661,12 +4661,14 @@ function whereRow(){return `<button class="btn ${CUR==='iz'?'':'alt'}" data-act=
 /* 開店前畫面的 🚶 暖簾街：走進門＝按開店前那排的按鈕（where／解鎖），關閉回開店前畫面 */
 /* 暖簾街：已開放給所有玩家；舊的按鈕清單保留在「📋 清單」 */
 function townDev(){return true} /* 2026-11-13 暖簾街開放給所有玩家（之前只有作者／管理員）。店家本身是否出現仍照各店自己的權限（御好燒、酒吧等還沒開放的不會出現） */
-function townWhere(){if(!ST||!townDev())return;townOpen(ST,CUR,whereRow(),'townback','twrow')}
+function townHud(){const TD=evNow(),HI=TD.hol?holInfo(TD.hol):null;
+  return `<span class="twday">${T('第 {0} 天',ST.day)} <small>${dateStr(ST.day)}</small></span>${TD.ev||HI?`<button class="twev" type="button" data-act="twev">${HI?HI.ic+' '+T(HI.zh):''}${HI&&TD.ev?' · ':''}${TD.ev?EVS[TD.ev][0]+' '+T(EVS[TD.ev][1]):''}</button>`:''}`}
+function townWhere(){if(!ST||!townDev())return;townOpen(ST,CUR,whereRow(),'townback','twrow',townHud())}
 function branchPick(){if(!townDev()){branchList();return}const o=load()||{};townOpen(o,brCur(o),brRow(o,brCur(o)),'shopback','brpick')}
-function townOpen(o,cur,row,back,rc){
+function townOpen(o,cur,row,back,rc,hud){
   const shops=[['iz','🏮','居酒屋本店',1],['rm','🍜','深夜拉麵屋台',!!o.rm]];
   if(sushiDev())shops.push(['sushi','🍣','海風壽司',!!o.sushi]);if(tepDev())shops.push(['tep','🔥','炎舞鐵板燒',!!o.tep]);if(okoDev())shops.push(['oko','🥞','御好燒店',!!o.oko]);if(barDev())shops.push(['bar','🍸','月影酒吧',!!o.bar]);shops.push(['arcade','🎮','遊戲廳',true]);TOWNBACK=back;row+=`<button class="btn" data-act="arcadetown" data-town="arcade"></button>`;
-  modal(`<div class="town"><canvas class="twcv"></canvas><div class="twtop"><b>🏮 ${T('暖簾街')}</b><span class="twhint">${T('拖曳移動，走進店門就能進去，點頭上的泡泡聽他們聊天')}</span>${back==='shopback'?`<button class="btn alt twlist" data-act="brlist">📋 ${T('清單')}</button>`:''}<button class="btn alt twlist tw3tg" type="button">${town3dOn()?'2D':'3D'}</button><button class="xbtn" data-act="${back}" aria-label="${T('關閉')}">×</button></div><div class="pickrow ${rc}" style="display:none">${row}</div></div>`);
+  modal(`<div class="town"><canvas class="twcv"></canvas><div class="twtop"><b>🏮 ${T('暖簾街')}</b>${hud||''}<span class="twhint${hud?' twhint2':''}">${T('拖曳移動，走進店門就能進去，點頭上的泡泡聽他們聊天')}</span>${back==='shopback'?`<button class="btn alt twlist" data-act="brlist">📋 ${T('清單')}</button>`:''}<button class="btn alt twlist tw3tg" type="button">${town3dOn()?'2D':'3D'}</button><button class="xbtn" data-act="${back}" aria-label="${T('關閉')}">×</button></div><div class="pickrow ${rc}" style="display:none">${row}</div></div>`);
   const tw=document.querySelector('.modal .town');if(!tw)return;const card=tw.closest('.card'),md=tw.closest('.modal');card.classList.add('towncard');md.classList.add('townm');
   const sl=shops.map(([id,e,n,own])=>({id,e,n,own,cur:id===cur})),tg=tw.querySelector('.tw3tg');
   if(tg)tg.addEventListener('click',()=>{try{localStorage.setItem('izakaya-town3d',town3dOn()?'0':'1')}catch(e){}tg.textContent=town3dOn()?'2D':'3D';townRestart(tw,sl)});
@@ -5234,15 +5236,16 @@ function showTitle(){
   <p>客人點什麼就做什麼：裝啤酒、烤串燒、炸雞塊、做茶泡飯和生魚片拼盤。先點做好的菜拿起來，再點客人送上。客人等太久會生氣離開。</p>
   <div class="btns">${saved?`<button class="btn" data-act="cont">繼續第 ${saved.day+(saved.pendingNext?1:0)} 天</button><button class="btn alt" data-act="newgame">從頭開始</button>`:`<button class="btn" data-act="newgame">開店</button>`}</div>`);
 }
-function showDayIntro(){
+function showDayIntro(arrive){
   SHOPHOME=false;R=null;setCur(ST.where);renderHUD();pickToday();drawBg();$('custLayer').innerHTML='';$('stations').innerHTML='';
   const news=Object.keys(ITEMS).filter(k=>ITEMS[k].day===ST.day),show=CUR==='bar'?BRKEYS.filter(has):CUR==='oko'?OKKEYS.filter(has):CUR==='tep'?TPKEYS.filter(has):CUR==='sushi'?SUKEYS.filter(has):CUR==='rm'?(ST.rm&&!ST.rm.seen?['ramen','gyoza','lsour']:(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop==='rm')):(ST.day===1?['beer','edamame','negima']:news.concat(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop!=='rm'&&ITEMS[k].shop!=='sushi'));
   const due=(ST.dues||[]).filter(d=>d.left===1).reduce((s,d)=>s+d.amt,0);pickToday();const TD=evNow();
   const HI=TD.hol?holInfo(TD.hol):null;
+  if(arrive&&!RP.on&&!DEMO&&ST.day>1&&townDev()){townWhere();if(document.querySelector('.modal .town'))return}
   modal(`<h2>${T('第 {0} 天',ST.day)} <span style="font-size:16px;color:#7a4a2a">${dateStr(ST.day)}</span></h2>
   ${HI?`<div class="evbox"><span class="ei">${HI.ic}</span><div><b>${T('今天是{0}！',T(HI.zh))}</b><br>${T('會有特別的客人上門，每位都能登記進節日客圖鑑。')}</div></div>`:''}
   ${ST.day===365?`<p class="hint">${T('你撐過了一整年！日曆上的每個節日都解鎖了，可以到「📅 日曆」看看。')}</p>`:''}
-  ${ST.rm||ST.sushi||sushiDev()?`<div class="pickrow">${townDev()?`<button class="btn twgo" data-act="town">🚶 ${T('暖簾街')}</button>`:''}${whereRow()}</div>`:''}
+  ${townDev()?`<div class="pickrow"><button class="btn twgo" data-act="town">🚶 ${T('暖簾街')} · ${T({iz:'居酒屋本店',rm:'深夜拉麵屋台',sushi:'海風壽司',tep:'炎舞鐵板燒',oko:'御好燒店',bar:'月影酒吧'}[CUR]||'居酒屋本店')}</button></div>`:`<div class="pickrow">${whereRow()}</div>`}
   ${due?`<div class="bank"><b>${T('今天是還款日！')}</b>${T('打烊時會從錢包還銀行 {0}，記得多賺一點，不然還完錢包見底又要再借。',yen(due))}</div>`:''}
   ${!ST.owned&&ST.coins>=GOAL?`<div class="goalcard"><div><b>🏠 ${T('你已經存夠 {0} 了！',yen(GOAL))}</b><p>${T('現在就能買下整棟店面，之後再也不用付房租。')}</p></div><button class="btn" data-act="buyshop">${T('買下店面 {0}',yen(GOAL))}</button></div>`:''}
   ${TD.ev?`<div class="evbox"><span class="ei">${EVS[TD.ev][0]}</span><div><b>${T('今日事件：{0}',T(EVS[TD.ev][1]))}</b><br>${evDesc(TD)}${TD.ev==='sale'?`<div class="salepick"><small>${T('想讓哪道菜特價？點一下就能換：')}</small><div>${saleCands().map(k=>`<button class="btn ${TD.sale===k?'':'alt'}" data-act="salepick" data-id="${k}">${dishTitle(k)} ¥${Math.round(ITEMS[k].cost*(1+.25*lvOf(k))*.5/10)*10}</button>`).join('')}</div></div>`:''}</div></div>`:''}
@@ -5471,7 +5474,7 @@ function showShop(){
   const c=document.querySelector('.card');if(c&&shopScroll!=null&&shopKeep)c.scrollTop=shopScroll;shopKeep=false;
   if(SHOPJUMP){SHOPJUMP=false;const n=c&&c.querySelector('.shopnav');if(n)c.scrollTop=n.getBoundingClientRect().top-c.getBoundingClientRect().top+c.scrollTop-c.clientTop}
 }
-function advance(){if(ST.pendingNext){ST.day++;ST.pendingNext=false;save();cloudUpload(true)}showDayIntro()}
+function advance(arrive){if(ST.pendingNext){ST.day++;ST.pendingNext=false;save();cloudUpload(true)}showDayIntro(arrive)}
 
 /* pause button: the HUD re-renders several times a second (clock, wallet), which can swap the button out between pointerdown and click and lose the tap; so pause on pointerdown and ignore the matching click */
 let HUDDOWN={act:null,t:-1e9};/* 背包 and 🏦 sit in the HUD too, which re-renders constantly, so act on pointerdown and ignore the matching click (same trick as pause) */
@@ -5481,10 +5484,11 @@ document.addEventListener('click',e=>{
   const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;if(act==='pause'&&performance.now()-PAUSEDOWN<800)return;if(HUDDOWN.act===act&&performance.now()-HUDDOWN.t<800)return;if(ARC.busy&&/^(cont|newgame|asknew|homeshop|arcade|arcslot|arcpin|gacha|gachasecret)$/.test(act))return;
   if(/^(buy|lvup|staffup|rmstaff)/.test(act)&&!a.disabled&&!a.classList.contains('poor'))sfx('buy');else if(!['snd','sndg','start'].includes(act))sfx('click');
   if(act==='newgame'){slBackup(lsGet(KEY),'new');CL.lowOK=true;closeHome();ST=fresh();save();showDayIntro()}
-  else if(act==='cont'){goFS();closeHome();ST=load();advance()}
+  else if(act==='cont'){goFS();closeHome();ST=load();advance(1)}
   else if(act==='branch')branchPick();
   else if(act==='brlist')branchList();
   else if(act==='town')townWhere();
+  else if(act==='twev'){const tw=document.querySelector('.modal .town');if(!tw)return;const old=tw.querySelector('.twevtip');if(old){old.remove();return}const TD=evNow(),HI=TD.hol?holInfo(TD.hol):null,d=document.createElement('div');d.className='twevtip';d.innerHTML=(HI?`<div><b>${HI.ic} ${T('今天是{0}！',T(HI.zh))}</b><br>${T('會有特別的客人上門，每位都能登記進節日客圖鑑。')}</div>`:'')+(TD.ev?`<div><b>${EVS[TD.ev][0]} ${T('今日事件：{0}',T(EVS[TD.ev][1]))}</b><br>${evDesc(TD)}</div>`:'');d.addEventListener('click',()=>d.remove());tw.appendChild(d);setTimeout(()=>d.remove(),6000)}
   else if(act==='townback'){if(ST)showDayIntro();else closeModal()}
   else if(act==='reload')doUpdate();
   else if(act==='mp'){if(!FB_CONFIG){modal(`<h2>${T('多人模式')}</h2><div class="btns"><button class="btn" data-act="closem">${T('返回')}</button></div>`)}else if(!CL.user)coopPanel();else coopAct('open','')}
@@ -5642,7 +5646,7 @@ document.addEventListener('click',e=>{
   else if(act==='chopen')showChallenge();else if(act==='chstart')chStart(false);else if(act==='chstarth')chStart(true);else if(act==='home')showHome();
   else if(act==='start'){goFS();startDay();playReset();refitBurst();let seen=false;try{seen=localStorage.getItem('izakaya-iostip')==='1'}catch(e){}if(IOS&&!STANDALONE&&!seen)setTimeout(()=>{if(R&&!TUT)iosTip()},400)}
   else if(act==='iostipok'){closeModal();if(R&&IOSTIPR)R.paused=false;IOSTIPR=false;try{localStorage.setItem('izakaya-iostip','1')}catch(e){}}
-  else if(act==='next'||act==='back'){if(SHOPHOME){SHOPHOME=false;showHome()}else advance()}
+  else if(act==='next'||act==='back'){if(SHOPHOME){SHOPHOME=false;showHome()}else advance(1)}
   else if(act==='retry'){ST.pendingNext=false;save();showDayIntro()}
   else if(act==='shop')showShop();
   else if(act==='dil'){keepScroll();ST.dil=ST.dil||{};ST.dil[a.dataset.id]=+a.dataset.v;save();showShop()}
