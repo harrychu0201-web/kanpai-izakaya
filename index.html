@@ -6232,6 +6232,7 @@ if(window.visualViewport){visualViewport.addEventListener('resize',()=>{fitGate(
    這裡讀出平移量與縮放倍率，把遊戲外框反向位移、反向縮放，讓它在螢幕上維持不動。 */
 function compVV(){
   const el=$('wrap');if(!el||!window.visualViewport)return;
+  if(IOS){el.style.transform='';el.style.transformOrigin='';return} /* iOS 的 visualViewport 偏移／縮放殘值會把遊戲縮小或位移，不補償 */
   const vv=visualViewport,land=innerWidth>innerHeight;
   if(!TOUCH||!land){el.style.transform='';el.style.transformOrigin='';return}
   /* 只有真的被放大（可視寬高比版面視窗小）時才補償縮放；全螢幕切換後常會殘留一個 scale 數字但實際沒放大，
@@ -6257,6 +6258,7 @@ function stableVisH(){
   /* iPhone 加到主畫面（全螢幕）橫向時，實際可用高度就是螢幕短邊，不必靠量測；量測偶爾讀到偏矮的值，
      會讓舞台的虛擬寬度被放大到 1800、整個遊戲縮成約四分之一。這裡直接用螢幕短邊。 */
   if(IOS&&STANDALONE&&innerWidth>innerHeight)return Math.min(screen.width,screen.height);
+  if(IOS){const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''),o=innerWidth>innerHeight?'l':'p';if(typing&&STAB.h&&STAB.o===o)return STAB.h;const v=visH();STAB={o,h:v,m:v};return v}
   const o=innerWidth>innerHeight?'l':'p',v=visH();
   if(STAB.o!==o||!STAB.h){STAB={o,h:v,m:v};return v}
   if(pinLand()){const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');
@@ -6290,6 +6292,8 @@ function landT(){return TOUCH&&innerWidth>innerHeight}
 /* 橫向的視窗寬：營業中鎖定後只記最小值（側邊導覽列滑出滑入不會讓舞台忽大忽小）；寬度大變（摺疊／展開、分割視窗）立即重記。 */
 let LANDW={o:'',w:0};
 function landW(){const o=innerWidth>innerHeight?'l':'p',v=window.innerWidth;
+  /* iPhone 沒有 Android 那種滑出式導覽列，不需要「只縮不放」的釘住；Safari 網址列／工具列伸縮時會短暫讀到偏小的寬，釘住後就永遠卡在小的、越用越小。iOS 一律用即時寬度。 */
+  if(IOS){LANDW={o,w:v};return v}
   if(pinLand()){if(LANDW.o!==o||!LANDW.w){LANDW={o,w:v};return v}if(v<LANDW.w)LANDW.w=v;return LANDW.w}
   if(LANDW.o!==o||!LANDW.w||Math.abs(v-LANDW.w)>120||!playLocked()){LANDW={o,w:v};return v}
   if(v<LANDW.w)LANDW.w=v;return LANDW.w}
