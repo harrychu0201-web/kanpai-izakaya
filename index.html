@@ -5031,7 +5031,45 @@ function omkDraw(){
     res.textContent=`【${T(pick.n)}】${T(pick.t)}`+(got.length?T(' 獲得：{0}',got.join(T('、'))):'');
   }
 }
-function showArcSlot(){modal(`${ARC_CSS}<h2>${T('拉霸機')}</h2><div class="arc-reels" id="arcReels"><span>🍺</span><span>🍢</span><span>🍣</span></div><p class="arc-msg" id="arcMsg">${T('三個 💴 大獎，三個一樣小獎，兩個一樣退本金。下注越多，輸贏越大。')}</p><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p>${arcBetRow('slot')}<div class="btns"><button class="btn" data-act="arcspin">${T('轉！')}</button><button class="btn alt" data-act="arcade">${T('返回')}</button></div>`)}
+function arcMultiRow(g){const lab=g==='pin'?'連投 {0} 顆':'連轉 {0} 次';return `<div class="btns" style="align-items:center">${[10,100].map(n=>`<button class="btn alt" data-act="arcmulti" data-g="${g}" data-n="${n}">${T(lab,n)}</button>`).join('')}</div>`}
+function arcSpinMany(n){
+  if(ARC.busy)return;const bet=ARC.slotBet;let w=arcWallet(0);const w0=w;
+  let spins=0,win=0,eggs=0,jp=0,last=null;
+  while(spins<n&&w>=bet){
+    w-=bet;spins++;if(arcEggTick()){w+=EGG_PRIZE;eggs++}
+    const res=[0,0,0].map(()=>Math.floor(Math.random()*5));last=res;
+    const [a,b,c]=res,same=a===b&&b===c;if(same&&a===4){jp++;achEgg('jp')}
+    const m=same?(a===4?40:6):(a===b||b===c||a===c)?1:0;
+    if(m){w+=m*bet;win+=m*bet}
+  }
+  if(!spins){arcMsg(T('錢包不夠了，先去賣點東西吧！'));return}
+  const net=w-w0;if(net)arcWallet(net);achBump('sl',spins);
+  const reels=[...document.querySelectorAll('#arcReels span')];if(last)reels.forEach((r,i)=>{r.textContent=ARC.SYM[last[i]]});
+  arcShowW();sfx(jp?'star':win>=bet*6?'done':'pick');
+  const sg=net>=0?'+':'−';
+  let t=T('連轉 {0} 次：下注 {1}、中獎 {2}、彩蛋 {3} 次、大獎 {4} 次，淨 {5}',spins,yen(bet*spins),yen(win),eggs,jp,sg+yen(Math.abs(net)));
+  if(spins<n)t+=T('（錢包不夠，只轉了 {0} 次）',spins);
+  const e=document.getElementById('arcMsg');if(e)e.textContent=t;
+}
+function arcPinMany(n){
+  if(ARC.busy)return;const bet=ARC.pinBet;let w=arcWallet(0);const w0=w;
+  let balls=0,back=0,eggs=0,top=0,lastK=-1;const mx=Math.max(...ARC.PINMUL);
+  while(balls<n&&w>=bet){
+    w-=bet;balls++;if(arcEggTick()){w+=EGG_PRIZE;eggs++}
+    let k=0;for(let i=0;i<8;i++)k+=Math.random()<.5?1:0;
+    const m=ARC.PINMUL[k],pay=Math.round(bet*m);if(m===mx){top++;achEgg('pinj')}
+    if(pay){w+=pay;back+=pay}lastK=k;
+  }
+  if(!balls){arcMsg(T('錢包不夠了，先去賣點東西吧！'));return}
+  const net=w-w0;if(net)arcWallet(net);achBump('pb',balls);
+  arcPinDraw(null,lastK);arcShowW();sfx(top?'star':'done');
+  const sg=net>=0?'+':'−';
+  let t=T('連投 {0} 顆：下注 {1}、拿回 {2}、彩蛋 {3} 次、中大獎 {4} 次，淨 {5}',balls,yen(bet*balls),yen(back),eggs,top,sg+yen(Math.abs(net)));
+  if(balls<n)t+=T('（錢包不夠，只投了 {0} 顆）',balls);
+  const e=document.getElementById('arcMsg');if(e)e.textContent=t;
+}
+function arcMulti(g,n){g==='pin'?arcPinMany(n):arcSpinMany(n)}
+function showArcSlot(){modal(`${ARC_CSS}<h2>${T('拉霸機')}</h2><div class="arc-reels" id="arcReels"><span>🍺</span><span>🍢</span><span>🍣</span></div><p class="arc-msg" id="arcMsg">${T('三個 💴 大獎，三個一樣小獎，兩個一樣退本金。下注越多，輸贏越大。')}</p><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p>${arcBetRow('slot')}${arcMultiRow('slot')}<div class="btns"><button class="btn" data-act="arcspin">${T('轉！')}</button><button class="btn alt" data-act="arcade">${T('返回')}</button></div>`)}
 function arcSpin(){
   if(ARC.busy)return;const bet=ARC.slotBet;
   if(!arcCanPay(bet)){arcMsg(T('錢包不夠了，先去賣點東西吧！'));return}
@@ -5051,7 +5089,7 @@ function arcSpin(){
     arcMsg(same&&a===4?T('🎉 三個 💴！大獎 {0}！',yen(win)):same?T('三個一樣！拿到 {0}',yen(win)):m?T('兩個一樣，退回本金'):T('沒中，再來一把！'));
   },900+2*450+250);
 }
-function showArcPin(){modal(`${ARC_CSS}<h2>${T('彈珠台')}</h2><canvas id="arcCv" width="300" height="330" style="display:block;margin:0 auto;width:100%;max-width:300px;border-radius:12px"></canvas><p class="arc-msg" id="arcMsg">${T('中間最容易落下，但只拿回一小部分；兩邊的大獎很難中，中了是 5 倍！下注越多，輸贏越大。')}</p><p id="arcW" style="font-size:14px;text-align:center">${T('錢包：{0}',yen(arcWallet(0)))}</p>${arcBetRow('pin')}<div class="btns"><button class="btn" data-act="arcdrop">${T('投一顆')}</button><button class="btn alt" data-act="arcade">${T('返回')}</button></div>`);arcPinDraw(null,null)}
+function showArcPin(){modal(`${ARC_CSS}<h2>${T('彈珠台')}</h2><canvas id="arcCv" width="300" height="330" style="display:block;margin:0 auto;width:100%;max-width:300px;border-radius:12px"></canvas><p class="arc-msg" id="arcMsg">${T('中間最容易落下，但只拿回一小部分；兩邊的大獎很難中，中了是 5 倍！下注越多，輸贏越大。')}</p><p id="arcW" style="font-size:14px;text-align:center">${T('錢包：{0}',yen(arcWallet(0)))}</p>${arcBetRow('pin')}${arcMultiRow('pin')}<div class="btns"><button class="btn" data-act="arcdrop">${T('投一顆')}</button><button class="btn alt" data-act="arcade">${T('返回')}</button></div>`);arcPinDraw(null,null)}
 function arcPinDraw(ball,hi){
   const cv=document.getElementById('arcCv');if(!cv)return;const g=cv.getContext('2d'),cx=150,sp=32;
   g.fillStyle='#2a1a10';g.fillRect(0,0,300,330);
@@ -5415,6 +5453,7 @@ document.addEventListener('click',e=>{
   else if(act==='arcspin')arcSpin();
   else if(act==='arcbet')arcBet(a.dataset.g,+a.dataset.d);
   else if(act==='arcdrop')arcDrop();
+  else if(act==='arcmulti')arcMulti(a.dataset.g,+a.dataset.n);
   else if(act==='lang')showLang();
   else if(act==='update')doUpdate();
   else if(act==='lb'){LB.ch=0;LB.fcb=0;showLB()}
@@ -6926,6 +6965,7 @@ function startReplay(k){
   KEY=RPKEY;try{localStorage.setItem(RPKEY,JSON.stringify(sb))}catch(e){}
   ST=sb;closeHome();showDayIntro();
 }
+function achReplayCust(){try{if(DEMO||TEST)return;const rec=loadRec(),s=rec.ax=rec.ax||{},sv=R.served||0;s.sv=(s.sv||0)+sv;s.ls=(s.ls||0)+(R.lost||0);if(CUR==='sushi')s.sxv=(s.sxv||0)+sv;else if(CUR==='rm')s.rxv=(s.rxv||0)+sv;saveRec(rec);achSoon()}catch(e){}}
 function replayEnd(e,stars){
   const k=RP.k;let base=null;try{base=JSON.parse(lsGet(REAL_KEY)||'null')}catch(x){}
   R.settled=true;R.held=null;DAYLEN=159;
@@ -6933,7 +6973,7 @@ function replayEnd(e,stars){
   if(base){ST.day=base.day;ST.pendingNext=!!base.pendingNext;ST.today=base.today||null}
   RP.on=false;RP.k=0;KEY=REAL_KEY;
   try{localStorage.setItem(KEY,JSON.stringify(ST));localStorage.removeItem(RPKEY)}catch(x){}
-  touchLocal();cloudUpload(true);renderHUD();
+  achReplayCust();touchLocal();cloudUpload(true);renderHUD();
   modal(`<h2>${T('重玩結束')}</h2><div class="stars">${[0,1,2].map(i=>`<span class="${i<stars?'on':''}">★</span>`).join('')}</div>
   <div class="goalrow"><span>${T('營收 {0}',yen(R.earned))}</span><span>${T('淨利 {0}',yen(e))}</span></div>
   <p>${T('這次的錢已經放進錢包，星星只會往上更新。你的進度還是第 {0} 天。',ST.day)}</p>
@@ -9558,6 +9598,10 @@ document.addEventListener('keydown',e=>{if(!AST.on||!AST.ed||/INPUT|TEXTAREA/.te
 .astm button{background:#c0392b!important;color:#fff!important}
 @media (max-height:430px){.astr{width:178px}.astl{width:56px}.astl button{font-size:16px}.asth{padding:3px 6px}}
 `;document.head.appendChild(st)})();
+Object.assign(I18N.en=I18N.en||{},{"連轉 {0} 次":"Spin ×{0}","連投 {0} 顆":"Drop ×{0}","連轉 {0} 次：下注 {1}、中獎 {2}、彩蛋 {3} 次、大獎 {4} 次，淨 {5}":"Spun {0} times: bet {1}, won {2}, bonus {3}, jackpots {4}, net {5}","連投 {0} 顆：下注 {1}、拿回 {2}、彩蛋 {3} 次、中大獎 {4} 次，淨 {5}":"Dropped {0} balls: bet {1}, returned {2}, bonus {3}, big wins {4}, net {5}","（錢包不夠，只轉了 {0} 次）":"(Not enough money, only spun {0} times)","（錢包不夠，只投了 {0} 顆）":"(Not enough money, only dropped {0} balls)"});
+Object.assign(I18N.ja=I18N.ja||{},{"連轉 {0} 次":"{0}回連続","連投 {0} 顆":"{0}個連続","連轉 {0} 次：下注 {1}、中獎 {2}、彩蛋 {3} 次、大獎 {4} 次，淨 {5}":"{0}回転：賭け{1}、獲得{2}、おまけ{3}回、大当たり{4}回、収支{5}","連投 {0} 顆：下注 {1}、拿回 {2}、彩蛋 {3} 次、中大獎 {4} 次，淨 {5}":"{0}個投入：賭け{1}、戻り{2}、おまけ{3}回、大当たり{4}回、収支{5}","（錢包不夠，只轉了 {0} 次）":"（所持金が足りず、{0}回で止まりました）","（錢包不夠，只投了 {0} 顆）":"（所持金が足りず、{0}個で止まりました）"});
+Object.assign(I18N.ko=I18N.ko||{},{"連轉 {0} 次":"{0}회 연속 스핀","連投 {0} 顆":"{0}개 연속 투입","連轉 {0} 次：下注 {1}、中獎 {2}、彩蛋 {3} 次、大獎 {4} 次，淨 {5}":"{0}회 스핀: 베팅 {1}, 당첨 {2}, 보너스 {3}회, 잭팟 {4}회, 순이익 {5}","連投 {0} 顆：下注 {1}、拿回 {2}、彩蛋 {3} 次、中大獎 {4} 次，淨 {5}":"{0}개 투입: 베팅 {1}, 회수 {2}, 보너스 {3}회, 대박 {4}회, 순이익 {5}","（錢包不夠，只轉了 {0} 次）":"(지갑이 부족해서 {0}회만 돌렸어요)","（錢包不夠，只投了 {0} 顆）":"(지갑이 부족해서 {0}개만 던졌어요)"});
+Object.assign(I18N.id=I18N.id||{},{"連轉 {0} 次":"Putar ×{0}","連投 {0} 顆":"Lempar ×{0}","連轉 {0} 次：下注 {1}、中獎 {2}、彩蛋 {3} 次、大獎 {4} 次，淨 {5}":"Putar {0} kali: taruhan {1}, menang {2}, bonus {3} kali, jackpot {4} kali, bersih {5}","連投 {0} 顆：下注 {1}、拿回 {2}、彩蛋 {3} 次、中大獎 {4} 次，淨 {5}":"Lempar {0} bola: taruhan {1}, kembali {2}, bonus {3} kali, big win {4} kali, bersih {5}","（錢包不夠，只轉了 {0} 次）":"(Uang tidak cukup, hanya {0} putaran)","（錢包不夠，只投了 {0} 顆）":"(Uang tidak cukup, hanya {0} bola)"});
 </script>
 </body>
 </html>
