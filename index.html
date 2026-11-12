@@ -6708,7 +6708,30 @@ async function cloudInit1(){
     /* App Check: proves a request comes from this real site, so scripts and curl can't hammer the database. Inert until APPCHECK_KEY (reCAPTCHA v3 site key) is filled in. */
     if(APPCHECK_KEY){try{const ac=await import(B+'firebase-app-check.js');ac.initializeAppCheck(app,{provider:new ac.ReCaptchaV3Provider(APPCHECK_KEY),isTokenAutoRefreshEnabled:true})}catch(e){console.warn('app check',e)}}
     const auth=au.getAuth(app),db=fs.getFirestore(app);
-    let RD=null,rtT=null,rtN=0;const rtdb=async()=>{if(!RD){const rd=await import(B+'firebase-database.js');RD={rd,db:rd.getDatabase(app,RTDB_URL)}}return RD};
+    /*DL-BEGIN*/ /* download meter (admin diagnostics): counts bytes the server sends back per top-level path, flushed to dlstat/$day/$uid/$device every 5 min. Writes are not counted as downloads. */
+    const DL={b:{},dirty:0};
+    const dlWrap=rd=>{const o=Object.assign({},rd);
+      const add=s=>{try{const k=String(s.ref).replace(/^https?:\/\/[^/]+\/?/,'').split('/')[0]||'(root)';DL.b[k]=(DL.b[k]||0)+(JSON.stringify(s.val())||'').length;DL.dirty=1}catch(e){}};
+      o.get=(q,...a)=>rd.get(q,...a).then(s=>{add(s);return s});
+      o.onValue=(q,cb,...a)=>rd.onValue(q,s=>{add(s);cb(s)},...a);
+      return o};
+    const dlDay=()=>new Date(Date.now()+8*3600e3).toISOString().slice(0,10).replace(/-/g,'');
+    const dlDev=(()=>{let v='';try{v=localStorage.getItem('izdv')||'';if(!v){v=Math.random().toString(36).slice(2,8);localStorage.setItem('izdv',v)}}catch(e){v='x'}return v})();
+    const dlFlush=async()=>{
+      if(!DL.dirty||!CL.user)return;
+      const day=dlDay();let st={};
+      try{st=JSON.parse(localStorage.getItem('izdl')||'{}')||{}}catch(e){}
+      if(st.d!==day||!st.b)st={d:day,b:{}};
+      Object.keys(DL.b).forEach(k=>{st.b[k]=(st.b[k]||0)+DL.b[k]});
+      DL.b={};DL.dirty=0;
+      try{localStorage.setItem('izdl',JSON.stringify(st))}catch(e){}
+      try{await rt((rd,r)=>rd.set(rd.ref(r,'dlstat/'+day+'/'+CL.user.uid+'/'+dlDev),{b:st.b,t:rd.serverTimestamp()}))}catch(e){}
+    };
+    setInterval(dlFlush,300000);
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)dlFlush()});
+    window.addEventListener('pagehide',()=>{dlFlush()});
+    /*DL-END*/
+    let RD=null,rtT=null,rtN=0;const rtdb=async()=>{if(!RD){const rd=await import(B+'firebase-database.js');RD={rd:dlWrap(rd),db:rd.getDatabase(app,RTDB_URL)}}return RD};
     /* free plan = 100 simultaneous connections: drop the socket once nothing needs it. rtN counts requests still in flight so a short idle never cuts one off;
        only an open chat, a co-op room or the home-screen invite listener keeps the line up (see coopInvTick) */
     const rtIdle=ms=>{clearTimeout(rtT);rtT=setTimeout(()=>{if(RD&&!rtN&&!CHT.unsub&&!COOP.on&&!COOP.invOff)RD.rd.goOffline(RD.db)},ms||8000)};

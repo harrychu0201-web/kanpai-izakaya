@@ -609,6 +609,16 @@
           ".validate": "newData.hasChildren(['s','t']) && newData.child('s').isString() && newData.child('t').isString() && newData.child('t').val().length < 2000"
         }
       }
+    },
+    "dlstat": {
+      "$day": {
+        "$uid": {
+          "$dev": {
+            ".write": "auth != null && auth.uid === $uid",
+            ".read": false
+          }
+        }
+      }
     }
   }
 }
