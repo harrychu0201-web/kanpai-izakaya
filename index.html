@@ -6866,7 +6866,7 @@ async function cloudInit1(){
       idle:()=>rtIdle(),
       chatSub:(cb,err,pre)=>{let off=null,dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
         const lo=pre||'-'; /* 每個語言聊天室 = chat 底下 key 的前綴（繁中沿用原本的 push id，開頭都是 '-'），用 orderByKey 範圍查詢，不用改 Firebase 規則 */
-        off=rd.onValue(rd.query(rd.ref(r,'chat'),rd.orderByKey(),rd.startAt(lo),rd.endAt(lo+'\uf8ff'),rd.limitToLast(50)),snap=>{const a=[];snap.forEach(c=>{const x=c.val()||{};a.push({id:c.key,uid:x.uid,name:x.name,text:x.text,adm:x.adm===true,t:typeof x.t==='number'?x.t:Date.now(),likes:x.likes||{},rp:x.rp||null})});cb(a.reverse())},err)}).catch(err);
+        off=rd.onValue(rd.query(rd.ref(r,'chat'),rd.orderByKey(),rd.startAt(lo),rd.endAt(lo+'\uf8ff'),rd.limitToLast(30)),snap=>{const a=[];snap.forEach(c=>{const x=c.val()||{};a.push({id:c.key,uid:x.uid,name:x.name,text:x.text,adm:x.adm===true,t:typeof x.t==='number'?x.t:Date.now(),likes:x.likes||{},rp:x.rp||null})});cb(a.reverse())},err)}).catch(err);
         return ()=>{dead=true;if(off)off()}},
       chatSend:(uid,name,text,adm,rp,pre)=>rt((rd,r)=>{const id=(pre||'')+rd.push(rd.ref(r,'chat')).key;
         const m={uid,name,text,t:rd.serverTimestamp()};if(adm)m.adm=true;if(rp)m.rp=rp; /* rp: snapshot of the message being replied to */ /* adm: the rules only accept it from the author's verified Google account, so players can't fake the 👑 mark */
@@ -7120,7 +7120,7 @@ async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=nu
   const put=async dd=>{try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},dd))}
     catch(e){const d2=Object.assign({},dd);delete d2.dex;delete d2.chal;delete d2.chalh;delete d2.fc;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}}}; /* rules not updated yet: still keep the rest of the entry */
   try{await put(d)}catch(e){const nn=String(d.name).replace(/管理[員员]/g,'').trim();if(nn===d.name)throw e;await put(Object.assign({},d,{name:nn||'玩家'}))} /* published rules may still reject 管理員 in names: show the name without it instead of not showing him at all */
-  LB.last=u.uid+k}
+  LB.last=u.uid+k;/* update my own row in every cached board in place (no full re-download) */Object.keys(LB.cache).forEach(f=>{const c=LB.cache[f],tb=LBT.find(x=>x[0]===f);if(!c||!c.rows||!tb)return;const asc=tb[2]==='asc';const rows=c.rows.filter(x=>x.uid!==u.uid);if(typeof d[f]==='number'&&(!asc||d[f]>0))rows.push(Object.assign({uid:u.uid},d,{at:Date.now()}));rows.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f]);c.rows=rows})}
 const lbVal=(t,v)=>t==='fc'?(window.fcFmt?window.fcFmt(v):String(v)):t==='chal'||t==='chalh'?chTime(v):t==='dex'?T('{0} 種',v):t==='days'?T('{0} 天',v):yen(v);
 const lbHead=tb=>`<h2>${T('排行榜')}</h2><div class="lbtabs">${LBT.filter(x=>!(LB.ch&&x[0]==='fr')).map(([k,n])=>`<button class="stab ${LB.tab===k?'on':''}" data-act="lbtab" data-id="${k}">${T(n)}</button>`).join('')}</div><p class="lbdesc">${T(tb[3])}</p>`;
 /* ===== manual scores (owner only): for a player whose own upload keeps failing. Stored in notice/lbman/<name>, merged into the board;
