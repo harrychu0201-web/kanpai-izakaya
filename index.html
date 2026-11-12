@@ -1017,7 +1017,7 @@ function chCycle(){R.t-=DAYLEN*(24-CHG.h0)/24;CHG.h0=0;ST.coins+=net();R.earned=
 function chFail(why){if(!chOn())return;CHG.on=false;chRecord();if(R)R.over=true;renderHUD();
   const r=loadRec(),best=CHG.hard?r.chalh:r.chal,act=CHG.hard?'chstarth':'chstart';
   modal(CHEND=`<h2>${T('無限挑戰結束')}</h2><p>${T('最後一次失誤：{0}',T(why))}</p><div class="goalrow"><span>${T('營業時間 {0}',chTime(CHG.sec))}</span><span>${T('撐到第 {0} 天',ST.day)}</span><span>${T('滿意 {0} 位',R?R.served:0)}</span></div><p>${T('這次的營業時間會登上排行榜。目前最佳：{0}',chTime(best||0))}</p>${!CL.user?`<p>${T('登入並取暱稱後才會上榜。')}</p>`:!r.nick?`<p>${T('取個暱稱就能加入排行榜。')}</p>`:''}<div class="btns"><button class="btn" data-act="${act}">${T('再挑戰一次')}</button><button class="btn alt" data-act="chlb" data-id="${CHG.hard?'chalh':'chal'}">${T('排行榜')}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`)}
-function chStart(hard){if(CHG)chQuit();LB.ch=0;CHEND='';
+function chStart(hard){ARCTOWN=null;if(CHG)chQuit();LB.ch=0;CHEND='';
   CHG={on:true,hard:!!hard,sec:0,strikes:0,log:[],day:1,h0:16};
   ST=Object.assign(load()||fresh(),{day:1,coins:3000,debt:0,loans:0,dues:[],stars:{},where:'iz',pendingNext:false,pre:null});
   delete ST.today;delete ST.past;
@@ -4638,7 +4638,7 @@ document.addEventListener('click',e=>{if(!HOME)return;const m=e.target.closest('
 /* 2026-11-12 暖簾街（原名分店街）：選店改成在街上走路、走進店門（參考使用者給的校園走路影片）。
    拖曳＝虛擬搖桿；輕點地面＝走過去；直接點店面＝走到門口自動進店；電腦可用方向鍵/WASD。
    走進門＝按下原本清單裡那顆按鈕（隱藏的 .brpick 列），所以解鎖、換店、返回的邏輯全部沿用舊的，不另寫一套。原清單在「📋 清單」。 */
-let TOWN=null,TOWN_IC={};
+let TOWN=null,TOWN_IC={},TOWNBACK='',ARCTOWN=null;
 if(typeof CanvasRenderingContext2D!=='undefined'&&!CanvasRenderingContext2D.prototype.roundRect)CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r||0,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath()};
 
 const TOWN_WIN={iz:'img/home-ffe867f5.webp',sushi:'img/bg-sushi-b2a51cbc.webp',tep:'img/bg-tep-a4f780a7.webp'};
@@ -4648,6 +4648,7 @@ const TOWN_LOOK={iz:{wall:'#7a3f24',wall2:'#5c2c18',noren:'#23315c',ink:'#f3e6c8
   sushi:{wall:'#d9c49a',wall2:'#bfa67a',noren:'#1f5a8a',ink:'#ffffff',kan:'寿司',lan:'#e9e1cf'},
   tep:{wall:'#2a2226',wall2:'#1a1416',noren:'#a3201a',ink:'#ffd9a0',kan:'鉄板焼',lan:'#ff6a2a'},
   oko:{wall:'#a8662e',wall2:'#874e20',noren:'#e08a1e',ink:'#3a1e0c',kan:'お好み焼',lan:'#f0b03a'},
+  arcade:{wall:'#2b2250',wall2:'#1c1638',noren:'#c8226a',ink:'#fff3d6',kan:'ゲーム',lan:'#4ad0ff',g:['#7a8cff','#e0509a']},
   bar:{wall:'#22203a',wall2:'#15132a',noren:'#5a2a6a',ink:'#ffe9a8',kan:'月影バー',lan:'#ffcf7a'}};
 function townImg(s){let i=TOWN_IC[s];if(!i){i=new Image();i.src=s;TOWN_IC[s]=i}return i}
 function brRow(o,cur){const btn=(id,name,sub,ok)=>`<button class="btn ${cur===id?'':'alt'}" data-act="pickbranch" data-id="${id}" data-town="${id}" ${ok?'':'disabled'}>${T(name)}${cur===id?` · ${T('目前')}`:''}<small>${T(sub)}</small></button>`;
@@ -4664,18 +4665,18 @@ function townWhere(){if(!ST||!townDev())return;townOpen(ST,CUR,whereRow(),'townb
 function branchPick(){if(!townDev()){branchList();return}const o=load()||{};townOpen(o,brCur(o),brRow(o,brCur(o)),'shopback','brpick')}
 function townOpen(o,cur,row,back,rc){
   const shops=[['iz','🏮','居酒屋本店',1],['rm','🍜','深夜拉麵屋台',!!o.rm]];
-  if(sushiDev())shops.push(['sushi','🍣','海風壽司',!!o.sushi]);if(tepDev())shops.push(['tep','🔥','炎舞鐵板燒',!!o.tep]);if(okoDev())shops.push(['oko','🥞','御好燒店',!!o.oko]);if(barDev())shops.push(['bar','🍸','月影酒吧',!!o.bar]);
+  if(sushiDev())shops.push(['sushi','🍣','海風壽司',!!o.sushi]);if(tepDev())shops.push(['tep','🔥','炎舞鐵板燒',!!o.tep]);if(okoDev())shops.push(['oko','🥞','御好燒店',!!o.oko]);if(barDev())shops.push(['bar','🍸','月影酒吧',!!o.bar]);shops.push(['arcade','🎮','遊戲廳',true]);TOWNBACK=back;row+=`<button class="btn" data-act="arcadetown" data-town="arcade"></button>`;
   modal(`<div class="town"><canvas class="twcv"></canvas><div class="twtop"><b>🏮 ${T('暖簾街')}</b><span class="twhint">${T('拖曳移動，走進店門就能進去，點頭上的泡泡聽他們聊天')}</span>${back==='shopback'?`<button class="btn alt twlist" data-act="brlist">📋 ${T('清單')}</button>`:''}<button class="btn alt twlist tw3tg" type="button">${town3dOn()?'2D':'3D'}</button><button class="xbtn" data-act="${back}" aria-label="${T('關閉')}">×</button></div><div class="pickrow ${rc}" style="display:none">${row}</div></div>`);
   const tw=document.querySelector('.modal .town');if(!tw)return;const card=tw.closest('.card'),md=tw.closest('.modal');card.classList.add('towncard');md.classList.add('townm');
   const sl=shops.map(([id,e,n,own])=>({id,e,n,own,cur:id===cur})),tg=tw.querySelector('.tw3tg');
   if(tg)tg.addEventListener('click',()=>{try{localStorage.setItem('izakaya-town3d',town3dOn()?'0':'1')}catch(e){}tg.textContent=town3dOn()?'2D':'3D';townRestart(tw,sl)});
   townStart(tw,sl)}
-/* 3D 版橫丁：three.js 打包檔只在作者／管理員打開橫丁時才載入（img/town3d-dfd3334c.js，hash 在檔名裡，換版本檔名就變）。
+/* 3D 版橫丁：three.js 打包檔只在作者／管理員打開橫丁時才載入（img/town3d-e6176ef0.js，hash 在檔名裡，換版本檔名就變）。
    載入失敗、裝置不支援 WebGL、或按了右上角的 2D，就用下面原本的 2D 版。 */
 let T3P=null;
 function town3dOn(){try{return localStorage.getItem('izakaya-town3d')!=='0'}catch(e){return true}}
 function loadTown3D(){if(window.Town3D)return Promise.resolve();if(T3P)return T3P;
-  T3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/town3d-dfd3334c.js';s.onload=()=>ok();s.onerror=()=>{T3P=null;no(new Error('town3d'))};document.head.appendChild(s)});return T3P}
+  T3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/town3d-e6176ef0.js';s.onload=()=>ok();s.onerror=()=>{T3P=null;no(new Error('town3d'))};document.head.appendChild(s)});return T3P}
 function townFresh(tw){const old=tw.querySelector('canvas'),c=document.createElement('canvas');c.className='twcv';old.replaceWith(c);return c}
 function townStart(tw,shops){if(TOWN)TOWN.dead=1;
   if(!town3dOn()){town2Start(tw,shops);return}
@@ -4809,7 +4810,7 @@ function townShop(ctx,sh,S){const L=TOWN_LOOK[sh.id]||TOWN_LOOK.iz,x=sh.x,w=sh.w
   /* 靠近門口提示 */
   if(near){const a=.6+.4*Math.sin(t*6);ctx.fillStyle=`rgba(255,236,170,${a})`;ctx.beginPath();ctx.moveTo(dx,gy+8);ctx.lineTo(dx-14,gy+28);ctx.lineTo(dx+14,gy+28);ctx.closePath();ctx.fill();
     ctx.font=`900 15px 'Zen Maru Gothic','Noto Sans TC',sans-serif`;ctx.fillStyle='#fff3cf';ctx.strokeStyle='rgba(20,10,5,.8)';ctx.lineWidth=4;const tx=T('往上走進店'),hy=gy-170+96;ctx.strokeText(tx,dx,hy);ctx.fillText(tx,dx,hy)}}
-function showHome(){if(CHG)chQuit();LB.ch=0;CHEND='';if(RP.on)abandonReplay();
+function showHome(){ARCTOWN=null;if(CHG)chQuit();LB.ch=0;CHEND='';if(RP.on)abandonReplay();
   if(CUR!=='iz'){CUR='iz';chooseLayout(true)}SHOPHOME=false;DEMO=false;if(TUT){TUT=null;tutLayer().innerHTML=''}const wasPlay=!HOME;HOME=true;R=null;ST=null;closeModal();if(wasPlay){PLAYT=0;STAB={o:'',h:0};STABW={o:'',w:0};LANDW={o:'',w:0};refitBurst()}setTimeout(fit,0);renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
   const saved=load();
   const nbtn=NOTICE?`<button class="langbtn noticefab" data-act="notice" aria-label="${T('公告')}">📢 ${T('公告')}${noticeDue()?'<i class="rdot"></i>':''}</button>`:'';
@@ -4919,7 +4920,7 @@ function arcBetType(g,v){
   const e=document.getElementById('arcBetAmt');if(e)e.value=n;
 }
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.arcbet)arcBetType(t.dataset.arcbet,t.value)});
-function showArcade(){modal(`<h2>${T('遊戲廳')}</h2><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p><p style="font-size:14px">${T('試試你的小手氣~')}</p><div class="btns"><button class="btn" data-act="arcslot">🎰 ${T('拉霸機')}</button><button class="btn" data-act="arcpin">🔮 ${T('彈珠台')}</button><button class="btn" data-act="chopen">♾️ ${T('無限挑戰')}</button><button class="btn" data-act="omk">🎋 ${T('幸運籤')}</button><button class="btn" data-act="gacha">🥚 ${T('扭蛋機')}</button><button class="btn" data-act="fc">🍙 ${T('點食成金')}</button><button class="btn alt" data-act="closem">${T('返回')}</button></div>`)}
+function showArcade(){modal(`<h2>${T('遊戲廳')}</h2><p id="arcW" style="font-size:14px">${T('錢包：{0}',yen(arcWallet(0)))}</p><p style="font-size:14px">${T('試試你的小手氣~')}</p><div class="btns"><button class="btn" data-act="arcslot">🎰 ${T('拉霸機')}</button><button class="btn" data-act="arcpin">🔮 ${T('彈珠台')}</button><button class="btn" data-act="chopen">♾️ ${T('無限挑戰')}</button><button class="btn" data-act="omk">🎋 ${T('幸運籤')}</button><button class="btn" data-act="gacha">🥚 ${T('扭蛋機')}</button><button class="btn" data-act="fc">🍙 ${T('點食成金')}</button><button class="btn alt" data-act="${ARCTOWN?'arcreturn':'closem'}">${T('返回')}</button></div>`)}
 const ARC_CSS=`<style>.arc-reels{display:flex;gap:10px;justify-content:center;margin:14px 0}.arc-reels span{width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:38px;background:#fff8e6;border:3px solid #7a4a2a;border-radius:12px;box-shadow:inset 0 -4px 0 #e9d3a6}.arc-msg{font-size:15px;min-height:1.4em;text-align:center;margin:6px 0}</style>`;
 const GACHA_PRICE=300,GACHA_PITY=10,GACHA_RATE={c:60,r:30,s:10};
 const GACHA_NAME={c:'普通',r:'稀有',s:'超稀有',x:'秘密'},GACHA_COL={c:'#7a4a2a',r:'#2f7fb8',s:'#c8891a',x:'#7a3ad0'};
@@ -5493,7 +5494,9 @@ document.addEventListener('click',e=>{
   else if(act==='replay')showReplay();
   else if(act==='replayok')startReplay(+$('rpday').value);
   else if(act==='rpagain')startReplay(+a.dataset.id);
-  else if(act==='arcade')showArcade();
+  else if(act==='arcade'){if(HOME)ARCTOWN=null;showArcade()}
+  else if(act==='arcadetown'){ARCTOWN=TOWNBACK||'townback';showArcade()}
+  else if(act==='arcreturn'){const b=ARCTOWN;ARCTOWN=null;if(b==='shopback')branchPick();else townWhere()}
   else if(/^fc(buy|tab|qty|up|claim|claimall|cloud|lb)?$/.test(act))fcAct(act,a);
   else if(act==='arcslot')showArcSlot();
   else if(act==='arcpin')showArcPin();

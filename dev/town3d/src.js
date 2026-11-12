@@ -153,7 +153,7 @@ export function start(o) {
         x.save(); x.beginPath(); x.rect(wx, wy, ww, wh); x.clip();
         const im = art && imgs[sh.id];
         if (im && im.complete && im.naturalWidth) { const iw = im.naturalWidth, ih = im.naturalHeight, cwid = ih * .6 * ww / wh, cx = wx < cw / 2 ? iw * .18 : iw * .62; x.drawImage(im, cx, ih * .2, cwid, ih * .6, wx, wy, ww, wh); x.fillStyle = 'rgba(255,170,80,.18)'; x.fillRect(wx, wy, ww, wh); }
-        else { const gr = x.createLinearGradient(0, wy, 0, wy + wh); gr.addColorStop(0, '#ffd88a'); gr.addColorStop(1, '#e59a45'); x.fillStyle = gr; x.fillRect(wx, wy, ww, wh); }
+        else { const gr = x.createLinearGradient(0, wy, 0, wy + wh); gr.addColorStop(0, L.g ? L.g[0] : '#ffd88a'); gr.addColorStop(1, L.g ? L.g[1] : '#e59a45'); x.fillStyle = gr; x.fillRect(wx, wy, ww, wh); }
         if (!sh.own) { x.fillStyle = 'rgba(20,12,8,.6)'; x.fillRect(wx, wy, ww, wh); }
         x.restore(); x.strokeStyle = O; x.lineWidth = 4; x.strokeRect(wx, wy, ww, wh); x.lineWidth = 3; x.strokeStyle = 'rgba(42,24,16,.8)'; x.beginPath(); x.moveTo(wx + ww / 2, wy); x.lineTo(wx + ww / 2, wy + wh); x.moveTo(wx, wy + wh / 2); x.lineTo(wx + ww, wy + wh / 2); x.stroke();
       };
@@ -161,7 +161,7 @@ export function start(o) {
       const wy = ch - 2.5 * PX, wh = 1.6 * PX;
       win(.45 * PX, wy, 1.95 * PX, wh, true); win(5.6 * PX, wy, 1.95 * PX, wh, true);
       x.fillStyle = L.wall2; x.fillRect(0, ch - .9 * PX, cw, .9 * PX); x.strokeStyle = 'rgba(0,0,0,.25)'; x.lineWidth = 2; for (let i = 1; i < 4; i++) { x.beginPath(); x.moveTo(0, ch - .9 * PX + i * .225 * PX); x.lineTo(cw, ch - .9 * PX + i * .225 * PX); x.stroke(); }
-      const dg = x.createLinearGradient(0, ch - 2.5 * PX, 0, ch); dg.addColorStop(0, sh.own ? '#ffcf7a' : '#4a3a30'); dg.addColorStop(1, sh.own ? '#b8642a' : '#2a201a');
+      const dg = x.createLinearGradient(0, ch - 2.5 * PX, 0, ch); dg.addColorStop(0, sh.own ? (L.g ? L.g[0] : '#ffcf7a') : '#4a3a30'); dg.addColorStop(1, sh.own ? (L.g ? L.g[1] : '#b8642a') : '#2a201a');
       x.fillStyle = dg; x.fillRect(3 * PX, ch - 2.5 * PX, 2 * PX, 2.5 * PX);
       if (!sh.own) { x.fillStyle = 'rgba(0,0,0,.35)'; x.fillRect(0, 0, cw, ch); }
       if (sh.tex) sh.tex.needsUpdate = true;
