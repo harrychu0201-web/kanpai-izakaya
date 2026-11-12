@@ -4638,11 +4638,11 @@ document.addEventListener('click',e=>{if(!HOME)return;const m=e.target.closest('
 /* 2026-11-12 暖簾街（原名分店街）：選店改成在街上走路、走進店門（參考使用者給的校園走路影片）。
    拖曳＝虛擬搖桿；輕點地面＝走過去；直接點店面＝走到門口自動進店；電腦可用方向鍵/WASD。
    走進門＝按下原本清單裡那顆按鈕（隱藏的 .brpick 列），所以解鎖、換店、返回的邏輯全部沿用舊的，不另寫一套。原清單在「📋 清單」。 */
-let TOWN=null,TOWN_IC={},TOWNBACK='',ARCTOWN=null;
+let TOWN=null,TOWNBACK='',ARCTOWN=null;
 if(typeof CanvasRenderingContext2D!=='undefined'&&!CanvasRenderingContext2D.prototype.roundRect)CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r||0,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath()};
 
 const TOWN_WIN={iz:'img/home-ffe867f5.webp',sushi:'img/bg-sushi-b2a51cbc.webp',tep:'img/bg-tep-a4f780a7.webp'};
-const TOWN_ME='img/staff-girl-1.webp',TOWN_NPC=['img/mob0-walk-143a721e.webp','img/mob3-walk-83dba783.webp','img/mob5-walk-c60a351b.webp','img/kazuo-walk-4c811f45.webp'];
+const TOWN_ME='img/staff-girl-1.webp';
 const TOWN_LOOK={iz:{wall:'#7a3f24',wall2:'#5c2c18',noren:'#23315c',ink:'#f3e6c8',kan:'居酒屋',lan:'#d8452f'},
   rm:{wall:'#3b2a22',wall2:'#2a1d17',noren:'#b8261c',ink:'#fff3d6',kan:'らーめん',lan:'#e2553a',yatai:1},
   sushi:{wall:'#d9c49a',wall2:'#bfa67a',noren:'#1f5a8a',ink:'#ffffff',kan:'寿司',lan:'#e9e1cf'},
@@ -4650,7 +4650,6 @@ const TOWN_LOOK={iz:{wall:'#7a3f24',wall2:'#5c2c18',noren:'#23315c',ink:'#f3e6c8
   oko:{wall:'#a8662e',wall2:'#874e20',noren:'#e08a1e',ink:'#3a1e0c',kan:'お好み焼',lan:'#f0b03a'},
   arcade:{wall:'#2b2250',wall2:'#1c1638',noren:'#c8226a',ink:'#fff3d6',kan:'ゲーム',lan:'#4ad0ff',g:['#7a8cff','#e0509a']},
   bar:{wall:'#22203a',wall2:'#15132a',noren:'#5a2a6a',ink:'#ffe9a8',kan:'月影バー',lan:'#ffcf7a'}};
-function townImg(s){let i=TOWN_IC[s];if(!i){i=new Image();i.src=s;TOWN_IC[s]=i}return i}
 function brRow(o,cur){const btn=(id,name,sub,ok)=>`<button class="btn ${cur===id?'':'alt'}" data-act="pickbranch" data-id="${id}" data-town="${id}" ${ok?'':'disabled'}>${T(name)}${cur===id?` · ${T('目前')}`:''}<small>${T(sub)}</small></button>`;
   const lk=(id,act,name)=>`<button class="btn alt" data-act="${act}" data-town="${id}">${T(name)}<small>${T('花錢解鎖')}</small></button>`;
   return `${btn('iz','🏮 居酒屋本店','',true)}${o.rm?btn('rm','🍜 深夜拉麵屋台','',true):lk('rm','rmhome','🍜 深夜拉麵屋台')}${sushiDev()?(o.sushi?btn('sushi','🍣 海風壽司','',true):lk('sushi','sushihome','🍣 海風壽司')):''}${tepDev()?(o.tep?btn('tep','🔥 炎舞鐵板燒','',true):lk('tep','tephome','🔥 炎舞鐵板燒')):''}${okoDev()?(o.oko?btn('oko','🥞 御好燒店','',true):lk('oko','okohome','🥞 御好燒店')):''}${barDev()?(o.bar?btn('bar','🍸 月影酒吧','',true):lk('bar','barhome','🍸 月影酒吧')):''}`}
@@ -4668,150 +4667,31 @@ function branchPick(){if(!townDev()){branchList();return}const o=load()||{};town
 function townOpen(o,cur,row,back,rc,hud){
   const shops=[['iz','🏮','居酒屋本店',1],['rm','🍜','深夜拉麵屋台',!!o.rm]];
   if(sushiDev())shops.push(['sushi','🍣','海風壽司',!!o.sushi]);if(tepDev())shops.push(['tep','🔥','炎舞鐵板燒',!!o.tep]);if(okoDev())shops.push(['oko','🥞','御好燒店',!!o.oko]);if(barDev())shops.push(['bar','🍸','月影酒吧',!!o.bar]);shops.push(['arcade','🎮','遊戲廳',true]);TOWNBACK=back;row+=`<button class="btn" data-act="arcadetown" data-town="arcade"></button>`;
-  modal(`<div class="town"><canvas class="twcv"></canvas><div class="twtop"><b>🏮 ${T('暖簾街')}</b>${hud||''}<span class="twhint${hud?' twhint2':''}">${T('拖曳移動，走進店門就能進去，點頭上的泡泡聽他們聊天')}</span>${back==='shopback'?`<button class="btn alt twlist" data-act="brlist">📋 ${T('清單')}</button>`:''}<button class="btn alt twlist tw3tg" type="button">${town3dOn()?'2D':'3D'}</button><button class="xbtn" data-act="${back}" aria-label="${T('關閉')}">×</button></div><div class="pickrow ${rc}" style="display:none">${row}</div></div>`);
+  modal(`<div class="town"><canvas class="twcv"></canvas><div class="twtop"><b>🏮 ${T('暖簾街')}</b>${hud||''}<span class="twhint${hud?' twhint2':''}">${T('拖曳移動，走進店門就能進去，點頭上的泡泡聽他們聊天')}</span>${back==='shopback'?`<button class="btn alt twlist" data-act="brlist">📋 ${T('清單')}</button>`:''}<button class="xbtn" data-act="home" aria-label="${T('關閉')}">×</button></div><div class="pickrow ${rc}" style="display:none">${row}</div></div>`);
   const tw=document.querySelector('.modal .town');if(!tw)return;const card=tw.closest('.card'),md=tw.closest('.modal');card.classList.add('towncard');md.classList.add('townm');
-  const sl=shops.map(([id,e,n,own])=>({id,e,n,own,cur:id===cur})),tg=tw.querySelector('.tw3tg');
-  if(tg)tg.addEventListener('click',()=>{try{localStorage.setItem('izakaya-town3d',town3dOn()?'0':'1')}catch(e){}tg.textContent=town3dOn()?'2D':'3D';townRestart(tw,sl)});
+  const sl=shops.map(([id,e,n,own])=>({id,e,n,own,cur:id===cur}));
   townStart(tw,sl)}
-/* 3D 版橫丁：three.js 打包檔只在作者／管理員打開橫丁時才載入（img/town3d-e6176ef0.js，hash 在檔名裡，換版本檔名就變）。
-   載入失敗、裝置不支援 WebGL、或按了右上角的 2D，就用下面原本的 2D 版。 */
+/* 暖簾街：three.js 打包檔在打開暖簾街時才載入（img/town3d-e6176ef0.js，hash 在檔名裡，換版本檔名就變）。
+   載入失敗或裝置不支援 WebGL 時顯示提示，只剩返回主頁。 */
 let T3P=null;
-function town3dOn(){try{return localStorage.getItem('izakaya-town3d')!=='0'}catch(e){return true}}
 function loadTown3D(){if(window.Town3D)return Promise.resolve();if(T3P)return T3P;
   T3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/town3d-e6176ef0.js';s.onload=()=>ok();s.onerror=()=>{T3P=null;no(new Error('town3d'))};document.head.appendChild(s)});return T3P}
 function townFresh(tw){const old=tw.querySelector('canvas'),c=document.createElement('canvas');c.className='twcv';old.replaceWith(c);return c}
 function townStart(tw,shops){if(TOWN)TOWN.dead=1;
-  if(!town3dOn()){town2Start(tw,shops);return}
   const cv=tw.querySelector('canvas'),ld=document.createElement('div');ld.className='tw3load';ld.textContent='🏮 …';tw.appendChild(ld);
-  const fb=()=>{ld.remove();if(!document.contains(tw))return;town2Start(tw,shops)};
+  const fail=()=>{ld.remove();if(!document.contains(tw))return;townFresh(tw);townFail(tw)};
   loadTown3D().then(()=>{ld.remove();if(!document.contains(cv))return;
     let ctl=null;try{ctl=Town3D.start({cv,root:tw,shops:shops.map(s=>({id:s.id,e:s.e,n:T(s.n),own:s.own,cur:s.cur})),looks:TOWN_LOOK,me:TOWN_ME,walk:town3dWalk(),win:TOWN_WIN,
       txt:{cur:'📍 '+T('目前'),lock:'🔒 '+T('花錢解鎖'),enter:T('往上走進店'),next:T('再聽一句')},onEnter:(sh,c)=>townGo(c,sh)})}catch(e){ctl=null}
-    if(!ctl){townFresh(tw);fb();return}
-    TOWN=ctl},fb)}
+    if(!ctl){fail();return}
+    TOWN=ctl},fail)}
+function townFail(tw){const m=document.createElement('div');m.className='tw3load';m.style.cssText='flex-direction:column;gap:14px;text-align:center;padding:20px';
+  m.innerHTML=`<div>${T('這台裝置無法顯示暖簾街（需要支援 WebGL 的瀏覽器）')}</div><button class="btn" data-act="home">${T('主頁')}</button>`;tw.appendChild(m)}
 function town3dWalk(){const w={};for(const k in SPR)if(SPR[k]&&SPR[k].walk)w[k]=SPR[k].walk;for(const k in MOBSPR)if(MOBSPR[k]&&MOBSPR[k].walk)w[k]=MOBSPR[k].walk;if(typeof ROBSPR!=='undefined'&&ROBSPR.walk)w.robot=ROBSPR.walk;return w}
-function townRestart(tw,shops){if(TOWN)TOWN.dead=1;townFresh(tw);tw.querySelectorAll('.tw3hint,.tw3j,.tw3cam,.tw3fade,.tw3card,.tw3load').forEach(e=>e.remove());townStart(tw,shops)}
-function town2Start(tw,shops){if(TOWN)TOWN.dead=1;
-  const SW=340,GAP=90,M=230,GY=380,n=shops.length;shops.forEach((s,i)=>{s.x=M+i*(SW+GAP);s.w=SW;s.dx=s.x+SW/2});
-  const W=M*2+n*SW+(n-1)*GAP,cs=shops.find(s=>s.cur)||shops[0];
-  const cv=tw.querySelector('canvas'),ctx=cv.getContext('2d');
-  const npc=TOWN_NPC.slice(0,3).map((src,i)=>({src,x:(W/3)*i+120,y:430+i*45,v:(i%2?-1:1)*(42+i*9),ph:i*1.7}));
-  const S={dead:0,cv,ctx,W,GY,shops,px:cs.dx,py:480,face:1,tgt:null,joy:null,keys:{},ent:null,t:0,last:performance.now(),camx:0,walk:0,npc,dpr:1,cw:0,ch:0};
-  TOWN=S;S.camx=Math.max(0,S.px-480);
-  [TOWN_ME,...TOWN_NPC.slice(0,3),...Object.values(TOWN_WIN)].forEach(townImg);
-  const k=()=>S.ch/600, toW=(cx,cy)=>{const r=cv.getBoundingClientRect(),lx=(cx-r.left)*(S.cw/r.width),ly=(cy-r.top)*(S.ch/r.height);return {x:lx/k()+S.camx-S.ox,y:ly/k(),lx,ly}};
-  let pd=null;
-  cv.addEventListener('pointerdown',e=>{if(S.ent)return;e.preventDefault();try{cv.setPointerCapture(e.pointerId)}catch(_){}const p=toW(e.clientX,e.clientY);pd={id:e.pointerId,sx:p.lx,sy:p.ly,moved:0}});
-  cv.addEventListener('pointermove',e=>{if(!pd||pd.id!==e.pointerId||S.ent)return;const p=toW(e.clientX,e.clientY),dx=p.lx-pd.sx,dy=p.ly-pd.sy,d=Math.hypot(dx,dy),R=55*k();
-    if(!pd.moved&&d>12*k())pd.moved=1;if(pd.moved){const m=Math.min(1,d/R)/Math.max(d,1e-6);S.joy={ox:pd.sx,oy:pd.sy,x:dx*m,y:dy*m};S.tgt=null}});
-  const up=e=>{if(!pd||pd.id!==e.pointerId)return;if(!pd.moved&&!S.ent){const p=toW(e.clientX,e.clientY);const sh=S.shops.find(s=>p.x>=s.x&&p.x<=s.x+s.w&&p.y<GY+6);
-      if(sh)S.tgt={x:sh.dx,y:GY+4,shop:sh};else S.tgt={x:Math.max(40,Math.min(W-40,p.x)),y:Math.max(398,Math.min(575,p.y))}}
-    pd=null;S.joy=null};
-  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
-  const kd=e=>{if(!document.contains(cv))return;const c=e.key;if(/^(Arrow|w$|a$|s$|d$|W$|A$|S$|D$)/.test(c)){S.keys[c.toLowerCase()]=1;S.tgt=null;e.preventDefault()}},ku=e=>{delete S.keys[e.key.toLowerCase()]};
-  document.addEventListener('keydown',kd);document.addEventListener('keyup',ku);
-  S.off=()=>{document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku)};
-  requestAnimationFrame(()=>townTick(S))}
-function townEnter(S,sh){if(S.ent)return;S.ent={sh,t0:performance.now(),y0:S.py};S.tgt=null;S.joy=null;try{sfx('click')}catch(e){}}
-function townTick(S){if(S.dead||!document.contains(S.cv)){S.dead=1;S.off&&S.off();if(TOWN===S)TOWN=null;return}
-  const now=performance.now(),dt=Math.min(.05,(now-S.last)/1000);S.last=now;S.t+=dt;
-  const cv=S.cv,ctx=S.ctx,dpr=Math.min(2,window.devicePixelRatio||1),r=cv.getBoundingClientRect();
-  const cw=Math.max(1,cv.clientWidth),ch=Math.max(1,cv.clientHeight);
-  if(cw!==S.cw||ch!==S.ch||dpr!==S.dpr){S.cw=cw;S.ch=ch;S.dpr=dpr;cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);S.bs=cv.width/cw}
-  const k=ch/600,VW=cw/k;S.ox=S.W<VW?(VW-S.W)/2:0;
-  /* 移動 */
-  if(!S.ent){let vx=0,vy=0;const K=S.keys;if(K.arrowleft||K.a)vx-=1;if(K.arrowright||K.d)vx+=1;if(K.arrowup||K.w)vy-=1;if(K.arrowdown||K.s)vy+=1;
-    if(S.joy){vx=S.joy.x;vy=S.joy.y}else if(vx||vy){const l=Math.hypot(vx,vy);vx/=l;vy/=l}else if(S.tgt){const far=S.tgt.shop&&Math.abs(S.tgt.x-S.px)>8,ty=far?Math.max(S.py,410):S.tgt.y,dx=S.tgt.x-S.px,dy=ty-S.py,d=Math.hypot(dx,dy);if(d<6&&!far){if(S.tgt.shop){S.px=S.tgt.x;S.py=S.tgt.y;townEnter(S,S.tgt.shop)}S.tgt=null}else{vx=dx/d;vy=dy/d}}
-    const sp=270,mv=Math.hypot(vx,vy);if(mv>.05){S.px+=vx*sp*dt;S.py+=vy*sp*.75*dt;if(Math.abs(vx)>.15)S.face=vx>0?1:-1;S.walk+=dt*mv}
-    S.px=Math.max(30,Math.min(S.W-30,S.px));const door=S.shops.find(s=>Math.abs(S.px-s.dx)<46);S.py=Math.min(578,Math.max(door?GYD(S)-2:398,S.py));
-    if(!S.ent&&door&&S.py<=GYD(S)+12&&(S.tgt?S.tgt.shop===door:vy<-.2))townEnter(S,door);S.moving=mv>.05}
-  let camT=Math.max(0,Math.min(Math.max(0,S.W-VW),S.px-VW/2));S.camx+=(camT-S.camx)*Math.min(1,dt*8);if(S.W<=VW)S.camx=0;
-  for(const p of S.npc){p.x+=p.v*dt;if(p.x>S.W+80)p.x=-80;if(p.x<-80)p.x=S.W+80}
-  /* 畫 */
-  ctx.setTransform(S.bs*k,0,0,S.bs*k,0,0);ctx.clearRect(0,0,VW,600);
-  let z=1,zx=0,zy=0,fade=0;if(S.ent){const p=Math.min(1,(now-S.ent.t0)/750),e=p*p*(3-2*p);z=1+e*1.4;zx=S.ent.sh.dx;zy=290;fade=Math.max(0,(p-.4)/.6);S.py=S.ent.y0+(330-S.ent.y0)*Math.min(1,p*1.6);S.px+=(S.ent.sh.dx-S.px)*Math.min(1,dt*10);
-    if(p>=1&&!S.ent.done){S.ent.done=1;townGo(S,S.ent.sh)}}
-  ctx.save();if(z!==1){const sx=zx-S.camx+S.ox;ctx.translate(sx,zy);ctx.scale(z,z);ctx.translate(-sx,-zy)}
-  townSky(ctx,VW,S);ctx.save();ctx.translate(-S.camx+S.ox,0);townGround(ctx,S);for(const sh of S.shops)townShop(ctx,sh,S);townLamps(ctx,S);
-  const ents=[...S.npc.map(p=>({y:p.y,f:()=>townPerson(ctx,p.src,p.x,p.y,p.v>0?1:-1,S.t*6+p.ph,1,.9)})),{y:S.py,f:()=>{const a=S.ent?Math.max(0,1-Math.max(0,(now-S.ent.t0)/750-.25)*2.2):1;townPerson(ctx,TOWN_ME,S.px,S.py,S.face,S.walk*9,a,1.08,!!(S.moving||S.ent))}}];
-  ents.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
-  if(S.tgt&&!S.ent){ctx.strokeStyle='rgba(255,230,160,.8)';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(S.tgt.x,S.tgt.y,16+Math.sin(S.t*8)*3,6,0,0,7);ctx.stroke()}
-  ctx.restore();ctx.restore();
-  if(S.joy){const lx=S.joy.ox/k,ly=S.joy.oy/k;ctx.fillStyle='rgba(255,255,255,.12)';ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(lx,ly,55,0,7);ctx.fill();ctx.stroke();ctx.fillStyle='rgba(255,255,255,.85)';ctx.beginPath();ctx.arc(lx+S.joy.x*55,ly+S.joy.y*55,22,0,7);ctx.fill()}
-  if(fade){ctx.fillStyle=`rgba(10,6,4,${fade})`;ctx.fillRect(0,0,VW,600)}
-  requestAnimationFrame(()=>townTick(S))}
-function GYD(S){return S.GY+4}
 function townGo(S,sh){const tw=S.cv.closest('.town'),b=tw&&tw.querySelector(`[data-town="${sh.id}"]`);
   if(b&&!b.disabled)b.click();
   /* 按鈕沒把畫面換掉（例如被擋下）就退回街上 */
-  setTimeout(()=>{if(!S.dead&&document.contains(S.cv)){if(S.resume)S.resume();else{S.ent=null;S.py=GYD(S)+70}}},120)}
-function townSky(ctx,VW,S){const g=ctx.createLinearGradient(0,0,0,380);g.addColorStop(0,'#141235');g.addColorStop(.6,'#3a2350');g.addColorStop(1,'#6b3a4a');ctx.fillStyle=g;ctx.fillRect(-VW,0,VW*3,600);
-  ctx.fillStyle='#fff';for(let i=0;i<40;i++){const x=((i*197)%1000)/1000*VW,y=(i*53)%170+8;ctx.globalAlpha=.35+.35*Math.sin(S.t*2+i);ctx.fillRect(x,y,2,2)}ctx.globalAlpha=1;
-  const mx=VW*.82;ctx.fillStyle='#fdf2c8';ctx.beginPath();ctx.arc(mx,70,30,0,7);ctx.fill();ctx.fillStyle='#2a1d45';ctx.beginPath();ctx.arc(mx+12,62,26,0,7);ctx.fill();
-  /* 遠景房子（慢速視差，用世界座標編號，捲動時不會跳） */
-  const off=S.camx*.4,b0=Math.floor(off/150)-1,hh=i=>120+(((i*71)%90)+90)%90,ww=i=>110+(((i*37)%60)+60)%60;
-  for(let i=b0;i<b0+VW/150+3;i++){const x=i*150-off,w=ww(i),h=hh(i);ctx.fillStyle='#22183a';ctx.fillRect(x,380-h-40,w,h+40);ctx.beginPath();ctx.moveTo(x-10,380-h-40);ctx.lineTo(x+w/2,380-h-75);ctx.lineTo(x+w+10,380-h-40);ctx.fill();
-    ctx.fillStyle='rgba(255,200,110,.5)';if(((i%3)+3)%3===0)ctx.fillRect(x+30,380-h+10,14,18);if(((i%2)+2)%2)ctx.fillRect(x+70,380-h+40,14,18)}}
-function townGround(ctx,S){const W=S.W,g=ctx.createLinearGradient(0,380,0,600);g.addColorStop(0,'#5a4a46');g.addColorStop(1,'#3a302e');ctx.fillStyle=g;ctx.fillRect(-600,380,W+1200,220);
-  ctx.strokeStyle='rgba(0,0,0,.22)';ctx.lineWidth=2;for(let y=400;y<600;y+=34){ctx.beginPath();ctx.moveTo(-600,y);ctx.lineTo(W+600,y);ctx.stroke()}
-  for(let r=0;r<7;r++){const y=380+r*34,o=r%2?40:0;for(let x=-600+o;x<W+600;x+=80){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+34);ctx.stroke()}}
-  ctx.fillStyle='#2b201c';ctx.fillRect(-600,374,W+1200,8)}
-function townLamps(ctx,S){for(let i=0;i<=S.shops.length;i++){const x=i===0?S.shops[0].x-GAPL(S)/2:S.shops[i-1].x+S.shops[i-1].w+GAPL(S)/2;
-  const gl=ctx.createRadialGradient(x,250,4,x,250,120);gl.addColorStop(0,'rgba(255,214,140,.55)');gl.addColorStop(1,'rgba(255,214,140,0)');ctx.fillStyle=gl;ctx.fillRect(x-130,130,260,300);
-  ctx.fillStyle='#2b2422';ctx.fillRect(x-4,250,8,150);ctx.fillRect(x-14,394,28,8);ctx.fillStyle='#ffe2a6';ctx.strokeStyle='#2b2422';ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(x-14,226,28,30,6);ctx.fill();ctx.stroke()}}
-function GAPL(S){return S.shops.length>1?S.shops[1].x-S.shops[0].x-S.shops[0].w:90}
-/* 走路的腳：原圖是一張靜態圖。
-   側面路人（*-walk）：整張圖直接畫，只做擺動和彈跳（不拆腿，拆腿會多出兩隻腳）；正面店員：把腳那段切出來，左右腳輪流抬起。上半身最後畫，蓋住接縫 */
-const TOWN_LEG={'img/staff-girl-1.webp':{h:.855,k:'front',sx:.525}};
-function townPerson(ctx,src,x,y,face,ph,alpha,sc,walking){const im=townImg(src);if(!im.complete||!im.naturalWidth)return;const d=(.86+.3*(y-400)/180)*sc,h=150*d,w=h*im.naturalWidth/im.naturalHeight,mv=walking!==false,b=mv?Math.abs(Math.sin(ph))*3*d:0;
-  const L=TOWN_LEG[src]||{h:.74,k:'side'},IW=im.naturalWidth,IH=im.naturalHeight,hy=IH*L.h,lh=h*(1-L.h),top=-h;
-  ctx.save();ctx.globalAlpha=alpha*.35;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(x,y,w*.32,8*d,0,0,7);ctx.fill();ctx.globalAlpha=alpha;ctx.translate(x,y-b);ctx.scale(face,1);
-  if(!mv){ctx.drawImage(im,-w/2,top,w,h);ctx.restore();return}
-  const s=Math.sin(ph);
-  if(L.k==='side'){/* 側面路人：原圖已經畫好兩隻腳（走路的姿勢），不能再複製腿——複製會變四隻腳。整張圖只做左右微擺＋上下彈跳 */
-    ctx.rotate(s*.05);ctx.drawImage(im,-w/2,top,w,h);ctx.restore();return}
-  else{const sx=IW*L.sx,lift=lh*.3;
-    ctx.drawImage(im,0,hy,sx,IH-hy,-w/2,-lh-Math.max(0,s)*lift,w*L.sx,lh);
-    ctx.drawImage(im,sx,hy,IW-sx,IH-hy,-w/2+w*L.sx,-lh-Math.max(0,-s)*lift,w*(1-L.sx),lh)}
-  const ov=h*.02;ctx.drawImage(im,0,0,IW,hy+ov/h*IH,-w/2,top,w,h-lh+ov);ctx.restore()}
-function townShop(ctx,sh,S){const L=TOWN_LOOK[sh.id]||TOWN_LOOK.iz,x=sh.x,w=sh.w,top=110,gy=S.GY,dx=sh.dx,t=S.t,near=!S.ent&&Math.abs(S.px-dx)<150&&S.py<500,O='#2a1810';
-  ctx.lineJoin='round';
-  /* 牆 */
-  ctx.fillStyle=L.wall;ctx.strokeStyle=O;ctx.lineWidth=4;ctx.fillRect(x,top,w,gy-top);ctx.strokeRect(x,top,w,gy-top);
-  ctx.fillStyle=L.wall2;for(let i=1;i<6;i++)ctx.fillRect(x+i*w/6-3,top+60,6,gy-top-60);
-  /* 屋頂 */
-  ctx.fillStyle='#2f3446';ctx.beginPath();ctx.moveTo(x-22,top+8);ctx.lineTo(x+18,top-38);ctx.lineTo(x+w-18,top-38);ctx.lineTo(x+w+22,top+8);ctx.closePath();ctx.fill();ctx.stroke();
-  ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=2;for(let i=1;i<14;i++){const xx=x+i*w/14;ctx.beginPath();ctx.moveTo(xx,top-34);ctx.lineTo(xx+(xx-dx)*.08,top+5);ctx.stroke()}
-  /* 招牌 */
-  const sw=Math.min(w-30,230);ctx.fillStyle='#f3e2bd';ctx.strokeStyle=O;ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(dx-sw/2,top+12,sw,44,8);ctx.fill();ctx.stroke();
-  ctx.fillStyle='#3a1e0c';ctx.textAlign='center';ctx.textBaseline='middle';let fs=24;const label=sh.e+' '+T(sh.n);ctx.font=`900 ${fs}px 'Zen Maru Gothic','Noto Sans TC',sans-serif`;while(ctx.measureText(label).width>sw-16&&fs>12){fs--;ctx.font=`900 ${fs}px 'Zen Maru Gothic','Noto Sans TC',sans-serif`}ctx.fillText(label,dx,top+35);
-  /* 窗：看得到店裡（有背景圖就用背景圖） */
-  const ww=(w-120)/2-22,wy=top+82,wh=150,win=TOWN_WIN[sh.id]&&townImg(TOWN_WIN[sh.id]);
-  for(const wx of [x+14,dx+60+8]){ctx.save();ctx.beginPath();ctx.rect(wx,wy,ww,wh);ctx.clip();
-    if(win&&win.complete&&win.naturalWidth){const iw=win.naturalWidth,ih=win.naturalHeight,cw=ih*.6*ww/wh,cx=wx<dx?iw*.18:iw*.62;ctx.drawImage(win,cx,ih*.2,cw,ih*.6,wx,wy,ww,wh);ctx.fillStyle='rgba(255,170,80,.18)';ctx.fillRect(wx,wy,ww,wh)}
-    else{const g=ctx.createLinearGradient(0,wy,0,wy+wh);g.addColorStop(0,'#ffd88a');g.addColorStop(1,'#e59a45');ctx.fillStyle=g;ctx.fillRect(wx,wy,ww,wh)}
-    if(!sh.own){ctx.fillStyle='rgba(20,12,8,.55)';ctx.fillRect(wx,wy,ww,wh)}
-    ctx.restore();ctx.strokeStyle=O;ctx.lineWidth=4;ctx.strokeRect(wx,wy,ww,wh);ctx.lineWidth=3;ctx.strokeStyle='rgba(42,24,16,.8)';ctx.beginPath();ctx.moveTo(wx+ww/2,wy);ctx.lineTo(wx+ww/2,wy+wh);ctx.moveTo(wx,wy+wh/2);ctx.lineTo(wx+ww,wy+wh/2);ctx.stroke()}
-  /* 門 */
-  const dw=100,dt=gy-170;const dg=ctx.createLinearGradient(0,dt,0,gy);dg.addColorStop(0,sh.own?'#ffcf7a':'#4a3a30');dg.addColorStop(1,sh.own?'#b8642a':'#2a201a');ctx.fillStyle=dg;ctx.fillRect(dx-dw/2,dt,dw,170);
-  if(near){ctx.save();ctx.shadowColor='#ffd27a';ctx.shadowBlur=24+Math.sin(t*6)*8;ctx.strokeStyle='#ffd27a';ctx.lineWidth=5;ctx.strokeRect(dx-dw/2,dt,dw,170);ctx.restore()}
-  ctx.strokeStyle=O;ctx.lineWidth=4;ctx.strokeRect(dx-dw/2,dt,dw,170);
-  /* 暖簾 */
-  const nh=78,sway=Math.sin(t*1.8+sh.x)*2;for(let i=0;i<3;i++){const nx=dx-dw/2-6+i*(dw+12)/3,nw=(dw+12)/3-3;ctx.fillStyle=L.noren;ctx.beginPath();ctx.moveTo(nx,dt-4);ctx.lineTo(nx+nw,dt-4);ctx.lineTo(nx+nw+sway,dt+nh);ctx.lineTo(nx+sway,dt+nh);ctx.closePath();ctx.fill();ctx.strokeStyle=O;ctx.lineWidth=3;ctx.stroke()}
-  ctx.fillStyle='#4a2a14';ctx.fillRect(dx-dw/2-12,dt-10,dw+24,8);
-  const ks=[...L.kan];ctx.fillStyle=L.ink;
-  if(ks.length<=3){ctx.font=`900 28px 'Noto Sans TC','Zen Maru Gothic',serif`;ks.forEach((c,i)=>{const o=(3-ks.length)/2;ctx.fillText(c,dx-dw/2-6+(i+o)*(dw+12)/3+((dw+12)/3-3)/2+sway/2,dt+30)})}
-  else{ctx.font=`900 22px 'Noto Sans TC','Zen Maru Gothic',serif`;ctx.fillText(L.kan,dx+sway/2,dt+32,dw+4)}
-  /* 燈籠 */
-  for(const lx of [dx-dw/2-30,dx+dw/2+30]){const fl=.85+.15*Math.sin(t*7+lx);const gl=ctx.createRadialGradient(lx,dt+20,4,lx,dt+20,70);gl.addColorStop(0,`rgba(255,150,80,${.45*fl})`);gl.addColorStop(1,'rgba(255,150,80,0)');ctx.fillStyle=gl;ctx.fillRect(lx-70,dt-50,140,140);
-    ctx.strokeStyle=O;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(lx,dt-30);ctx.lineTo(lx,dt-6);ctx.stroke();ctx.fillStyle=L.lan;ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(lx,dt+20,17,26,0,0,7);ctx.fill();ctx.stroke();ctx.fillStyle='#2a1810';ctx.fillRect(lx-9,dt-8,18,5);ctx.fillRect(lx-9,dt+44,18,5)}
-  /* 未解鎖：準備中木牌 */
-  if(!sh.own){ctx.save();ctx.translate(dx,dt+118);ctx.rotate(-.06);ctx.fillStyle='#e9d3a4';ctx.strokeStyle=O;ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(-58,-20,116,40,6);ctx.fill();ctx.stroke();ctx.fillStyle='#7a2a14';ctx.font=`900 15px 'Zen Maru Gothic','Noto Sans TC',sans-serif`;ctx.fillText('🔒 '+T('花錢解鎖'),0,1);ctx.restore()}
-  /* 目前所在 */
-  if(sh.cur){const by=top-14+Math.sin(t*3)*4;ctx.fillStyle='#ffd34d';ctx.strokeStyle=O;ctx.lineWidth=3;const tx='📍 '+T('目前');ctx.font=`900 17px 'Zen Maru Gothic','Noto Sans TC',sans-serif`;const tw=ctx.measureText(tx).width+24;ctx.beginPath();ctx.roundRect(dx-tw/2,by-16,tw,32,16);ctx.fill();ctx.stroke();ctx.fillStyle='#3a1e0c';ctx.fillText(tx,dx,by)}
-  /* 靠近門口提示 */
-  if(near){const a=.6+.4*Math.sin(t*6);ctx.fillStyle=`rgba(255,236,170,${a})`;ctx.beginPath();ctx.moveTo(dx,gy+8);ctx.lineTo(dx-14,gy+28);ctx.lineTo(dx+14,gy+28);ctx.closePath();ctx.fill();
-    ctx.font=`900 15px 'Zen Maru Gothic','Noto Sans TC',sans-serif`;ctx.fillStyle='#fff3cf';ctx.strokeStyle='rgba(20,10,5,.8)';ctx.lineWidth=4;const tx=T('往上走進店'),hy=gy-170+96;ctx.strokeText(tx,dx,hy);ctx.fillText(tx,dx,hy)}}
+  setTimeout(()=>{if(!S.dead&&document.contains(S.cv)&&S.resume)S.resume()},120)}
 function showHome(){ARCTOWN=null;if(CHG)chQuit();LB.ch=0;CHEND='';if(RP.on)abandonReplay();
   if(CUR!=='iz'){CUR='iz';chooseLayout(true)}SHOPHOME=false;DEMO=false;if(TUT){TUT=null;tutLayer().innerHTML=''}const wasPlay=!HOME;HOME=true;R=null;ST=null;closeModal();if(wasPlay){PLAYT=0;STAB={o:'',h:0};STABW={o:'',w:0};LANDW={o:'',w:0};refitBurst()}setTimeout(fit,0);renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
   const saved=load();
