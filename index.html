@@ -4740,8 +4740,20 @@ function townLamps(ctx,S){for(let i=0;i<=S.shops.length;i++){const x=i===0?S.sho
   const gl=ctx.createRadialGradient(x,250,4,x,250,120);gl.addColorStop(0,'rgba(255,214,140,.55)');gl.addColorStop(1,'rgba(255,214,140,0)');ctx.fillStyle=gl;ctx.fillRect(x-130,130,260,300);
   ctx.fillStyle='#2b2422';ctx.fillRect(x-4,250,8,150);ctx.fillRect(x-14,394,28,8);ctx.fillStyle='#ffe2a6';ctx.strokeStyle='#2b2422';ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(x-14,226,28,30,6);ctx.fill();ctx.stroke()}}
 function GAPL(S){return S.shops.length>1?S.shops[1].x-S.shops[0].x-S.shops[0].w:90}
-function townPerson(ctx,src,x,y,face,ph,alpha,sc,walking){const im=townImg(src);if(!im.complete||!im.naturalWidth)return;const d=(.86+.3*(y-400)/180)*sc,h=150*d,w=h*im.naturalWidth/im.naturalHeight,b=walking===false?0:Math.abs(Math.sin(ph))*6*d;
-  ctx.save();ctx.globalAlpha=alpha*.35;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(x,y,w*.32,8*d,0,0,7);ctx.fill();ctx.globalAlpha=alpha;ctx.translate(x,y-b);ctx.rotate(walking===false?0:Math.sin(ph)*.04);ctx.scale(face,1);ctx.drawImage(im,-w/2,-h,w,h);ctx.restore()}
+/* 走路的腳：原圖是一張靜態圖，所以把腳那段切出來另外畫。
+   側面路人（*-walk）：腿那段複製兩份，以胯下為支點前後擺（剪刀步）；正面店員：左右腳輪流抬起。上半身最後畫，蓋住接縫 */
+const TOWN_LEG={'img/staff-girl-1.webp':{h:.855,k:'front',sx:.525}};
+function townPerson(ctx,src,x,y,face,ph,alpha,sc,walking){const im=townImg(src);if(!im.complete||!im.naturalWidth)return;const d=(.86+.3*(y-400)/180)*sc,h=150*d,w=h*im.naturalWidth/im.naturalHeight,mv=walking!==false,b=mv?Math.abs(Math.sin(ph))*3*d:0;
+  const L=TOWN_LEG[src]||{h:.74,k:'side'},IW=im.naturalWidth,IH=im.naturalHeight,hy=IH*L.h,lh=h*(1-L.h),top=-h;
+  ctx.save();ctx.globalAlpha=alpha*.35;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(x,y,w*.32,8*d,0,0,7);ctx.fill();ctx.globalAlpha=alpha;ctx.translate(x,y-b);ctx.scale(face,1);
+  if(!mv){ctx.drawImage(im,-w/2,top,w,h);ctx.restore();return}
+  const s=Math.sin(ph);
+  if(L.k==='side'){const a=s*.38,px=0,py=-lh;
+    for(const sg of [-1,1]){ctx.save();ctx.translate(px,py);ctx.rotate(a*sg);ctx.drawImage(im,0,hy,IW,IH-hy,-w/2,0,w,lh);ctx.restore()}}
+  else{const sx=IW*L.sx,lift=lh*.3;
+    ctx.drawImage(im,0,hy,sx,IH-hy,-w/2,-lh-Math.max(0,s)*lift,w*L.sx,lh);
+    ctx.drawImage(im,sx,hy,IW-sx,IH-hy,-w/2+w*L.sx,-lh-Math.max(0,-s)*lift,w*(1-L.sx),lh)}
+  const ov=h*.02;ctx.drawImage(im,0,0,IW,hy+ov/h*IH,-w/2,top,w,h-lh+ov);ctx.restore()}
 function townShop(ctx,sh,S){const L=TOWN_LOOK[sh.id]||TOWN_LOOK.iz,x=sh.x,w=sh.w,top=110,gy=S.GY,dx=sh.dx,t=S.t,near=!S.ent&&Math.abs(S.px-dx)<150&&S.py<500,O='#2a1810';
   ctx.lineJoin='round';
   /* 牆 */
