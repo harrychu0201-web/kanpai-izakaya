@@ -4658,11 +4658,13 @@ function brRow(o,cur){const btn=(id,name,sub,ok)=>`<button class="btn ${cur===id
   return `${btn('iz','🏮 居酒屋本店','',true)}${o.rm?btn('rm','🍜 深夜拉麵屋台','',true):lk('rm','rmhome','🍜 深夜拉麵屋台')}${sushiDev()?(o.sushi?btn('sushi','🍣 海風壽司','',true):lk('sushi','sushihome','🍣 海風壽司')):''}${tepDev()?(o.tep?btn('tep','🔥 炎舞鐵板燒','',true):lk('tep','tephome','🔥 炎舞鐵板燒')):''}${okoDev()?(o.oko?btn('oko','🥞 御好燒店','',true):lk('oko','okohome','🥞 御好燒店')):''}${barDev()?(o.bar?btn('bar','🍸 月影酒吧','',true):lk('bar','barhome','🍸 月影酒吧')):''}`}
 function brCur(o){return o.where==='bar'&&o.bar&&barDev()?'bar':o.where==='oko'&&o.oko&&okoDev()?'oko':o.where==='tep'&&o.tep&&tepDev()?'tep':o.where==='sushi'&&o.sushi?'sushi':o.where==='rm'&&o.rm?'rm':'iz'}
 function branchList(){const o=load()||{},cur=brCur(o);
-  modal(`<h2>${T('分店')}</h2><p class="hint">${T('選一家店，下次營業就在那裡開門。')}</p><div class="pickrow brpick">${brRow(o,cur)}</div><div class="btns"><button class="btn" data-act="branch">🚶 ${T('分店街')}</button><button class="btn" data-act="shopback">${T('關閉')}</button></div>`)}
+  modal(`<h2>${T('分店')}</h2><p class="hint">${T('選一家店，下次營業就在那裡開門。')}</p><div class="pickrow brpick">${brRow(o,cur)}</div><div class="btns">${townDev()?`<button class="btn" data-act="branch">🚶 ${T('分店街')}</button>`:''}<button class="btn" data-act="shopback">${T('關閉')}</button></div>`)}
 function whereRow(){return `<button class="btn ${CUR==='iz'?'':'alt'}" data-act="where" data-id="iz" data-town="iz">🏮 ${T('居酒屋本店')}</button>${ST.rm?`<button class="btn ${CUR==='rm'?'':'alt'}" data-act="where" data-id="rm" data-town="rm">🍜 ${T('深夜拉麵屋台')}</button>`:`<button class="btn alt" data-act="rmhome" data-town="rm">🍜 ${T('深夜拉麵屋台')}<small>${T('花錢解鎖')}</small></button>`}${ST.sushi?`<button class="btn ${CUR==='sushi'?'':'alt'}" data-act="where" data-id="sushi" data-town="sushi">🍣 ${T('海風壽司')}</button>`:sushiDev()?`<button class="btn alt" data-act="sushihome" data-town="sushi">🍣 ${T('海風壽司')}<small>${T('花錢解鎖')}</small></button>`:''}${tepDev()?(ST.tep?`<button class="btn ${CUR==='tep'?'':'alt'}" data-act="where" data-id="tep" data-town="tep">🔥 ${T('炎舞鐵板燒')}</button>`:`<button class="btn alt" data-act="tephome" data-town="tep">🔥 ${T('炎舞鐵板燒')}<small>${T('花錢解鎖')}</small></button>`):''}${okoDev()?(ST.oko?`<button class="btn ${CUR==='oko'?'':'alt'}" data-act="where" data-id="oko" data-town="oko">🥞 ${T('御好燒店')}</button>`:`<button class="btn alt" data-act="okohome" data-town="oko">🥞 ${T('御好燒店')}<small>${T('花錢解鎖')}</small></button>`):''}${barDev()?(ST.bar?`<button class="btn ${CUR==='bar'?'':'alt'}" data-act="where" data-id="bar" data-town="bar">🍸 ${T('月影酒吧')}</button>`:`<button class="btn alt" data-act="barhome" data-town="bar">🍸 ${T('月影酒吧')}<small>${T('花錢解鎖')}</small></button>`):''}`}
 /* 開店前畫面的 🚶 分店街：走進門＝按開店前那排的按鈕（where／解鎖），關閉回開店前畫面 */
-function townWhere(){if(!ST)return;townOpen(ST,CUR,whereRow(),'townback','twrow')}
-function branchPick(){const o=load()||{};townOpen(o,brCur(o),brRow(o,brCur(o)),'shopback','brpick')}
+/* 分店街：測試中，只有作者和管理員看得到（同 okoDev）；一般玩家維持原本的按鈕清單 */
+function townDev(){try{return !pview()&&canView()}catch(e){return false}}
+function townWhere(){if(!ST||!townDev())return;townOpen(ST,CUR,whereRow(),'townback','twrow')}
+function branchPick(){if(!townDev()){branchList();return}const o=load()||{};townOpen(o,brCur(o),brRow(o,brCur(o)),'shopback','brpick')}
 function townOpen(o,cur,row,back,rc){
   const shops=[['iz','🏮','居酒屋本店',1],['rm','🍜','深夜拉麵屋台',!!o.rm]];
   if(sushiDev())shops.push(['sushi','🍣','海風壽司',!!o.sushi]);if(tepDev())shops.push(['tep','🔥','炎舞鐵板燒',!!o.tep]);if(okoDev())shops.push(['oko','🥞','御好燒店',!!o.oko]);if(barDev())shops.push(['bar','🍸','月影酒吧',!!o.bar]);
@@ -5134,7 +5136,7 @@ function showDayIntro(){
   modal(`<h2>${T('第 {0} 天',ST.day)} <span style="font-size:16px;color:#7a4a2a">${dateStr(ST.day)}</span></h2>
   ${HI?`<div class="evbox"><span class="ei">${HI.ic}</span><div><b>${T('今天是{0}！',T(HI.zh))}</b><br>${T('會有特別的客人上門，每位都能登記進節日客圖鑑。')}</div></div>`:''}
   ${ST.day===365?`<p class="hint">${T('你撐過了一整年！日曆上的每個節日都解鎖了，可以到「📅 日曆」看看。')}</p>`:''}
-  ${ST.rm||ST.sushi||sushiDev()?`<div class="pickrow"><button class="btn twgo" data-act="town">🚶 ${T('分店街')}</button>${whereRow()}</div>`:''}
+  ${ST.rm||ST.sushi||sushiDev()?`<div class="pickrow">${townDev()?`<button class="btn twgo" data-act="town">🚶 ${T('分店街')}</button>`:''}${whereRow()}</div>`:''}
   ${due?`<div class="bank"><b>${T('今天是還款日！')}</b>${T('打烊時會從錢包還銀行 {0}，記得多賺一點，不然還完錢包見底又要再借。',yen(due))}</div>`:''}
   ${!ST.owned&&ST.coins>=GOAL?`<div class="goalcard"><div><b>🏠 ${T('你已經存夠 {0} 了！',yen(GOAL))}</b><p>${T('現在就能買下整棟店面，之後再也不用付房租。')}</p></div><button class="btn" data-act="buyshop">${T('買下店面 {0}',yen(GOAL))}</button></div>`:''}
   ${TD.ev?`<div class="evbox"><span class="ei">${EVS[TD.ev][0]}</span><div><b>${T('今日事件：{0}',T(EVS[TD.ev][1]))}</b><br>${evDesc(TD)}${TD.ev==='sale'?`<div class="salepick"><small>${T('想讓哪道菜特價？點一下就能換：')}</small><div>${saleCands().map(k=>`<button class="btn ${TD.sale===k?'':'alt'}" data-act="salepick" data-id="${k}">${dishTitle(k)} ¥${Math.round(ITEMS[k].cost*(1+.25*lvOf(k))*.5/10)*10}</button>`).join('')}</div></div>`:''}</div></div>`:''}
