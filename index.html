@@ -6219,6 +6219,9 @@ let STAB={o:'',h:0},STABGROW=false,STABJ=false;
 /* 手機橫向：舞台尺寸只跟著「同方向內見過的最小可見範圍」走，網址列／狀態列／導覽列一出現或收起都不改舞台大小與位置。 */
 function pinLand(){return TOUCH&&innerWidth>innerHeight}
 function stableVisH(){
+  /* iPhone 加到主畫面（全螢幕）橫向時，實際可用高度就是螢幕短邊，不必靠量測；量測偶爾讀到偏矮的值，
+     會讓舞台的虛擬寬度被放大到 1800、整個遊戲縮成約四分之一。這裡直接用螢幕短邊。 */
+  if(IOS&&STANDALONE&&innerWidth>innerHeight)return Math.min(screen.width,screen.height);
   const o=innerWidth>innerHeight?'l':'p',v=visH();
   if(STAB.o!==o||!STAB.h){STAB={o,h:v,m:v};return v}
   if(pinLand()){const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');
