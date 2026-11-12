@@ -6777,7 +6777,7 @@ async function cloudLogin(force){if(IAB&&!force&&!CL.iabTried){iabHelp('');retur
 // Chrome severs the sign-in popup when the player picks "Use another account", so the popup seems to close by itself.
 // Workaround: add that account to the browser first, then it shows up in the account list and can be picked directly.
 function loginHelp(){if(!HOME)return;modal(`<h2>${T('登入視窗關掉了')}</h2><p>${T('如果你剛剛是按「使用其他帳戶」，Chrome 會把登入視窗切斷。')}</p><p>${T('先按「新增 Google 帳號」，在新分頁登入你要用的帳號，登好後回到遊戲再按一次登入，那個帳號就會直接出現在清單裡，點它就好。')}</p><div class="btns"><button class="btn" data-act="addacct">${T('新增 Google 帳號')}</button><button class="btn" data-act="login">${T('再試一次')}</button><button class="btn" data-act="closem">${T('知道了')}</button></div>`)}
-function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){CL.isPoster=false;if(CL.api)CL.api.isPoster(u.uid).then(v=>{CL.isPoster=v===true}).catch(()=>{});CL.isStaff=false;if(CL.api)CL.api.isStaff(u.uid).then(v=>{CL.isStaff=v===true;if(CL.isStaff&&typeof coopInvStart==='function')coopInvStart()}).catch(()=>{});cloudSync();setTimeout(()=>replyCheck(0),2500);setTimeout(coopInvStart,3000);setTimeout(()=>{if(typeof coopResume==='function')coopResume().catch(e=>console.warn('coop resume',e))},3200)}else coopInvStop();if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
+function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){CL.isPoster=false;if(CL.api)CL.api.isPoster(u.uid).then(v=>{CL.isPoster=v===true}).catch(()=>{});CL.isStaff=false;if(CL.api)CL.api.isStaff(u.uid).then(v=>{CL.isStaff=v===true;if(CL.isStaff&&typeof coopInvStart==='function')coopInvStart();if(HOME&&typeof AST!=='undefined'&&!AST.on)try{showHome()}catch(e){}}).catch(()=>{});cloudSync();setTimeout(()=>replyCheck(0),2500);setTimeout(coopInvStart,3000);setTimeout(()=>{if(typeof coopResume==='function')coopResume().catch(e=>console.warn('coop resume',e))},3200)}else coopInvStop();if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
 async function claimGrants(){const u=CL.user;if(!u||TEST||RP.on||!CL.api||!CL.api.grantsGet)return;
   let g={};try{g=await CL.api.grantsGet(u.uid)||{}}catch(e){console.warn('grants',e);return}
   for(const id of Object.keys(g)){const x=g[id]||{},items={};Object.keys(x.items||{}).forEach(k=>{const n=Math.floor(+x.items[k]);if(PROPS[k]&&n>0)items[k]=Math.min(20,n)});
@@ -7390,7 +7390,9 @@ const PVKEY='izakaya-pview';
 function pview(){try{return localStorage.getItem(PVKEY)==='1'}catch(e){return false}}
 const canView=()=>!!(CL.user&&(CL.user.email===ADMIN_EMAIL||CL.isStaff===true));
 function isAdmin(){return !!(CL.user&&CL.user.email===ADMIN_EMAIL)&&!pview()}
-function isTester(){return !pview()&&isAdmin()} /* 測試面板：只有作者（admins/ 管理員不再有測試面板；玩家視角下關閉） */
+function isTester(){return !pview()&&isAdmin()}
+/* 美術工坊：作者和管理員（admins/）都能用；玩家視角下關閉 */
+const canArt=()=>!pview()&&(isAdmin()||CL.isStaff===true); /* 測試面板：只有作者（admins/ 管理員不再有測試面板；玩家視角下關閉） */
 /* announcement posters: the owner adds their uid under posters/<uid> in Realtime Database; they can post, edit and delete announcements (not feedback, bans or vote stats) */
 /* staff, posters and the owner can add, edit and delete announcements */
 const canPost=()=>!pview()&&(isAdmin()||CL.isPoster===true||CL.isStaff===true);
@@ -7536,7 +7538,7 @@ function tstBtn(){
   if(!can&&!TEST)return '';
   const vb=can?`<button class="langbtn tstbtn ${pv?'on':''}" data-act="pvtoggle">${pv?'👤 玩家視角':'🎭 作者視角'}${pv&&TEST?'・測試存檔':''}</button>`:'';
   if(pv)return vb;
-  return vb+(isTester()?`<button class="langbtn tstbtn ${TEST?'on':''}" data-act="tstpanel">🧪 ${TEST?'測試中':'測試'}</button><button class="langbtn tstbtn" data-ast="open">🎨 美術工坊</button>`:'');
+  return vb+(isTester()?`<button class="langbtn tstbtn ${TEST?'on':''}" data-act="tstpanel">🧪 ${TEST?'測試中':'測試'}</button>`:'')+(canArt()?`<button class="langbtn tstbtn" data-ast="open">🎨 美術工坊</button>`:'');
 }
 /* 玩家視角切換：不走 tst 開頭的按鈕（玩家視角下 tst 按鈕會被擋） */
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act="pvtoggle"]');if(!a||!canView())return;
@@ -9254,7 +9256,7 @@ async function artSync(){const api=CL.api;if(!api||!api.rtx)return;
   for(const id in L){if(idx[id]||D[id])continue;try{await astUnstore(L[id])}catch(e){}delete L[id];astJS(AST_LS,L)}}
 
 /* ---------- 美術工坊介面 ---------- */
-const AST_CATS=[['chr','👤 客人・店員'],['food','🍢 食物・器具'],['bg','🏮 背景・裝潢'],['dish','🍱 菜色圖示'],['stk','💬 貼圖'],['txt','✏️ 改字']];
+const AST_CATS=[['chr','👤 客人・店員'],['food','🍢 食物・器具'],['bg','🏮 背景・裝潢'],['dish','🍱 菜色圖示'],['stk','💬 貼圖'],['sk','📝 空白畫布'],['txt','✏️ 改字']];
 const AST_ART={beermug:'啤酒杯',beertap:'啤酒機',board:'砧板',bowl:'碗',box:'食材箱',edamame:'毛豆',fryer:'炸鍋',ftray:'炸物盤',grill:'烤架',karaage:'唐揚雞',negima:'蔥肉串',tsukune:'雞肉丸串',kitchen:'廚房背景',maguro:'鮪魚',rice:'白飯',sake:'清酒',salmon:'鮭魚',tai:'鯛魚',tea:'茶',trash:'垃圾桶',tray:'托盤',tsalmon:'鮭魚生魚片',tume:'鮪魚生魚片'};
 const AST_MOOD={ok:'平常',happy:'開心',worry:'擔心',angry:'生氣',walk:'走路',hit:'被打'};
 function astSlots(){if(AST.map)return AST.map;const all={},html=document.documentElement.innerHTML;
@@ -9274,12 +9276,13 @@ function astSlots(){if(AST.map)return AST.map;const all={},html=document.documen
   return AST.map=out}
 function astDishSvg(key){try{const k=key==='sashimi'?'sashimi:'+Object.keys(FISH).slice(0,2).join('+'):key;return _astIcon(k)||''}catch(e){return ''}}
 function astThumb(s){if(s.k==='dish'){const u=DISHOV[s.key];return u?`<img src="${u}">`:astDishSvg(s.key)}return `<img src="${s.p}" loading="lazy">`}
-function astOpen(){if(!isTester())return;AST.on=true;let el=$('ast');if(!el){el=document.createElement('div');el.id='ast';document.body.appendChild(el)}el.style.display='flex';astList()}
+function astOpen(){if(!canArt())return;AST.on=true;let el=$('ast');if(!el){el=document.createElement('div');el.id='ast';document.body.appendChild(el)}el.style.display='flex';astList()}
 function astClose(){AST.on=false;const el=$('ast');if(el){el.style.display='none';el.innerHTML=''}AST.ed=null;try{if(HOME)showHome()}catch(e){}}
 function astHead(extra){return `<div class="asth"><b>🎨 美術工坊</b>${extra||''}<button data-ast="close">✕ 關閉</button></div>`}
 function astList(){const el=$('ast');if(!el)return;AST.ed=null;const L=astJ(AST_LS),D=astJ(AST_DR);
   const tabs=AST_CATS.map(([k,n])=>`<button class="${AST.tab===k?'on':''}" data-ast="tab" data-id="${k}">${n}</button>`).join('');
   if(AST.tab==='txt')return astTxt();
+  if(AST.tab==='sk')return astSkTab();
   const q=AST.q.trim(),list=astSlots().filter(s=>s.cat===AST.tab&&(!q||s.name.includes(q)||(s.p||s.key).includes(q)));
   el.innerHTML=astHead(`<div class="astt">${tabs}</div>`)+`<div class="astb"><div class="astq"><input id="astq" placeholder="搜尋名字…" value="${esc(AST.q)}"><span>點一張圖就能畫／換圖・<i class="pub">已發布</i> <i class="dr">試看中（只有你）</i></span></div>
    <div class="astg">${list.map(s=>`<button class="astc" data-ast="edit" data-id="${s.id}">${D[s.id]?'<i class="dr">試看中</i>':L[s.id]?'<i class="pub">已發布</i>':''}<span class="ti">${astThumb(s)}</span><small>${esc(s.name)}</small></button>`).join('')||'<p>沒有符合的</p>'}</div></div>`;
@@ -9327,7 +9330,7 @@ const AST_TOOLS=[['brush','🖌️','筆'],['eraser','🧽','橡皮擦'],['fill'
 function astEdRender(){const E=AST.ed,el=$('ast'),s=E.s;
   const tools=AST_TOOLS.map(([k,i,n])=>`<button class="${E.tool===k?'on':''}" data-ast="tool" data-id="${k}">${i}<small>${n}</small></button>`).join('')+`<button data-ast="undo">↩️<small>上一步</small></button><button data-ast="redo">↪️<small>下一步</small></button>`;
   const L=astJ(AST_LS),D=astJ(AST_DR);
-  el.innerHTML=astHead(`<span class="astn">${esc(s.name)}・${E.cv.width}×${E.cv.height}${D[s.id]?' <i class="dr">試看中</i>':L[s.id]?' <i class="pub">已發布</i>':''}</span><button data-ast="back">← 回列表</button><button class="hd" data-ast="try">👀 試看</button><button class="go hd" data-ast="pub">🚀 發布</button>`)+
+  el.innerHTML=astHead(`<span class="astn">${esc(s.name)}・${E.cv.width}×${E.cv.height}${D[s.id]?' <i class="dr">試看中</i>':L[s.id]?' <i class="pub">已發布</i>':''}</span><button data-ast="back">← 回列表</button>${s.k==='sk'?'<button class="go hd" data-ast="sksave">💾 存草稿</button>':'<button class="hd" data-ast="try">👀 試看</button><button class="go hd" data-ast="pub">🚀 發布</button>'}`)+
   `<div class="aste"><div class="astl">${tools}</div>
    <div class="asts bg${E.bgm}" id="asts"><div class="astw" id="astw">${E.orig&&E.refOn?`<img class="ref" src="${E.orig.src}" style="opacity:${E.refOp}">`:''}</div></div>
    <div class="astr" id="astr"></div></div>`;
@@ -9351,9 +9354,9 @@ function astSide(){const E=AST.ed,r=$('astr');if(!r)return;
    <div class="row"><button data-ast="bgm">底色：${['格子','白','深'][E.bgm]}</button><button data-ast="ref" class="${E.refOn?'on':''}">原圖疊影${E.refOn?'：開':''}</button></div>
    ${E.refOn?`<label>疊影深淺<input type="range" min="5" max="100" value="${Math.round(E.refOp*100)}" id="astrop"></label>`:''}
    <h4>圖</h4><div class="col">
-   <button data-ast="fromorig">從原圖重新開始</button><button data-ast="clear">清空畫布</button>
-   <button data-ast="import">📷 匯入圖片（手機相簿／Gemini 圖）</button><button data-ast="debg">✂️ 去背景（去掉邊緣的底色）</button>
-   ${astJ(AST_DR)[E.s.id]?'<button data-ast="untry">取消試看（換回已發布／原本的圖）</button>':''}${astJ(AST_LS)[E.s.id]&&!astJ(AST_DR)[E.s.id]?'<button class="warn" data-ast="revert">↺ 還原成原本的圖（取消發布）</button>':''}
+   ${E.s.k==='sk'?'':'<button data-ast="fromorig">從原圖重新開始</button>'}<button data-ast="clear">清空畫布</button>
+   <button data-ast="import">📷 匯入圖片（手機相簿／Gemini 圖）</button><button data-ast="skopen">🗂 從草稿匯入</button><button data-ast="debg">✂️ 去背景（去掉邊緣的底色）</button>
+   ${E.s.k==='sk'?`<button class="go" data-ast="sksave">💾 存草稿</button><button class="warn" data-ast="skdel" data-id="${E.s.id}">🗑 刪除這張草稿</button>`:`${astJ(AST_DR)[E.s.id]?'<button data-ast="untry">取消試看（換回已發布／原本的圖）</button>':''}${astJ(AST_LS)[E.s.id]&&!astJ(AST_DR)[E.s.id]?'<button class="warn" data-ast="revert">↺ 還原成原本的圖（取消發布）</button>':''}`}
    <button data-ast="dl">⬇️ 下載這張圖</button></div><input type="file" id="astfile" accept="image/*" style="display:none">`;
   const g=(id,f)=>{const i=$(id);if(i)i.oninput=()=>f(i.value)};
   g('astcol',v=>{E.col=v;r.querySelectorAll('.pal button').forEach(b=>b.classList.remove('on'))});
@@ -9443,6 +9446,45 @@ async function astPub(){const E=AST.ed;if(E.adj)astAdjEnd(true);if(!(await astRe
 async function astRevert(){const s=AST.ed.s;if(!confirm(`把「${s.name}」還原成原本的圖？所有玩家下次開遊戲會換回原圖。`))return;if(!(await astReady()))return;
   try{await CL.api.rtx((rd,r)=>rd.update(rd.ref(r,'artov'),{['d/'+s.id]:null,['i/'+s.id]:null}));const L=astJ(AST_LS);if(L[s.id])await astUnstore(L[s.id]);delete L[s.id];astJS(AST_LS,L);
     if(AST.ed.orig)astDrawFit(AST.ed.orig,true);AST.ed.undo=[];AST.ed.dirty=false;astEdRender();toast('已還原成原圖')}catch(e){astErr(e)}}
+/* ---------- 空白畫布：不綁任何圖，存在本機 Cache（img/~sk/ 假網址）；可以畫、存草稿、下載；「從草稿匯入」可以把它蓋到任何一張圖上，再用縮放移動調整 ---------- */
+const AST_SK_LS='izakaya-artsk';
+const astSkList=()=>astJ(AST_SK_LS);
+const astSkUrl=id=>astAbs('img/~sk/'+id);
+function astSkTabs(){return AST_CATS.map(([k,n])=>`<button class="${AST.tab===k?'on':''}" data-ast="tab" data-id="${k}">${n}</button>`).join('')}
+function astSkNew(){const el=$('ast');
+  el.innerHTML=astHead('')+`<div class="astb" style="overflow:auto"><div class="astq"><button data-ast="tab" data-id="sk">← 回列表</button><b>新增空白畫布</b><span>選大小，之後還能用縮放移動調整</span></div>
+   <div style="display:flex;flex-direction:column;gap:8px;max-width:360px;padding:6px 0">
+   <input id="astskn" placeholder="名字（例如：新食物、新裝飾）" style="font:inherit;padding:8px;border-radius:8px;border:0;user-select:text;-webkit-user-select:text">
+   ${[[300,300],[600,600],[900,600],[600,900],[1200,800]].map(([w,h])=>`<button data-ast="skmk" data-w="${w}" data-h="${h}">${w}×${h}　${w===h?'正方形':w>h?'橫向':'直向'}</button>`).join('')}
+   </div></div>`}
+function astSkMake(btn){const name=(($('astskn')||{}).value||'').trim()||'未命名畫布';const w=+btn.dataset.w,h=+btn.dataset.h;
+  const id='sk_'+Date.now().toString(36);const L=astSkList();L[id]={name,w,h,t:Date.now()};astJS(AST_SK_LS,L);astEditSk(id)}
+async function astEditSk(id){const m=astSkList()[id];if(!m){toast('找不到這張草稿');return}
+  const E=AST.ed={s:{k:'sk',id,name:m.name,cat:'sk'},tool:'brush',col:'#3a2414',size:6,alpha:1,zoom:1,undo:[],redo:[],dirty:false,refOn:false,refOp:.35,bgm:0,tol:40,adj:null};
+  const cv=document.createElement('canvas');cv.width=m.w;cv.height=m.h;E.cv=cv;E.cx=cv.getContext('2d',{willReadFrequently:true});
+  E.maxUndo=Math.max(4,Math.min(30,Math.floor(160e6/(m.w*m.h*4))));
+  const c=await astCache();const r=c&&await c.match(new Request(astSkUrl(id)));
+  if(r){const im=await astLoadImg(URL.createObjectURL(await r.blob()));if(im)E.cx.drawImage(im,0,0,m.w,m.h)}
+  if(AST.ed!==E)return;
+  astEdRender();requestAnimationFrame(()=>astFitView())}
+async function astSkSave(){const E=AST.ed;if(!E||E.s.k!=='sk')return;const c=await astCache();if(!c){toast('這個瀏覽器不能存草稿');return}
+  const b=await new Promise(r=>E.cv.toBlob(r,'image/png'));if(!b){toast('存不了，再試一次');return}
+  await c.put(new Request(astSkUrl(E.s.id)),new Response(b,{headers:{'Content-Type':'image/png'}}));
+  const L=astSkList();L[E.s.id]=Object.assign({},L[E.s.id]||{},{name:E.s.name,w:E.cv.width,h:E.cv.height,t:Date.now()});astJS(AST_SK_LS,L);E.dirty=false;toast('草稿已存好 💾')}
+async function astSkDel(id){if(!confirm('刪除這張草稿？刪了就找不回來'))return;const c=await astCache();if(c)await c.delete(new Request(astSkUrl(id)));
+  const L=astSkList();delete L[id];astJS(AST_SK_LS,L);if(AST.ed&&AST.ed.s.id===id)AST.ed.dirty=false;astList();toast('草稿已刪除')}
+async function astSkThumbs(root,ids){const c=await astCache();if(!c)return;for(const id of ids){const r=await c.match(new Request(astSkUrl(id)));const t=root.querySelector(`[data-skthumb="${id}"]`);if(r&&t)t.innerHTML=`<img src="${URL.createObjectURL(await r.blob())}">`}}
+async function astSkTab(){const el=$('ast');const L=astSkList();const ids=Object.keys(L).sort((a,b)=>(L[b].t||0)-(L[a].t||0));
+  el.innerHTML=astHead(`<div class="astt">${astSkTabs()}</div>`)+`<div class="astb"><div class="astq"><button class="go" data-ast="skadd">＋ 新增空白畫布</button><span>空白畫布可以自由畫；存成草稿後，任何一張圖的編輯畫面都能「從草稿匯入」</span></div>
+   <div class="astg">${ids.map(id=>`<button class="astc" data-ast="skedit" data-id="${id}"><span class="skx" data-ast="skdel" data-id="${id}" style="position:absolute;top:2px;right:4px;z-index:2">🗑</span><span class="ti" data-skthumb="${id}"></span><small>${esc(L[id].name)}・${L[id].w}×${L[id].h}</small></button>`).join('')||'<p>還沒有草稿，按上面的「＋ 新增空白畫布」開始畫</p>'}</div></div>`;
+  await astSkThumbs(el,ids)}
+async function astPickSk(){if(!AST.ed)return;const L=astSkList();const ids=Object.keys(L).sort((a,b)=>(L[b].t||0)-(L[a].t||0));
+  if(!ids.length){toast('還沒有草稿，先到「📝 空白畫布」畫一張存起來');return}
+  const d=document.createElement('div');d.className='astm';
+  d.innerHTML=`<div style="max-width:560px;width:90%;max-height:86%;overflow:auto"><h3>選一張草稿匯入</h3><p style="font-size:12px;margin:0 0 8px">匯入會蓋掉目前這張的內容，按「上一步」可以復原</p><div class="astg" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px">${ids.map(id=>`<button class="astc" data-ast="skin" data-id="${id}"><span class="ti" data-skthumb="${id}"></span><small>${esc(L[id].name)}</small></button>`).join('')}</div><button data-ast="msgx" style="margin-top:8px">取消</button></div>`;
+  $('ast').appendChild(d);await astSkThumbs(d,ids)}
+async function astSkIn(id){const c=await astCache();const r=c&&await c.match(new Request(astSkUrl(id)));document.querySelectorAll('#ast .astm').forEach(x=>x.remove());
+  if(!r){toast('這張草稿讀不到');return}await astImport(await r.blob())}
 document.addEventListener('click',async e=>{const a=e.target.closest('[data-ast]');if(!a||!AST.on&&a.dataset.ast!=='open')return;const k=a.dataset.ast,id=a.dataset.id,E=AST.ed;
   if(k==='open'){astOpen();return}
   if(k==='close'){if(E&&E.dirty&&!confirm('畫的東西還沒試看或發布，確定要關掉？'))return;astClose()}
@@ -9451,6 +9493,7 @@ document.addEventListener('click',async e=>{const a=e.target.closest('[data-ast]
   else if(k==='tab'){AST.tab=id;AST.q='';astList()}
   else if(k==='edit'){astEdit(id)}
   else if(k==='txpub')astTxPub(id,false);else if(k==='txdel')astTxPub(id,true);
+  else if(k==='skadd')astSkNew();else if(k==='skmk')astSkMake(a);else if(k==='skedit')astEditSk(id);else if(k==='skdel')astSkDel(id);else if(k==='skopen')astPickSk();else if(k==='skin')astSkIn(id);
   if(!E)return;
   if(k==='back'){if(E.dirty&&!confirm('畫的東西還沒試看或發布，確定要回列表？'))return;astList()}
   else if(k==='tool'){if(E.adj&&id!=='adj')astAdjEnd(true);if(id==='adj'){if(!E.adj)astStartAdj(null,false)}else{E.tool=id;astEdRender()}}
@@ -9467,7 +9510,8 @@ document.addEventListener('click',async e=>{const a=e.target.closest('[data-ast]
   else if(k==='adjok')astAdjEnd(true);else if(k==='adjno')astAdjEnd(false);
   else if(k==='try')astTry();else if(k==='untry')astUntry();
   else if(k==='pub')astPub();else if(k==='revert')astRevert();
-  else if(k==='dl'){const b=await astExport();if(!b)return;const u=URL.createObjectURL(b),l=document.createElement('a');l.href=u;l.download=(E.s.p?E.s.p.split('/').pop().replace(/\.\w+$/,''):E.s.key.replace(/\W/g,'_'))+(b.type==='image/png'?'.png':'.webp');document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+  else if(k==='sksave')astSkSave();
+  else if(k==='dl'){const b=await astExport();if(!b)return;const u=URL.createObjectURL(b),l=document.createElement('a');l.href=u;l.download=(E.s.p?E.s.p.split('/').pop().replace(/\.\w+$/,''):(E.s.key?E.s.key.replace(/\W/g,'_'):'sketch_'+E.s.id))+(b.type==='image/png'?'.png':'.webp');document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
 });
 window.addEventListener('resize',()=>{if(AST.ed&&$('asts'))astFitView()});
 document.addEventListener('keydown',e=>{if(!AST.on||!AST.ed||/INPUT|TEXTAREA/.test(document.activeElement&&document.activeElement.tagName))return;

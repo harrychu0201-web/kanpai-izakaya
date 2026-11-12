@@ -590,13 +590,13 @@
     "artov": {
       "i": {
         ".read": true,
-        ".write": "auth != null && (auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
+        ".write": "auth != null && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('admins').child(auth.uid).val() === true)",
         "$k": {
           ".validate": "newData.hasChildren(['v','k']) && newData.child('v').isNumber() && (newData.child('k').val() === 'img' || newData.child('k').val() === 'dish')"
         }
       },
       "d": {
-        ".write": "auth != null && (auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
+        ".write": "auth != null && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('admins').child(auth.uid).val() === true)",
         "$k": {
           ".read": true,
           ".validate": "newData.isString() && newData.val().beginsWith('data:image/') && newData.val().length < 2000000"
@@ -604,7 +604,7 @@
       },
       "tx": {
         ".read": true,
-        ".write": "auth != null && (auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true)",
+        ".write": "auth != null && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('admins').child(auth.uid).val() === true)",
         "$k": {
           ".validate": "newData.hasChildren(['s','t']) && newData.child('s').isString() && newData.child('t').isString() && newData.child('t').val().length < 2000"
         }
