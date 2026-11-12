@@ -6308,7 +6308,7 @@ let PTR=false,PENDFIT=false;document.addEventListener('pointerdown',()=>{PTR=tru
 /* 橫向手機底部的 Home 橫條區（safe-area-inset-bottom）：舞台若貼到螢幕最底，玩家點櫃台白線附近時會落在系統手勢區，長按會叫出 Siri。
    這裡量出這段高度，讓舞台底邊離開它。 */
 /* 底部保留區：iPhone 的 Home 橫條（長按會叫出 Siri）與 Android 手勢列。舞台底邊一律離開這段，點櫃台白線附近不會落進系統手勢區。 */
-function safeBottom(){const p=document.createElement('div');p.style.cssText='position:fixed;left:0;bottom:0;visibility:hidden;pointer-events:none;padding-bottom:env(safe-area-inset-bottom,0px)';document.body.appendChild(p);const v=p.offsetHeight;p.remove();const ios=/iP(hone|od|ad)/.test(navigator.userAgent);return ios?18:Math.max(v,TOUCH?12:0)} /* iPhone 底部保留 18px（直接用 18，不再取系統安全區的 21px 與 26px 較大者） */
+function safeBottom(){const p=document.createElement('div');p.style.cssText='position:fixed;left:0;bottom:0;visibility:hidden;pointer-events:none;padding-bottom:env(safe-area-inset-bottom,0px)';document.body.appendChild(p);const v=p.offsetHeight;p.remove();const ios=/iP(hone|od|ad)/.test(navigator.userAgent);return TOUCH?18:v} /* 手機（iPhone、Android）底部保留一律 18px，不再取系統安全區或舊的 26／12px */
 function fit(){
   if(PTR){PENDFIT=true;return}
   document.body.classList.toggle('ovl',TOUCH&&innerWidth>innerHeight&&Math.min(screen.width,screen.height)<560&&!HOME);
