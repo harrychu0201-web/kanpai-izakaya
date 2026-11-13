@@ -6698,6 +6698,9 @@ async function cloudInit1(){
         let A=window.__LBALL;
         if(!A||!A.rows||Date.now()-A.t>180000){
           const p=(A&&A.p&&Date.now()-A.pt<60000)?A.p:(async()=>{
+            /* static snapshot of the whole board, rebuilt every ~15 min by the lb-snapshot GitHub Action and served from GitHub (no Firebase download); live scan below is only the fallback */
+            try{const rs=await fetch('https://raw.githubusercontent.com/harrychu0201-web/kanpai-izakaya/lb-data/lb.json',{cache:'no-cache'});
+              if(rs.ok){const j=await rs.json();if(j&&Array.isArray(j.rows)&&j.rows.length>=20&&typeof j.t==='number'&&Date.now()-j.t<5400000&&j.rows.every(x=>x&&typeof x.uid==='string'))return j.rows}}catch(e){}
             const pages=await rt(async (rd,r)=>{const out=[];let cur=null;
               for(;;){const c=[rd.orderByChild('earned')];if(cur)c.push(rd.endBefore(cur.v,cur.k));c.push(rd.limitToLast(100));
                 const s=await rd.get(rd.query(rd.ref(r,'lb'),...c));const pg=[];s.forEach(x=>{pg.push(Object.assign({uid:x.key},x.val()))});
