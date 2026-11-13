@@ -7707,7 +7707,7 @@ function tstBtn(){
   if(!can&&!TEST)return '';
   const vb=can?`<button class="langbtn tstbtn ${pv?'on':''}" data-act="pvtoggle">${pv?'👤 玩家視角':'🎭 作者視角'}${pv&&TEST?'・測試存檔':''}</button>`:'';
   if(pv)return vb;
-  return vb+(isTester()?`<button class="langbtn tstbtn ${TEST?'on':''}" data-act="tstpanel">🧪 ${TEST?'測試中':'測試'}</button>`:'')+(canArt()?`<button class="langbtn tstbtn" data-ast="open">🎨 美術工坊</button>`:'');
+  return vb+(isTester()?`<button class="langbtn tstbtn ${TEST?'on':''}" data-act="tstpanel">🧪 ${TEST?'測試中':'測試'}</button>`:'')+(canArt()?`<button class="langbtn tstbtn" data-ast="open">🎨 美術工坊</button><button class="langbtn tstbtn" data-lyed="open">📐 排版</button>`:'');
 }
 /* 玩家視角切換：不走 tst 開頭的按鈕（玩家視角下 tst 按鈕會被擋） */
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act="pvtoggle"]');if(!a||!canView())return;
@@ -9728,6 +9728,213 @@ Object.assign(I18N.en=I18N.en||{},{"連抽 {0} 顆":"Pull ×{0}","連抽 {0} 顆
 Object.assign(I18N.ja=I18N.ja||{},{"連抽 {0} 顆":"{0}回連続","連抽 {0} 顆：新收藏 {1}、重複退 {2}、超稀有以上 {3} 顆，淨 {4}":"{0}回：新規{1}、重複返還{2}、超レア以上{3}回、収支{4}","（錢包不夠，只抽了 {0} 顆）":"（所持金が足りず、{0}回で止まりました）"});
 Object.assign(I18N.ko=I18N.ko||{},{"連抽 {0} 顆":"{0}회 연속 뽑기","連抽 {0} 顆：新收藏 {1}、重複退 {2}、超稀有以上 {3} 顆，淨 {4}":"{0}회: 신규 {1}, 중복 환불 {2}, 초희귀 이상 {3}회, 순이익 {4}","（錢包不夠，只抽了 {0} 顆）":"(지갑이 부족해서 {0}회만 뽑았어요)"});
 Object.assign(I18N.id=I18N.id||{},{"連抽 {0} 顆":"Gacha ×{0}","連抽 {0} 顆：新收藏 {1}、重複退 {2}、超稀有以上 {3} 顆，淨 {4}":"Gacha {0}x: new {1}, dupes refunded {2}, super-rare+ {3}, bersih {4}","（錢包不夠，只抽了 {0} 顆）":"(Uang tidak cukup, hanya {0} kali)"});
+</script>
+<script>/* ===== 📐 排版編輯（作者／美術工坊權限，2026-11-14） =====
+   在遊戲裡直接拖曳、微調、放大縮小任何按鈕／圖片／面板；重疊的地方標紅框、超出畫面的標橘框。
+   規則：{q:選擇器, c:所在對話框的特徵（空＝不在對話框裡）, sc:''＝所有畫面／'iz:land'＝只有這家店, x,y:位移(px), s:縮放}
+   LYOV＝玩家看到的版本（作者按「匯出」貼給 Claude 後寫進這裡）；作者本機有草稿時用草稿，切成玩家視角就看回 LYOV。
+   只動 CSS 的 translate／scale 屬性，不改任何存檔，也不改元素原本的 transform。 */
+const LYOV=/*LYOV*/[]/*LYOV*/;
+const LYKEY='izakaya-lyed',LYONKEY='izakaya-lyed-on';
+const LY={on:false,sel:false,rules:null,el:null,rule:null,k:1,step:1,undo:[],styled:new Map(),top:false,drag:null,rs:null,olOn:true,olT:0,obs:null,raf:0,rep:null,cnt:0};
+function lyCan(){try{return canArt()}catch(e){return false}}
+function lyDraft(){try{const v=JSON.parse(localStorage.getItem(LYKEY)||'null');return v&&Array.isArray(v.r)?v.r:null}catch(e){return null}}
+function lyRules(){if(LY.on&&LY.rules)return LY.rules;let pv=false;try{pv=pview()}catch(e){}return pv?LYOV:(lyDraft()||LYOV)}
+function lySave(){try{localStorage.setItem(LYKEY,JSON.stringify({v:1,r:LY.rules}))}catch(e){}}
+function lyId(r){return (r.sc||'')+'|'+(r.c||'')+'|'+r.q}
+function lyScopeNow(){return (typeof CUR!=='undefined'?CUR:'')+':'+(typeof LAY!=='undefined'?LAY:'')}
+/* 對話框特徵：卡片裡前三個不同的按鈕動作（跟語言無關）；沒有按鈕就用標題字 */
+const LY_GEN=new Set(['home','close','back','x','ok','cancel','closeM']);
+function lyCards(){return document.querySelectorAll('#modalLayer .card,#homeModal .card')}
+function lySig(card){const a=[];card.querySelectorAll('[data-act]').forEach(b=>{const v=b.dataset.act;if(v&&!LY_GEN.has(v)&&!a.includes(v)&&a.length<3)a.push(v)});
+  if(a.length)return a.join(',');const h=card.querySelector('h2,h3');return h?'h:'+h.textContent.trim().slice(0,30):'*'}
+function lyCardOk(card,sig){if(sig==='*')return true;if(sig.startsWith('h:')){const h=card.querySelector('h2,h3');return !!h&&h.textContent.trim().slice(0,30)===sig.slice(2)}
+  return sig.split(',').every(v=>card.querySelector('[data-act="'+CSS.escape(v)+'"]'))}
+function lyMatch(r){if(r.sc&&r.sc!==lyScopeNow())return [];
+  try{if(r.c){const out=[];lyCards().forEach(cd=>{if(!lyCardOk(cd,r.c))return;if(!r.q)out.push(cd);else cd.querySelectorAll(r.q).forEach(e=>out.push(e))});return out}
+    return Array.from(document.querySelectorAll(r.q))}catch(e){return []}}
+function lyApply(){const now=new Map();
+  for(const r of lyRules()){const tx=(r.x||r.y)?(r.x||0)+'px '+(r.y||0)+'px':'',s=r.s&&r.s!==1?String(r.s):'';
+    for(const e of lyMatch(r)){if(e.closest('#lyBar,#lyOv,#lyOut'))continue;now.set(e,1);if(e.style.translate!==tx)e.style.translate=tx;if(e.style.scale!==s)e.style.scale=s}}
+  for(const [e] of LY.styled)if(!now.has(e)){e.style.translate='';e.style.scale=''}
+  LY.styled=now}
+function lyObserve(){if(LY.obs)return;LY.obs=new MutationObserver(()=>lyApply());LY.obs.observe(document.body,{childList:true,subtree:true})}
+/* ---- 點到哪一個 ---- */
+const LY_BAN=new Set(['wrap','box','game','bg','counter','custLayer','stations','fx','modalLayer','homeModal','homeLayer','lyBar','lyOv','lyOut']);
+const LY_MEAN='button,[data-act],[data-ast],[id],.st,.pgbtn,img,.up,.plaque,.card,.lbl,.bubble,.btn,h2,h3,p,label,input,select,textarea,canvas';
+function lyOk(e){return e&&e.nodeType===1&&e!==document.body&&e!==document.documentElement&&!LY_BAN.has(e.id)&&!e.classList.contains('modal')&&!e.classList.contains('layer')}
+function lyPick(t){let e=t;while(e&&e instanceof SVGElement&&e.ownerSVGElement)e=e.ownerSVGElement;
+  while(e&&e!==document.body){if(lyOk(e)&&e.matches(LY_MEAN))return e;e=e.parentElement}return null}
+function lyUp(el){let p=el&&el.parentElement;while(p&&p!==document.body){if(lyOk(p))return p;p=p.parentElement}return el}
+/* ---- 產生選擇器 ---- */
+function lyDataSel(e){let s=e.tagName.toLowerCase();for(const a of e.attributes)if(/^data-/.test(a.name)&&a.name!=='data-close'&&a.value.length<60)s+='['+a.name+'="'+CSS.escape(a.value)+'"]';return s}
+function lyPath(el,base){const seg=[];let e=el;while(e&&e!==base){const p=e.parentElement;if(!p)break;const same=Array.from(p.children).filter(x=>x.tagName===e.tagName);seg.unshift(e.tagName.toLowerCase()+(same.length>1?':nth-of-type('+(same.indexOf(e)+1)+')':''));e=p}return seg.join(' > ')}
+function lyUniqId(e,root){return e.id&&!/\d{4,}/.test(e.id)&&(root||document).querySelectorAll('#'+CSS.escape(e.id)).length===1}
+function lyQ(el){const card=el.closest('#modalLayer .card,#homeModal .card'),ds=lyDataSel(el),hasD=ds.includes('[');
+  if(card){const c=lySig(card);if(el===card)return {q:'',c};
+    if(lyUniqId(el,card))return {q:'#'+CSS.escape(el.id),c};
+    if(hasD&&card.querySelectorAll(ds).length===1)return {q:ds,c};
+    return {q:':scope > '+lyPath(el,card),c}}
+  if(lyUniqId(el))return {q:'#'+CSS.escape(el.id),c:''};
+  if(hasD&&document.querySelectorAll(ds).length===1)return {q:ds,c:''};
+  let a=el.parentElement;while(a&&a!==document.body&&!lyUniqId(a))a=a.parentElement;
+  if(a&&a!==document.body){const b='#'+CSS.escape(a.id);if(hasD&&a.querySelectorAll(ds).length===1)return {q:b+' '+ds,c:''};return {q:b+' > '+lyPath(el,a),c:''}}
+  return {q:'body > '+lyPath(el,document.body),c:''}}
+function lyName(el){if(!el)return '';const t=(el.getAttribute('aria-label')||el.textContent||'').replace(/\s+/g,' ').trim();
+  return (t?t.slice(0,12):'')||el.dataset.act||el.id||el.tagName.toLowerCase()}
+/* 舞台有縮放：手指移動 1px ≠ 元素移動 1px，選到時量一次比例 */
+function lyRatio(el){const r=LY.rule,x=r.x||0,y=r.y||0,a=el.getBoundingClientRect().left;el.style.translate=(x+100)+'px '+y+'px';const b=el.getBoundingClientRect().left;el.style.translate=(x||y)?x+'px '+y+'px':'';const k=(b-a)/100;return k>.01?k:1}
+function lySelect(el){LY.el=el||null;LY.rule=null;
+  if(el){const {q,c}=lyQ(el),sc=el.closest('#stations,#custLayer,#fx')?lyScopeNow():'',id=lyId({q,c,sc});
+    LY.rule=LY.rules.find(r=>lyId(r)===id)||{q,c,sc,x:0,y:0,s:1};LY.k=lyRatio(el);
+    /* 工具列自動躲開選到的東西：東西在下半部，工具列就移到上面 */
+    const rc=el.getBoundingClientRect(),top=rc.top+rc.height/2>innerHeight/2;if(top!==LY.top){LY.top=top;lyBar()}}
+  lyDraw()}
+function lyFix(r){r.x=Math.round((r.x||0)*10)/10;r.y=Math.round((r.y||0)*10)/10;r.s=Math.round(Math.max(.2,Math.min(5,r.s||1))*100)/100}
+function lyStore(r){const id=lyId(r),i=LY.rules.findIndex(x=>x===r||lyId(x)===id),empty=!r.x&&!r.y&&(r.s||1)===1;
+  if(i<0&&!empty)LY.rules.push(r);else if(i>=0&&empty)LY.rules.splice(i,1);else if(i>=0&&LY.rules[i]!==r)LY.rules[i]=r}
+function lyPushUndo(){LY.undo.push(JSON.stringify(LY.rules));if(LY.undo.length>100)LY.undo.shift()}
+function lyEdit(fn,noUndo){const r=LY.rule;if(!r)return;if(!noUndo)lyPushUndo();fn(r);lyFix(r);lyStore(r);lySave();lyApply();lyDraw()}
+function lyUndo(){const s=LY.undo.pop();if(!s)return lyMsg('沒有可以復原的');LY.rules=JSON.parse(s);lySave();lyApply();if(LY.el&&LY.rule){const id=lyId(LY.rule);LY.rule=LY.rules.find(r=>lyId(r)===id)||Object.assign(LY.rule,{x:0,y:0,s:1})}lyDraw()}
+function lyScope(){const r=LY.rule;if(!r)return;lyPushUndo();const i=LY.rules.indexOf(r);if(i>=0)LY.rules.splice(i,1);
+  r.sc=r.sc?'':lyScopeNow();const id=lyId(r),j=LY.rules.findIndex(x=>lyId(x)===id);if(j>=0)LY.rules.splice(j,1);lyStore(r);lySave();lyApply();lyDraw()}
+/* ---- 畫面：工具列、選取框、紅框 ---- */
+const LY_CSS=`#lyBar{position:fixed;left:0;right:0;bottom:0;z-index:2147483600;display:flex;gap:3px;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px max(6px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));background:#1d2733ee;font:14px/1.1 system-ui,sans-serif;color:#fff;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+#lyBar.top{top:0;bottom:auto;padding-top:calc(4px + env(safe-area-inset-top,0px));padding-bottom:4px}
+#lyBar button{flex:0 0 auto;min-width:44px;height:44px;padding:0 6px;border:0;border-radius:8px;background:#3a4b5e;color:#fff;font:inherit;font-size:15px;cursor:pointer}
+#lyBar button:active{background:#5a7590}#lyBar button.on{background:#1f8a5a}#lyBar button.warn{background:#b8402c}#lyBar .lysep{width:1px;height:30px;background:#ffffff33;flex:0 0 auto}
+#lyBar.mini,#lyBar.mini.top{left:23%;right:auto;top:calc(6px + env(safe-area-inset-top,0px));bottom:auto;border-radius:24px;padding:3px;background:#1d2733cc} /* 暫停時的小按鈕放在上排左邊空的地方：遊戲中 HUD 這段是空的，首頁是標題字 */
+#lyOv{position:fixed;inset:0;z-index:2147483650;pointer-events:none}
+#lyOv .lysel{position:fixed;border:2px dashed #2aa8ff;box-shadow:0 0 0 1px #fff8;border-radius:3px}
+#lyOv .lyh{position:absolute;right:-17px;bottom:-17px;width:34px;height:34px;border-radius:50%;background:#2aa8ff;border:2px solid #fff;pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center;color:#fff;font:bold 16px system-ui}
+#lyOv .lytag{position:absolute;left:-2px;bottom:100%;margin-bottom:3px;white-space:nowrap;background:#2aa8ff;color:#fff;font:12px/1.3 system-ui,sans-serif;padding:2px 6px;border-radius:5px}
+#lyOv .lytag.below{bottom:auto;top:100%;margin:3px 0 0}
+#lyOv .lyol{position:fixed;background:#ff2a2a40;border:2px solid #ff2a2a}#lyOv .lyof{position:fixed;border:2px dashed #ff9a1a;background:#ff9a1a22}
+#lyOut{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2147483700;width:min(560px,92vw);max-height:86vh;overflow:auto;background:#fffaf0;color:#3a2414;border:3px solid #7a4a2a;border-radius:14px;padding:12px 14px;font:14px/1.5 system-ui,sans-serif;box-shadow:0 8px 30px #0008}
+#lyOut textarea{width:100%;box-sizing:border-box;height:90px;font:12px monospace;background:#fff;color:#333;border:1px solid #c9a77a;border-radius:6px}#lyOut .r{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+#lyOut button{min-height:44px;padding:0 14px;border-radius:10px;border:2px solid #7a4a2a;background:#ffd98a;font:inherit;font-weight:bold;color:#3a2414}#lyOut button.alt{background:#fff}`;
+function lyMsg(t){let m=document.getElementById('lyMsg');if(!m){m=document.createElement('div');m.id='lyMsg';m.style.cssText='position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:2147483800;background:#1d2733;color:#fff;padding:8px 14px;border-radius:10px;font:14px system-ui;pointer-events:none';document.body.appendChild(m)}
+  m.textContent=t;m.style.display='block';clearTimeout(m._t);m._t=setTimeout(()=>{m.style.display='none'},1800)}
+function lyBarHTML(){if(!LY.sel)return `<button data-ly="max" title="繼續排版">📐</button>`;
+  const r=LY.rule;return `<button data-ly="min" title="暫停排版，可以正常玩">⏸</button><button data-ly="up" title="改選外面那一層">⬆外層</button>`+
+  `<button data-ly="mv" data-d="-1,0">◀</button><button data-ly="mv" data-d="0,-1">▲</button><button data-ly="mv" data-d="0,1">▼</button><button data-ly="mv" data-d="1,0">▶</button>`+
+  `<button data-ly="sc" data-d="-1">－</button><button data-ly="sc" data-d="1">＋</button><button data-ly="step" title="每按一下移動幾格">${LY.step}格</button>`+
+  `<button data-ly="reset" title="這一個回到原本的位置">↺</button><button data-ly="undo" title="復原上一步">↶</button>`+
+  `<button data-ly="scope" title="這個調整只套用在這家店，或所有畫面">${r&&r.sc?'限這家店':'全畫面'}</button>`+
+  `<button data-ly="ol" class="${LY.olOn?(LY.cnt?'warn':'on'):''}" title="紅框：重疊；橘框：超出畫面">🔲${LY.olOn?LY.cnt:'關'}</button><button data-ly="out">💾匯出</button><button data-ly="pos" title="工具列移到上面／下面">⇅</button><button data-ly="close" title="關掉排版工具">✕</button>`}
+function lyBar(){let b=document.getElementById('lyBar');if(!LY.on){if(b)b.remove();return}
+  if(!document.getElementById('lyCss')){const s=document.createElement('style');s.id='lyCss';s.textContent=LY_CSS;document.head.appendChild(s)}
+  if(!b){b=document.createElement('div');b.id='lyBar';document.body.appendChild(b)}
+  b.className=(LY.top?'top ':'')+(LY.sel?'':'mini');b.innerHTML=lyBarHTML()}
+function lyOv(){let o=document.getElementById('lyOv');if(!LY.on||!LY.sel){if(o)o.remove();return null}
+  if(!o){o=document.createElement('div');o.id='lyOv';o.innerHTML='<div class="lyols"></div><div class="lysel" hidden><span class="lytag"></span><span class="lyh">⤡</span></div>';document.body.appendChild(o)}return o}
+function lyDraw(){const o=lyOv();if(!o)return;const box=o.querySelector('.lysel');
+  if(LY.el&&!LY.el.isConnected&&LY.rule){LY.el=lyMatch(LY.rule)[0]||null;if(LY.el)LY.k=lyRatio(LY.el)}
+  if(!LY.el){box.hidden=true;return}const r=LY.el.getBoundingClientRect(),R=LY.rule||{};
+  box.hidden=false;Object.assign(box.style,{left:r.left+'px',top:r.top+'px',width:Math.max(4,r.width)+'px',height:Math.max(4,r.height)+'px'});
+  const tg=box.querySelector('.lytag');tg.classList.toggle('below',r.top<(LY.top?84:30));
+  const n=LY.rule?lyMatch(LY.rule).length:1;
+  tg.textContent=lyName(LY.el)+'　'+(R.x||0)+', '+(R.y||0)+(R.s&&R.s!==1?'　×'+R.s:'')+(R.sc?'　（只這家店）':'')+(n>1?'　同款 '+n+' 個一起動':'')}
+/* 重疊檢查：只看最上面那層（有對話框就只看對話框裡面） */
+const LY_CAND='button,[data-act],[data-ast],.st,.pgbtn,img,.up,.plaque,.bubble,.btn,.lbl,h2,input,select,textarea,canvas';
+function lyClip(e,root){let r=e.getBoundingClientRect(),x0=r.left,y0=r.top,x1=r.right,y1=r.bottom;let p=e.parentElement;
+  while(p&&p!==document.body){const cs=getComputedStyle(p);if(cs.overflowX!=='visible'||cs.overflowY!=='visible'){const q=p.getBoundingClientRect();x0=Math.max(x0,q.left);y0=Math.max(y0,q.top);x1=Math.min(x1,q.right);y1=Math.min(y1,q.bottom)}if(p===root)break;p=p.parentElement}
+  return {x0,y0,x1,y1,full:r}}
+function lyCheck(){const o=document.getElementById('lyOv');if(!o)return;const box=o.querySelector('.lyols');
+  if(!LY.olOn){box.innerHTML='';LY.cnt=0;return}
+  let H=false;try{H=HOME}catch(e){}
+  const root=document.querySelector('#modalLayer .modal')||document.querySelector('#homeModal .modal')||(H&&document.getElementById('homeLayer'))||document.getElementById('wrap');if(!root){box.innerHTML='';return}
+  const W=innerWidth,Hh=innerHeight,list=[];
+  for(const e of root.querySelectorAll(LY_CAND)){if(list.length>=300)break;if(e.closest('#lyBar,#lyOv,#lyOut,#custLayer,#fx'))continue; /* 客人本來就會站在吧台後面、泡泡蓋在上面，不算 */
+    if(e.checkVisibility&&!e.checkVisibility({opacityProperty:true,visibilityProperty:true}))continue;
+    const c=lyClip(e,root);if(c.x1-c.x0<3||c.y1-c.y0<3)continue;if((c.x1-c.x0)*(c.y1-c.y0)>W*Hh*.35)continue;if(c.x1<0||c.y1<0||c.x0>W||c.y0>Hh)continue;list.push({e,c})}
+  let h='',n=0;
+  for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){const a=list[i],b=list[j];if(a.e.contains(b.e)||b.e.contains(a.e))continue;
+    const x0=Math.max(a.c.x0,b.c.x0),y0=Math.max(a.c.y0,b.c.y0),x1=Math.min(a.c.x1,b.c.x1),y1=Math.min(a.c.y1,b.c.y1);
+    if(x1-x0>=4&&y1-y0>=4){n++;if(n<=60)h+=`<div class="lyol" style="left:${x0}px;top:${y0}px;width:${x1-x0}px;height:${y1-y0}px"></div>`}}
+  for(const {c} of list){const f=c.full;if(f.left<-2||f.top<-2||f.right>W+2||f.bottom>Hh+2){if(c.x0<=f.left+1&&c.x1>=f.right-1&&c.y0<=f.top+1&&c.y1>=f.bottom-1){n++;const x0=Math.max(0,f.left),y0=Math.max(0,f.top);h+=`<div class="lyof" style="left:${x0}px;top:${y0}px;width:${Math.max(4,Math.min(W,f.right)-x0)}px;height:${Math.max(4,Math.min(Hh,f.bottom)-y0)}px"></div>`}}}
+  box.innerHTML=h;if(n!==LY.cnt){LY.cnt=n;const b=document.querySelector('#lyBar [data-ly="ol"]');if(b){b.textContent='🔲'+n;b.className=n?'warn':'on'}}}
+function lyLoop(){LY.raf=0;if(!LY.on||!LY.sel)return;lyDraw();const t=performance.now();if(t-LY.olT>900&&!LY.drag&&!LY.rs){LY.olT=t;lyCheck()}LY.raf=requestAnimationFrame(lyLoop)}
+function lyKick(){if(!LY.raf&&LY.on&&LY.sel)LY.raf=requestAnimationFrame(lyLoop)}
+/* ---- 開關 ---- */
+function lyOpen(min){if(!lyCan())return;LY.on=true;LY.sel=!min;try{LY.top=!!R&&!HOME}catch(e){}LY.rules=JSON.parse(JSON.stringify(lyDraft()||LYOV));LY.undo=[];
+  try{localStorage.setItem(LYONKEY,'1')}catch(e){}lyObserve();lyBar();lyOv();lyApply();lyKick();if(!min)lyMsg('點一下選它，按住藍框拖曳移動，拉藍色圓點縮放')}
+function lyClose(){LY.on=false;LY.sel=false;LY.el=null;LY.rule=null;try{localStorage.removeItem(LYONKEY)}catch(e){}
+  ['lyBar','lyOv','lyOut'].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});lyApply()}
+function lyMode(on){LY.sel=on;if(!on){LY.drag=null;LY.rs=null}if(on&&!LY.el){try{LY.top=!!R&&!HOME}catch(e){}}lyBar();lyOv();if(on){lyDraw();LY.olT=0;lyKick()}}
+function lyMove(dx,dy){if(!LY.rule)return lyMsg('先點一個東西');lyEdit(r=>{r.x=(r.x||0)+dx*LY.step;r.y=(r.y||0)+dy*LY.step})}
+function lyScale(d){if(!LY.rule)return lyMsg('先點一個東西');const st=LY.step===1?.01:LY.step===5?.05:.1;lyEdit(r=>{r.s=(r.s||1)+d*st})}
+function lyExport(){let o=document.getElementById('lyOut');if(o){o.remove();return}
+  const json=JSON.stringify(LY.rules),diff=json!==JSON.stringify(LYOV);
+  o=document.createElement('div');o.id='lyOut';
+  o.innerHTML=`<b style="font-size:16px">💾 匯出排版</b><p style="margin:6px 0">現在這些調整<b>只有你這台裝置看得到</b>${diff?'':'（跟玩家目前看到的一樣）'}。按「複製」，整串貼給 Claude，就會放進遊戲上線給所有玩家。共 ${LY.rules.length} 項調整。</p><textarea readonly>${json.replace(/</g,'&lt;')}</textarea>
+  <div class="r"><button data-lyo="copy">📋 複製</button><button class="alt" data-lyo="revert">放棄草稿（回到玩家版）</button><button class="alt" data-lyo="clear">全部清空</button><button class="alt" data-lyo="x">關閉</button></div>`;
+  document.body.appendChild(o)}
+function lyCopy(t){const done=()=>lyMsg('已複製，貼給 Claude 就可以');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,()=>fb());else fb();
+  function fb(){const ta=document.querySelector('#lyOut textarea');if(!ta)return;ta.focus();ta.select();try{document.execCommand('copy');done()}catch(e){lyMsg('請手動全選複製')}}}
+/* ---- 事件：排版中，點到遊戲的東西不會觸發遊戲 ---- */
+function lyMine(t){return !!(t&&t.closest&&t.closest('#lyBar,#lyOut,#lyOv .lyh'))}
+function lyXY(e){const p=e.touches?e.touches[0]||e.changedTouches[0]:e;return {x:p.clientX,y:p.clientY}}
+/* 手指點一下＝選它（沒移動才算，所以清單還是可以滑）；按在已選的東西上拖＝移動它 */
+['pointerdown','pointerup','mousedown','mouseup','click','dblclick','touchstart','touchend','contextmenu'].forEach(tp=>window.addEventListener(tp,e=>{
+  if(tp==='pointerup'&&LY.rs){LY.rs=null;lyApply()}
+  if(!LY.on||!LY.sel||lyMine(e.target))return;
+  e.stopImmediatePropagation();
+  const onSel=!!(LY.el&&LY.el.contains(e.target));
+  if(tp==='touchstart'){if(onSel&&e.cancelable)e.preventDefault();return}
+  if(e.cancelable&&tp!=='pointerdown')e.preventDefault();
+  if(tp==='pointerdown'){const p=lyXY(e);LY.tap={id:e.pointerId,x:p.x,y:p.y};
+    if(onSel&&LY.rule)LY.drag={id:e.pointerId,x0:p.x,y0:p.y,rx:LY.rule.x||0,ry:LY.rule.y||0,moved:false};return}
+  if(tp==='pointerup'){const D=LY.drag,T=LY.tap;LY.drag=null;LY.tap=null;
+    if(D&&D.moved){lyApply();return}
+    if(T){const p=lyXY(e);if(Math.hypot(p.x-T.x,p.y-T.y)<10){const el=lyPick(e.target);if(el!==LY.el)lySelect(el)}}}},{capture:true,passive:false}));
+window.addEventListener('pointermove',e=>{if(!LY.on||!LY.sel)return;const p=lyXY(e);
+  if(LY.rs){e.preventDefault();e.stopImmediatePropagation();const d=Math.hypot(p.x-LY.rs.cx,p.y-LY.rs.cy);const s=LY.rs.s0*d/Math.max(8,LY.rs.d0);lyEdit(r=>{r.s=s},true);return}
+  if(LY.tap&&Math.hypot(p.x-LY.tap.x,p.y-LY.tap.y)>=10&&!LY.drag)LY.tap=null;
+  const D=LY.drag;if(!D||!LY.rule||(D.id!=null&&e.pointerId!==D.id))return;e.preventDefault();e.stopImmediatePropagation();
+  const dx=p.x-D.x0,dy=p.y-D.y0;if(!D.moved){if(Math.hypot(dx,dy)<5)return;D.moved=true;LY.tap=null;lyPushUndo()}
+  lyEdit(r=>{r.x=D.rx+dx/LY.k;r.y=D.ry+dy/LY.k},true)},{capture:true,passive:false});
+window.addEventListener('pointercancel',()=>{LY.tap=null;LY.drag=null;if(LY.rs){LY.rs=null;lyApply()}},true);
+/* 縮放圓點 */
+document.addEventListener('pointerdown',e=>{if(!LY.on||!LY.sel||!e.target.closest('#lyOv .lyh')||!LY.el||!LY.rule)return;e.preventDefault();e.stopPropagation();
+  const r=LY.el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;lyPushUndo();LY.rs={cx,cy,d0:Math.hypot(e.clientX-cx,e.clientY-cy),s0:LY.rule.s||1}},true);
+/* 工具列：方向和縮放按住會一直動 */
+function lyRepStop(){if(LY.rep){clearTimeout(LY.rep.t);clearInterval(LY.rep.i);LY.rep=null}}
+function lyRepAct(b){const d=(b.dataset.d||'').split(',').map(Number);if(b.dataset.ly==='mv')lyMove(d[0],d[1]);else lyScale(d[0])}
+document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('#lyBar [data-ly="mv"],#lyBar [data-ly="sc"]');if(!b)return;e.preventDefault();lyRepStop();lyRepAct(b);
+  LY.rep={t:setTimeout(()=>{LY.rep.i=setInterval(()=>lyRepAct(b),70)},380)}},true);
+['pointerup','pointercancel','pointerleave'].forEach(tp=>document.addEventListener(tp,lyRepStop,true));
+document.addEventListener('click',e=>{const t=e.target;if(!t.closest)return;
+  const o=t.closest('[data-lyed]');if(o){if(lyCan())lyOpen();return}
+  const b=t.closest('#lyBar [data-ly]');if(b){const k=b.dataset.ly;
+    if(k==='max')lyMode(true);else if(k==='min'){lyMode(false);lyMsg('排版暫停中，可以正常玩；點上面的 📐 繼續')}
+    else if(k==='up'){if(LY.el)lySelect(lyUp(LY.el));else lyMsg('先點一個東西')}
+    else if(k==='step'){LY.step=LY.step===1?5:LY.step===5?20:1;lyBar()}
+    else if(k==='scope'){if(LY.rule){lyScope();lyBar();lyMsg(LY.rule.sc?'這個調整只套用在這家店':'這個調整套用在全部畫面')}else lyMsg('先點一個東西')}
+    else if(k==='reset'){if(LY.rule)lyEdit(r=>{r.x=0;r.y=0;r.s=1});else lyMsg('先點一個東西')}
+    else if(k==='undo')lyUndo();
+    else if(k==='ol'){LY.olOn=!LY.olOn;LY.olT=0;lyBar();lyCheck()}
+    else if(k==='pos'){LY.top=!LY.top;lyBar()}
+    else if(k==='out')lyExport();
+    else if(k==='close')lyClose();
+    if(k!=='mv'&&k!=='sc'&&k!=='step'&&k!=='ol'&&k!=='pos'&&k!=='max'&&k!=='min'&&k!=='close'&&LY.on)lyBar();return}
+  const x=t.closest('#lyOut [data-lyo]');if(x){const k=x.dataset.lyo,o=document.getElementById('lyOut');
+    if(k==='copy')lyCopy(JSON.stringify(LY.rules));
+    else if(k==='revert'){lyPushUndo();LY.rules=JSON.parse(JSON.stringify(LYOV));try{localStorage.removeItem(LYKEY)}catch(e){}lyApply();if(LY.el)lySelect(LY.el);if(o)o.remove();lyMsg('已回到玩家目前看到的版面')}
+    else if(k==='clear'){lyPushUndo();LY.rules=[];lySave();lyApply();if(LY.el)lySelect(LY.el);if(o)o.remove();lyMsg('全部清空了（按 ↶ 復原可以救回來）')}
+    else if(k==='x'&&o)o.remove()}},true);
+/* 電腦：方向鍵移動（Shift 一次 10 倍）、+/- 縮放、Ctrl+Z 復原、Esc 暫停 */
+window.addEventListener('keydown',e=>{if(!LY.on||!LY.sel)return;if(/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''))return;
+  const m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];let hit=true;
+  if(m){const s=LY.step;if(e.shiftKey)LY.step=s*10;lyMove(m[0],m[1]);LY.step=s}else if(e.key==='+'||e.key==='=')lyScale(1);else if(e.key==='-')lyScale(-1);
+  else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z')lyUndo();else if(e.key==='Escape')lyMode(false);else hit=false;
+  if(hit){e.preventDefault();e.stopImmediatePropagation()}},true);
+addEventListener('resize',()=>{if(LY.on&&LY.sel&&LY.el&&LY.rule)LY.k=lyRatio(LY.el)});
+/* 開遊戲：有排版就套上；上次排版沒關，登入後自動叫出小按鈕 */
+if(lyRules().length){lyObserve();lyApply()}
+(function lyBoot(n){let want=false;try{want=localStorage.getItem(LYONKEY)==='1'}catch(e){}if(!want)return;
+  if(lyCan()){if(!LY.on)lyOpen(true);return}if(n<60)setTimeout(()=>lyBoot(n+1),2000)})(0);
 </script>
 </body>
 </html>
