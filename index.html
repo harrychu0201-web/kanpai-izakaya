@@ -7354,14 +7354,16 @@ async function sendFb(){const t=$('fbtext'),c=$('fbcontact'),m=$('fbmsg');if(!t)
   say(T('送出中…'));
   try{const d={cat:FB.cat,text:text.slice(0,800),contact,lang:LANG,day:(ST&&ST.day)||(load()||{}).day||0,at:Date.now()};if(CL.user)d.uid=CL.user.uid;
     FB.last=Date.now();FB.text='';achBump('fb');
-    try{if(!CL.api)throw 0;await CL.api.addFb(d)}catch(e){console.warn('feedback',e);fbQueue(d);
+    try{if(!CL.api)throw 0;await fbTimeout(CL.api.addFb(d))}catch(e){console.warn('feedback',e);fbQueue(d);
       modal(`<h2>${T('謝謝你！')}</h2><p>${T('現在連線不太穩，意見已先存在這台裝置，之後打開遊戲會自動補送給作者 🙏')}</p><div class="btns"><button class="btn" data-act="closem">${T('知道了')}</button></div>`);return}
     modal(`<h2>${T('謝謝你！')}</h2><p>${T('意見已經送給作者了 🙏')}</p><div class="btns"><button class="btn" data-act="closem">${T('知道了')}</button></div>`)}
   catch(e){console.warn('feedback',e);say(T('送出失敗，請稍後再試'))}}
 const FBQ='izakaya-fbq';
+/* if the database is unreachable or over its free quota the write can hang forever instead of failing; give up after 10 s so the feedback goes to the local queue and is re-sent on a later launch */
+const fbTimeout=p=>Promise.race([p,new Promise((_,j)=>setTimeout(()=>j(new Error('fb timeout')),10000))]);
 function fbQueue(d){try{const q=JSON.parse(localStorage.getItem(FBQ)||'[]');q.push(d);localStorage.setItem(FBQ,JSON.stringify(q.slice(-10)))}catch(e){}}
 async function fbFlush(){if(!CL.api)return;let q;try{q=JSON.parse(localStorage.getItem(FBQ)||'[]')}catch(e){return}if(!q.length)return;
-  const left=[];for(const d of q){try{await CL.api.addFb(d)}catch(e){left.push(d)}}
+  const left=[];for(const d of q){try{await fbTimeout(CL.api.addFb(d))}catch(e){left.push(d)}}
   try{if(left.length)localStorage.setItem(FBQ,JSON.stringify(left));else localStorage.removeItem(FBQ)}catch(e){}}
 /* ===== replies to feedback: the author answers from the in-game inbox; the player sees it next time they open the game ===== */
 const RPL={list:[],shown:{},open:null,draft:'',busy:false,last:0};
