@@ -336,8 +336,8 @@ body.tutmode:has(.modal) #tut{display:none}
 @keyframes mobmad{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 .cust.mob[data-m=worry]:not(.walk) .spr img.m-worry{animation:mobfret 1.2s infinite ease-in-out}
 @keyframes mobfret{50%{transform:translateY(2px) rotate(-1deg)}}
-.homecat{position:absolute;left:2.5%;bottom:max(12%,calc(env(safe-area-inset-bottom,0px) + 26px));width:clamp(56px,11vh,96px);z-index:6;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;filter:drop-shadow(0 3px 0 rgba(30,10,4,.55))}
-.homecat svg{width:100%;height:auto;display:block;overflow:visible}.homecat .tail{transform-box:fill-box;transform-origin:10% 90%;animation:ctail 2.4s ease-in-out infinite}
+.homecat{position:absolute;left:44%;bottom:max(24%,calc(env(safe-area-inset-bottom,0px) + 120px));visibility:hidden;width:clamp(56px,11vh,96px);z-index:6;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;filter:drop-shadow(0 3px 0 rgba(30,10,4,.55))}
+.homecat.pl{visibility:visible}.homecat svg{width:100%;height:auto;display:block;overflow:visible}.homecat .tail{transform-box:fill-box;transform-origin:10% 90%;animation:ctail 2.4s ease-in-out infinite}
 .catsay{position:absolute;left:calc(2.5% + clamp(56px,11vh,96px) + 4px);bottom:max(15%,calc(env(safe-area-inset-bottom,0px) + 40px));max-width:46vw;padding:6px 12px;background:#fbf1dc;color:#3a1a10;border:3px solid #3a1a10;border-radius:14px;font-weight:900;font-size:clamp(12px,2.7vh,16px);line-height:1.35;z-index:7;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none}.catsay.on{opacity:1;transform:none}
 .homecat.tap svg{animation:csq .35s}@keyframes ctail{50%{transform:rotate(14deg)}}@keyframes csq{40%{transform:scale(1.12,.86)}}
 .hg-badge{position:absolute;top:-6px;right:-6px;font-size:30px;line-height:1;pointer-events:none;z-index:4;filter:drop-shadow(0 2px 0 #3a1a10)}
@@ -4529,14 +4529,27 @@ function showSecretDex(){
   <div class="btns"><button class="btn" data-act="dex">${T('返回')}</button></div>`)}
 /* 首頁的貓：遇過 3 位神祕訪客後出現。摸牠會有反應，摸到一定次數牠會偷偷給你一個東西 */
 const SGCAT_LINES=['喵～','（呼嚕呼嚕）','喵嗚？','（把頭蹭了過來）','……喵。','（甩了一下尾巴）'];
+/* 首頁貓的位置：不固定在左下（會擋到側欄的分享），改成每次量過畫面，坐在底部木牌（新的一局…）上緣，並避開所有按鈕與紅點 */
+function placeHomeCat(){try{const h=document.querySelector('.home'),c=h&&h.querySelector('.homecat');if(!c)return;
+  const hr=h.getBoundingClientRect(),cw=c.offsetWidth,ch=c.offsetHeight;if(!cw||!ch)return;
+  const shown=e=>{if(e.closest('.modal')||e.closest('.homecat')||e.closest('.catsay'))return false;const r=e.getBoundingClientRect();if(r.width<2||r.height<2)return false;const st=getComputedStyle(e);return st.display!=='none'&&st.visibility!=='hidden'};
+  const obs=[...h.querySelectorAll('button,.plq,.chbtn,.sideb,.plnew,.rdot,.hg-badge')].filter(shown).map(e=>({e,r:e.getBoundingClientRect()}));
+  const hit=(l,t,ign)=>{const r=l+cw,b=t+ch-10;for(const o of obs){if(ign&&(o.e===ign||ign.contains(o.e)))continue;const q=o.r;if(l<q.right+2&&r>q.left-2&&t<q.bottom&&b>q.top)return true}return false};
+  const inb=(l,t)=>l>=hr.left+4&&l+cw<=hr.right-4&&t>=hr.top+4&&t+ch<=hr.bottom-2;
+  let pos=null;
+  const plqs=[...h.querySelectorAll('.menu .plq:not(.pri)')].filter(shown);
+  for(const p of plqs){const pr=p.getBoundingClientRect();for(let x=pr.left+pr.width*.08;x+cw<=pr.right-pr.width*.04;x+=14){const t=pr.top+6-ch;if(inb(x,t)&&!hit(x,t,p)){pos=[x,t];break}}if(pos)break}
+  if(!pos){for(let t=hr.bottom-ch-4;t>=hr.top+4&&!pos;t-=16){for(let x=hr.left+hr.width*.3;x+cw<=hr.right-4&&!pos;x+=16){if(!hit(x,t))pos=[x,t]}}}
+  if(!pos)pos=[hr.left+hr.width*.44,hr.bottom-ch-hr.height*.3];
+  c.style.left=(pos[0]-hr.left)+'px';c.style.top=(pos[1]-hr.top)+'px';c.style.bottom='auto';c.classList.add('pl')}catch(e){}}
 function sgHomeCat(){try{if(!HOME)return;const r=loadRec();if(Object.keys(r.sg||{}).length<SG_CATN)return;const h=homeLayer().querySelector('.home');if(!h||h.querySelector('.homecat'))return;
-  h.insertAdjacentHTML('beforeend',`<button class="homecat" data-act="homecat" aria-label="${T('貓')}">${sv(`<g class="tail"><path d="M74 72q22-4 18-26" fill="none" stroke="#3a1a10" stroke-width="10" stroke-linecap="round"/><path d="M74 72q22-4 18-26" fill="none" stroke="#f2a94e" stroke-width="5" stroke-linecap="round"/></g><path d="M22 92q-6-30 16-40h22q22 10 16 40z" fill="#f2a94e" stroke="#3a1a10" stroke-width="3.5" stroke-linejoin="round"/><path d="M40 92q-2-16 4-26M54 92q2-16-4-26" stroke="#c97f2a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M28 36l-2-20 16 10z M66 36l2-20-16 10z" fill="#f2a94e" stroke="#3a1a10" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="47" cy="46" rx="22" ry="18" fill="#f2a94e" stroke="#3a1a10" stroke-width="3.5"/><path d="M36 30v6M47 28v7M58 30v6" stroke="#c97f2a" stroke-width="3" stroke-linecap="round"/><ellipse cx="38" cy="47" rx="3" ry="4.2" fill="#3a1a10"/><ellipse cx="56" cy="47" rx="3" ry="4.2" fill="#3a1a10"/><path d="M44 54q3 3 6 0" fill="none" stroke="#3a1a10" stroke-width="2.5" stroke-linecap="round"/><path d="M47 51.5l-2-1.5h4z" fill="#d85a5a"/>`,'0 0 100 100')}</button>`)}catch(e){}}
+  h.insertAdjacentHTML('beforeend',`<button class="homecat" data-act="homecat" aria-label="${T('貓')}">${sv(`<g class="tail"><path d="M74 72q22-4 18-26" fill="none" stroke="#3a1a10" stroke-width="10" stroke-linecap="round"/><path d="M74 72q22-4 18-26" fill="none" stroke="#f2a94e" stroke-width="5" stroke-linecap="round"/></g><path d="M22 92q-6-30 16-40h22q22 10 16 40z" fill="#f2a94e" stroke="#3a1a10" stroke-width="3.5" stroke-linejoin="round"/><path d="M40 92q-2-16 4-26M54 92q2-16-4-26" stroke="#c97f2a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M28 36l-2-20 16 10z M66 36l2-20-16 10z" fill="#f2a94e" stroke="#3a1a10" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="47" cy="46" rx="22" ry="18" fill="#f2a94e" stroke="#3a1a10" stroke-width="3.5"/><path d="M36 30v6M47 28v7M58 30v6" stroke="#c97f2a" stroke-width="3" stroke-linecap="round"/><ellipse cx="38" cy="47" rx="3" ry="4.2" fill="#3a1a10"/><ellipse cx="56" cy="47" rx="3" ry="4.2" fill="#3a1a10"/><path d="M44 54q3 3 6 0" fill="none" stroke="#3a1a10" stroke-width="2.5" stroke-linecap="round"/><path d="M47 51.5l-2-1.5h4z" fill="#d85a5a"/>`,'0 0 100 100')}</button>`);placeHomeCat();requestAnimationFrame(placeHomeCat)}catch(e){}}
 function homeCatTap(el){try{if(el&&el.classList){el.classList.remove('tap');void el.offsetWidth;el.classList.add('tap')}try{sfx('click')}catch(e){}
   achBump('cat',1);const r=loadRec(),n=(r.ax&&r.ax.cat)||0;
   if(n>=SG_CATGIFT&&!(r.eg&&r.eg.catg)){r.eg=r.eg||{};r.eg.catg=1;saveRec(r);invAdd({tip:1,fast:1});catSay('貓咪從背後掏出了一個小東西，推到你面前',3200);return}
   catSay(SGCAT_LINES[Math.floor(Math.random()*SGCAT_LINES.length)])}catch(e){}}
 /* 首頁沒有 toast 元素（那是營業畫面才有的），貓的反應用自己的小對話框 */
-function catSay(m,ms){const h=homeLayer().querySelector('.home');if(!h)return;let b=h.querySelector('.catsay');if(!b){b=document.createElement('div');b.className='catsay';h.appendChild(b)}b.textContent=T(m);b.classList.add('on');clearTimeout(catSay.t);catSay.t=setTimeout(()=>b.classList.remove('on'),ms||1700)}
+function catSay(m,ms){const h=homeLayer().querySelector('.home');if(!h)return;let b=h.querySelector('.catsay');if(!b){b=document.createElement('div');b.className='catsay';h.appendChild(b)}b.textContent=T(m);{const c=h.querySelector('.homecat');if(c){b.style.left=Math.max(4,c.offsetLeft)+'px';b.style.top='auto';b.style.bottom=(h.clientHeight-c.offsetTop+4)+'px';const hr=h.getBoundingClientRect();b.classList.add('on');const br=b.getBoundingClientRect();if(br.right>hr.right-8)b.style.left=Math.max(4,c.offsetLeft-(br.right-hr.right+8))+'px'}}b.classList.add('on');clearTimeout(catSay.t);catSay.t=setTimeout(()=>b.classList.remove('on'),ms||1700)}
 function showMishapDex(){
   const nwM=dxsNew('m:');dxsMark(nwM);
   const m=loadRec().mishap||{},ks=Object.keys(MISHAPS),n=ks.filter(k=>m[k]).length,done=!!loadRec().mishapReward;
@@ -4676,6 +4689,7 @@ function placeChat(){const h=document.querySelector('.home'),c=document.querySel
   if(rf){rf.style.left=left;rf.style.bottom='auto';rf.style.top=(y-rf.offsetHeight-8)+'px'}
   const rec=document.querySelector('.home .side-r [data-act=records] svg');
   if(rw&&rec){const rr=rec.getBoundingClientRect();rw.style.left=(rr.left-hr.left-rw.offsetWidth-10)+'px';rw.style.bottom='auto';rw.style.top=((rr.top+rr.bottom)/2-hr.top-rw.offsetHeight/2)+'px';if(fr){fr.style.left=rw.style.left;fr.style.bottom='auto';fr.style.top=(parseFloat(rw.style.top)+rw.offsetHeight+8)+'px'}}
+  placeHomeCat();
 }
 function sideBtn(act,label){const [a,b,ic]=SIDEI[act];return `<button class="sideb" data-act="${act}"><svg viewBox="0 0 64 64"><defs><linearGradient id="sg-${act}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><circle cx="32" cy="32" r="29" fill="url(#sg-${act})" stroke="#3a1a10" stroke-width="3.5"/><circle cx="32" cy="32" r="25.5" fill="none" stroke="#c9963e" stroke-width="2.5"/><ellipse cx="32" cy="16" rx="17" ry="6" fill="#fff" opacity=".1"/>${ic}</svg>${homeDotOn(act)?'<i class="rdot"></i>':''}<span>${T(label)}</span></button>`}
 function plaque(act,label,sub,primary,cls,badge){return `<button class="plq ${primary?'pri':''} ${cls||''}" data-act="${act}"><span class="plan">${sv(lanternG(''),'0 0 60 84')}</span><span class="plt">${T(label)}${sub?`<small>${sub}</small>`:''}</span>${badge?`<i class="plnew">${T(badge)}</i>`:''}</button>`}
