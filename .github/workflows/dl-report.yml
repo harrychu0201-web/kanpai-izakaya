@@ -1,0 +1,69 @@
+name: Download report
+
+# Reads the dlstat counters (bytes downloaded per top-level RTDB path, reported by
+# game clients) and prints ONLY aggregated totals. No uids or device ids are printed.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Aggregate dlstat
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: |
+          set -euo pipefail
+          WORK="$RUNNER_TEMP/dlrep"
+          mkdir -p "$WORK" && cd "$WORK"
+          npm init -y >/dev/null
+          npm install --silent firebase-admin@12
+          printf '%s' "$FIREBASE_SA" > sa.json
+          cat > rep.mjs <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { initializeApp, cert } from 'firebase-admin/app';
+          import { getDatabase } from 'firebase-admin/database';
+          const sa = JSON.parse(readFileSync('sa.json', 'utf8'));
+          initializeApp({ credential: cert(sa), databaseURL: 'https://kanpai-izakaya-default-rtdb.firebaseio.com' });
+          const db = getDatabase();
+          const snap = await db.ref('dlstat').once('value');
+          const all = snap.val() || {};
+          const mb = n => (n / 1048576).toFixed(1) + ' MB';
+          for (const day of Object.keys(all).sort()) {
+            const users = all[day] || {};
+            const tot = {}; let devs = 0; const perUser = [];
+            for (const uid of Object.keys(users)) {
+              let u = 0;
+              for (const dev of Object.keys(users[uid] || {})) {
+                devs++;
+                const b = (users[uid][dev] || {}).b || {};
+                for (const k of Object.keys(b)) { tot[k] = (tot[k] || 0) + b[k]; u += b[k]; }
+              }
+              perUser.push(u);
+            }
+            perUser.sort((a, b) => b - a);
+            const sum = Object.values(tot).reduce((a, b) => a + b, 0);
+            console.log(`== ${day}: users=${Object.keys(users).length} devices=${devs} total=${mb(sum)} (chars, ~bytes)`);
+            for (const k of Object.keys(tot).sort((a, b) => tot[b] - tot[a])) console.log(`   ${k.padEnd(12)} ${mb(tot[k]).padStart(12)}  ${(100 * tot[k] / (sum || 1)).toFixed(1)}%`);
+            console.log(`   top5 users: ${perUser.slice(0, 5).map(mb).join(', ')}`);
+          }
+          const lb = await db.ref('lb').once('value');
+          console.log('lb players:', lb.numChildren(), ' lb size:', mb(JSON.stringify(lb.val() || {}).length));
+          for (const p of ['online', 'mm', 'artov/i', 'artov/tx', 'notice']) {
+            const s = await db.ref(p).once('value');
+            console.log(`size ${p}:`, mb(JSON.stringify(s.val() || {}).length), 'children', s.numChildren());
+          }
+          const ai = (await db.ref('artov/i').once('value')).val() || {};
+          console.log('artov images:', Object.keys(ai).length, 'declared total', mb(Object.values(ai).reduce((a, x) => a + (x.sz || 0), 0)));
+          process.exit(0);
+          JS
+          node rep.mjs
+          rm -f sa.json
