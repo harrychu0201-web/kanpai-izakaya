@@ -4569,11 +4569,17 @@ function deliver(seat){
   if(!heldValid()){R.held=null;renderStations();toast('那份已經不能送了');return}
   let j=c.order.findIndex((k,idx)=>!c.filled[idx]&&k===R.held.key);
   if(j<0&&c.extra&&c.extra.ok&&!c.extra.done&&c.extra.key===R.held.key)j='x'; // bonus add-on dish
-  if(j<0){giveTo(c,'wrong',R.held,true);return} /* 送錯菜：還是會送出去（食材照扣），客人生氣走人、整桌不付錢 */
+  if(j<0){
+    /* 這位客人點的這道已經被店員（或自己先前）上過了：不算送錯，菜留在手上，客人不會生氣 */
+    const hk2=R.held.key;
+    if(c.order.some((k,idx)=>c.filled[idx]&&k===hk2)||(c.extra&&c.extra.done&&c.extra.key===hk2)){shake(c);toast('這位客人這道菜已經上過了');return}
+    giveTo(c,'wrong',R.held,true);return} /* 送錯菜：還是會送出去（食材照扣），客人生氣走人、整桌不付錢 */
   
   sfx('serve');giveTo(c,j,R.held,true);
 }
 function giveTo(c,j,h,byPlayer){
+  /* 玩家手上正拿著同一道菜：店員讓玩家自己送，避免店員和玩家同時上同一道、玩家那份變成「送錯菜」把客人氣走 */
+  if(!byPlayer&&R.held&&R.held.key===h.key&&heldValid())return false;
   const ik=instKey(h);
   if(ik&&live()<costOf(ik)){if(byPlayer){toast(T('錢包沒錢了，買不起食材！'));askLoan()}return false}
   const from=srcCenter(h),to={x:seatX(c.seat,seatsN()),y:70};
