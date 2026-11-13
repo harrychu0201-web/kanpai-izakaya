@@ -33,8 +33,8 @@ const CSS = `
 .tw3hint.on{opacity:1}
 .tw3j{position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;background:#ffffff1f;border:3px solid #ffffff99;pointer-events:none;display:none}
 .tw3j i{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:#ffffffd9}
-.tw3cam{position:absolute;right:max(12px,env(safe-area-inset-right));bottom:30px;display:flex;gap:8px}
-.tw3cam button{width:46px;height:46px;border-radius:50%;border:2px solid #ffffffaa;background:#2a1810b3;color:#fff3d6;font-size:22px;line-height:1;padding:0;touch-action:none;user-select:none;-webkit-user-select:none}
+.tw3cam{position:absolute;right:max(16px,env(safe-area-inset-right));bottom:30px;display:flex;gap:18px}
+.tw3cam button{width:88px;height:88px;border-radius:50%;border:4px solid #ffffffcc;background:#2a1810cc;color:#fff3d6;font-size:44px;line-height:1;padding:0;touch-action:none;user-select:none;-webkit-user-select:none}
 .tw3cam button:active{background:#6b3a1ab3}
 .tw3fade{position:absolute;inset:0;background:#0a0604;opacity:0;pointer-events:none}
 .tw3card{position:absolute;bottom:30px;left:12px;width:min(460px,calc(46% - 6px));background:#fff6e0;color:#3a1e0c;border:3px solid #2a1810;border-radius:16px;box-shadow:0 6px 0 #0006;padding:8px 10px 8px;display:none;font-size:15px;line-height:1.45}
@@ -46,11 +46,11 @@ const CSS = `
 .tw3av{flex:none;width:44px;height:44px;border-radius:50%;border:2px solid #2a1810;background-color:#e9d3a4;background-repeat:no-repeat;background-size:230% auto;background-position:50% 3%}
 .tw3nm{flex:1;min-width:0;line-height:1.25}.tw3nm b{font-size:16px;display:block}.tw3nm small{font-size:12px;opacity:.7}
 .tw3k{flex:none;border:2px solid #2a1810;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;white-space:nowrap}
-.tw3x{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid #2a1810;background:#fff;font-size:20px;line-height:1;padding:0;color:#3a1e0c}
+.tw3x{flex:none;width:72px;height:72px;border-radius:50%;border:4px solid #2a1810;background:#fff;font-size:44px;line-height:1;padding:0;color:#3a1e0c}
 .tw3t{font-size:16px}.tw3t.mind{font-style:italic;color:#4a3a78}
 .tw3t p{margin:2px 0}.tw3t p b{margin-right:6px;color:#8a3a14}
 .tw3b{display:flex;justify-content:flex-end;margin-top:4px}
-.tw3n{border:2px solid #2a1810;border-radius:999px;background:#ffd27a;color:#3a1e0c;font-weight:800;font-size:13px;padding:3px 14px}
+.tw3n{border:2px solid #2a1810;border-radius:999px;background:#ffd27a;color:#3a1e0c;font-weight:800;font-size:22px;padding:0 32px;min-height:72px}
 .tw3load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff3d6;font-size:16px;background:#140f2e}
 `;
 

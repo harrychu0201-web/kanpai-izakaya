@@ -4725,11 +4725,11 @@ function townOpen(o,cur,row,back,rc,hud){
   const tw=document.querySelector('.modal .town');if(!tw)return;const card=tw.closest('.card'),md=tw.closest('.modal');card.classList.add('towncard');md.classList.add('townm');
   const sl=shops.map(([id,e,n,own])=>({id,e,n,own,cur:id===cur}));
   townStart(tw,sl)}
-/* 暖簾街：three.js 打包檔在打開暖簾街時才載入（img/town3d-e6176ef0.js，hash 在檔名裡，換版本檔名就變）。
+/* 暖簾街：three.js 打包檔在打開暖簾街時才載入（img/town3d-6c05daf1.js，hash 在檔名裡，換版本檔名就變）。
    載入失敗或裝置不支援 WebGL 時顯示提示，只剩返回主頁。 */
 let T3P=null;
 function loadTown3D(){if(window.Town3D)return Promise.resolve();if(T3P)return T3P;
-  T3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/town3d-e6176ef0.js';s.onload=()=>ok();s.onerror=()=>{T3P=null;no(new Error('town3d'))};document.head.appendChild(s)});return T3P}
+  T3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/town3d-6c05daf1.js';s.onload=()=>ok();s.onerror=()=>{T3P=null;no(new Error('town3d'))};document.head.appendChild(s)});return T3P}
 function townFresh(tw){const old=tw.querySelector('canvas'),c=document.createElement('canvas');c.className='twcv';old.replaceWith(c);return c}
 function townStart(tw,shops){if(TOWN)TOWN.dead=1;
   const cv=tw.querySelector('canvas'),ld=document.createElement('div');ld.className='tw3load';ld.textContent='🏮 …';tw.appendChild(ld);
