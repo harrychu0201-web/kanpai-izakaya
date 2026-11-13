@@ -1,7 +1,8 @@
 name: Export feedback
 
-# Reads the latest player feedback (fb node only) and stores it as a private
-# workflow artifact. Repo is public, so the data is never committed or published.
+# Reads the latest player feedback (fb node only) and pushes it to the PRIVATE
+# repo harrychu0201-web/kanpai-feedback-inbox. This repo is public, so the data
+# must never be committed here.
 on:
   schedule:
     - cron: '17 */2 * * *'
@@ -9,6 +10,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: feedback-export
+  cancel-in-progress: false
 
 jobs:
   export:
@@ -19,13 +24,18 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Export feedback
+      - name: Export feedback to private inbox
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          FEEDBACK_PAT: ${{ secrets.FEEDBACK_PAT }}
         run: |
           set -euo pipefail
           if [ -z "$FIREBASE_SA" ]; then
             echo "FIREBASE_SA secret is missing" >&2
+            exit 1
+          fi
+          if [ -z "$FEEDBACK_PAT" ]; then
+            echo "FEEDBACK_PAT secret is missing" >&2
             exit 1
           fi
           WORK="$RUNNER_TEMP/fbexport"
@@ -33,7 +43,6 @@ jobs:
           npm init -y >/dev/null
           npm install --silent firebase-admin@12
           printf '%s' "$FIREBASE_SA" > sa.json
-          echo "secret length=${#FIREBASE_SA} first_byte=$(head -c1 sa.json | od -An -c | tr -d ' ') last_byte=$(tail -c1 sa.json | od -An -c | tr -d ' ')"
           cat > export.mjs <<'JS'
           import { readFileSync, writeFileSync } from 'node:fs';
           import { initializeApp, cert } from 'firebase-admin/app';
@@ -48,18 +57,25 @@ jobs:
           const items = [];
           snap.forEach(c => { items.push({ id: c.key, ...c.val() }); });
           items.reverse();
-          writeFileSync('feedback.json', JSON.stringify({ exportedAt: new Date().toISOString(), count: items.length, items }, null, 2));
+          writeFileSync('feedback.json', JSON.stringify({ exportedAt: new Date().toISOString(), count: items.length, items }, null, 2) + '\n');
           console.log('exported', items.length, 'items');
           process.exit(0);
           JS
           node export.mjs
           rm -f sa.json
-          mkdir -p "$GITHUB_WORKSPACE/out"
-          cp feedback.json "$GITHUB_WORKSPACE/out/feedback.json"
 
-      - name: Upload private artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: feedback-export
-          path: out/feedback.json
-          retention-days: 14
+          # Push to the private inbox repo (token only in env, never echoed)
+          git clone -q --depth 1 "https://x-access-token:${FEEDBACK_PAT}@github.com/harrychu0201-web/kanpai-feedback-inbox.git" inbox 2>/dev/null || { git init -q inbox && git -C inbox remote add origin "https://x-access-token:${FEEDBACK_PAT}@github.com/harrychu0201-web/kanpai-feedback-inbox.git"; }
+          cp feedback.json inbox/feedback.json
+          cd inbox
+          git config user.name "feedback-export"
+          git config user.email "feedback-export@users.noreply.github.com"
+          git checkout -q -B main
+          git add feedback.json
+          if git diff --cached --quiet; then
+            echo "no change since last export"
+          else
+            git commit -q -m "feedback export $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push -q origin main
+            echo "pushed to inbox"
+          fi
