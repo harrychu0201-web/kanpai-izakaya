@@ -6232,7 +6232,7 @@ function pinLand(){return TOUCH&&innerWidth>innerHeight}
 function stableVisH(){
   /* iPhone 加到主畫面（全螢幕）橫向時，實際可用高度就是螢幕短邊，不必靠量測；量測偶爾讀到偏矮的值，
      會讓舞台的虛擬寬度被放大到 1800、整個遊戲縮成約四分之一。這裡直接用螢幕短邊。 */
-  if(IOS&&STANDALONE&&innerWidth>innerHeight)return Math.min(screen.width,screen.height);
+  if(IOS&&STANDALONE&&innerWidth>innerHeight)return Math.max(Math.min(screen.width,screen.height),window.innerHeight);
   if(IOS){const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''),o=innerWidth>innerHeight?'l':'p';if(typing&&STAB.h&&STAB.o===o)return STAB.h;const v=visH();STAB={o,h:v,m:v};return v}
   const o=innerWidth>innerHeight?'l':'p',v=visH();
   if(STAB.o!==o||!STAB.h){STAB={o,h:v,m:v};return v}
@@ -6291,7 +6291,9 @@ function fit(){
   const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?landW():(TOUCH?(landT()?landW():stableWrapW()):$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)+(TOUCH?safeBottom():0)));
   /* 保險上限：iOS 更新後偶爾量到過大的寬高（例如讀到還沒排好的版面），遊戲會被放大到超出螢幕，只剩左上角看得到。
      不管量到什麼，遊戲的可用寬高都不會超過實際視窗的寬高。 */
-  const cw=pinLand()?Math.max(screen.width,screen.height):window.innerWidth,ch=pinLand()?Math.min(screen.width,screen.height):window.innerHeight;
+  /* screen.width/height 是「裝置」的 CSS 尺寸，不會跟著頁面縮放走。iPhone Safari 的頁面縮放（aA 選單）或「要求桌面版網站」會讓版面視窗變成螢幕的兩倍大，
+     只用 screen 當上限，遊戲就只剩一半寬、一半高（約四分之一）。上限取 screen 與實際版面視窗較大者。 */
+  const cw=pinLand()?Math.max(screen.width,screen.height,window.innerWidth):window.innerWidth,ch=pinLand()?Math.max(Math.min(screen.width,screen.height),window.innerHeight):window.innerHeight;
   const s=Math.min(Math.min(w,Math.max(200,cw))/W,Math.min(maxH,Math.max(200,ch))/H);box.style.width=(W*s)+'px';box.style.height=(H*s)+'px';
   /* 左側錨定：用「釘住的寬度」排版，而不是目前寬度置中。手機橫向時，右側系統導覽列滑出會讓可見寬度變窄，置中的畫面就會整個左右移動。 */
   if(TOUCH){box.style.alignSelf='flex-start';box.style.marginLeft=Math.max(0,(Math.min(w,Math.max(200,cw))-W*s)/2)+'px'}else{box.style.alignSelf='';box.style.marginLeft=''}

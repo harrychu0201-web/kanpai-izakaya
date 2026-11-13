@@ -1,4 +1,4 @@
-const CACHE='izakaya-v762';
+const CACHE='izakaya-v764';
 // character art lives in img/ with the content hash in each file name, so a file never changes once published:
 // keep it in its own cache that survives version bumps (an update then only re-downloads the small page, not 2.4MB of art)
 const IMGCACHE='izakaya-img';
@@ -38,6 +38,10 @@ self.addEventListener('fetch',e=>{
             done.then(()=>self.clients.matchAll({type:'window'})).then(cs=>cs.forEach(cl=>cl.postMessage({type:'newver'})));
         }
         return res}).catch(()=>null);
+      // the game page itself: try the network first (up to 3s) so every launch gets the newest version;
+      // cache-first meant iPhone home-screen players kept playing an old version for days after a fix
+      if(hit&&req.mode==='navigate'){e.waitUntil(refresh.catch(()=>null));
+        return Promise.race([refresh,new Promise(ok=>setTimeout(()=>ok(null),3000))]).then(res=>res||hit)}
       if(hit){e.waitUntil(refresh);return hit}
       return refresh.then(res=>res||caches.match('./index.html')).then(res=>res||Response.error());
     }));
