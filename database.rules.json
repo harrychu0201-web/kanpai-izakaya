@@ -225,6 +225,9 @@
         "ctx": {
           ".validate": "newData.isString() && newData.val().length <= 300"
         },
+        "ni": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 3"
+        },
         "$other": {
           ".validate": false
         }
@@ -617,6 +620,17 @@
             ".write": "auth != null && auth.uid === $uid",
             ".read": false
           }
+        }
+      }
+    },
+    "fbimg": {
+      ".read": false,
+      "$id": {
+        ".read": "auth != null && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('admins').child(auth.uid).val() === true)",
+        ".write": "(!data.exists() && newData.exists() && newData.parent().parent().child('fb').child($id).child('t').val() === now) || (auth != null && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('admins').child(auth.uid).val() === true))",
+        ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['i0'])",
+        "$k": {
+          ".validate": "$k.matches(/^i[0-2]$/) && newData.isString() && newData.val().matches(/^data:image\\/jpeg;base64,/) && newData.val().length <= 200000"
         }
       }
     }
