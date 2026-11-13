@@ -6394,7 +6394,15 @@ function mergeRec(a,b){const pj=s=>{try{return s?JSON.parse(s)||{}:{}}catch(e){r
   {const sg={};[x.sg||{},y.sg||{}].forEach(h=>{for(const k in h)sg[k]=Math.max(sg[k]||0,h[k]||0)});if(Object.keys(sg).length)o.sg=sg}
   {const v=Math.max(x.achV||0,y.achV||0);if(v)o.achV=v}
   if(x.dxs||y.dxs)o.dxs=Object.assign({},x.dxs||{},y.dxs||{});
-  {const ci=[x.ci,y.ci].filter(Boolean).sort((p,q)=>String(q.last||'').localeCompare(String(p.last||'')));if(ci[0])o.ci=ci[0]}
+  {const cs=[x.ci,y.ci].filter(Boolean).sort((p,q)=>String(q.last||'').localeCompare(String(p.last||'')));
+    if(cs[0]){const c=Object.assign({},cs[0]),e=cs[1];
+      /* 兩台裝置各自簽到：最後簽到日只差一天代表是同一段連續簽到，接上另一台的天數，不能只保留較新的那一份 */
+      if(e&&e.last&&c.last){const [ey,em,ed]=e.last.split('-').map(Number),[cy,cm,cd]=c.last.split('-').map(Number);
+        const gap=Math.round((new Date(cy,cm-1,cd)-new Date(ey,em-1,ed))/864e5);
+        if(gap===1)c.streak=Math.max(c.streak||0,(e.streak||0)+1);
+        if(gap===0)c.streak=Math.max(c.streak||0,e.streak||0);
+        if(gap>=0&&gap<=1&&(e.hd||c.hd)){const u=[...new Set([...(e.hd||[]),...(c.hd||[])])].sort();c.hd=u.slice(-30)}}
+      o.ci=c}}
   return JSON.stringify(o)}
 Object.assign(I18N["zh-Hans"],{"多人模式":"多人模式","新推出！":"新推出！","離線":"离线","邀請":"邀请","邀請在線上的好友一起開店，對方會收到邀請通知。":"邀请在线的好友一起开店，对方会收到邀请通知。","還沒有好友，先去加好友吧！":"还没有好友，先去加好友吧！","{0} 位好友在線上":"{0} 位好友在线上","登入後才能玩多人模式。":"登录后才能玩多人模式。","🧪 連線測試":"多人模式"});
 Object.assign(I18N["en"],{"多人模式":"Multiplayer","新推出！":"NEW!","離線":"Offline","邀請":"Invite","邀請在線上的好友一起開店，對方會收到邀請通知。":"Invite an online friend to run the shop together. They'll get a notification.","還沒有好友，先去加好友吧！":"No friends yet — add some first!","{0} 位好友在線上":"{0} friends online","登入後才能玩多人模式。":"Sign in to play multiplayer."});
