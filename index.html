@@ -6694,13 +6694,21 @@ async function cloudInit1(){
         return all.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f]).slice(0,n)},
       // every player on one board (for rank + percentile): pages of 100 by the field, walking backwards with endBefore(value,key)
       all:async(f,dir)=>{const asc=dir==='asc';
-        const pages=await rt(async (rd,r)=>{const out=[];let cur=null;
-          for(;;){const c=[rd.orderByChild(f)];if(cur)c.push(rd.endBefore(cur.v,cur.k));c.push(rd.limitToLast(100));
-            const s=await rd.get(rd.query(rd.ref(r,'lb'),...c));const pg=[];s.forEach(x=>{pg.push(Object.assign({uid:x.key},x.val()))});
-            if(!pg.length)break;out.push(pg);if(pg.length<100)break;const v0=pg[0][f];if(typeof v0!=='number')break;cur={v:v0,k:pg[0].uid}}
-          return out});
-        const all=[].concat(...pages.reverse()).filter(x=>typeof x[f]==='number'&&(!asc||x[f]>0));
-        return all.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f])},
+        /* download saver: every board used to walk the whole lb node by itself (7 tabs = 7 full scans); scan once (ordered by 'earned', which every row has) and derive each board from the shared copy for 3 minutes */
+        let A=window.__LBALL;
+        if(!A||!A.rows||Date.now()-A.t>180000){
+          const p=(A&&A.p&&Date.now()-A.pt<60000)?A.p:(async()=>{
+            const pages=await rt(async (rd,r)=>{const out=[];let cur=null;
+              for(;;){const c=[rd.orderByChild('earned')];if(cur)c.push(rd.endBefore(cur.v,cur.k));c.push(rd.limitToLast(100));
+                const s=await rd.get(rd.query(rd.ref(r,'lb'),...c));const pg=[];s.forEach(x=>{pg.push(Object.assign({uid:x.key},x.val()))});
+                if(!pg.length)break;out.push(pg);if(pg.length<100)break;const v0=pg[0].earned;if(typeof v0!=='number')break;cur={v:v0,k:pg[0].uid}}
+              return out});
+            return [].concat(...pages.reverse())})();
+          window.__LBALL=A={t:A&&A.t||0,rows:A&&A.rows||null,p,pt:Date.now()};
+          try{const rows=await p;window.__LBALL={t:Date.now(),rows}}catch(e){if(window.__LBALL&&window.__LBALL.p===p)window.__LBALL=A.rows?{t:A.t,rows:A.rows}:null;throw e}
+          A=window.__LBALL}
+        const all=A.rows.filter(x=>typeof x[f]==='number'&&(!asc||x[f]>0));
+        return all.slice().sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f])},
       putLb:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lb/'+uid),d)),
       lbMan:()=>rt((rd,r)=>rd.get(rd.ref(r,'notice/lbman')).then(s=>s.val()||{})),
       setLbMan:(k,d)=>rt((rd,r)=>rd.set(rd.ref(r,'notice/lbman/'+k),d)),
@@ -6788,7 +6796,7 @@ async function cloudInit1(){
         return rd.update(rd.ref(r),{['fbreply/'+uid+'/'+thr+'/msgs/'+mid]:{text,t:ts},['fb/'+fid]:Object.assign({cat:'re',text,uid,thr,t:ts},d)})}),
       myReplies:uid=>rt((rd,r)=>rd.get(rd.ref(r,'fbreply/'+uid)).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.sort((x,y)=>(y.t||0)-(x.t||0))})),
       replySeen:(uid,id)=>rt((rd,r)=>rd.set(rd.ref(r,'fbreply/'+uid+'/'+id+'/seen'),true)),
-      notice:()=>rt((rd,r)=>rd.get(rd.ref(r,'notice')).then(s=>s.val())),
+      notice:()=>{/* download saver: the whole notice node (all posts, 手動榜, del/unflag) is re-read on every launch; reuse a 30-min local copy, author/admin always read fresh */let adm=false;try{adm=typeof isAdmin==='function'&&!!isAdmin()}catch(e){}if(!adm)try{const c=JSON.parse(localStorage.getItem('izakaya-nrc')||'null');if(c&&typeof c.t==='number'&&Date.now()-c.t<1800000&&c.t<=Date.now()+60000&&'d' in c)return Promise.resolve(c.d)}catch(e){}return rt((rd,r)=>rd.get(rd.ref(r,'notice')).then(s=>s.val())).then(v=>{if(!adm)try{localStorage.setItem('izakaya-nrc',JSON.stringify({t:Date.now(),d:v}))}catch(e){}return v})},
       noticeVoteGet:(nid,uid)=>rt((rd,r)=>rd.get(rd.ref(r,'noticevote/'+nkey(nid)+'/'+uid)).then(s=>s.exists()?s.val():null)),
       noticeVoteSet:(nid,uid,v)=>rt((rd,r)=>rd.set(rd.ref(r,'noticevote/'+nkey(nid)+'/'+uid),v)),
       isPoster:uid=>rt((rd,r)=>rd.get(rd.ref(r,'posters/'+uid)).then(s=>s.val()===true)),
@@ -7058,7 +7066,7 @@ async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=nu
   const put=async dd=>{try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},dd))}
     catch(e){const d2=Object.assign({},dd);delete d2.dex;delete d2.chal;delete d2.chalh;delete d2.fc;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}}}; /* rules not updated yet: still keep the rest of the entry */
   try{await put(d)}catch(e){const nn=String(d.name).replace(/管理[員员]/g,'').trim();if(nn===d.name)throw e;await put(Object.assign({},d,{name:nn||'玩家'}))} /* published rules may still reject 管理員 in names: show the name without it instead of not showing him at all */
-  LB.last=u.uid+k;/* update my own row in every cached board in place (no full re-download) */Object.keys(LB.cache).forEach(f=>{const c=LB.cache[f],tb=LBT.find(x=>x[0]===f);if(!c||!c.rows||!tb)return;const asc=tb[2]==='asc';const rows=c.rows.filter(x=>x.uid!==u.uid);if(typeof d[f]==='number'&&(!asc||d[f]>0))rows.push(Object.assign({uid:u.uid},d,{at:Date.now()}));rows.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f]);c.rows=rows})}
+  LB.last=u.uid+k;/* update my own row in every cached board in place (no full re-download) */try{const A=window.__LBALL;if(A&&A.rows){const nr=Object.assign({uid:u.uid},d,{at:Date.now()});const i=A.rows.findIndex(x=>x.uid===u.uid);if(i>=0)A.rows[i]=nr;else A.rows.push(nr)}}catch(e){}Object.keys(LB.cache).forEach(f=>{const c=LB.cache[f],tb=LBT.find(x=>x[0]===f);if(!c||!c.rows||!tb)return;const asc=tb[2]==='asc';const rows=c.rows.filter(x=>x.uid!==u.uid);if(typeof d[f]==='number'&&(!asc||d[f]>0))rows.push(Object.assign({uid:u.uid},d,{at:Date.now()}));rows.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f]);c.rows=rows})}
 const lbVal=(t,v)=>t==='fc'?(window.fcFmt?window.fcFmt(v):String(v)):t==='chal'||t==='chalh'?chTime(v):t==='dex'?T('{0} 種',v):t==='days'?T('{0} 天',v):yen(v);
 const lbHead=tb=>`<h2>${T('排行榜')}</h2><div class="lbtabs">${LBT.filter(x=>!(LB.ch&&x[0]==='fr')).map(([k,n])=>`<button class="stab ${LB.tab===k?'on':''}" data-act="lbtab" data-id="${k}">${T(n)}</button>`).join('')}</div><p class="lbdesc">${T(tb[3])}</p>`;
 /* ===== manual scores (owner only): for a player whose own upload keeps failing. Stored in notice/lbman/<name>, merged into the board;
