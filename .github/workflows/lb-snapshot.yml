@@ -1,0 +1,67 @@
+name: Leaderboard snapshot
+
+# Every ~15 minutes: read the whole lb node once with the service account and publish it as
+# lb.json on the lb-data branch (force-pushed, single commit). The game loads that file from
+# raw.githubusercontent.com instead of every player scanning the Firebase lb node themselves.
+# Contents = what the public leaderboard already shows (uid, name, scores).
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lb-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build snapshot
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: |
+          set -euo pipefail
+          WORK="$RUNNER_TEMP/lbsnap"
+          mkdir -p "$WORK/out" && cd "$WORK"
+          npm init -y >/dev/null
+          npm install --silent firebase-admin@12
+          printf '%s' "$FIREBASE_SA" > sa.json
+          cat > snap.mjs <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { initializeApp, cert } from 'firebase-admin/app';
+          import { getDatabase } from 'firebase-admin/database';
+          const sa = JSON.parse(readFileSync('sa.json', 'utf8'));
+          initializeApp({ credential: cert(sa), databaseURL: 'https://kanpai-izakaya-default-rtdb.firebaseio.com' });
+          const snap = await getDatabase().ref('lb').once('value');
+          const rows = [];
+          snap.forEach(c => { rows.push(Object.assign({ uid: c.key }, c.val())); });
+          if (rows.length < 20) { console.error('too few rows, not publishing:', rows.length); process.exit(1); }
+          writeFileSync('out/lb.json', JSON.stringify({ t: Date.now(), n: rows.length, rows }));
+          console.log('rows', rows.length);
+          process.exit(0);
+          JS
+          node snap.mjs
+          rm -f sa.json
+          ls -l out/lb.json
+
+      - name: Publish to lb-data branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/lbsnap/out"
+          git init -q -b lb-data
+          git config user.name "lb-snapshot"
+          git config user.email "lb-snapshot@users.noreply.github.com"
+          git add lb.json
+          git commit -q -m "leaderboard snapshot"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" lb-data
