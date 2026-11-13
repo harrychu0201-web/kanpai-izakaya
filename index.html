@@ -6698,9 +6698,6 @@ async function cloudInit1(){
         let A=window.__LBALL;
         if(!A||!A.rows||Date.now()-A.t>180000){
           const p=(A&&A.p&&Date.now()-A.pt<60000)?A.p:(async()=>{
-            /* static snapshot of the whole board, rebuilt every ~15 min by the lb-snapshot GitHub Action and served from GitHub (no Firebase download); live scan below is only the fallback */
-            try{const rs=await fetch('https://raw.githubusercontent.com/harrychu0201-web/kanpai-izakaya/lb-data/lb.json',{cache:'no-cache'});
-              if(rs.ok){const j=await rs.json();if(j&&Array.isArray(j.rows)&&j.rows.length>=20&&typeof j.t==='number'&&Date.now()-j.t<5400000&&j.rows.every(x=>x&&typeof x.uid==='string'))return j.rows}}catch(e){}
             const pages=await rt(async (rd,r)=>{const out=[];let cur=null;
               for(;;){const c=[rd.orderByChild('earned')];if(cur)c.push(rd.endBefore(cur.v,cur.k));c.push(rd.limitToLast(100));
                 const s=await rd.get(rd.query(rd.ref(r,'lb'),...c));const pg=[];s.forEach(x=>{pg.push(Object.assign({uid:x.key},x.val()))});
@@ -6815,7 +6812,7 @@ async function cloudInit1(){
       idle:()=>rtIdle(),
       chatSub:(cb,err,pre)=>{let off=null,dead=false;rtdb().then(({rd,db:r})=>{if(dead)return;clearTimeout(rtT);rd.goOnline(r);
         const lo=pre||'-'; /* 每個語言聊天室 = chat 底下 key 的前綴（繁中沿用原本的 push id，開頭都是 '-'），用 orderByKey 範圍查詢，不用改 Firebase 規則 */
-        off=rd.onValue(rd.query(rd.ref(r,'chat'),rd.orderByKey(),rd.startAt(lo),rd.endAt(lo+'\uf8ff'),rd.limitToLast(30)),snap=>{const a=[];snap.forEach(c=>{const x=c.val()||{};a.push({id:c.key,uid:x.uid,name:x.name,text:x.text,adm:x.adm===true,t:typeof x.t==='number'?x.t:Date.now(),likes:x.likes||{},rp:x.rp||null})});cb(a.reverse())},err)}).catch(err);
+        off=rd.onValue(rd.query(rd.ref(r,'chat'),rd.orderByKey(),rd.startAt(lo),rd.endAt(lo+'\uf8ff'),rd.limitToLast(100)),snap=>{const a=[];snap.forEach(c=>{const x=c.val()||{};a.push({id:c.key,uid:x.uid,name:x.name,text:x.text,adm:x.adm===true,t:typeof x.t==='number'?x.t:Date.now(),likes:x.likes||{},rp:x.rp||null})});cb(a.reverse())},err)}).catch(err);
         return ()=>{dead=true;if(off)off()}},
       chatSend:(uid,name,text,adm,rp,pre)=>rt((rd,r)=>{const id=(pre||'')+rd.push(rd.ref(r,'chat')).key;
         const m={uid,name,text,t:rd.serverTimestamp()};if(adm)m.adm=true;if(rp)m.rp=rp; /* rp: snapshot of the message being replied to */ /* adm: the rules only accept it from the author's verified Google account, so players can't fake the 👑 mark */
