@@ -6723,6 +6723,8 @@ async function cloudInit1(){
           A=window.__LBALL}
         const all=A.rows.filter(x=>typeof x[f]==='number'&&(!asc||x[f]>0));
         return all.slice().sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f])},
+      /* 點食成金 on the board: putLb replaces the whole row, so a device without its own 點食成金 copy used to wipe fc; read what the server already has (lb row and cloud save, whichever is larger) */
+      lbFcSrv:uid=>rt((rd,r)=>Promise.all([rd.get(rd.ref(r,'lb/'+uid+'/fc')).then(x=>+x.val()||0).catch(()=>{throw new Error('lbfc')}),rd.get(rd.ref(r,'saves/'+uid+'/fc')).then(x=>{try{return +JSON.parse(x.val()).e||0}catch(e){return 0}}).catch(()=>0)]).then(a=>{const m=Math.max(a[0],a[1]);return isFinite(m)&&m>=1?Math.round(m):0})),
       putLb:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lb/'+uid),d)),
       lbMan:()=>rt((rd,r)=>rd.get(rd.ref(r,'notice/lbman')).then(s=>s.val()||{})),
       setLbMan:(k,d)=>rt((rd,r)=>rd.set(rd.ref(r,'notice/lbman/'+k),d)),
@@ -7076,11 +7078,14 @@ for(const l in A){if(I18N[l])Object.assign(I18N[l],{'你的暱稱「{0}」含有
 function lbEntry(){const r=loadRec();
   if(!r.nick||nickBad(r.nick))return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.maxDay>0&&!isAdmin())d.days=Math.round(r.maxDay); /* the author's test runs (1000+ days) stay off the 最長營業 board */if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;{let fe=0;try{fe=+JSON.parse(localStorage.getItem('izakaya-fc-v1')||'null').e||0}catch(e){}if(fe>=1&&isFinite(fe))d.fc=Math.round(fe)}return d} /* 點食成金累計賺取（只讀、不改它的存檔）*/
 async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return} /* a save touched by the author test tools never goes on the leaderboard */
+  if(CL.api.lbFcSrv){let sv=LB.fcs&&LB.fcs.u===u.uid?LB.fcs.v:null;
+    if(sv==null){try{sv=await CL.api.lbFcSrv(u.uid);LB.fcs={u:u.uid,v:sv}}catch(e){if(!(d.fc>=1))throw e;sv=0}}
+    if(sv>=1&&!(d.fc>=sv))d.fc=sv} /* never let an upload from a device without 點食成金 data (or an older copy) erase or lower the player's 點食成金 score */
   const k=JSON.stringify(d);if(LB.last===u.uid+k)return;
   const put=async dd=>{try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},dd))}
     catch(e){const d2=Object.assign({},dd);delete d2.dex;delete d2.chal;delete d2.chalh;delete d2.fc;try{await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}catch(e2){if(!d2.days)throw e2;delete d2.days;await CL.api.putLb(u.uid,Object.assign({at:Date.now()},d2))}}}; /* rules not updated yet: still keep the rest of the entry */
   try{await put(d)}catch(e){const nn=String(d.name).replace(/管理[員员]/g,'').trim();if(nn===d.name)throw e;await put(Object.assign({},d,{name:nn||'玩家'}))} /* published rules may still reject 管理員 in names: show the name without it instead of not showing him at all */
-  LB.last=u.uid+k;/* update my own row in every cached board in place (no full re-download) */try{const A=window.__LBALL;if(A&&A.rows){const nr=Object.assign({uid:u.uid},d,{at:Date.now()});const i=A.rows.findIndex(x=>x.uid===u.uid);if(i>=0)A.rows[i]=nr;else A.rows.push(nr)}}catch(e){}Object.keys(LB.cache).forEach(f=>{const c=LB.cache[f],tb=LBT.find(x=>x[0]===f);if(!c||!c.rows||!tb)return;const asc=tb[2]==='asc';const rows=c.rows.filter(x=>x.uid!==u.uid);if(typeof d[f]==='number'&&(!asc||d[f]>0))rows.push(Object.assign({uid:u.uid},d,{at:Date.now()}));rows.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f]);c.rows=rows})}
+  LB.last=u.uid+k;if(d.fc>=1)LB.fcs={u:u.uid,v:d.fc};/* update my own row in every cached board in place (no full re-download) */try{const A=window.__LBALL;if(A&&A.rows){const nr=Object.assign({uid:u.uid},d,{at:Date.now()});const i=A.rows.findIndex(x=>x.uid===u.uid);if(i>=0)A.rows[i]=nr;else A.rows.push(nr)}}catch(e){}Object.keys(LB.cache).forEach(f=>{const c=LB.cache[f],tb=LBT.find(x=>x[0]===f);if(!c||!c.rows||!tb)return;const asc=tb[2]==='asc';const rows=c.rows.filter(x=>x.uid!==u.uid);if(typeof d[f]==='number'&&(!asc||d[f]>0))rows.push(Object.assign({uid:u.uid},d,{at:Date.now()}));rows.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f]);c.rows=rows})}
 const lbVal=(t,v)=>t==='fc'?(window.fcFmt?window.fcFmt(v):String(v)):t==='chal'||t==='chalh'?chTime(v):t==='dex'?T('{0} 種',v):t==='days'?T('{0} 天',v):yen(v);
 const lbHead=tb=>`<h2>${T('排行榜')}</h2><div class="lbtabs">${LBT.filter(x=>!(LB.ch&&x[0]==='fr')).map(([k,n])=>`<button class="stab ${LB.tab===k?'on':''}" data-act="lbtab" data-id="${k}">${T(n)}</button>`).join('')}</div><p class="lbdesc">${T(tb[3])}</p>`;
 /* ===== manual scores (owner only): for a player whose own upload keeps failing. Stored in notice/lbman/<name>, merged into the board;
