@@ -58,7 +58,7 @@ export function start(o) {
   const cv = o.cv, tw = o.root, txt = o.txt || {};
   if (!document.getElementById('tw3css')) { const s = document.createElement('style'); s.id = 'tw3css'; s.textContent = CSS; document.head.appendChild(s); }
 
-  const renderer = new WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
+  const renderer = new WebGLRenderer({ canvas: cv, antialias: (window.devicePixelRatio || 1) < 2, powerPreference: 'high-performance' });
   renderer.setClearColor(0x1a1536, 1);
   const scene = new Scene();
   scene.fog = new Fog(0x4a2f55, 38, 130);
@@ -434,22 +434,22 @@ export function start(o) {
   }
 
   /* ───────── 每幀 ───────── */
-  let cw = 0, ch = 0, dprv = 0, pr = 1, slow = 0, fpsT = 0, fpsN = 0;
+  let cw = 0, ch = 0, dprv = 0, pr = 1, slow = 0, fpsT = 0, fpsN = 0, prCap = 9;
   const fwd = new Vector3(), rgt = new Vector3();
   function resize() {
     const r = cv.getBoundingClientRect(), W = Math.max(1, cv.clientWidth), Hh = Math.max(1, cv.clientHeight), dpr = Math.min(2, window.devicePixelRatio || 1);
     if (W === cw && Hh === ch && dpr === dprv) return;
-    cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2.2);
+    cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2.2); pr = Math.min(pr, prCap, Math.sqrt(1.3e6 / (W * Hh))); /* 手機上總像素上限約 130 萬，不然高 DPR 手機會卡到人物延遲 */
     renderer.setPixelRatio(pr); renderer.setSize(W, Hh, false); camera.aspect = W / Hh; camera.updateProjectionMatrix();
   }
   function frame(now) {
     if (S.dead) return;
     if (!document.contains(cv)) { dispose(); return; }
     S.raf = requestAnimationFrame(frame);
-    const dt = Math.min(.05, (now - S.last) / 1000); S.last = now; S.t += dt; const t = S.t;
+    const dt = Math.min(.12, (now - S.last) / 1000); S.last = now; S.t += dt; const t = S.t;
     resize();
     /* 效能自適應：連續太慢就降解析度 */
-    fpsT += dt; fpsN++; if (fpsT > 1.5) { const avg = fpsT / fpsN; if (avg > .04 && pr > .7) { pr *= .8; renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } fpsT = 0; fpsN = 0; }
+    fpsT += dt; fpsN++; if (fpsT > 1) { const avg = fpsT / fpsN; if (avg > .026 && pr > .5) { pr = Math.max(.5, pr * .82); prCap = pr; renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } fpsT = 0; fpsN = 0; }
     /* 鏡頭轉向 */
     const K = S.keys; if (K.q) S.yawT = clamp(S.yawT + dt * 1.6, -1.3, 1.3); if (K.e) S.yawT = clamp(S.yawT - dt * 1.6, -1.3, 1.3); if (S.camV) S.yawT = clamp(S.yawT + S.camV * dt * 1.6, -1.3, 1.3);
     S.yaw += (S.yawT - S.yaw) * Math.min(1, dt * 7); S.dist += (S.distT - S.dist) * Math.min(1, dt * 5);
@@ -518,7 +518,7 @@ export function start(o) {
     /* 鏡頭 */
     const aspect = cw / ch, extra = aspect < 1.45 ? 1.45 / aspect : 1;
     const tgtY = lerp(1.3, 1.6, enterP);
-    camT.x += (me.x - camT.x) * Math.min(1, dt * 7); camT.z += (me.z - camT.z) * Math.min(1, dt * 7); camT.y = tgtY;
+    camT.x += (me.x - camT.x) * Math.min(1, dt * 20); camT.z += (me.z - camT.z) * Math.min(1, dt * 20); /* 鏡頭幾乎即時跟上，人物才不會在畫面上飄 */ camT.y = tgtY;
     const dd = S.dist * extra, ph = .5;
     camPos.set(camT.x + sy * Math.cos(ph) * dd, camT.y + Math.sin(ph) * dd, camT.z + cy * Math.cos(ph) * dd);
     camPos.z = Math.min(camPos.z, 24); camPos.x = clamp(camPos.x, XMIN + 2, XMAX - 2);
