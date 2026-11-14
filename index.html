@@ -7517,10 +7517,10 @@ async function showInbox(reload){if(!canInbox())return;
   inboxDraw()}
 function inboxDraw(){
   const all=INB.rows.concat(INB.old),nDone=all.filter(isDone).length;let shown=INB.showDone?all:all.filter(f=>!isDone(f));
-  /* 📌 pinned ideas stay at the top even after a reply or 已讀, until unpinned, so they don't get buried in the 已回覆 folder */
-  const pins=INB.who?[]:INB.rows.filter(f=>f.pin);
-  shown=shown.filter(f=>!pins.includes(f));
-  if(INB.onlyPin)shown=[];
+  /* 📌 pinned ideas are kept out of the inbox and only listed in the 📌 待做 view, so they stay put even after a reply or 已讀 */
+  const pins=INB.rows.filter(f=>f.pin);
+  shown=shown.filter(f=>!f.pin);
+  if(INB.onlyPin)shown=pins;
   if(INB.who)shown=all.filter(f=>f.uid===INB.who).sort((a,b)=>(a.t||a.at||0)-(b.t||b.at||0));
   const item=f=>{const op=INB.open===f.id;
     return `<div class="inbit${f.re?' done':''}"><p class="inbh">${esc(FBCATN[f.cat]||f.cat||'')} · ${chatTime(f.t||f.at||0)} ${f.lang?' · '+esc(f.lang):''} · 第 ${+f.day||0} 天${f.old?' · 舊資料':''}</p>
@@ -7529,10 +7529,10 @@ function inboxDraw(){
     ${!op&&INB.drafts[f.id]?'<p class="inbh">📝 有未送出的草稿</p>':''}${op?`<textarea class="fbtext" id="inbtext" data-id="${esc(f.id)}" maxlength="1000" oninput="fbDraftSet(this.dataset.id,this.value)" placeholder="回覆給這位玩家…">${esc(INB.drafts[f.id]||'')}</textarea>
       <div class="btns" style="justify-content:flex-start"><button class="btn" data-act="inbsend">${INB.busy?'送出中…':'送出回覆'}</button><button class="btn alt" data-act="inbre" data-id="">取消</button></div>`
     :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbread" data-id="${esc(f.id)}">${f.rd?'↩ 取消已讀':'✔ 已讀'}</button>`}${f.old?'':`<button class="btn alt" data-act="inbpin" data-id="${esc(f.id)}">${f.pin?'📌 取消待做':'📌 收進待做'}</button>`}${f.uid&&!INB.who?`<button class="btn alt" data-act="inbwho" data-id="${esc(f.uid)}">👤 看這位玩家全部</button>`:''}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
-  modal(`<h2>📬 收件匣（${INB.rows.filter(f=>!isDone(f)).length}）</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
+  modal(`<h2>${INB.onlyPin?'📌 待做・蒐藏（'+pins.length+'）':'📬 收件匣（'+INB.rows.filter(f=>!isDone(f)&&!f.pin).length+'）'}</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
   <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button>${nDone?`<button class="btn alt" data-act="inbdone">${INB.showDone?'🙈 隱藏已回覆・已讀':'👁 顯示已回覆・已讀（'+nDone+'）'}</button>`:''}<button class="btn alt" data-act="inbpinview">${INB.onlyPin?'← 返回收件匣':'📌 待做（'+INB.rows.filter(f=>f.pin).length+'）'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
   ${INB.who?`<div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbwho" data-id="">← 返回全部意見</button><span class="inbh">這位玩家的全部意見，由舊到新</span></div>`:''}
-  ${pins.length?`<p class="inbh"><b>📌 待做・蒐藏（${pins.length}）</b></p>${pins.map(item).join('')}${shown.length?'<p class="inbh"><b>其他意見</b></p>':''}`:''}${shown.length?shown.map(item).join(''):(pins.length?'':'<p style="font-size:14px">'+(INB.onlyPin?'還沒有待做的意見。':nDone?'未回覆的意見都處理完了 🎉':'還沒有新的意見。')+'</p>')}
+  ${shown.length?shown.map(item).join(''):'<p style="font-size:14px">'+(INB.onlyPin?'還沒有待做的意見。':nDone?'未回覆的意見都處理完了 🎉':'還沒有新的意見。')+'</p>'}
   <div class="btns"><button class="btn alt" data-act="fb">返回</button></div>`);
   const t=$('inbtext');if(t&&!('ontouchstart' in window))t.focus()}
 async function inboxImg(id){if(INB.imgs[id]&&INB.imgs[id]!=='err')return;INB.imgs[id]='load';inboxDraw();try{const a=await CL.api.fbImgGet(id);INB.imgs[id]=a.length?a:'err'}catch(e){INB.imgs[id]='err'}inboxDraw()}
