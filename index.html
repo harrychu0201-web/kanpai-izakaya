@@ -8145,6 +8145,8 @@ function coGameOnRoom(v){
   if(v.state==='lobby'&&CO.open&&!coHost()&&CO.S&&CO.S.over){if(!CO.S.hb){CO.S.hb=1;CO.lastHtml='';coPaint()}return}
   coSync();
   if(v.state==='ended'&&CO.open){if(coHost()){if(CO.S&&!CO.S.over)coEnd('partner')}else if(!(CO.S&&CO.S.over)){coClose(false);coopNote('房間已結束')}}}
+/* 多人模式：數字鍵 1–9 = 點第 N 個喊話按鈕（電腦鍵盤用；輸入框打字時不攔截） */
+document.addEventListener('keydown',e=>{if(!CO.open||!CO.S||e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;if(!/^[1-9]$/.test(e.key))return;const t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;const n=+e.key-1;if(coSHs(coRole(),CO.S)[n]===undefined)return;e.preventDefault();coTap('sh:'+n)});
 function coOpen(){if(CO.open)return;CO.open=true;CO.leaveOnBack=0;
   try{if(typeof R!=='undefined'&&R&&!R.over&&!R.paused&&typeof pause==='function')pause()}catch(e){}
   coStyle();let ov=document.getElementById('cogame');if(ov)ov.remove();ov=document.createElement('div');ov.id='cogame';
@@ -8421,7 +8423,7 @@ function coPaint(){const S=CO.S,ov=document.getElementById('cogame');if(!S)retur
   if(!S.over&&now>=S.t0){const dn=Math.floor((now-S.t0)/CO_DAY);if(dn>=1&&dn!==CO.hintDay&&!(S.cl&&(S.cl.k||S.cl.f))){CO.hintDay=dn;if(dn===1||dn%3===0)coToast('🌙 累了嗎？按上方「打烊」，雙方同意就能休息並結算')}}
   const cls=S.cl||{k:0,f:0},clMy=cls[me],clOt=cls[me==='k'?'f':'k'],clBtn=S.over||now<S.t0?'':`<button class="cob${clOt&&!clMy?' cx-act':''}" data-co="close" style="min-height:26px;min-width:40px;padding:0 10px;font-size:13px;white-space:nowrap${clOt&&!clMy?';border-color:#ffc65a;color:#ffc65a;background:#5a3a10':clMy?';opacity:.85':''}">${clMy?'⏳ 取消打烊':clOt?'🌙 同意打烊':'🌙 打烊'}</button>`,
   ct=document.getElementById('cotop'),cth=`<div class="cotl"><span>${'❤'.repeat(Math.max(0,S.hearts))||'💔'}</span><span>第 ${Math.floor(left/CO_DAY)+1} 天</span><span>⏱ ${mm}:${ss}</span><span>接客 ${S.sv}</span>${CO.bot?'':voGameBtns()}</div><div class="cotc">${clBtn}</div><div class="cotr">${COOP.pname||CO.bot?`<span class="mtx" style="max-width:9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🤝 ${esc(coopPN())}</span>`:''}<span>${me==='k'?'🍳 廚房':'🧾 外場'}</span><span>我的錢包 ¥${Math.round(S.w[me])}</span><button class="cob" data-co="leave" style="min-height:26px;min-width:40px;padding:0 8px">✕</button></div>`;if(ct.dataset.h!==cth){ct.dataset.h=cth;ct.innerHTML=cth}
-  {const sh=document.getElementById('cosh');if(sh){const ol=S.ol||{},items=(me==='f'?coKeys(S).map(k=>`<button class="cob co-add${ol[k]?' on':''}" data-co="o+:${k}"><span class="coai">${coIco(k)}</span>＋${esc(CO_FOOD[k].n)}${ol[k]?`<i>${ol[k]}</i>`:''}</button>`):[]).concat(coSHs(me,S).map((t,i)=>`<button class="cob" data-co="sh:${i}">${esc(t)}</button>`)),hh=Math.ceil(items.length/2);
+  {const sh=document.getElementById('cosh');if(sh){const ol=S.ol||{},items=(me==='f'?coKeys(S).map(k=>`<button class="cob co-add${ol[k]?' on':''}" data-co="o+:${k}"><span class="coai">${coIco(k)}</span>＋${esc(CO_FOOD[k].n)}${ol[k]?`<i>${ol[k]}</i>`:''}</button>`):[]).concat(coSHs(me,S).map((t,i)=>`<button class="cob" data-co="sh:${i}">${i<9?`<i class="cokb">${i+1}</i>`:''}${esc(t)}</button>`)),hh=Math.ceil(items.length/2);
     /* 外場：菜名按鈕集中在最左邊兩排（5+4），喊話接在後面，免得菜名被擠到要滑才看得到 */const nd=me==='f'?coKeys(S).length:0,dh=Math.ceil(nd/2),ns=items.length-nd,sh2=Math.ceil(ns/2),h=items.map((b,i)=>{let r,c;if(i<nd){r=i<dh?1:2;c=(i<dh?i:i-dh)+1}else{const j=i-nd;r=j<sh2?1:2;c=dh+(j<sh2?j:j-sh2)+1}return b.replace('<button ',`<button style="grid-row:${r};grid-column:${c}" `)}).join('');if(sh.dataset.h!==h){sh.dataset.h=h;sh.innerHTML=h}}}
   coOrderPaint(S,me);
   let html;
@@ -8434,6 +8436,7 @@ function coPaint(){const S=CO.S,ov=document.getElementById('cogame');if(!S)retur
 function coStyle(){if(document.getElementById('costyle'))return;const s=document.createElement('style');s.id='costyle';
   s.textContent=`#cogame{position:fixed;inset:0;z-index:8500;background:#1b0e07;padding:max(2px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));color:#f3dfb4;display:grid;grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr);font-size:13px;-webkit-user-select:none;user-select:none;touch-action:manipulation}
 #cogame *{box-sizing:border-box}
+#cogame .cokb{display:none;font-style:normal;margin-right:4px;opacity:.75;font-size:11px}@media (hover:hover) and (pointer:fine){#cogame .cokb{display:inline}}
 #cogame .cotop{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center;padding:4px 8px;background:#1b0e07;font-size:14px}#cogame .cosp{flex:1}
 #cogame .cotl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;min-width:0}#cogame .cotc{justify-self:center}#cogame .cotr{display:flex;gap:10px;align-items:center;justify-content:flex-end;min-width:0;white-space:nowrap}
 @media (max-width:900px){#cogame .cotop{font-size:12px;gap:6px}#cogame .cotl,#cogame .cotr{gap:6px}#cogame .mtx{display:none}}
