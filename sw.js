@@ -1,4 +1,8 @@
-const CACHE='izakaya-v773';
+<<<<<<< HEAD
+const CACHE='izakaya-v774';
+=======
+const CACHE='izakaya-v774';
+>>>>>>> parent of 921b631 (Cut realtime database download volume)
 // character art lives in img/ with the content hash in each file name, so a file never changes once published:
 // keep it in its own cache that survives version bumps (an update then only re-downloads the small page, not 2.4MB of art)
 const IMGCACHE='izakaya-img';
