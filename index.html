@@ -5507,7 +5507,7 @@ document.addEventListener('click',e=>{
   else if(act==='rplopen'){const t=$('rpltext');if(t)RPL.draft=t.value;if(RPL.open!==a.dataset.id){RPL.open=a.dataset.id||null;RPL.draft=''}replyDraw()}
   else if(act==='rplsend')replyBack();
   else if(act==='inbox')showInbox(!!a.dataset.id);
-  else if(act==='inbold')inboxOld();
+  else if(act==='inbpinview'){INB.onlyPin=!INB.onlyPin;INB.open=null;inboxDraw()}
   else if(act==='inbdone'){INB.showDone=!INB.showDone;inboxDraw()}
   else if(act==='inbre'){INB.open=a.dataset.id||null;inboxDraw()}
   else if(act==='inbwho'){INB.who=a.dataset.id||null;INB.open=null;inboxDraw()}
@@ -6850,7 +6850,6 @@ async function cloudInit1(){
       fbPubList:n=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'fbpub'),rd.orderByChild('t'),rd.limitToLast(n))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.reverse()})),
       fbPubBackfill:rows=>rt((rd,r)=>{const u={};rows.forEach(f=>{u['fbpub/'+f.id]=Object.assign({cat:f.cat||'other',text:String(f.text).slice(0,800),t:f.t},f.re?{re:f.re}:{})});return rd.update(rd.ref(r),u).then(()=>rows.length)}),
       fbList:n=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'fb'),rd.orderByChild('t'),rd.limitToLast(n))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.reverse()})),
-      fbOld:async()=>(await fs.getDocs(fs.query(fs.collection(db,'feedback'),fs.orderBy('at','desc'),fs.limit(60)))).docs.map(d=>Object.assign({id:'fs_'+d.id,old:true},d.data())),
       fbDel:(id,row)=>rt((rd,r)=>{const u={['fb/'+id]:null,['fbpub/'+id]:null,['claim/'+id]:null};if(row){const c=Object.assign({},row);delete c.id;u['trash/'+id]=Object.assign(c,{by:CL.user.uid,delT:rd.serverTimestamp()})}return rd.update(rd.ref(r),u)}),
       // read/unread is saved on the item itself so it shows the same on every device the author logs into (true on-read, removed on-unread; never written for Firestore fallback rows)
       fbReadSet:(id,v)=>rt((rd,r)=>rd.set(rd.ref(r,'fb/'+id+'/rd'),v?true:null)),
@@ -7519,6 +7518,7 @@ function inboxDraw(){
   /* 📌 pinned ideas stay at the top even after a reply or 已讀, until unpinned, so they don't get buried in the 已回覆 folder */
   const pins=INB.who?[]:INB.rows.filter(f=>f.pin);
   shown=shown.filter(f=>!pins.includes(f));
+  if(INB.onlyPin)shown=[];
   if(INB.who)shown=all.filter(f=>f.uid===INB.who).sort((a,b)=>(a.t||a.at||0)-(b.t||b.at||0));
   const item=f=>{const op=INB.open===f.id;
     return `<div class="inbit${f.re?' done':''}"><p class="inbh">${esc(FBCATN[f.cat]||f.cat||'')} · ${chatTime(f.t||f.at||0)} ${f.lang?' · '+esc(f.lang):''} · 第 ${+f.day||0} 天${f.old?' · 舊資料':''}</p>
@@ -7528,13 +7528,12 @@ function inboxDraw(){
       <div class="btns" style="justify-content:flex-start"><button class="btn" data-act="inbsend">${INB.busy?'送出中…':'送出回覆'}</button><button class="btn alt" data-act="inbre" data-id="">取消</button></div>`
     :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbread" data-id="${esc(f.id)}">${f.rd?'↩ 取消已讀':'✔ 已讀'}</button>`}${f.old?'':`<button class="btn alt" data-act="inbpin" data-id="${esc(f.id)}">${f.pin?'📌 取消待做':'📌 收進待做'}</button>`}${f.uid&&!INB.who?`<button class="btn alt" data-act="inbwho" data-id="${esc(f.uid)}">👤 看這位玩家全部</button>`:''}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
   modal(`<h2>📬 收件匣（${INB.rows.filter(f=>!isDone(f)).length}）</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
-  <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button>${nDone?`<button class="btn alt" data-act="inbdone">${INB.showDone?'🙈 隱藏已回覆・已讀':'👁 顯示已回覆・已讀（'+nDone+'）'}</button>`:''}<button class="btn alt" data-act="inbold">${INB.old.length?'已載入舊意見':'載入 Firestore 舊意見'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
+  <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button>${nDone?`<button class="btn alt" data-act="inbdone">${INB.showDone?'🙈 隱藏已回覆・已讀':'👁 顯示已回覆・已讀（'+nDone+'）'}</button>`:''}<button class="btn alt" data-act="inbpinview">${INB.onlyPin?'← 返回收件匣':'📌 待做（'+INB.rows.filter(f=>f.pin).length+'）'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
   ${INB.who?`<div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbwho" data-id="">← 返回全部意見</button><span class="inbh">這位玩家的全部意見，由舊到新</span></div>`:''}
-  ${pins.length?`<p class="inbh"><b>📌 待做・蒐藏（${pins.length}）</b></p>${pins.map(item).join('')}${shown.length?'<p class="inbh"><b>其他意見</b></p>':''}`:''}${shown.length?shown.map(item).join(''):(pins.length?'':'<p style="font-size:14px">'+(nDone?'未回覆的意見都處理完了 🎉':'還沒有新的意見。')+'</p>')}
+  ${pins.length?`<p class="inbh"><b>📌 待做・蒐藏（${pins.length}）</b></p>${pins.map(item).join('')}${shown.length?'<p class="inbh"><b>其他意見</b></p>':''}`:''}${shown.length?shown.map(item).join(''):(pins.length?'':'<p style="font-size:14px">'+(INB.onlyPin?'還沒有待做的意見。':nDone?'未回覆的意見都處理完了 🎉':'還沒有新的意見。')+'</p>')}
   <div class="btns"><button class="btn alt" data-act="fb">返回</button></div>`);
   const t=$('inbtext');if(t&&!('ontouchstart' in window))t.focus()}
 async function inboxImg(id){if(INB.imgs[id]&&INB.imgs[id]!=='err')return;INB.imgs[id]='load';inboxDraw();try{const a=await CL.api.fbImgGet(id);INB.imgs[id]=a.length?a:'err'}catch(e){INB.imgs[id]='err'}inboxDraw()}
-async function inboxOld(){if(INB.old.length)return;try{INB.old=await CL.api.fbOld();toast('載入了 '+INB.old.length+' 則舊意見')}catch(e){toast('舊意見讀取失敗（Firestore 額度可能還沒重置）')}inboxDraw()}
 async function inboxSend(){const f=INB.rows.concat(INB.old).find(x=>x.id===INB.open),t=$('inbtext');if(!f||!t||INB.busy)return;
   const text=t.value.trim().slice(0,1000);fbDraftSet(f.id,t.value);if(!text){toast('先寫點什麼再送出');return}
   INB.busy=true;inboxDraw();
