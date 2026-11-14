@@ -611,6 +611,11 @@
         "$k": {
           ".validate": "newData.hasChildren(['s','t']) && newData.child('s').isString() && newData.child('t').isString() && newData.child('t').val().length < 2000"
         }
+      },
+      "ly": {
+        ".read": true,
+        ".write": "auth != null && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('admins').child(auth.uid).val() === true)",
+        ".validate": "newData.isString() && newData.val().length < 30000"
       }
     },
     "dlstat": {

@@ -9416,6 +9416,7 @@ function artSyncSoon(){if(astSynced||!CL.api||!CL.api.rtx)return;astSynced=true;
 async function artSync(){const api=CL.api;if(!api||!api.rtx)return;
   const [idx,tx]=await Promise.all([api.rtx((rd,r)=>rd.get(rd.ref(r,'artov/i')).then(s=>s.val()||{})).catch(()=>null),
     api.rtx((rd,r)=>rd.get(rd.ref(r,'artov/tx')).then(s=>s.val()||{})).catch(()=>null)]);
+  try{const lyv=await api.rtx((rd,r)=>rd.get(rd.ref(r,'artov/ly')).then(x=>x.val()));if(typeof lyv==='string')lySetPub(JSON.parse(lyv))}catch(e){console.warn('artov ly',e)}
   if(tx){const o={};for(const h in tx){const x=tx[h];if(x&&typeof x.s==='string'&&typeof x.t==='string')o[x.s]=x.t}
     TXOV=o;astJS('izakaya-txov',o)}
   if(!idx)return;
@@ -9735,7 +9736,13 @@ Object.assign(I18N.id=I18N.id||{},{"連抽 {0} 顆":"Gacha ×{0}","連抽 {0} �
    規則：{q:選擇器, c:所在對話框的特徵（空＝不在對話框裡）, sc:''＝所有畫面／'iz:land'＝只有這家店, x,y:位移(px), s:縮放}
    LYOV＝玩家看到的版本（作者按「匯出」貼給 Claude 後寫進這裡）；作者本機有草稿時用草稿，切成玩家視角就看回 LYOV。
    只動 CSS 的 translate／scale 屬性，不改任何存檔，也不改元素原本的 transform。 */
-const LYOV=/*LYOV*/[{"q":"button[data-act=\"homecat\"]","c":"","sc":"","x":-2.4,"y":1.6,"s":1}]/*LYOV*/;
+const LYOV_BAKED=/*LYOV*/[{"q":"button[data-act=\"homecat\"]","c":"","sc":"","x":-2.4,"y":1.6,"s":1}]/*LYOV*/;
+/* 作者按「發布」會把排版存到資料庫 artov/ly，玩家開遊戲時同步，並留一份在本機（下次開遊戲一開始就套上，不用等網路）。沒發布過就用上面寫死的版本。 */
+const LYPUBKEY='izakaya-lyov';
+function lyPubOk(a){return Array.isArray(a)&&a.length<=300&&a.every(r=>r&&typeof r==="object"&&typeof r.q==="string")}
+let LYOV=(()=>{try{const a=JSON.parse(localStorage.getItem(LYPUBKEY)||"null");if(lyPubOk(a))return a}catch(e){}return LYOV_BAKED})();
+/* 玩家端：收到資料庫裡發布的排版就換上去，立刻重套 */
+function lySetPub(a){if(!lyPubOk(a))return;const same=JSON.stringify(a)===JSON.stringify(LYOV);LYOV=a;try{localStorage.setItem(LYPUBKEY,JSON.stringify(a))}catch(e){}if(same)return;try{lyObserve();lyApply()}catch(e){}}
 const LYKEY='izakaya-lyed',LYONKEY='izakaya-lyed-on';
 const LY={on:false,sel:false,rules:null,el:null,rule:null,k:1,step:1,undo:[],styled:new Map(),top:false,drag:null,rs:null,olOn:true,olT:0,obs:null,raf:0,rep:null,cnt:0};
 function lyCan(){try{return canArt()}catch(e){return false}}
@@ -9868,10 +9875,20 @@ function lyScale(d){if(!LY.rule)return lyMsg('先點一個東西');const st=LY.s
 function lyExport(){let o=document.getElementById('lyOut');if(o){o.remove();return}
   const json=JSON.stringify(LY.rules),diff=json!==JSON.stringify(LYOV);
   o=document.createElement('div');o.id='lyOut';
-  o.innerHTML=`<b style="font-size:16px">💾 匯出排版</b><p style="margin:6px 0">現在這些調整<b>只有你這台裝置看得到</b>${diff?'':'（跟玩家目前看到的一樣）'}。按「複製」，整串貼給 Claude，就會放進遊戲上線給所有玩家。共 ${LY.rules.length} 項調整。</p><textarea readonly>${json.replace(/</g,'&lt;')}</textarea>
-  <div class="r"><button data-lyo="copy">📋 複製</button><button class="alt" data-lyo="revert">放棄草稿（回到玩家版）</button><button class="alt" data-lyo="clear">全部清空</button><button class="alt" data-lyo="x">關閉</button></div>`;
+  o.innerHTML=`<b style="font-size:16px">💾 匯出排版</b><p style="margin:6px 0">現在這些調整<b>只有你這台裝置看得到</b>${diff?'':'（跟玩家目前看到的一樣）'}。按「🚀 發布」就會直接給所有玩家（他們下次開遊戲就看到），不用貼給 Claude。共 ${LY.rules.length} 項調整。</p><textarea readonly>${json.replace(/</g,'&lt;')}</textarea>
+  <div class="r"><button data-lyo="pub">🚀 發布給所有玩家</button><button class="alt" data-lyo="copy">📋 複製</button><button class="alt" data-lyo="revert">放棄草稿（回到玩家版）</button><button class="alt" data-lyo="clear">全部清空</button><button class="alt" data-lyo="x">關閉</button></div>`;
   document.body.appendChild(o)}
-function lyCopy(t){const done=()=>lyMsg('已複製，貼給 Claude 就可以');
+function lyPublish(){const o=document.getElementById('lyOut'),rules=JSON.parse(JSON.stringify(LY.rules));
+  if(!lyPubOk(rules))return lyMsg('排版資料不正常，沒有發布');
+  if(!CL.api||!CL.api.rtx)return lyMsg('還沒連上雲端，等一下再按');
+  lyMsg('發布中…');
+  CL.api.rtx((rd,r)=>rd.set(rd.ref(r,'artov/ly'),JSON.stringify(rules))).then(()=>{
+    LYOV=rules;try{localStorage.setItem(LYPUBKEY,JSON.stringify(rules));localStorage.removeItem(LYKEY)}catch(e){}
+    LY.rules=JSON.parse(JSON.stringify(rules));LY.undo=[];lyApply();if(LY.el)lySelect(LY.el);if(o)o.remove();
+    lyMsg('已發布！玩家下次開遊戲就會看到');
+  }).catch(e=>{console.warn('ly publish',e);const c=String(e&&(e.code||e.message)||e);
+    lyMsg(/permission/i.test(c)?'發布失敗：資料庫規則還沒更新（要把 repo 的 database.rules.json 貼到 Firebase 主控台）':'發布失敗：'+c)})}
+function lyCopy(t){const done=()=>lyMsg('已複製（備份用）');
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,()=>fb());else fb();
   function fb(){const ta=document.querySelector('#lyOut textarea');if(!ta)return;ta.focus();ta.select();try{document.execCommand('copy');done()}catch(e){lyMsg('請手動全選複製')}}}
 /* ---- 事件：排版中，點到遊戲的東西不會觸發遊戲 ---- */
@@ -9921,7 +9938,8 @@ document.addEventListener('click',e=>{const t=e.target;if(!t.closest)return;
     else if(k==='close')lyClose();
     if(k!=='mv'&&k!=='sc'&&k!=='step'&&k!=='ol'&&k!=='pos'&&k!=='max'&&k!=='min'&&k!=='close'&&LY.on)lyBar();return}
   const x=t.closest('#lyOut [data-lyo]');if(x){const k=x.dataset.lyo,o=document.getElementById('lyOut');
-    if(k==='copy')lyCopy(JSON.stringify(LY.rules));
+    if(k==='pub')lyPublish();
+    else if(k==='copy')lyCopy(JSON.stringify(LY.rules));
     else if(k==='revert'){lyPushUndo();LY.rules=JSON.parse(JSON.stringify(LYOV));try{localStorage.removeItem(LYKEY)}catch(e){}lyApply();if(LY.el)lySelect(LY.el);if(o)o.remove();lyMsg('已回到玩家目前看到的版面')}
     else if(k==='clear'){lyPushUndo();LY.rules=[];lySave();lyApply();if(LY.el)lySelect(LY.el);if(o)o.remove();lyMsg('全部清空了（按 ↶ 復原可以救回來）')}
     else if(k==='x'&&o)o.remove()}},true);
