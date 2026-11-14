@@ -210,6 +210,9 @@
         "rd": {
           ".validate": "newData.val() === true"
         },
+        "pin": {
+         ".validate": "newData.val() === true"
+        },
         "day": {
           ".validate": "newData.isNumber()"
         },
