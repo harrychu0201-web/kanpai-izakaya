@@ -5193,7 +5193,7 @@ function showTitle(){
 var SHOPSET=0; /* 最近一次在選店時選的店是哪一天（選店後才顯示下方說明） */
 function showDayIntro(arrive){
   SHOPHOME=false;R=null;setCur(ST.where);renderHUD();pickToday();drawBg();$('custLayer').innerHTML='';$('stations').innerHTML='';
-  const news=Object.keys(ITEMS).filter(k=>ITEMS[k].day===ST.day),show=CUR==='bar'?BRKEYS.filter(has):CUR==='oko'?OKKEYS.filter(has):CUR==='tep'?TPKEYS.filter(has):CUR==='sushi'?SUKEYS.filter(has):CUR==='rm'?(ST.rm&&!ST.rm.seen?['ramen','gyoza','lsour']:(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop==='rm')):(ST.day===1?['beer','edamame','negima']:news.concat(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop!=='rm'&&ITEMS[k].shop!=='sushi'));
+  const news=Object.keys(ITEMS).filter(k=>ITEMS[k].day===ST.day),show=CUR==='bar'?BRKEYS.filter(has):CUR==='oko'?OKKEYS.filter(has):CUR==='tep'?TPKEYS.filter(has):CUR==='sushi'?SUKEYS.filter(has):CUR==='rm'?(ST.rm&&!ST.rm.seen?['ramen','gyoza','lsour']:(ST.fresh||[]).filter(k=>ITEMS[k]&&ITEMS[k].shop==='rm')):(ST.day===1?['beer','edamame','negima']:news.concat(ST.fresh||[]).filter(k=>ITEMS[k]&&(!ITEMS[k].shop||ITEMS[k].shop==='both')));
   const due=(ST.dues||[]).filter(d=>d.left===1).reduce((s,d)=>s+d.amt,0);pickToday();const TD=evNow();
   const HI=TD.hol?holInfo(TD.hol):null;
   const DESC=SHOPSET===ST.day;
