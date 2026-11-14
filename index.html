@@ -7676,7 +7676,7 @@ async function chatAddFriend(m){const me=CL.user;if(!me||!CL.api||!m||!m.uid)ret
   if(m.uid===me.uid){toast(T('不能加自己當好友。'));chatDraw();return}
   if(FR.data&&FR.data.fl[m.uid]){toast(T('已經是好友了。'));chatDraw();return}
   if(FR.data&&Object.keys(FR.data.fl).length>=FR_MAX){toast(T('好友最多 {0} 位。',FR_MAX));chatDraw();return}
-  try{await CL.api.frAdd(me.uid,m.uid);const r=loadRec();if(r.frRm&&r.frRm[m.uid]){delete r.frRm[m.uid];saveRec(r)}
+  try{await CL.api.frAdd(me.uid,m.uid);achBump('fa');const r=loadRec();if(r.frRm&&r.frRm[m.uid]){delete r.frRm[m.uid];saveRec(r)}
     if(FR.data)FR.data.fl[m.uid]=1;FR.t=0;toast(T('已加入好友！'))}
   catch(e){console.warn('chatfadd',e);toast(T('加好友失敗，請稍後再試。'))}
   chatDraw()}
