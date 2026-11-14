@@ -6786,6 +6786,7 @@ async function cloudInit1(){
       onlineNow:()=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'online'),rd.orderByChild('t'),rd.startAt(Date.now()-ON_WIN))).then(s=>{const o={};s.forEach(c=>{const v=c.val();if(v&&!v.off)o[c.key]=v.t});return o})),
       lbxMany:ids=>rt((rd,r)=>Promise.all(ids.map(k=>rd.get(rd.ref(r,'lbx/'+k)).then(s=>[k,s.val()]))).then(a=>{const o={};a.forEach(([k,v])=>{o[k]=v});return o})),
       lbFindName:nick=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'lb'),rd.orderByChild('name'),rd.equalTo(nick),rd.limitToFirst(5))).then(s=>{const a=[];s.forEach(c=>{a.push({uid:c.key,name:(c.val()||{}).name})});return a})),
+      lbGetOne:uid=>rt((rd,r)=>rd.get(rd.ref(r,'lb/'+uid)).then(s=>s.val())),
       grantAdd:(uid,items,why)=>rt((rd,r)=>rd.push(rd.ref(r,'grants/'+uid),{t:rd.serverTimestamp(),by:'author',why:why||'',items})),
       grantsGet:uid=>rt((rd,r)=>rd.get(rd.ref(r,'grants/'+uid)).then(s=>s.val()||{})),
       grantDel:(uid,id)=>rt((rd,r)=>rd.remove(rd.ref(r,'grants/'+uid+'/'+id))),
@@ -7762,7 +7763,7 @@ function tstPanel(){
   <p class="tsth">事件設定會套用到之後每一天，直到你改回「隨機」。</p>
   <div class="tstr"><b>拉麵店</b>${o&&o.rm?`<button class="btn alt" disabled>屋台已開張</button>`:`<button class="btn" data-act="tstrm">買店面＋開屋台</button>`}${o&&o.rm&&!o.rm.k2?`<button class="btn" data-act="tstk2">擴建二號廚房</button>`:''}<span style="font-size:13px">${!o?'':o.rm?(o.rm.k2?'屋台＋二號廚房都有了':'已有屋台，還沒擴建'):o.owned?'已買店面，還沒開屋台':'還沒買店面'}・不扣錢</span></div>
   <div class="tstr"><b>屋台炸物</b><button class="btn alt" data-act="tstfried">賣出 +50</button><span style="font-size:13px">${o&&o.rm?`目前 ${o.rm.fried||0} 份`:'還沒開屋台'}</span></div>
-    ${isAdmin()?`<div class="tstr"><b>補發道具</b><button class="btn" data-act="tstgrant">補發給玩家</button></div>`:''}
+    ${isAdmin()?`<div class="tstr"><b>補發道具</b><button class="btn" data-act="tstgrant">補發給玩家</button></div><div class="tstr"><b>查玩家</b><button class="btn alt" data-act="tstlook">查排行榜資料（唯讀）</button></div>`:''}
     <div class="tstr"><b>美術工坊</b><button class="btn" data-ast="open">🎨 自己畫圖／換圖／改字</button></div>
     <div class="tstr"><b>營業速度</b>${[1,2,4].map(n=>`<button class="btn ${TSPD===n?'':'alt'}" data-act="tstspd" data-id="${n}">${n}x</button>`).join('')}</div>
   </div><div class="btns">${TEST?`<button class="btn alt" data-act="tstreset">清空測試存檔</button><button class="btn alt" data-act="tstoff">離開測試模式</button>`:`<button class="btn alt" data-act="tstcopy">另開獨立測試存檔</button>`}<button class="btn" data-act="closem">關閉</button></div>`)}
@@ -7784,9 +7785,29 @@ document.addEventListener('click',e=>{const a=e.target.closest('[data-act^="tst"
   else if(act==='tstfried')tstEdit(o=>{if(o.rm)o.rm.fried=(o.rm.fried||0)+50});
   else if(act==='tstgrant')grantPanel();
   else if(act==='tstgrantgo')grantSend();
+  else if(act==='tstlook')lookPanel();
+  else if(act==='tstlookgo')lookSend();
   else if(act==='tstreset'){if(!TEST)return;lsSet(TKEY,null);lsSet(TRKEY,null);const r=loadRec();r.tut=true;saveRec(r);showHome();tstPanel()}
 });
 
+function lookPanel(){if(!isAdmin())return;
+  modal(`<h2>查玩家排行榜資料</h2><p>只讀，不會改任何資料。暱稱要完全一樣，同名的會全部列出。</p>
+  <div class="tstr"><b>暱稱</b><input id="lnick" placeholder="玩家暱稱" maxlength="24"></div>
+  <div id="lout" style="min-height:1.6em;margin:8px 0"></div>
+  <div class="btns"><button class="btn" data-act="tstlookgo">查詢</button><button class="btn alt" data-act="closem">關閉</button></div>`)}
+async function lookSend(){if(!isAdmin())return;
+  const nick=($('lnick').value||'').trim(),out=$('lout');
+  if(!nick){out.textContent='請先輸入暱稱';return}
+  if(!CL.api||!CL.api.lbFindName||!CL.api.lbGetOne){out.textContent='雲端還沒連上，請重新整理後再試（需要用作者帳號登入）';return}
+  out.textContent='查詢中…';
+  let hits=[];try{hits=await CL.api.lbFindName(nick)}catch(e){out.textContent='查詢失敗：'+(e&&e.message||e);return}
+  if(!hits.length){out.textContent='找不到暱稱「'+nick+'」（需完全一樣，含大小寫與空白）';return}
+  const f=v=>v==null?'—':Number(v).toLocaleString('zh-TW');
+  const t=v=>v?new Date(v).toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false}):'—';
+  const rows=[];
+  for(const h of hits){let d={};try{d=(await CL.api.lbGetOne(h.uid))||{}}catch(e){d={}}
+    rows.push(`<div style="border-top:1px dashed #c9a77a;padding:6px 0;font-size:14px;word-break:break-all"><b>${esc(String(d.name||h.name))}</b><br>uid：${esc(h.uid)}<br>累計營收 earned：${f(d.earned)}<br>單日淨利 best：${f(d.best)}<br>最長營業 days：${f(d.days)}<br>點食成金 fc：${f(d.fc)}<br>最後上傳 at：${t(d.at)}</div>`)}
+  out.innerHTML=rows.join('')}
 function grantPanel(){if(!isAdmin())return;
   modal(`<h2>補發道具</h2><p>用玩家的暱稱找人（對方要至少開過一次排行榜才有暱稱）。補發會在對方下次登入時自動入帳。</p>
   <div class="tstr"><b>暱稱</b><input id="gnick" placeholder="玩家暱稱" maxlength="24"></div>
