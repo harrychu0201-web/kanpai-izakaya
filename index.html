@@ -6816,7 +6816,7 @@ async function cloudInit1(){
         offs.push(rd.onValue(rf('p'),s=>{room.p=s.val()||{};fire()},err));
         offs.push(rd.onValue(rf('st'),s=>cb('st',s.val()),err));
         offs.push(rd.onValue(rf('rtc'),s=>cb('rtc',s.val()||{}),err));
-        offs.push(rd.onChildAdded(rf('ev'),s=>cb('ev',Object.assign({id:s.key},s.val()||{}))))}).catch(err);
+        offs.push(rd.onChildAdded(rd.query(rf('ev'),rd.limitToLast(80)),s=>cb('ev',Object.assign({id:s.key},s.val()||{}))))}).catch(err);
         return ()=>{dead=true;offs.forEach(f=>{if(typeof f==='function')f()})}},
       coopStSet:(code,str)=>rt((rd,r)=>rd.set(rd.ref(r,'rooms/'+code+'/st'),String(str))),
       coopRtcSet:(code,uid,o)=>rt((rd,r)=>rd.set(rd.ref(r,'rooms/'+code+'/rtc/'+uid),{d:String(o.d),n:+o.n,t:rd.serverTimestamp()})),
@@ -7994,8 +7994,8 @@ function coOlFix(S){const o=S.ol;if(!o)return false;
   const p=coBotPend(S);let ch=false;
   Object.keys(o).forEach(k=>{const n=Math.min(o[k],p[k]||0);if(n!==o[k]){ch=true;if(n>0)o[k]=n;else delete o[k]}});return ch}
 function coEnd(why){const S=CO.S;if(!S||S.over)return;S.over=1;if(coHost()&&!CO.bot){coLobbyInit();S.nv=CO.L.v}S.why=why;S.endAt=Date.now();clearInterval(CO.tickT);CO.tickT=null;coPush();coPaint()}
-function coDirty(){if(!coHost()||CO.snapT)return;CO.snapT=setTimeout(()=>{CO.snapT=null;coPush()},90)}
-function coPush(){const S=CO.S;if(!S||!coHost()||!COOP.code||!CL.api||!CL.api.coopStSet)return;clearTimeout(CO.snapT);CO.snapT=null;S.now=Date.now();
+function coDirty(){if(!coHost()||CO.snapT)return;const wait=Math.max(90,(CO.lastPushT||0)+500-Date.now());CO.snapT=setTimeout(()=>{CO.snapT=null;coPush()},wait)}
+function coPush(){const S=CO.S;if(!S||!coHost()||!COOP.code||!CL.api||!CL.api.coopStSet)return;clearTimeout(CO.snapT);CO.snapT=null;CO.lastPushT=Date.now();S.now=Date.now();
   COOP.w++;CL.api.coopStSet(COOP.code,JSON.stringify(S)).catch(e=>console.warn('co push',e))}
 async function coStart(){if(!coHost()||!COOP.code||!CL.api)return;if(!coBothRdy()){coopNote('雙方都要先按準備');return}const o=coopOther();
   if(!(o&&COOP.p[o]&&COOP.p[o].on)){coopNote('對方不在線');return}
