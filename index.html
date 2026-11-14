@@ -6388,6 +6388,8 @@ function mergeRec(a,b){const pj=s=>{try{return s?JSON.parse(s)||{}:{}}catch(e){r
   ['maxDay','maxCoins','earned','bankrupt','bestDay','chal','chalh'].forEach(k=>{const v=Math.max(x[k]||0,y[k]||0);if(v)o[k]=v});
   {const a=x.ownDay||0,b=y.ownDay||0;if(a||b)o.ownDay=a&&b?Math.min(a,b):a||b}
   ['owned','tut'].forEach(k=>{if(x[k]||y[k])o[k]=true});o.met=Object.assign({},x.met||{},y.met||{});
+  /* 扭蛋 (2026-11-14): was not merged, so the local copy replaced the cloud collection wholesale (a device with an older/empty gacha wiped it). Keep the higher count per item and the higher pity counter from either side */
+  if(x.gacha||y.gacha){const gx=x.gacha||{},gy=y.gacha||{},gc={};[gx.c||{},gy.c||{}].forEach(h=>{for(const k in h)gc[k]=Math.max(gc[k]||0,h[k]||0)});o.gacha=Object.assign({},gy,gx,{c:gc,p:Math.max(gx.p||0,gy.p||0)})}
   {const inv={};[x.inv||{},y.inv||{}].forEach(h=>{for(const k in h)inv[k]=Math.max(inv[k]||0,h[k]||0)});if(Object.keys(inv).length)o.inv=inv}
   {const ach=Object.assign({},x.ach||{},y.ach||{});if(Object.keys(ach).length)o.ach=ach}
   {const ul=Object.assign({},x.ul||{},y.ul||{});if(Object.keys(ul).length)o.ul=ul}
