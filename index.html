@@ -6788,7 +6788,7 @@ async function cloudInit1(){
       onlineNow:()=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'online'),rd.orderByChild('t'),rd.startAt(Date.now()-ON_WIN))).then(s=>{const o={};s.forEach(c=>{const v=c.val();if(v&&!v.off)o[c.key]=v.t});return o})),
       lbxMany:ids=>rt((rd,r)=>Promise.all(ids.map(k=>rd.get(rd.ref(r,'lbx/'+k)).then(s=>[k,s.val()]))).then(a=>{const o={};a.forEach(([k,v])=>{o[k]=v});return o})),
       lbFindName:nick=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'lb'),rd.orderByChild('name'),rd.equalTo(nick),rd.limitToFirst(5))).then(s=>{const a=[];s.forEach(c=>{a.push({uid:c.key,name:(c.val()||{}).name})});return a})),
-      lbGetOne:uid=>rt((rd,r)=>rd.get(rd.ref(r,'lb/'+uid)).then(s=>s.val())),
+      lbGetOne:uid=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'lb'),rd.orderByKey(),rd.equalTo(uid),rd.limitToFirst(1))).then(s=>{let v=null;s.forEach(c=>{v=c.val()});return v})),
       grantAdd:(uid,items,why)=>rt((rd,r)=>rd.push(rd.ref(r,'grants/'+uid),{t:rd.serverTimestamp(),by:'author',why:why||'',items})),
       grantsGet:uid=>rt((rd,r)=>rd.get(rd.ref(r,'grants/'+uid)).then(s=>s.val()||{})),
       grantDel:(uid,id)=>rt((rd,r)=>rd.remove(rd.ref(r,'grants/'+uid+'/'+id))),
@@ -7807,8 +7807,8 @@ async function lookSend(){if(!isAdmin())return;
   const f=v=>v==null?'—':Number(v).toLocaleString('zh-TW');
   const t=v=>v?new Date(v).toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false}):'—';
   const rows=[];
-  for(const h of hits){let d={};try{d=(await CL.api.lbGetOne(h.uid))||{}}catch(e){d={}}
-    rows.push(`<div style="border-top:1px dashed #c9a77a;padding:6px 0;font-size:14px;word-break:break-all"><b>${esc(String(d.name||h.name))}</b><br>uid：${esc(h.uid)}<br>累計營收 earned：${f(d.earned)}<br>單日淨利 best：${f(d.best)}<br>最長營業 days：${f(d.days)}<br>點食成金 fc：${f(d.fc)}<br>最後上傳 at：${t(d.at)}</div>`)}
+  for(const h of hits){let d={},err=null;try{d=(await CL.api.lbGetOne(h.uid))||{}}catch(e){err=(e&&(e.code||e.message))||String(e)}
+    rows.push(`<div style="border-top:1px dashed #c9a77a;padding:6px 0;font-size:14px;word-break:break-all"><b>${esc(String(d.name||h.name))}</b><br>uid：${esc(h.uid)}<br>累計營收 earned：${f(d.earned)}<br>單日淨利 best：${f(d.best)}<br>最長營業 days：${f(d.days)}<br>點食成金 fc：${f(d.fc)}<br>最後上傳 at：${t(d.at)}${err?`<br><span style="color:#e0412c">讀取失敗：${esc(String(err))}</span>`:''}</div>`)}
   out.innerHTML=rows.join('')}
 function grantPanel(){if(!isAdmin())return;
   modal(`<h2>補發道具</h2><p>用玩家的暱稱找人（對方要至少開過一次排行榜才有暱稱）。補發會在對方下次登入時自動入帳。</p>
