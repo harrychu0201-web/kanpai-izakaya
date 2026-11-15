@@ -568,8 +568,33 @@ def sc_lyed(b, base):
         c.close()
 
 
+def sc_ach_backfill(b, base):
+    """舊存檔（成就還沒推出時就已經達成條件）：重新載入後，能從存檔推回來的成就要自動補記錄並通知，不能要玩家重玩。"""
+    c = Ctx(b, base, style='old').open()
+    try:
+        c.page.evaluate("""(()=>{const k=%s;const r=JSON.parse(localStorage.getItem(k)||'{}');
+            r.maxDay=50;r.gacha={c:{a:2,b:1}};r.ci={last:'2020-01-03',streak:2,hd:['2020-01-01','2020-01-02','2020-01-03']};
+            r.frG={u1:'2020-01-03',u2:'2020-01-03'};delete r.eg;delete r.ax;delete r.ul;r.achV=1;localStorage.setItem(k,JSON.stringify(r))})()""" % json.dumps(REC_KEY))
+        c.page.reload()
+        c.page.wait_for_timeout(2500)
+        rec = json.loads(c.page.evaluate('localStorage.getItem(%r)' % REC_KEY) or 'null') or {}
+        ax, eg, ul = rec.get('ax') or {}, rec.get('eg') or {}, rec.get('ul') or {}
+        want = {'gp': 3, 'ck': 3, 'cs': 2, 'fg': 2}
+        bad = [k for k, v in want.items() if (ax.get(k) or 0) < v]
+        if bad:
+            raise AssertionError('舊存檔沒有補上成就計數：%s（ax=%s）' % (bad, ax))
+        if not (eg.get('hl') or {}).get('valentine'):
+            raise AssertionError('已經走過的情人節沒有補記錄（eg.hl=%s）' % eg.get('hl'))
+        if not ul.get('hl1'):
+            raise AssertionError('補上的「節日開張」沒有解鎖通知（ul=%s）' % ul)
+        c.expect_clean('成就回溯補記錄')
+    finally:
+        c.close()
+
+
 SCENARIOS = [('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
-             ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves)]
+             ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
+             ('ach_backfill', sc_ach_backfill)]
 
 
 def find_chrome():

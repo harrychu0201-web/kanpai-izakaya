@@ -4186,9 +4186,20 @@ function achNext(){const it=ACHQ.shift();if(!it){ACHNOW=0;return}ACHNOW=1;const 
   setTimeout(()=>{b.classList.remove('on');setTimeout(achNext,450)},3200)}
 function achSoon(){clearTimeout(ACHT);ACHT=setTimeout(achCheck,250)}
 /* 檢查有沒有新解鎖的成就；第一次執行（舊存檔升級）時，把已經達成的成就靜靜標成已解鎖，不一次跳出一大串通知 */
+/* 補記錄：新成就推出前就已經達成的，能從存檔裡推回來的就直接補上（只會往上補，不會把已有的數字變小）。
+   推得出來的：扭蛋總抽數（gacha.c 每抽一次就加一）、簽到天數（ci.hd）與連續簽到（ci.streak）、送過禮的好友數（frG）、
+   節日（依 maxDay 算出每個已經走過的節日）。拉霸、彈珠、道具、客訴、聊天這類當時沒記下來的次數推不回來，只能從現在開始算 */
+function achBackfill(r){let chg=false;const x=r.ax=r.ax||{},up=(k,v)=>{if(v>(x[k]||0)){x[k]=v;chg=true}};
+  const ci=r.ci||{};up('ck',(ci.hd||[]).length);up('cs',ci.streak||0);
+  up('gp',Object.values((r.gacha&&r.gacha.c)||{}).reduce((a,b)=>a+(+b||0),0));
+  up('fg',Object.keys(r.frG||{}).length);
+  const hm={};for(let d=1;d<=(r.maxDay||0);d++){const h=holOf(d);if(h)hm[h.id]=1}
+  if(Object.keys(hm).some(id=>!((r.eg&&r.eg.hl)||{})[id])){r.eg=r.eg||{};r.eg.hl=Object.assign({},(r.eg.hl)||{},hm);chg=true}
+  return chg}
 function achCheck(){if(DEMO||TEST||RP.on||TUT)return;try{
   const r=loadRec();r.ul=r.ul||{};const first=!r.achV,fresh=[];let chg=false;
   {const o=ownCnt(),x=r.ax=r.ax||{};if(o.dc>(x.dc||0)){x.dc=o.dc;chg=true}if(o.br&&!x.br){x.br=1;chg=true}}
+  if(achBackfill(r))chg=true;
   for(const a of ACHS){if(!r.ul[a.id]&&a.c(r)){r.ul[a.id]=1;fresh.push(a)}}
   if(first)r.achV=1;
   if(!fresh.length&&!first){if(chg)saveRec(r);return}
