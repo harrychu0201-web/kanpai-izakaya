@@ -469,8 +469,6 @@ def sc_lyed(b, base):
                 break
             pg.evaluate("try{closeModal()}catch(e){}")
             pg.wait_for_timeout(400)
-        CNT = "[...document.querySelectorAll('*')].filter(e=>e.style&&(e.style.translate||e.style.scale)&&!e.closest('#lyBar,#lyOv,#lyOut')).length"
-        base_n = pg.evaluate(CNT)   # 遊戲自己本來就有的 translate（不是排版造成的）
         pg.tap('[data-lyed]')
         pg.wait_for_timeout(300)
         pg.tap('#lyBar [data-ly="pos"]')   # 工具列換到上面，不要蓋住下方按鈕
@@ -512,10 +510,35 @@ def sc_lyed(b, base):
         pg.evaluate("closeModal()")
         # 進遊戲：選開始營業 → 👆進入 → 選教學跳過/開店
         c.expect_clean('排版編輯')
-        # 全部清空後，畫面回到原狀
-        pg.evaluate("LY.rules=[];lyApply()")
-        if pg.evaluate(CNT) > base_n:
-            raise AssertionError('清空排版後還有元素留著位移')
+        pg.evaluate("lyClose()")
+        # 營業中從暫停選單／設定進入排版（不必先在首頁開）
+        to_day(c, run_ms=1500)
+        pg.evaluate("CL.user={email:ADMIN_EMAIL,uid:'t',name:'t',photo:''}")
+        for how in ('pause', 'sndg'):
+            c.click('[data-act=pause]', wait=500)
+            if how == 'sndg':
+                c.click('.modal [data-act=sndg]', wait=500)
+            c.click('.modal [data-lyed]', wait=700)
+            if not pg.evaluate("!!$('lyBar')&&LY.sel"):
+                raise AssertionError('營業中從 %s 進排版，沒有出現工具列' % how)
+            if pg.evaluate("!!document.querySelector('#modalLayer .modal')"):
+                raise AssertionError('進排版後對話框沒關')
+            if pg.evaluate("R.paused"):
+                raise AssertionError('進排版後遊戲還停在暫停')
+            x, y = center('#st-edamame')
+            pg.touchscreen.tap(x, y)
+            pg.wait_for_timeout(250)
+            l0 = pg.evaluate('LY.el.getBoundingClientRect().left')
+            for _ in range(3):
+                pg.tap('#lyBar [data-ly="mv"][data-d="1,0"]')
+            if pg.evaluate('LY.el.getBoundingClientRect().left') - l0 < 1:
+                raise AssertionError('營業中的排版移不動')
+            pg.evaluate("lyClose()")
+        c.expect_clean('營業中進排版')
+        # 草稿清掉後（玩家視角），營業畫面不該再有被排版移動過的元素
+        pg.evaluate("localStorage.removeItem(LYKEY);lyApply()")
+        if pg.evaluate("LY.styled.size") and pg.evaluate("[...LY.styled.keys()].some(e=>e.closest('#stations'))"):
+            raise AssertionError('清掉草稿後營業畫面還有元素留著位移')
     finally:
         c.close()
 

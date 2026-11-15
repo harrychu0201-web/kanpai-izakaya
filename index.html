@@ -5175,6 +5175,7 @@ function showSndModal(fromGame){
   SETBACK=false;
   modal(`<h2>⚙️ ${T('設定')}</h2>
   <div class="how">
+    ${fromGame&&canArt()?'<div class="how-row" style="justify-content:space-between;gap:14px"><div><b>📐 排版</b><br><small>調整這個畫面的按鈕與圖片位置（只有作者看得到）</small></div><button class="btn" style="min-width:130px" data-lyed="open">📐 開啟排版</button></div>':''}
     <div class="how-row" style="justify-content:space-between;gap:14px">
       <div><b>🎵 ${T('背景音樂 (BGM)')}</b><br>${T('店裡的輕音樂與和風配樂。')}</div>
       <button class="btn ${SND.bgmOn?'':'alt'}" style="min-width:130px;white-space:nowrap" data-act="togbgm">${SND.bgmOn?'🔊 '+T('開啟中'):'🔇 '+T('已靜音')}<br><small style="font-size:12px;opacity:.85">${T(SND.bgmOn?'點一下關閉':'點一下開啟')}</small></button>
@@ -5995,7 +5996,7 @@ function shootCust(c){const fine=5000;R.fines+=fine;sfx('ouch');
   popup(seatX(c.seat,seatsN()),120,T('打到客人！罰款 {0}',yen(fine)),true);
   if(c.look.spr&&PROF[c.look.spr]){ST.banned=ST.banned||{};ST.banned[c.look.spr]=ST.day+3;const ch=CHARS.find(x=>x.spr===c.look.spr);setTimeout(()=>toast(T('{0}嚇壞了，三天內都不敢再來',/^(zh|ja)/.test(LANG)?'「'+T(ch.name)+'」':T(ch.name))),600)}
   c.pat=0;leave(c,false);R.seats.forEach(o=>{if(o&&o!==c&&o.st==='wait')o.pat=Math.max(1,o.pat-o.max*.3)});renderHUD()}
-function pause(){R.paused=true;modal(`<h2>${T('暫停中')}</h2><div class="btns"><button class="btn" data-act="resume">${T('繼續營業')}</button><button class="btn alt" data-act="sndg">⚙️ ${T('設定')}</button>${R.eloan||DEMO?'':`<button class="btn alt" data-act="bank">${T('🏦 銀行窗口')}</button>`}<button class="btn alt" data-act="quit">${T('重新開始')}</button><button class="btn alt" data-act="home">${T('回到主頁')}</button></div>`)}
+function pause(){R.paused=true;modal(`<h2>${T('暫停中')}</h2><div class="btns"><button class="btn" data-act="resume">${T('繼續營業')}</button><button class="btn alt" data-act="sndg">⚙️ ${T('設定')}</button>${canArt()?'<button class="btn alt" data-lyed="open">📐 排版</button>':''}${R.eloan||DEMO?'':`<button class="btn alt" data-act="bank">${T('🏦 銀行窗口')}</button>`}<button class="btn alt" data-act="quit">${T('重新開始')}</button><button class="btn alt" data-act="home">${T('回到主頁')}</button></div>`)}
 let lastTap={k:'',t:0},lpT=0;
 function srcOfEl(t){const g=t.closest('[data-grill]');if(g)return {src:'grill',i:+g.dataset.grill};const f=t.closest('[data-fry]');if(f)return {src:'fryer',i:+f.dataset.fry};const b=t.closest('[data-board]');if(b)return {src:'board',i:+b.dataset.board};const tp=t.closest('[data-tep]');if(tp)return {src:'teppan',i:+tp.dataset.tep};const tm=t.closest('[data-tem]');if(tm)return {src:'tempura',i:+tm.dataset.tem};const rp=t.closest('[data-rp]');if(rp)return {src:'rmpan',i:+rp.dataset.rp};const rf=t.closest('[data-rf]');if(rf)return {src:'rfry',i:+rf.dataset.rf};const ty=t.closest('[data-ty]');if(ty)return {src:'tyaki',i:+ty.dataset.ty};const bw=t.closest('[data-bowl]');if(bw)return {src:'bowl',i:+bw.dataset.bowl};const tk=t.closest('[data-tk]');if(tk)return {src:'tako',i:+tk.dataset.tk};const tmx=t.closest('[data-tm]');if(tmx)return {src:'tama',i:+tmx.dataset.tm};const ogx=t.closest('[data-og]');if(ogx)return {src:'onig',i:+ogx.dataset.og};const mkx=t.closest('[data-mk]');if(mkx)return {src:'maki',i:+mkx.dataset.mk};const tpx=t.closest('[data-tpn]');if(tpx)return {src:'tpn',i:+tpx.dataset.tpn};const lmx=t.closest('[data-lm]');if(lmx)return {src:'lamen',i:+lmx.dataset.lm};const tsx=t.closest('[data-ts]');if(tsx)return {src:'tsk',i:+tsx.dataset.ts};if(t.closest('#st-odenPot'))return {src:'oden'};return null}
 function autoWarm(h){
@@ -10017,7 +10018,7 @@ document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.c
   LY.rep={t:setTimeout(()=>{LY.rep.i=setInterval(()=>lyRepAct(b),70)},380)}},true);
 ['pointerup','pointercancel','pointerleave'].forEach(tp=>document.addEventListener(tp,lyRepStop,true));
 document.addEventListener('click',e=>{const t=e.target;if(!t.closest)return;
-  const o=t.closest('[data-lyed]');if(o){if(lyCan())lyOpen();return}
+  const o=t.closest('[data-lyed]');if(o){if(!lyCan())return;const inM=!!o.closest('#modalLayer .modal');if(inM){try{closeModal()}catch(x){}try{if(R&&!TUT&&R.paused){R.paused=false;last=performance.now()}}catch(x){}}lyOpen();return}
   const b=t.closest('#lyBar [data-ly]');if(b){const k=b.dataset.ly;
     if(k==='go')lyGo();else if(k==='max')lyMode(true);else if(k==='min'){lyMode(false);lyMsg('排版暫停中，可以正常玩；點上面的 📐 繼續')}
     else if(k==='up'){if(LY.el)lySelect(lyUp(LY.el));else lyMsg('先點一個東西')}
