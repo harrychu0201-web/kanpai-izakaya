@@ -5279,7 +5279,7 @@ function usePre(k){
   else if(k==='nb'){if(p.nb){toast(T('今天已經備妥不焦符了'));return}p.nb=1}
   else if(k==='pt'){p.pt=(p.pt||0)+1}
   else{if(p[k]){toast(T('今天已經備妥{0}了',PROPS[k].n));return}p[k]=1}
-  inv[k]--;r.inv=inv;saveRec(r);ST.pre=p;save();cloudUpload(true);
+  inv[k]--;r.inv=inv;{const a=r.ax=r.ax||{};a.us=(a.us||0)+1}saveRec(r);ST.pre=p;save();cloudUpload(true);achSoon();
   toast(T('使用了 {0}，開店後生效',PROPS[k].n));showPreProps();
 }
 function bankrupt(){
