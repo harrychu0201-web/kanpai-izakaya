@@ -20,6 +20,7 @@ jobs:
           rsync -a \
             --exclude='.git' --exclude='.github' --exclude='build' \
             --exclude='README.md' --exclude='database.rules.json' \
+            --exclude='tools' --exclude='CLAUDE.md' --exclude='.gitignore' \
             ./ build/
 
       - name: Install butler
