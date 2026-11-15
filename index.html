@@ -7252,7 +7252,7 @@ async function frLoad(){const me=CL.user,a=CL.api,uid=me.uid;
   lbxPush(me); /* refresh my own public snapshot so friends see my name even if earlier uploads failed */
   const [fl,rq]=await Promise.all([a.frList(uid),a.frReq(uid)]);const rm=loadRec().frRm||{};
   const add=Object.keys(rq).filter(k=>k!==uid&&!fl[k]&&!rm[k]).slice(0,Math.max(0,FR_MAX-Object.keys(fl).length));
-  if(add.length){await a.frAcc(uid,add);add.forEach(k=>{fl[k]=1})}
+  if(add.length){await a.frAcc(uid,add);add.forEach(k=>{fl[k]=1});achBump('fa',add.length)}
   const ids=Object.keys(fl);const [lbs,gifts,cl,on]=await Promise.all([ids.length?a.lbxMany(ids):{},a.giftList(uid),a.gclaimGet(uid),ids.length&&a.onlineMany?a.onlineMany(ids).catch(()=>({})):{}]);
   const pend=Object.keys(gifts).filter(f=>fl[f]&&(gifts[f].d||0)>(cl[f]||0));
   FR.data={fl,lbs,gifts,pend,on:on||{}};FR.t=Date.now();return FR.data}
