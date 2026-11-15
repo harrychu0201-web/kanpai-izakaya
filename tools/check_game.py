@@ -448,8 +448,80 @@ def sc_saves(b, base):
         c.close()
 
 
+def sc_lyed(b, base):
+    """📐 排版編輯（作者工具）：真實觸控點擊。選取不會觸發遊戲；👆進入才會真的按下去；進到成就／排行榜／設定等每個畫面都要能選、能移動；玩家端沒有按鈕。"""
+    prof = dict(viewport={'width': 844, 'height': 390}, has_touch=True, is_mobile=True, device_scale_factor=2)
+    pl = Ctx(b, base, profile=prof).open()          # 一般玩家：沒有排版按鈕，也不載入觀察器
+    try:
+        pl.dismiss_modals()
+        if pl.has('[data-lyed]'):
+            raise AssertionError('一般玩家不該看到排版工具')
+    finally:
+        pl.close()
+    c = Ctx(b, base, profile=prof).open()
+    pg = c.page
+    try:
+        c.dismiss_modals(8)
+        pg.evaluate("CL.user={email:ADMIN_EMAIL,uid:'t',name:'t',photo:''};acctRefresh()")
+        pg.wait_for_timeout(1800)
+        for _ in range(6):   # 登入後公告會自己彈出來，先關乾淨
+            if not pg.evaluate("!!document.querySelector('#homeModal .modal,#modalLayer .modal')"):
+                break
+            pg.evaluate("try{closeModal()}catch(e){}")
+            pg.wait_for_timeout(400)
+        CNT = "[...document.querySelectorAll('*')].filter(e=>e.style&&(e.style.translate||e.style.scale)&&!e.closest('#lyBar,#lyOv,#lyOut')).length"
+        base_n = pg.evaluate(CNT)   # 遊戲自己本來就有的 translate（不是排版造成的）
+        pg.tap('[data-lyed]')
+        pg.wait_for_timeout(300)
+        pg.tap('#lyBar [data-ly="pos"]')   # 工具列換到上面，不要蓋住下方按鈕
+
+        def center(sel):
+            r = pg.locator(sel).first.bounding_box()
+            return r['x'] + r['width'] / 2, r['y'] + r['height'] / 2
+
+        def modal_open():
+            return pg.evaluate("!!document.querySelector('#homeModal .modal,#modalLayer .modal')")
+
+        for act in ('ach', 'lb', 'social', 'dex', 'snd', 'fb', 'acct', 'chat'):
+            pg.evaluate("try{closeModal()}catch(e){}")
+            pg.wait_for_timeout(250)
+            if not pg.evaluate("!!document.querySelector('#lyBar [data-ly=\"go\"]')"):
+                pg.tap('#lyBar [data-ly="max"]')
+            x, y = center('[data-act="%s"]' % act)
+            pg.touchscreen.tap(x, y)
+            pg.wait_for_timeout(250)
+            if modal_open():
+                raise AssertionError('排版中點 %s 不該直接開畫面（只能選取）' % act)
+            pg.tap('#lyBar [data-ly="go"]')
+            pg.wait_for_timeout(900)
+            if not modal_open():
+                raise AssertionError('選了 %s 按 👆進入 沒有打開畫面' % act)
+            tgt = pg.evaluate("""(()=>{const c=document.querySelector('#homeModal .card,#modalLayer .card');
+              const bs=[...c.querySelectorAll('button,[data-act],h2,h3,img')].filter(e=>{const r=e.getBoundingClientRect();
+              return r.width>10&&r.height>10&&r.top>60&&r.bottom<innerHeight-10&&r.left>0&&r.right<innerWidth});
+              const e=bs[Math.min(2,bs.length-1)];if(!e)return null;const r=e.getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2]})()""")
+            if not tgt:
+                raise AssertionError('%s 畫面裡找不到可選的東西' % act)
+            pg.touchscreen.tap(*tgt)
+            pg.wait_for_timeout(250)
+            l0 = pg.evaluate('LY.el.getBoundingClientRect().left')
+            for _ in range(3):
+                pg.tap('#lyBar [data-ly="mv"][data-d="1,0"]')
+            if pg.evaluate('LY.el.getBoundingClientRect().left') - l0 < 1:
+                raise AssertionError('%s 畫面裡的東西移不動' % act)
+        pg.evaluate("closeModal()")
+        # 進遊戲：選開始營業 → 👆進入 → 選教學跳過/開店
+        c.expect_clean('排版編輯')
+        # 全部清空後，畫面回到原狀
+        pg.evaluate("LY.rules=[];lyApply()")
+        if pg.evaluate(CNT) > base_n:
+            raise AssertionError('清空排版後還有元素留著位移')
+    finally:
+        c.close()
+
+
 SCENARIOS = [('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
-             ('pick', sc_pick), ('layout', sc_layout), ('saves', sc_saves)]
+             ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves)]
 
 
 def find_chrome():

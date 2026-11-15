@@ -9832,7 +9832,7 @@ let LYOV=(()=>{try{const a=JSON.parse(localStorage.getItem(LYPUBKEY)||"null");if
 /* 玩家端：收到資料庫裡發布的排版就換上去，立刻重套 */
 function lySetPub(a){if(!lyPubOk(a))return;const same=JSON.stringify(a)===JSON.stringify(LYOV);LYOV=a;try{localStorage.setItem(LYPUBKEY,JSON.stringify(a))}catch(e){}if(same)return;try{lyObserve();lyApply()}catch(e){}}
 const LYKEY='izakaya-lyed',LYONKEY='izakaya-lyed-on';
-const LY={on:false,sel:false,rules:null,el:null,rule:null,k:1,step:1,undo:[],styled:new Map(),top:false,drag:null,rs:null,olOn:true,olT:0,obs:null,raf:0,rep:null,cnt:0};
+const LY={pass:false,on:false,sel:false,rules:null,el:null,rule:null,k:1,step:1,undo:[],styled:new Map(),top:false,drag:null,rs:null,olOn:true,olT:0,obs:null,raf:0,rep:null,cnt:0};
 function lyCan(){try{return canArt()}catch(e){return false}}
 function lyDraft(){try{const v=JSON.parse(localStorage.getItem(LYKEY)||'null');return v&&Array.isArray(v.r)?v.r:null}catch(e){return null}}
 function lyRules(){if(LY.on&&LY.rules)return LY.rules;let pv=false;try{pv=pview()}catch(e){}return pv?LYOV:(lyDraft()||LYOV)}
@@ -9845,7 +9845,7 @@ function lyCards(){return document.querySelectorAll('#modalLayer .card,#homeModa
 function lySig(card){const a=[];card.querySelectorAll('[data-act]').forEach(b=>{const v=b.dataset.act;if(v&&!LY_GEN.has(v)&&!a.includes(v)&&a.length<3)a.push(v)});
   if(a.length)return a.join(',');const h=card.querySelector('h2,h3');return h?'h:'+h.textContent.trim().slice(0,30):'*'}
 function lyCardOk(card,sig){if(sig==='*')return true;if(sig.startsWith('h:')){const h=card.querySelector('h2,h3');return !!h&&h.textContent.trim().slice(0,30)===sig.slice(2)}
-  return sig.split(',').every(v=>card.querySelector('[data-act="'+CSS.escape(v)+'"]'))}
+  return sig.split(',').some(v=>card.querySelector('[data-act="'+CSS.escape(v)+'"]'))}
 function lyMatch(r){if(r.sc&&r.sc!==lyScopeNow())return [];
   try{if(r.c){const out=[];lyCards().forEach(cd=>{if(!lyCardOk(cd,r.c))return;if(!r.q)out.push(cd);else cd.querySelectorAll(r.q).forEach(e=>out.push(e))});return out}
     return Array.from(document.querySelectorAll(r.q))}catch(e){return []}}
@@ -9895,9 +9895,9 @@ function lyUndo(){const s=LY.undo.pop();if(!s)return lyMsg('沒有可以復原�
 function lyScope(){const r=LY.rule;if(!r)return;lyPushUndo();const i=LY.rules.indexOf(r);if(i>=0)LY.rules.splice(i,1);
   r.sc=r.sc?'':lyScopeNow();const id=lyId(r),j=LY.rules.findIndex(x=>lyId(x)===id);if(j>=0)LY.rules.splice(j,1);lyStore(r);lySave();lyApply();lyDraw()}
 /* ---- 畫面：工具列、選取框、紅框 ---- */
-const LY_CSS=`#lyBar{position:fixed;left:0;right:0;bottom:0;z-index:2147483600;display:flex;gap:3px;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px max(6px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));background:#1d2733ee;font:14px/1.1 system-ui,sans-serif;color:#fff;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+const LY_CSS=`#lyBar{position:fixed;left:0;right:0;bottom:0;z-index:2147483600;display:flex;gap:2px;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px max(6px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));background:#1d2733ee;font:14px/1.1 system-ui,sans-serif;color:#fff;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 #lyBar.top{top:0;bottom:auto;padding-top:calc(4px + env(safe-area-inset-top,0px));padding-bottom:4px}
-#lyBar button{flex:0 0 auto;min-width:44px;height:44px;padding:0 6px;border:0;border-radius:8px;background:#3a4b5e;color:#fff;font:inherit;font-size:15px;cursor:pointer}
+#lyBar button{flex:0 0 auto;min-width:44px;height:44px;padding:0 4px;border:0;border-radius:8px;background:#3a4b5e;color:#fff;font:inherit;font-size:15px;cursor:pointer}
 #lyBar button:active{background:#5a7590}#lyBar button.on{background:#1f8a5a}#lyBar button.warn{background:#b8402c}#lyBar .lysep{width:1px;height:30px;background:#ffffff33;flex:0 0 auto}
 #lyBar.mini,#lyBar.mini.top{left:23%;right:auto;top:calc(6px + env(safe-area-inset-top,0px));bottom:auto;border-radius:24px;padding:3px;background:#1d2733cc} /* 暫停時的小按鈕放在上排左邊空的地方：遊戲中 HUD 這段是空的，首頁是標題字 */
 #lyOv{position:fixed;inset:0;z-index:2147483650;pointer-events:none}
@@ -9912,12 +9912,12 @@ const LY_CSS=`#lyBar{position:fixed;left:0;right:0;bottom:0;z-index:2147483600;d
 function lyMsg(t){let m=document.getElementById('lyMsg');if(!m){m=document.createElement('div');m.id='lyMsg';m.style.cssText='position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:2147483800;background:#1d2733;color:#fff;padding:8px 14px;border-radius:10px;font:14px system-ui;pointer-events:none';document.body.appendChild(m)}
   m.textContent=t;m.style.display='block';clearTimeout(m._t);m._t=setTimeout(()=>{m.style.display='none'},1800)}
 function lyBarHTML(){if(!LY.sel)return `<button data-ly="max" title="繼續排版">📐</button>`;
-  const r=LY.rule;return `<button data-ly="min" title="暫停排版，可以正常玩">⏸</button><button data-ly="up" title="改選外面那一層">⬆外層</button>`+
+  const r=LY.rule;return `<button data-ly="min" title="暫停排版，可以正常玩">⏸操作</button><button data-ly="go" class="on" title="真的按下選到的按鈕（進入成就、排行榜、商店…），排版工具不會關">👆進入</button><button data-ly="pos" title="工具列擋到東西時，換到畫面另一邊">⇅換邊</button><button data-ly="up" title="改選外面那一層">⬆外</button>`+
   `<button data-ly="mv" data-d="-1,0">◀</button><button data-ly="mv" data-d="0,-1">▲</button><button data-ly="mv" data-d="0,1">▼</button><button data-ly="mv" data-d="1,0">▶</button>`+
   `<button data-ly="sc" data-d="-1">－</button><button data-ly="sc" data-d="1">＋</button><button data-ly="step" title="每按一下移動幾格">${LY.step}格</button>`+
   `<button data-ly="reset" title="這一個回到原本的位置">↺</button><button data-ly="undo" title="復原上一步">↶</button>`+
   `<button data-ly="scope" title="這個調整只套用在這家店，或所有畫面">${r&&r.sc?'限這家店':'全畫面'}</button>`+
-  `<button data-ly="ol" class="${LY.olOn?(LY.cnt?'warn':'on'):''}" title="紅框：重疊；橘框：超出畫面">🔲${LY.olOn?LY.cnt:'關'}</button><button data-ly="out">💾匯出</button><button data-ly="pos" title="工具列移到上面／下面">⇅</button><button data-ly="close" title="關掉排版工具">✕</button>`}
+  `<button data-ly="ol" class="${LY.olOn?(LY.cnt?'warn':'on'):''}" title="紅框：重疊；橘框：超出畫面">🔲${LY.olOn?LY.cnt:'關'}</button><button data-ly="out">💾匯出</button><button data-ly="close" title="關掉排版工具">✕</button>`}
 function lyBar(){let b=document.getElementById('lyBar');if(!LY.on){if(b)b.remove();return}
   if(!document.getElementById('lyCss')){const s=document.createElement('style');s.id='lyCss';s.textContent=LY_CSS;document.head.appendChild(s)}
   if(!b){b=document.createElement('div');b.id='lyBar';document.body.appendChild(b)}
@@ -9954,10 +9954,15 @@ function lyLoop(){LY.raf=0;if(!LY.on||!LY.sel)return;lyDraw();const t=performanc
 function lyKick(){if(!LY.raf&&LY.on&&LY.sel)LY.raf=requestAnimationFrame(lyLoop)}
 /* ---- 開關 ---- */
 function lyOpen(min){if(!lyCan())return;LY.on=true;LY.sel=!min;try{LY.top=!!R&&!HOME}catch(e){}LY.rules=JSON.parse(JSON.stringify(lyDraft()||LYOV));LY.undo=[];
-  try{localStorage.setItem(LYONKEY,'1')}catch(e){}lyObserve();lyBar();lyOv();lyApply();lyKick();if(!min)lyMsg('點一下選它，按住藍框拖曳移動，拉藍色圓點縮放')}
+  try{localStorage.setItem(LYONKEY,'1')}catch(e){}lyObserve();lyBar();lyOv();lyApply();lyKick();if(!min)lyMsg('點一下選它；👆進入＝真的按下去；工具列擋到東西就按 ⇅換邊')}
 function lyClose(){LY.on=false;LY.sel=false;LY.el=null;LY.rule=null;try{localStorage.removeItem(LYONKEY)}catch(e){}
   ['lyBar','lyOv','lyOut'].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});lyApply()}
 function lyMode(on){LY.sel=on;if(!on){LY.drag=null;LY.rs=null}if(on&&!LY.el){try{LY.top=!!R&&!HOME}catch(e){}}lyBar();lyOv();if(on){lyDraw();LY.olT=0;lyKick()}}
+/* 排版中點到的東西只會被選取；要真的進入某個畫面，選它再按 👆進入（排版工具不會關，進去後照樣可以點選、移動） */
+function lyGo(){const e=LY.el;if(!e||!e.isConnected)return lyMsg('先點一個東西');
+  const r=e.getBoundingClientRect(),o={bubbles:true,cancelable:true,composed:true,clientX:r.left+r.width/2,clientY:r.top+r.height/2,pointerId:77,pointerType:'touch',isPrimary:true,view:window};
+  LY.pass=true;try{try{e.dispatchEvent(new PointerEvent('pointerdown',o));e.dispatchEvent(new PointerEvent('pointerup',o))}catch(x){}e.click()}finally{LY.pass=false}
+  lyMsg('已按下：'+lyName(e));setTimeout(()=>{lyApply();LY.olT=0;if(!LY.el||!LY.el.isConnected){LY.el=null;LY.rule=null;lyBar()}lyDraw()},350)}
 function lyMove(dx,dy){if(!LY.rule)return lyMsg('先點一個東西');lyEdit(r=>{r.x=(r.x||0)+dx*LY.step;r.y=(r.y||0)+dy*LY.step})}
 function lyScale(d){if(!LY.rule)return lyMsg('先點一個東西');const st=LY.step===1?.01:LY.step===5?.05:.1;lyEdit(r=>{r.s=(r.s||1)+d*st})}
 function lyExport(){let o=document.getElementById('lyOut');if(o){o.remove();return}
@@ -9985,7 +9990,7 @@ function lyXY(e){const p=e.touches?e.touches[0]||e.changedTouches[0]:e;return {x
 /* 手指點一下＝選它（沒移動才算，所以清單還是可以滑）；按在已選的東西上拖＝移動它 */
 ['pointerdown','pointerup','mousedown','mouseup','click','dblclick','touchstart','touchend','contextmenu'].forEach(tp=>window.addEventListener(tp,e=>{
   if(tp==='pointerup'&&LY.rs){LY.rs=null;lyApply()}
-  if(!LY.on||!LY.sel||lyMine(e.target))return;
+  if(!LY.on||!LY.sel||LY.pass||lyMine(e.target))return;
   e.stopImmediatePropagation();
   const onSel=!!(LY.el&&LY.el.contains(e.target));
   if(tp==='touchstart'){if(onSel&&e.cancelable)e.preventDefault();return}
@@ -10014,7 +10019,7 @@ document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.c
 document.addEventListener('click',e=>{const t=e.target;if(!t.closest)return;
   const o=t.closest('[data-lyed]');if(o){if(lyCan())lyOpen();return}
   const b=t.closest('#lyBar [data-ly]');if(b){const k=b.dataset.ly;
-    if(k==='max')lyMode(true);else if(k==='min'){lyMode(false);lyMsg('排版暫停中，可以正常玩；點上面的 📐 繼續')}
+    if(k==='go')lyGo();else if(k==='max')lyMode(true);else if(k==='min'){lyMode(false);lyMsg('排版暫停中，可以正常玩；點上面的 📐 繼續')}
     else if(k==='up'){if(LY.el)lySelect(lyUp(LY.el));else lyMsg('先點一個東西')}
     else if(k==='step'){LY.step=LY.step===1?5:LY.step===5?20:1;lyBar()}
     else if(k==='scope'){if(LY.rule){lyScope();lyBar();lyMsg(LY.rule.sc?'這個調整只套用在這家店':'這個調整套用在全部畫面')}else lyMsg('先點一個東西')}
@@ -10024,7 +10029,7 @@ document.addEventListener('click',e=>{const t=e.target;if(!t.closest)return;
     else if(k==='pos'){LY.top=!LY.top;lyBar()}
     else if(k==='out')lyExport();
     else if(k==='close')lyClose();
-    if(k!=='mv'&&k!=='sc'&&k!=='step'&&k!=='ol'&&k!=='pos'&&k!=='max'&&k!=='min'&&k!=='close'&&LY.on)lyBar();return}
+    if(k!=='go'&&k!=='mv'&&k!=='sc'&&k!=='step'&&k!=='ol'&&k!=='pos'&&k!=='max'&&k!=='min'&&k!=='close'&&LY.on)lyBar();return}
   const x=t.closest('#lyOut [data-lyo]');if(x){const k=x.dataset.lyo,o=document.getElementById('lyOut');
     if(k==='pub')lyPublish();
     else if(k==='copy')lyCopy(JSON.stringify(LY.rules));
