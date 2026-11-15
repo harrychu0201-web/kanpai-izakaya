@@ -592,9 +592,47 @@ def sc_ach_backfill(b, base):
         c.close()
 
 
+def sc_sponsor(b, base):
+    """贊助頁（作者限定）：玩家看不到入口；作者視角下真實點擊進得去，價目表和退款內容都在，且文字不用句號。"""
+    c = Ctx(b, base).open(3000)
+    try:
+        c.dismiss_modals()
+        # 一般玩家：主畫面不能有測試按鈕，也不能開出贊助頁
+        if c.has('[data-act=tstpanel]') or c.has('[data-act=tstspon]'):
+            raise AssertionError('一般玩家的畫面上出現了作者專用的測試／贊助入口')
+        c.page.evaluate("typeof sponPanel==='function'&&sponPanel()")
+        c.page.wait_for_timeout(300)
+        if 'NT$' in (c.page.evaluate("document.body.innerText") or ''):
+            raise AssertionError('一般玩家也能開出贊助頁')
+        c.dismiss_modals()
+        # 作者：用作者信箱登入的狀態重畫主畫面，再真實點擊進去
+        c.page.evaluate("CL.user={email:ADMIN_EMAIL,uid:'check-admin',name:'Author Check',photo:''};showHome()")
+        c.page.wait_for_timeout(600)
+        c.dismiss_modals()
+        c.click('[data-act=tstpanel]')
+        c.click('[data-act=tstspon]')
+        txt = c.page.evaluate("(document.querySelector('.modal')||{innerText:''}).innerText")
+        for need in ('贊助一串烤串', 'NT$50', '贊助一碗味增拉麵', 'NT$100', '贊助一份和牛', 'NT$300',
+                     '自訂金額', 'NT$30 起', '付款前先知道', '想退款怎麼辦', '7 天內'):
+            if need not in txt:
+                raise AssertionError('贊助頁缺少內容：%s' % need)
+        if '。' in txt:
+            raise AssertionError('贊助頁出現句號「。」（遊戲文字規則：句末用～或！）')
+        c.click('.modal [data-act=tstpanel]')   # 返回測試面板（要點 modal 裡的，主畫面那顆被蓋住）
+        if not c.has('[data-act=tstspon]'):
+            raise AssertionError('贊助頁的「返回測試面板」沒有回到測試面板')
+        c.click('.modal [data-act=tstspon]')
+        c.click('.modal [data-act=closem]')
+        if c.has('.spon'):
+            raise AssertionError('贊助頁的「關閉」沒有關掉')
+        c.expect_clean('贊助頁')
+    finally:
+        c.close()
+
+
 SCENARIOS = [('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
-             ('ach_backfill', sc_ach_backfill)]
+             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor)]
 
 
 def find_chrome():
