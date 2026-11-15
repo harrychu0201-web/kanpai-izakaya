@@ -4745,7 +4745,7 @@ function shopCards(o,cur,act,withTown){
   const cards=L.filter(x=>x[4]).map(([id,em,nm,own,,lk])=>{const lo=TOWN_LOOK[id]||{},on=id===cur&&own;
     return `<button type="button" class="shopc${on?' cur':''}${own?'':' lock'}" data-act="${own?act:lk}" ${own?`data-id="${id}" `:''}data-town="${id}"><span class="sc-ban"><i class="sc-em">${em}</i><span class="sc-kan">${lo.kan||''}</span></span><span class="sc-bar" style="background:${lo.noren||'#7a3f24'}"></span><span class="sc-name">${T(nm)}</span><span class="sc-st">${on?'📍 '+T('目前'):own?'':'🔒 '+T('花錢解鎖')}</span></button>`}).join('');
   const go=withTown&&townDev()?`<button type="button" class="shopc towngo" data-act="town"><span class="sc-ban"><i class="sc-em">🚶</i><span class="sc-kan">暖簾街</span></span><span class="sc-bar" style="background:#2a2350"></span><span class="sc-name">${T('暖簾街')}</span><span class="sc-st">${T('逛逛暖簾街')}</span></button>`:'';
-  return `<div class="shopcar${act==='pickbranch'?' brpick':''}" role="list">${cards}${go}</div>`}
+  return `<div class="shopcar${act==='pickbranch'?' brpick':''}" role="list">${go}${cards}</div>`}
 function centerShopCar(){const car=document.querySelector('.modal .shopcar'),on=car&&car.querySelector('.cur');if(car&&on)car.scrollLeft=Math.max(0,on.offsetLeft-(car.clientWidth-on.offsetWidth)/2)}
 function brRow(o,cur){const btn=(id,name,sub,ok)=>`<button class="btn ${cur===id?'':'alt'}" data-act="pickbranch" data-id="${id}" data-town="${id}" ${ok?'':'disabled'}>${T(name)}${cur===id?` · ${T('目前')}`:''}<small>${T(sub)}</small></button>`;
   const lk=(id,act,name)=>`<button class="btn alt" data-act="${act}" data-town="${id}">${T(name)}<small>${T('花錢解鎖')}</small></button>`;

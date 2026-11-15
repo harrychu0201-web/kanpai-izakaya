@@ -357,8 +357,8 @@ def sc_pick(b, base):
         small = [x for x in cards if x[2] < 44 or x[3] < 44]
         if small:
             raise AssertionError('選店卡片實際大小小於 44px：%r' % small)
-        if not c.has('.modal .shopcar [data-act=town]'):
-            raise AssertionError('選店卡片最後面沒有暖簾街')
+        if c.page.evaluate("document.querySelector('.modal .shopcar .shopc').dataset.act")!='town':
+            raise AssertionError('選店卡片第一張應該是暖簾街')
         if c.has('.modal .infowrap'):
             raise AssertionError('還沒選店就先出現了說明文字')
         c.click('[data-act=where][data-id=iz]', wait=700)
