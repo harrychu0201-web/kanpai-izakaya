@@ -6780,7 +6780,7 @@ async function cloudInit1(){
         const all=A.rows.filter(x=>typeof x[f]==='number'&&(!asc||x[f]>0));
         return all.slice().sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f])},
       /* 點食成金 on the board: putLb replaces the whole row, so a device without its own 點食成金 copy used to wipe fc; read what the server already has (lb row and cloud save, whichever is larger) */
-      lbFcSrv:uid=>rt((rd,r)=>Promise.all([rd.get(rd.ref(r,'lb/'+uid+'/fc')).then(x=>+x.val()||0).catch(()=>{throw new Error('lbfc')}),rd.get(rd.ref(r,'saves/'+uid+'/fc')).then(x=>{try{return +JSON.parse(x.val()).e||0}catch(e){return 0}}).catch(()=>0)]).then(a=>{const m=Math.max(a[0],a[1]);return isFinite(m)&&m>=1?Math.round(m):0})),
+      lbFcSrv:uid=>rt((rd,r)=>Promise.all([rd.get(rd.ref(r,'lb/'+uid+'/fc')).then(x=>+x.val()||0).catch(()=>null),rd.get(rd.ref(r,'saves/'+uid+'/fc')).then(x=>{try{return +JSON.parse(x.val()).e||0}catch(e){return 0}}).catch(()=>null)]).then(a=>{if(a[0]==null&&a[1]==null)throw new Error('lbfc');const m=Math.max(a[0]||0,a[1]||0);return isFinite(m)&&m>=1?Math.round(m):0})), /* the board row (lb/…/fc) is not readable by the published rules, so a denied read used to fail every upload for players with 點食成金 points; fall back to the player's own save copy */
       putLb:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lb/'+uid),d)),
       lbMan:()=>rt((rd,r)=>rd.get(rd.ref(r,'notice/lbman')).then(s=>s.val()||{})),
       setLbMan:(k,d)=>rt((rd,r)=>rd.set(rd.ref(r,'notice/lbman/'+k),d)),
