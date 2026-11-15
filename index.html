@@ -5251,7 +5251,7 @@ function extendDay(){
   const r=loadRec();if(!((r.inv||{}).ext>0)){toast(T('沒有延長營業券，可以到首頁的道具商店用金幣買'));return}
   if((R.extH||0)>=3){toast(T('營業時間已經延到上限了'));return}
   const u=R.undo;ST=JSON.parse(u.st);saveRec(JSON.parse(u.rec));
-  const r2=loadRec();r2.inv.ext--;saveRec(r2);
+  const r2=loadRec();r2.inv.ext--;{const a=r2.ax=r2.ax||{};a.us=(a.us||0)+1}saveRec(r2);achSoon();
   R.extH=(R.extH||0)+1;DAYLEN=u.dayLen+159/8.5;
   R.settled=false;R.over=false;R.lastCall=false;R.undo=null;R.paused=false;
   save();cloudUpload(true);renderHUD();closeModal();last=performance.now();
@@ -7253,6 +7253,8 @@ async function frLoad(){const me=CL.user,a=CL.api,uid=me.uid;
   const [fl,rq]=await Promise.all([a.frList(uid),a.frReq(uid)]);const rm=loadRec().frRm||{};
   const add=Object.keys(rq).filter(k=>k!==uid&&!fl[k]&&!rm[k]).slice(0,Math.max(0,FR_MAX-Object.keys(fl).length));
   if(add.length){await a.frAcc(uid,add);add.forEach(k=>{fl[k]=1});achBump('fa',add.length)}
+   /* 舊玩家補算：計數功能上線前加的好友沒有記到，打開好友頁時用目前好友數補上（取較大值，不會減少） */
+   {const nf=Object.keys(fl).length;if(nf>((loadRec().ax||{}).fa||0))achBump('fa',nf,true)}
   const ids=Object.keys(fl);const [lbs,gifts,cl,on]=await Promise.all([ids.length?a.lbxMany(ids):{},a.giftList(uid),a.gclaimGet(uid),ids.length&&a.onlineMany?a.onlineMany(ids).catch(()=>({})):{}]);
   const pend=Object.keys(gifts).filter(f=>fl[f]&&(gifts[f].d||0)>(cl[f]||0));
   FR.data={fl,lbs,gifts,pend,on:on||{}};FR.t=Date.now();return FR.data}
