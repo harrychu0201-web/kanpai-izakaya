@@ -9838,7 +9838,7 @@ function lyCan(){try{return canArt()}catch(e){return false}}
 function lyDraft(){try{const v=JSON.parse(localStorage.getItem(LYKEY)||'null');return v&&Array.isArray(v.r)?v.r:null}catch(e){return null}}
 function lyRules(){if(LY.on&&LY.rules)return LY.rules;let pv=false;try{pv=pview()}catch(e){}return pv?LYOV:(lyDraft()||LYOV)}
 function lySave(){try{localStorage.setItem(LYKEY,JSON.stringify({v:1,r:LY.rules}))}catch(e){}}
-function lyId(r){return (r.sc||'')+'|'+(r.c||'')+'|'+r.q}
+function lyId(r){return (r.sc||'')+'|'+(r.c||'')+'|'+r.q+(r.st?'@'+r.st:'')}
 function lyScopeNow(){return (typeof CUR!=='undefined'?CUR:'')+':'+(typeof LAY!=='undefined'?LAY:'')}
 /* 對話框特徵：卡片裡前三個不同的按鈕動作（跟語言無關）；沒有按鈕就用標題字 */
 const LY_GEN=new Set(['home','close','back','x','ok','cancel','closeM']);
@@ -9847,21 +9847,35 @@ function lySig(card){const a=[];card.querySelectorAll('[data-act]').forEach(b=>{
   if(a.length)return a.join(',');const h=card.querySelector('h2,h3');return h?'h:'+h.textContent.trim().slice(0,30):'*'}
 function lyCardOk(card,sig){if(sig==='*')return true;if(sig.startsWith('h:')){const h=card.querySelector('h2,h3');return !!h&&h.textContent.trim().slice(0,30)===sig.slice(2)}
   return sig.split(',').some(v=>card.querySelector('[data-act="'+CSS.escape(v)+'"]'))}
-function lyMatch(r){if(r.sc&&r.sc!==lyScopeNow())return [];
+function lyMatch(r){if(r.sc&&r.sc!==lyScopeNow())return [];if(r.st&&r.st!==(typeof ARTSTYLE!=='undefined'?ARTSTYLE:''))return [];
   try{if(r.c){const out=[];lyCards().forEach(cd=>{if(!lyCardOk(cd,r.c))return;if(!r.q)out.push(cd);else cd.querySelectorAll(r.q).forEach(e=>out.push(e))});return out}
     return Array.from(document.querySelectorAll(r.q))}catch(e){return []}}
+/* SVG 群組本身常帶 transform="translate() scale()"，CSS 的 scale 屬性會套在它外面又以「沒套 transform 的位置」當中心，縮放時整個飄走。
+   所以 SVG 的縮放自己組：以它現在在畫面上的中心縮放，再接回原本的 transform（位移仍用 translate 屬性）。 */
+function lySvgXf(e,sc){try{const b=e.getBBox(),t=e.transform&&e.transform.baseVal,m=t&&t.numberOfItems?t.consolidate().matrix:{a:1,b:0,c:0,d:1,e:0,f:0},cx0=b.x+b.width/2,cy0=b.y+b.height/2,
+  cx=m.a*cx0+m.c*cy0+m.e,cy=m.b*cx0+m.d*cy0+m.f;
+  return 'translate('+cx+'px,'+cy+'px) scale('+sc+') translate('+(-cx)+'px,'+(-cy)+'px) matrix('+m.a+','+m.b+','+m.c+','+m.d+','+m.e+','+m.f+')'}catch(x){return ''}}
 function lyApply(){const now=new Map();
   for(const r of lyRules()){const tx=(r.x||r.y)?(r.x||0)+'px '+(r.y||0)+'px':'',s=r.s&&r.s!==1?String(r.s):'';
-    for(const e of lyMatch(r)){if(e.closest('#lyBar,#lyOv,#lyOut'))continue;now.set(e,1);if(e.style.translate!==tx)e.style.translate=tx;if(e.style.scale!==s)e.style.scale=s}}
-  for(const [e] of LY.styled)if(!now.has(e)){e.style.translate='';e.style.scale=''}
+    for(const e of lyMatch(r)){if(e.closest('#lyBar,#lyOv,#lyOut'))continue;now.set(e,1);if(e.style.translate!==tx)e.style.translate=tx;if(e instanceof SVGGraphicsElement){const xf=s?lySvgXf(e,s):'';if(e.style.transform!==xf)e.style.transform=xf;if(e.style.scale)e.style.scale=''}else if(e.style.scale!==s)e.style.scale=s}}
+  for(const [e] of LY.styled)if(!now.has(e)){e.style.translate='';e.style.scale='';if(e instanceof SVGGraphicsElement)e.style.transform=''}
   LY.styled=now}
 function lyObserve(){if(LY.obs)return;LY.obs=new MutationObserver(()=>lyApply());LY.obs.observe(document.body,{childList:true,subtree:true})}
 /* ---- 點到哪一個 ---- */
 const LY_BAN=new Set(['wrap','box','game','bg','counter','custLayer','stations','fx','modalLayer','homeModal','homeLayer','lyBar','lyOv','lyOut']);
 const LY_MEAN='button,[data-act],[data-ast],[id],.st,.pgbtn,img,.up,.plaque,.card,.lbl,.bubble,.btn,h2,h3,p,label,input,select,textarea,canvas';
 function lyOk(e){return e&&e.nodeType===1&&e!==document.body&&e!==document.documentElement&&!LY_BAN.has(e.id)&&!e.classList.contains('modal')&&!e.classList.contains('layer')}
-function lyPick(t){let e=t;while(e&&e instanceof SVGElement&&e.ownerSVGElement)e=e.ownerSVGElement;
-  while(e&&e!==document.body){if(lyOk(e)&&e.matches(LY_MEAN))return e;e=e.parentElement}return null}
+/* 背景是 SVG（pointer-events:none，點不到），用座標找裡面最小的圖形群組：菜單木牌、舊畫風的燈籠／酒瓶／招牌都能選。
+   新畫風的燈籠、電視、暖簾是畫在同一張背景圖裡的像素，沒有獨立的東西可以選。 */
+function lyBgPick(x,y){const bg=document.getElementById('bg');if(!bg)return null;const gr=document.getElementById('game')||bg,G=gr.getBoundingClientRect();let best=null,ba=1e12;
+  for(const g of bg.querySelectorAll('g')){if(g.closest('defs,clipPath,mask,pattern'))continue;const r=g.getBoundingClientRect(),a=r.width*r.height;
+    if(r.width<12||r.height<12||a>G.width*G.height*.3)continue;if(x<r.left||x>r.right||y<r.top||y>r.bottom)continue;if(a<ba){ba=a;best=g}}
+  return best}
+function lyBgHint(x,y){const bg=document.getElementById('bg');if(!bg||!bg.querySelector(':scope > svg image'))return false;const r=bg.getBoundingClientRect();return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom}
+function lyPick(t,x,y){let e=t;while(e&&e instanceof SVGElement&&e.ownerSVGElement)e=e.ownerSVGElement;
+  while(e&&e!==document.body){if(lyOk(e)&&e.matches(LY_MEAN))return e;e=e.parentElement}
+  if(x!=null){const g=lyBgPick(x,y);if(g)return g;if(lyBgHint(x,y))lyMsg('這是整張背景圖裡的圖案，沒辦法單獨移動（舊畫風可以）')}
+  return null}
 function lyUp(el){let p=el&&el.parentElement;while(p&&p!==document.body){if(lyOk(p))return p;p=p.parentElement}return el}
 /* ---- 產生選擇器 ---- */
 function lyDataSel(e){let s=e.tagName.toLowerCase();for(const a of e.attributes)if(/^data-/.test(a.name)&&a.name!=='data-close'&&a.value.length<60)s+='['+a.name+'="'+CSS.escape(a.value)+'"]';return s}
@@ -9882,8 +9896,8 @@ function lyName(el){if(!el)return '';const t=(el.getAttribute('aria-label')||el.
 /* 舞台有縮放：手指移動 1px ≠ 元素移動 1px，選到時量一次比例 */
 function lyRatio(el){const r=LY.rule,x=r.x||0,y=r.y||0,a=el.getBoundingClientRect().left;el.style.translate=(x+100)+'px '+y+'px';const b=el.getBoundingClientRect().left;el.style.translate=(x||y)?x+'px '+y+'px':'';const k=(b-a)/100;return k>.01?k:1}
 function lySelect(el){LY.el=el||null;LY.rule=null;
-  if(el){const {q,c}=lyQ(el),sc=el.closest('#stations,#custLayer,#fx')?lyScopeNow():'',id=lyId({q,c,sc});
-    LY.rule=LY.rules.find(r=>lyId(r)===id)||{q,c,sc,x:0,y:0,s:1};LY.k=lyRatio(el);
+  if(el){const {q,c}=lyQ(el),sc=el.closest('#stations,#custLayer,#fx,#bg')?lyScopeNow():'',st=el.closest('#bg')?ARTSTYLE:'',id=lyId({q,c,sc,st});
+    LY.rule=LY.rules.find(r=>lyId(r)===id)||(st?{q,c,sc,st,x:0,y:0,s:1}:{q,c,sc,x:0,y:0,s:1});LY.k=lyRatio(el);
     /* 工具列自動躲開選到的東西：東西在下半部，工具列就移到上面 */
     const rc=el.getBoundingClientRect(),top=rc.top+rc.height/2>innerHeight/2;if(top!==LY.top){LY.top=top;lyBar()}}
   lyDraw()}
@@ -9993,14 +10007,14 @@ function lyXY(e){const p=e.touches?e.touches[0]||e.changedTouches[0]:e;return {x
   if(tp==='pointerup'&&LY.rs){LY.rs=null;lyApply()}
   if(!LY.on||!LY.sel||LY.pass||lyMine(e.target))return;
   e.stopImmediatePropagation();
-  const onSel=!!(LY.el&&LY.el.contains(e.target));
+  const onSel=!!(LY.el&&(LY.el.contains(e.target)||(e.clientX!=null&&(()=>{const r=LY.el.getBoundingClientRect();return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom})())));
   if(tp==='touchstart'){if(onSel&&e.cancelable)e.preventDefault();return}
   if(e.cancelable&&tp!=='pointerdown')e.preventDefault();
   if(tp==='pointerdown'){const p=lyXY(e);LY.tap={id:e.pointerId,x:p.x,y:p.y};
     if(onSel&&LY.rule)LY.drag={id:e.pointerId,x0:p.x,y0:p.y,rx:LY.rule.x||0,ry:LY.rule.y||0,moved:false};return}
   if(tp==='pointerup'){const D=LY.drag,T=LY.tap;LY.drag=null;LY.tap=null;
     if(D&&D.moved){lyApply();return}
-    if(T){const p=lyXY(e);if(Math.hypot(p.x-T.x,p.y-T.y)<10){const el=lyPick(e.target);if(el!==LY.el)lySelect(el)}}}},{capture:true,passive:false}));
+    if(T){const p=lyXY(e);if(Math.hypot(p.x-T.x,p.y-T.y)<10){const el=lyPick(e.target,p.x,p.y);if(el!==LY.el)lySelect(el)}}}},{capture:true,passive:false}));
 window.addEventListener('pointermove',e=>{if(!LY.on||!LY.sel)return;const p=lyXY(e);
   if(LY.rs){e.preventDefault();e.stopImmediatePropagation();const d=Math.hypot(p.x-LY.rs.cx,p.y-LY.rs.cy);const s=LY.rs.s0*d/Math.max(8,LY.rs.d0);lyEdit(r=>{r.s=s},true);return}
   if(LY.tap&&Math.hypot(p.x-LY.tap.x,p.y-LY.tap.y)>=10&&!LY.drag)LY.tap=null;

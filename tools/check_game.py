@@ -534,6 +534,31 @@ def sc_lyed(b, base):
             if pg.evaluate('LY.el.getBoundingClientRect().left') - l0 < 1:
                 raise AssertionError('營業中的排版移不動')
             pg.evaluate("lyClose()")
+        # 背景裡的獨立圖形（菜單木牌）要能選、能移動；畫在背景圖裡的燈籠不能選，要有提示
+        c.click('[data-act=pause]', wait=500)
+        c.click('.modal [data-lyed]', wait=700)
+        pg.tap('#lyBar [data-ly="pos"]')   # 木牌在上方，工具列換到下面
+        bb = pg.evaluate("(()=>{const r=document.querySelector('#bg > g:nth-of-type(4)').getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2]})()")
+        pg.touchscreen.tap(*bb)
+        pg.wait_for_timeout(250)
+        if not pg.evaluate("!!LY.el&&!!LY.el.closest('#bg')&&LY.rule.st===ARTSTYLE"):
+            raise AssertionError('點不到背景裡的菜單木牌')
+        l0 = pg.evaluate('LY.el.getBoundingClientRect().left')
+        for _ in range(3):
+            pg.tap('#lyBar [data-ly="mv"][data-d="1,0"]')
+        pg.tap('#lyBar [data-ly="sc"][data-d="1"]')
+        if pg.evaluate('LY.el.getBoundingClientRect().left') - l0 < 1:
+            raise AssertionError('背景裡的木牌移不動')
+        cx0 = pg.evaluate("(()=>{const r=LY.el.getBoundingClientRect();return r.left+r.width/2})()")
+        pg.tap('#lyBar [data-ly="sc"][data-d="1"]')
+        if abs(pg.evaluate("(()=>{const r=LY.el.getBoundingClientRect();return r.left+r.width/2})()") - cx0) > 1.5:
+            raise AssertionError('背景木牌縮放時中心飄走')
+        r = pg.evaluate("(()=>{const r=document.getElementById('bg').getBoundingClientRect();return [r.left+r.width*0.676,r.top+r.height*0.21]})()")
+        pg.touchscreen.tap(*r)
+        pg.wait_for_timeout(250)
+        if pg.evaluate("!!LY.el"):
+            raise AssertionError('畫在背景圖裡的燈籠不該被選到')
+        pg.evaluate("lyClose()")
         c.expect_clean('營業中進排版')
         # 草稿清掉後（玩家視角），營業畫面不該再有被排版移動過的元素
         pg.evaluate("localStorage.removeItem(LYKEY);lyApply()")
