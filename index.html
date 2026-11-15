@@ -7826,7 +7826,7 @@ let TSTPEND=null;
 function tstEdit(fn,ok){const o=load()||fresh();
   if(!TEST&&!o.cheat&&!isAdmin()&&!ok){TSTPEND=fn;modal(`<h2>⚠️ 注意</h2><p>這是測試功能。用了之後，<b>這個存檔就不會再上排行榜</b>（所有分頁都不會）。</p><p style="font-size:14px">只是想測試的話，建議改用「另開獨立測試存檔」，正式存檔就不受影響。</p><div class="btns"><button class="btn" data-act="tstcheatok">我知道，還是要用</button><button class="btn alt" data-act="tstpanel">取消</button></div>`);return}
   if(!TEST&&!o.cheat){slBackup(lsGet(KEY),'cheat');o.cheat=1;o.cheatAt=Date.now()}fn(o);lsSet(KEY,JSON.stringify(o));if(!TEST)touchLocal();showHome();tstPanel()}
-const SPON_EMAIL=''; /* 客服信箱：拿到專門收贊助信件的 email 後填在這裡（作者限定頁，玩家看不到） */
+const SPON_EMAIL='kanpaiizakaya.game@gmail.com'; /* 客服信箱：拿到專門收贊助信件的 email 後填在這裡（作者限定頁，玩家看不到） */
 function sponPanel(){if(!isAdmin())return;
   const mail=SPON_EMAIL||'【請填客服信箱】';
   modal(`<h2>🍢 請我吃一串烤串吧</h2><div class="spon">
