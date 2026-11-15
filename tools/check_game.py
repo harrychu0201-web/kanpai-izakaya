@@ -10,6 +10,7 @@
   replay    選日期重玩：選一天 → 開始重玩 → 營業 → 回主頁（放棄重玩）
   shops     每家店的商店：每個分頁、每個買／升級按鈕都真的點過，買到全部擁有後再逐頁重開
   layout    橫向手機、iOS 縮放（layout viewport 約螢幕 2 倍）、Android、平板、桌機：舞台不能縮成一小塊、不能被切掉
+  pick      選店橫向卡片、說明預設收合、設定「進遊戲後先到哪」（店家選單／暖簾街）
   saves     玩完整條路徑後，玩家原本的存檔欄位一個都不能少、不認得的欄位原封不動
 """
 import argparse, functools, http.server, json, os, shutil, socketserver, sys, threading, time, traceback
@@ -342,6 +343,59 @@ def assert_stage(c, where, name):
                              % (name, where, desc, r['l'], r['t'], r['r'], r['b']))
 
 
+def sc_pick(b, base):
+    """選店：橫向卡片（同一列、可橫向捲動）、說明文字預設收合、設定的「進遊戲後先到哪」兩種模式都要真的點過"""
+    c = Ctx(b, base).open()
+    try:
+        c.dismiss_modals()
+        c.click('[data-act=cont]', wait=900)
+        cards = c.page.evaluate("[...document.querySelectorAll('.modal .shopcar .shopc')].map(e=>{const r=e.getBoundingClientRect();return [e.dataset.act,Math.round(r.top),Math.round(r.width),Math.round(r.height)]})")
+        if len(cards) < 3:
+            raise AssertionError('選店畫面的橫向卡片少於 3 張：%r' % cards)
+        if max(x[1] for x in cards) - min(x[1] for x in cards) > 3:
+            raise AssertionError('選店卡片沒有排成同一列（不是橫向）：%r' % cards)
+        small = [x for x in cards if x[2] < 44 or x[3] < 44]
+        if small:
+            raise AssertionError('選店卡片實際大小小於 44px：%r' % small)
+        if not c.has('.modal .shopcar [data-act=town]'):
+            raise AssertionError('選店卡片最後面沒有暖簾街')
+        if c.has('.modal .infowrap'):
+            raise AssertionError('還沒選店就先出現了說明文字')
+        c.click('[data-act=where][data-id=iz]', wait=700)
+        if not c.has('.modal .infowrap'):
+            raise AssertionError('選了店之後沒有「營業說明」區塊')
+        if c.page.evaluate("document.querySelector('.modal .infowrap').open"):
+            raise AssertionError('第 5 天的營業說明應該預設收合')
+        c.click('.modal .infowrap > summary', wait=400)
+        if '營業時間' not in c.page.evaluate("document.querySelector('.modal .infowrap').innerText"):
+            raise AssertionError('展開營業說明後看不到營業時間')
+        c.click('.modal [data-act=start]', wait=2500)  # 卡片選完之後照樣能開店
+        if not c.page.evaluate('typeof R!=="undefined"&&!!R&&!HOME'):
+            raise AssertionError('卡片選店後按開店營業，沒有進入營業')
+        day_to_home(c)
+        # 設定：進遊戲後先到哪 → 暖簾街，繼續就直接在街上
+        c.click('[data-act=snd]', wait=600)
+        c.click('.modal [data-act=entrymode][data-id=town]', wait=500)
+        if c.page.evaluate("localStorage.getItem('izakaya-entry')") != 'town':
+            raise AssertionError('設定選了暖簾街，但沒有存起來')
+        c.dismiss_modals()
+        c.click('[data-act=cont]', wait=1500)
+        if not c.has('.modal .town'):
+            raise AssertionError('設定成暖簾街模式，按繼續卻沒有直接進暖簾街')
+        c.click('.modal .town [data-act=home]', wait=800)
+        c.dismiss_modals()
+        # 改回店家選單，繼續就看到卡片
+        c.click('[data-act=snd]', wait=600)
+        c.click('.modal [data-act=entrymode][data-id=list]', wait=500)
+        c.dismiss_modals()
+        c.click('[data-act=cont]', wait=900)
+        if not c.has('.modal .shopcar .shopc'):
+            raise AssertionError('改回店家選單後，按繼續沒有看到選店卡片')
+        c.expect_clean('橫向選店與進入模式')
+    finally:
+        c.close()
+
+
 def sc_layout(b, base):
     for name, prof in PROFILES.items():
         c = Ctx(b, base, profile=prof).open(2600)
@@ -395,7 +449,7 @@ def sc_saves(b, base):
 
 
 SCENARIOS = [('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
-             ('layout', sc_layout), ('saves', sc_saves)]
+             ('pick', sc_pick), ('layout', sc_layout), ('saves', sc_saves)]
 
 
 def find_chrome():
