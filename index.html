@@ -6794,7 +6794,7 @@ async function cloudInit1(){
       lbxMany:ids=>rt((rd,r)=>Promise.all(ids.map(k=>rd.get(rd.ref(r,'lbx/'+k)).then(s=>[k,s.val()]))).then(a=>{const o={};a.forEach(([k,v])=>{o[k]=v});return o})),
       lbFindName:nick=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'lb'),rd.orderByChild('name'),rd.equalTo(nick),rd.limitToFirst(5))).then(s=>{const a=[];s.forEach(c=>{a.push({uid:c.key,name:(c.val()||{}).name})});return a})),
       lbGetOne:uid=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'lb'),rd.orderByKey(),rd.equalTo(uid),rd.limitToFirst(1))).then(s=>{let v=null;s.forEach(c=>{v=c.val()});return v})),
-      grantAdd:(uid,items,why)=>rt((rd,r)=>rd.push(rd.ref(r,'grants/'+uid),{t:rd.serverTimestamp(),by:'author',why:why||'',items})),
+      grantAdd:(uid,items,why,ach)=>rt((rd,r)=>{const o={t:rd.serverTimestamp(),by:'author',why:why||''};if(items&&Object.keys(items).length)o.items=items;if(ach)o.ach=ach;return rd.push(rd.ref(r,'grants/'+uid),o)}),
       grantsGet:uid=>rt((rd,r)=>rd.get(rd.ref(r,'grants/'+uid)).then(s=>s.val()||{})),
       grantDel:(uid,id)=>rt((rd,r)=>rd.remove(rd.ref(r,'grants/'+uid+'/'+id))),
       regCode:(uid,code)=>rt((rd,r)=>rd.set(rd.ref(r,'fcode/'+code),uid)),
@@ -6936,10 +6936,15 @@ async function cloudLogin(force){if(IAB&&!force&&!CL.iabTried){iabHelp('');retur
 // Workaround: add that account to the browser first, then it shows up in the account list and can be picked directly.
 function loginHelp(){if(!HOME)return;modal(`<h2>${T('登入視窗關掉了')}</h2><p>${T('如果你剛剛是按「使用其他帳戶」，Chrome 會把登入視窗切斷。')}</p><p>${T('先按「新增 Google 帳號」，在新分頁登入你要用的帳號，登好後回到遊戲再按一次登入，那個帳號就會直接出現在清單裡，點它就好。')}</p><div class="btns"><button class="btn" data-act="addacct">${T('新增 Google 帳號')}</button><button class="btn" data-act="login">${T('再試一次')}</button><button class="btn" data-act="closem">${T('知道了')}</button></div>`)}
 function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){CL.isPoster=false;if(CL.api)CL.api.isPoster(u.uid).then(v=>{CL.isPoster=v===true}).catch(()=>{});CL.isStaff=false;if(CL.api)CL.api.isStaff(u.uid).then(v=>{CL.isStaff=v===true;if(CL.isStaff&&typeof coopInvStart==='function')coopInvStart();if(HOME&&typeof AST!=='undefined'&&!AST.on)try{showHome()}catch(e){}}).catch(()=>{});cloudSync();setTimeout(()=>replyCheck(0),2500);setTimeout(coopInvStart,3000);setTimeout(()=>{if(typeof coopResume==='function')coopResume().catch(e=>console.warn('coop resume',e))},3200)}else coopInvStop();if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
+/* 找出一個成就讀的是哪個計數器（例如 fa5 讀 ax.fa），補發成就時直接把那個計數補到門檻 */
+function achKeyOf(a){let key=null;try{a.cur({ax:new Proxy({},{get:(t,k)=>{if(key===null&&typeof k==='string')key=k;return 0}})})}catch(e){}return key}
 async function claimGrants(){const u=CL.user;if(!u||TEST||RP.on||!CL.api||!CL.api.grantsGet)return;
   let g={};try{g=await CL.api.grantsGet(u.uid)||{}}catch(e){console.warn('grants',e);return}
   for(const id of Object.keys(g)){const x=g[id]||{},items={};Object.keys(x.items||{}).forEach(k=>{const n=Math.floor(+x.items[k]);if(PROPS[k]&&n>0)items[k]=Math.min(20,n)});
-    if(Object.keys(items).length){const r=loadRec();r.inv=r.inv||{};for(const k in items)r.inv[k]=(r.inv[k]||0)+items[k];saveRec(r);toast(T('收到補發：{0}',rwText(items)))}
+    const achA=x.ach?ACHS.find(a=>a.id===x.ach):null;
+    if(Object.keys(items).length||achA){const r=loadRec();r.inv=r.inv||{};for(const k in items)r.inv[k]=(r.inv[k]||0)+items[k];
+      if(achA){const key=achKeyOf(achA);if(key){const a=r.ax=r.ax||{};a[key]=Math.max(a[key]||0,AM(achA.max))}}
+      saveRec(r);achSoon();toast(T(achA?'收到補發：成就「{0}」':'收到補發：{0}',achA?T(achA.n):rwText(items)))}
     try{await CL.api.grantDel(u.uid,id)}catch(e){console.warn('grant del',e)}}}
 const gDay=g=>{try{const o=JSON.parse(g);return (o.day||0)+(o.pendingNext?1:0)}catch(e){return 0}};
 async function cloudSync(){
@@ -7821,6 +7826,7 @@ function grantPanel(){if(!isAdmin())return;
   modal(`<h2>補發道具</h2><p>用玩家的暱稱找人（對方要至少開過一次排行榜才有暱稱）。補發會在對方下次登入時自動入帳。</p>
   <div class="tstr"><b>暱稱</b><input id="gnick" placeholder="玩家暱稱" maxlength="24"></div>
   <div class="tstr"><b>道具</b><select id="gitem">${Object.keys(PROPS).map(k=>`<option value="${k}">${PROPS[k].ic}${PROPS[k].n}</option>`).join('')}</select><input id="gnum" type="number" min="1" max="20" value="1" style="width:70px"></div>
+  <div class="tstr"><b>或直接達成</b><select id="gach"><option value="">（不補成就）</option>${ACHS.filter(a=>achKeyOf(a)).map(a=>`<option value="${a.id}">${a.n}</option>`).join('')}</select></div>
   <div class="tstr"><b>原因</b><input id="gwhy" placeholder="例：屋台 bug 補償" maxlength="60"></div>
   <p id="gmsg" style="min-height:1.6em;font-weight:700;color:#7a2b1b;margin:8px 0"></p><div class="btns"><button class="btn" data-act="tstgrantgo">送出補發</button><button class="btn alt" data-act="closem">關閉</button></div>`)}
 function gmsg(t){const e=$('gmsg');if(e)e.textContent=t;if(t)toast(t)}
@@ -7834,9 +7840,10 @@ async function grantSend(){if(!isAdmin())return;
   if(!hits.length){gmsg('找不到暱稱「'+nick+'」：請確認暱稱完全一樣（含大小寫與空白）');return}
   if(hits.length>1){gmsg('同名的玩家有 '+hits.length+' 位，無法確定是哪一位');return}
   const h=hits[0];
-  if(!confirm('補發 '+PROPS[k].n+' ×'+n+' 給「'+h.name+'」？')){gmsg('已取消');return}
+  const ach=($('gach')&&$('gach').value)||'';const A=ach?ACHS.find(a=>a.id===ach):null;
+  if(!confirm(A?'直接達成成就「'+A.n+'」給「'+h.name+'」？':'補發 '+PROPS[k].n+' ×'+n+' 給「'+h.name+'」？')){gmsg('已取消');return}
   gmsg('送出中…');
-  try{await CL.api.grantAdd(h.uid,{[k]:n},why);gmsg('已送出補發：'+h.name+' '+PROPS[k].n+' ×'+n+'（玩家下次登入時領取）')}
+  try{await CL.api.grantAdd(h.uid,A?null:{[k]:n},why,A?A.id:null);gmsg(A?'已送出成就：'+h.name+'「'+A.n+'」（玩家下次登入時達成）':'已送出補發：'+h.name+' '+PROPS[k].n+' ×'+n+'（玩家下次登入時領取）')}
   catch(e){gmsg('送出失敗：'+(e&&e.message||e))}}
 function showAcct(){const u=CL.user;if(!u)return;
   const st=CL.status==='err'?T('同步失敗，稍後會再試')+(CL.err?` (${esc(CL.err)})`:''):CL.status==='sync'?T('同步中…'):T('已同步');
