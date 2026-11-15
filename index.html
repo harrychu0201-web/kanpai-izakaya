@@ -6288,12 +6288,25 @@ let PLAYT=0;function playLocked(){return !HOME&&PLAYT&&Date.now()-PLAYT>3000}
 let STAB={o:'',h:0},STABGROW=false,STABJ=false;
 /* 手機橫向：舞台尺寸只跟著「同方向內見過的最小可見範圍」走，網址列／狀態列／導覽列一出現或收起都不改舞台大小與位置。 */
 function pinLand(){return TOUCH&&innerWidth>innerHeight}
+/* iPhone Safari：網址列、底部工具列伸縮時，innerWidth／visH() 會連續變化，舞台邊框會跟著忽大忽小（玩家看到的「邊框在跳」）。
+   這裡改成：數值變動後要穩定 450ms 才套用，套用後才重排一次。不釘住、不只縮不放，所以不會卡在小尺寸。 */
+let IOSDB={o:'',w:0,h:0,pw:0,ph:0,tm:0};
+function iosApply(){
+  const o=innerWidth>innerHeight?'l':'p',w=innerWidth,h=visH();
+  if(IOSDB.o!==o||!IOSDB.w){IOSDB={o,w,h,pw:w,ph:h,tm:0};return IOSDB}
+  if(w!==IOSDB.pw||h!==IOSDB.ph){
+    IOSDB.pw=w;IOSDB.ph=h;clearTimeout(IOSDB.tm);
+    IOSDB.tm=setTimeout(()=>{IOSDB.tm=0;const cw=innerWidth,ch=visH();
+      if(cw===IOSDB.pw&&ch===IOSDB.ph&&(cw!==IOSDB.w||ch!==IOSDB.h)){IOSDB.w=cw;IOSDB.h=ch;fit()}},450);
+  }
+  return IOSDB;
+}
 function stableVisH(){
   if(RAWFIT)return Math.max(200,window.innerHeight);
   /* iPhone 加到主畫面（全螢幕）橫向時，實際可用高度就是螢幕短邊，不必靠量測；量測偶爾讀到偏矮的值，
      會讓舞台的虛擬寬度被放大到 1800、整個遊戲縮成約四分之一。這裡直接用螢幕短邊。 */
   if(IOS&&STANDALONE&&innerWidth>innerHeight)return Math.max(Math.min(screen.width,screen.height),window.innerHeight);
-  if(IOS){const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''),o=innerWidth>innerHeight?'l':'p';if(typing&&STAB.h&&STAB.o===o)return STAB.h;const v=visH();STAB={o,h:v,m:v};return v}
+  if(IOS){if(/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''))return IOSDB.h||visH();return iosApply().h}
   const o=innerWidth>innerHeight?'l':'p',v=visH();
   if(STAB.o!==o||!STAB.h){STAB={o,h:v,m:v};return v}
   if(pinLand()){const typing=/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');
@@ -6329,7 +6342,7 @@ let LANDW={o:'',w:0};
 function landW(){const o=innerWidth>innerHeight?'l':'p',v=window.innerWidth;
   if(RAWFIT)return v;
   /* iPhone 沒有 Android 那種滑出式導覽列，不需要「只縮不放」的釘住；Safari 網址列／工具列伸縮時會短暫讀到偏小的寬，釘住後就永遠卡在小的、越用越小。iOS 一律用即時寬度。 */
-  if(IOS){LANDW={o,w:v};return v}
+  if(IOS){return iosApply().w}
   if(pinLand()){if(LANDW.o!==o||!LANDW.w){LANDW={o,w:v};return v}if(v<LANDW.w)LANDW.w=v;return LANDW.w}
   if(LANDW.o!==o||!LANDW.w||Math.abs(v-LANDW.w)>120||!playLocked()){LANDW={o,w:v};return v}
   if(v<LANDW.w)LANDW.w=v;return LANDW.w}
