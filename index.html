@@ -1948,7 +1948,13 @@ function suRiceG(plain){
   const body='M12 64C9 51 24 43 50 43C76 43 91 51 88 64C90 76 76 84 50 84C24 84 10 76 12 64Z';
   return `<path d="${body}" transform="translate(2 3)" fill="${O}" opacity=".28"/><path d="${body}" fill="#fcf8ee"/>`+(plain?'':`<path d="M24 80C42 88 74 82 87 66C84 76 64 82 24 80Z" fill="#e8dec3"/>`)+suGrains([[24,58],[34,52],[46,50],[58,52],[70,55],[78,62],[30,68],[42,74],[56,76],[68,72],[50,63],[36,62],[64,64]])+`<path d="${body}" fill="none" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`;
 }
+/* 甜蝦握壽司：細長的蝦身（淡粉＋紅色蝦節，不畫眼睛），右邊一把明顯的紅色尾扇，和鮭魚的橘色寬片分得開 */
+const SU_SHRIMP='M6 44C6 34 20 29 42 29C62 29 76 31 84 37C82 43 72 46 60 45C46 44 32 47 20 53C11 56 6 51 6 44Z';
+function suShrimpG(){
+  return `<g transform="rotate(-4 50 40)"><clipPath id="sush"><path d="${SU_SHRIMP}"/></clipPath><path d="${SU_SHRIMP}" transform="translate(2 3)" fill="${O}" opacity=".3"/><path d="M78 36C86 31 93 25 101 21C100 29 103 35 104 40C103 46 100 51 96 56C92 49 86 45 78 44Z" fill="#e8573c" stroke="${O}" stroke-width="2.6" stroke-linejoin="round"/><path d="M85 37L99 26M86 40L102 39M85 43L96 53" stroke="#a82a16" stroke-width="2" stroke-linecap="round" opacity=".85"/><path d="M98 27L101 24M101 41L103 41" stroke="#ffc2b0" stroke-width="2" stroke-linecap="round"/><path d="${SU_SHRIMP}" fill="#fbd3c9"/><g clip-path="url(#sush)"><rect x="0" y="20" width="22" height="46" fill="#f2a08a"/><path d="M29 26Q24 40 31 56M41 26Q36 40 43 55M53 26Q48 39 55 52M65 26Q60 38 67 50M76 28Q72 38 77 46" stroke="#e8573c" stroke-width="3.6" fill="none" stroke-linecap="round" opacity=".9"/><path d="M12 36Q40 29 78 34" stroke="#fff1ec" stroke-width="3.2" fill="none" stroke-linecap="round" opacity=".9"/></g><path d="${SU_SHRIMP}" fill="none" stroke="${O}" stroke-width="3" stroke-linejoin="round"/></g>`;
+}
 function suTopG(id){
+  if(id==='ebi')return suShrimpG();
   const f=SU_FISH[id];let d='';
   if(id==='tuna')d=`<path d="M10 44Q40 30 92 38" stroke="${f.h}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".75"/><path d="M20 55L30 30M38 56L46 28M58 55L64 28M76 52L80 32" stroke="${f.e}" stroke-width="2.2" stroke-linecap="round" opacity=".7"/><path d="M8 55Q50 47 94 54V62H8Z" fill="${f.d}" opacity=".35"/>`;
   else if(id==='salmon')d=`<path d="M10 56L30 24M26 58L46 24M43 58L63 24M60 58L80 24M77 56L92 30" stroke="${f.d}" stroke-width="4.2" stroke-linecap="round" opacity=".9"/><path d="M12 36Q44 24 90 30" stroke="${f.h}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".8"/><path d="M8 54Q50 46 94 52V62H8Z" fill="${f.e}" opacity=".35"/>`;
@@ -2031,7 +2037,8 @@ function suKaraageTopG(){
 /* 炙燒握：魚片照原樣，再蓋上焦痕、美乃滋細線，左上角一小撮火苗 */
 function suAburiG(id){
   if(id==='cheesesalmon')return suAburiG('salmon')+suCheeseG();
-  return suTopG(id)+`<g transform="rotate(-4 50 40)"><clipPath id="suab"><path d="${SU_SLAB}"/></clipPath><g clip-path="url(#suab)"><path d="M4 20H98V38Q72 30 52 36Q30 44 4 38Z" fill="#7a3a12" opacity=".36"/><path d="M13 30L23 53M31 26L41 51M51 25L61 49M71 27L80 47" stroke="#2a1208" stroke-width="3.6" stroke-linecap="round" opacity=".72"/><path d="M8 41Q26 33 44 41T84 39" stroke="#fff7e2" stroke-width="3" fill="none" stroke-linecap="round" opacity=".95"/></g><path d="${SU_SLAB}" fill="none" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M12 8Q5 17 12 24Q16 18 22 22Q25 12 17 4Q17 8 12 8Z" fill="#ff9a2e" stroke="${O}" stroke-width="2" stroke-linejoin="round"/><path d="M14 17Q12 21 15 23Q18 20 17 16Z" fill="#ffe27a"/></g>`;
+  const sh=id==='ebi'?SU_SHRIMP:SU_SLAB,cid=id==='ebi'?'suabs':'suab';
+  return suTopG(id)+`<g transform="rotate(-4 50 40)"><clipPath id="${cid}"><path d="${sh}"/></clipPath><g clip-path="url(#${cid})"><path d="M4 20H98V38Q72 30 52 36Q30 44 4 38Z" fill="#7a3a12" opacity=".36"/><path d="M13 30L23 53M31 26L41 51M51 25L61 49M71 27L80 47" stroke="#2a1208" stroke-width="3.6" stroke-linecap="round" opacity=".72"/><path d="M8 41Q26 33 44 41T84 39" stroke="#fff7e2" stroke-width="3" fill="none" stroke-linecap="round" opacity=".95"/></g><path d="${sh}" fill="none" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M12 8Q5 17 12 24Q16 18 22 22Q25 12 17 4Q17 8 12 8Z" fill="#ff9a2e" stroke="${O}" stroke-width="2" stroke-linejoin="round"/><path d="M14 17Q12 21 15 23Q18 20 17 16Z" fill="#ffe27a"/></g>`;
 }
 /* 生魚片：深色盤子、蘿蔔絲、紫蘇葉、芥末，魚片一片一片疊著排開 */
 function suSlabG(id,x,y,r){const f=SU_FISH[id],p='M0 0L28 -3Q35 8 28 21L0 22Q-7 10 0 0Z';
