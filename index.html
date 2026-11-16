@@ -96,6 +96,7 @@ body.ovl .hud .icon-btn.bagbtn{width:auto;min-width:40px;height:36px;padding:0 9
 .cust .fig{position:absolute;left:0;top:40px;width:160px;height:210px}
 .cust.walk .fig{animation:bob .28s infinite alternate}
 @keyframes bob{to{transform:translateY(-5px)}}
+.cust-pz .cust.walk .spr,.cust-pz .cust.walk .fig,.cust-pz .robber .spr{animation-play-state:paused}
 .cust.shake .fig{animation:nope .3s}
 .cust.hop .fig{animation:hop .3s 2 alternate}
 @keyframes hop{to{transform:translateY(-14px)}}
@@ -6620,8 +6621,23 @@ function steamTick(){
   for(const [k,em] of STM)if(!seen.has(k)){em.remove();STM.delete(k)}
 }
 let lastHeld=null;
+/* 暫停時客人還在走進來：把滑動定在半路（CSS 過場不會被 JS 暫停，原本會在暫停中滑到定點、然後原地踏步）；繼續營業時接著滑完剩下的時間 */
+let CUSTPZ=false;
+function custPzSync(){
+  const p=!!(R&&R.paused&&!R.over);
+  if(p===CUSTPZ)return;
+  CUSTPZ=p;
+  document.body.classList.toggle('cust-pz',p);
+  if(!R)return;
+  R.seats.forEach(c=>{
+    if(!c||!c.el||c.st!=='in')return;
+    if(p){const m=getComputedStyle(c.el).transform;c.el.style.transition='none';c.el.style.transform=(!m||m==='none')?'translateX(0)':m}
+    else{const left=Math.max(0.05,(c.walkT||1.15)-c.t);c.el.style.transition='';c.el.style.transitionDuration=left.toFixed(2)+'s';c.el.style.transform='translateX(0)'}
+  });
+}
 function loop(now){
   requestAnimationFrame(loop);
+  custPzSync();
   if(R&&R.held!==lastHeld){if(R.held&&(!lastHeld||lastHeld.key!==R.held.key||lastHeld.src!==R.held.src))sfx('pick');lastHeld=R.held}
   const dt=Math.min(.1,(now-last)/1000);last=now;
   if(R&&!R.paused&&!R.over){const sp=CHEAT()?TSPD:1;for(let i=0;i<sp&&R&&!R.over;i++)step(dt);acc+=dt;if(acc>(TOUCH?.1:.07)){acc=0;renderStations();renderCust();renderHUD();sky()}}

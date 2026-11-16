@@ -948,9 +948,49 @@ def sc_bar(b, base):
         c.close()
 
 
-SCENARIOS = [('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
-             ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
-             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar)]
+
+
+def sc_pausewalk(b, base):
+    """回歸測試：客人還在走進來時按暫停 → 滑動要定住、不能在暫停中滑到定點後原地踏步；繼續營業後要接著走完。"""
+    c = Ctx(b, base).open()
+    try:
+        to_day(c, run_ms=800)
+        try:
+            c.page.wait_for_function("R && R.seats.some(x=>x&&x.st==='in'&&x.t<x.walkT-0.4)", timeout=20000)
+        except Exception:
+            raise AssertionError('等不到走進來的客人（還在走路中）' + c.diag('沒有客人在走路'))
+        c.click('[data-act=pause]', wait=0)
+        res = c.page.evaluate("""async()=>{
+            const x=R.seats.find(y=>y&&y.st==='in'&&y.t<y.walkT-0.4);
+            if(!x)return {err:'暫停前客人已經走到定點'};
+            window.__pzX=x;
+            const raf=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+            await raf();
+            const t0=getComputedStyle(x.el).transform;
+            await new Promise(r=>setTimeout(r,1500));
+            const t1=getComputedStyle(x.el).transform;
+            const sp=x.el.querySelector('.spr')||x.el.querySelector('.fig');
+            return {body:document.body.classList.contains('cust-pz'),same:t0===t1,
+                    aps:sp?getComputedStyle(sp).animationPlayState:'paused',st:x.st,t0,t1};
+        }""")
+        c.expect_clean('暫停時客人走路中')
+        if res.get('err'):
+            raise AssertionError(res['err'])
+        if not res['body']:
+            raise AssertionError('暫停時沒有套上 cust-pz（客人走路的同步沒有啟動）')
+        if not res['same']:
+            raise AssertionError('暫停中客人還在滑動（%s → %s），會滑到定點後原地踏步' % (res['t0'], res['t1']))
+        if res['aps'] != 'paused':
+            raise AssertionError('暫停中客人還在原地踏步（animation-play-state=%s）' % res['aps'])
+        c.click('.modal [data-act=resume]', wait=0)
+        try:
+            c.page.wait_for_function("!document.body.classList.contains('cust-pz') && window.__pzX && window.__pzX.st!=='in'", timeout=6000)
+        except Exception:
+            raise AssertionError('繼續營業後客人沒有走到定點' + c.diag('繼續營業後客人卡在走路中'))
+        c.expect_clean('繼續營業後客人走到定點')
+        day_to_home(c)
+    finally:
+        c.close()
 
 
 def find_chrome():
@@ -959,6 +999,12 @@ def find_chrome():
         if p and os.path.exists(p):
             return p
     return None
+
+
+SCENARIOS = [('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
+             ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
+             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar),
+             ('pausewalk', sc_pausewalk)]
 
 
 def main():
