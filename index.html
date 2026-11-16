@@ -8440,6 +8440,7 @@ const coV=S=>coVN(S&&S.v);
 const coVen=S=>CO_VEN[coV(S)];
 const coYa=()=>coV(typeof CO!=='undefined'?CO.S:null)==='ya';
 const coStageOf=(m,v)=>{let s=0;CO_VEN[coVN(v)].un.forEach((u,i)=>{if(m>=u.d)s=i});return s};
+const coKfmt=m=>'¥'+(m>=1000?(m/1000)+'k':m);
 const coTeamMoney=S=>Math.round(((S&&S.w&&S.w.k)||0)+((S&&S.w&&S.w.f)||0));
 const coKeys=S=>coVen(S).un.slice(0,((S&&S.stg)||0)+1).reduce((a,u)=>a.concat(u.k),[]);
 const coOK=(S,k)=>coKeys(S).indexOf(k)>=0;
@@ -8856,7 +8857,7 @@ function cxSmall(S,now,st){let o='';coArr(S,st).forEach((g,i)=>{const pos=`left:
     o+=`<button class="cxs cxslot${q.st==='done'?' cx-ok':''}${cxFC(g,q,now)}" data-co="k${st}:${i}" style="${pos}">${sv(inner,'0 0 36 86')}${cxBar(q)}${cxFlip(g,q,now)}</button>`});return o}
 /* 1 2 3 4 換廚房；別間有菜熟了亮黃點，快焦或焦了亮紅點 */
 function cxTabsHtml(S,now,pg){return coVen(S).pgs.map((n,ix)=>{let lv=0;CO_PG[n].forEach(st=>coArr(S,st).forEach(g=>{if(!g)return;const q=coPct(g,now);if(q.st==='burnt'||(q.st==='done'&&q.pct<35))lv=2;else if(q.st==='done'&&lv<1)lv=1}));
-  return `<button class="cxs cxtab${n===pg?' on':''}" data-co="pg:${n}"${coPgOK(S,n)?'':' style="opacity:.45"'}>${coPgOK(S,n)?ix+1:'🔒<small>¥'+coVen(S).un[coVen(S).ps[n]].d+'</small>'}${lv&&n!==pg?`<i class="${lv>1?'hot':''}"></i>`:''}</button>`}).join('')}
+  return `<button class="cxs cxtab${n===pg?' on':''}" data-co="pg:${n}"${coPgOK(S,n)?'':' style="opacity:.45"'}>${coPgOK(S,n)?ix+1:'🔒<small style="white-space:nowrap">'+coKfmt(coVen(S).un[coVen(S).ps[n]].d)+'</small>'}${lv&&n!==pg?`<i class="${lv>1?'hot':''}"></i>`:''}</button>`}).join('')}
 function cxRawSk(k,r){const g=CXK[k];return cxBox(r,'raw:'+k,sv(`<rect x="4" y="10" width="64" height="72" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/>${[0,1,2].map(i=>`<g transform="translate(${8+i*19} 13) scale(.48 .45)">${cxSk(g,'raw')}</g>`).join('')}`,'0 0 72 90'),CO_FOOD[k].n)}
 function cxRawC(r){return cxBox(r,'raw:kara',sv(`<path d="M10 10h116q-4 40-58 40q-54 0-58-40z" fill="#c9ced4" stroke="${O}" stroke-width="3"/><g transform="translate(10 -28)">${cxKa('raw',8,0)}</g><g transform="translate(44 -30)">${cxKa('raw',8,0)}</g>`,'0 0 136 58'),'生雞肉（唐揚）')}
 function cxTrash(r){return cxBox(r,'tr',sv(`<rect x="4" y="6" width="120" height="40" rx="10" fill="#5a5f66" stroke="${O}" stroke-width="3"/><path d="M48 16h32M58 16v-4h12v4M52 16l3 24h18l3-24" fill="#8a9098" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`,'0 0 128 52'),'丟掉手上的')}
