@@ -3278,58 +3278,16 @@ function bxBottle(l){const b=BXL[l],sh=b[2]||'tl',lb=b[3]||'#f6f0e0';let fill=b[
   else{body='M9 40Q9 32 16 30H24Q31 32 31 40V93Q31 96 28 96H12Q9 96 9 93Z';nk=[16,10,8,22];lab=[11,50,18,30]}
   const [nx,ny,nw,nh]=nk,[lx,ly,lw,lh]=lab;
   return `<rect x="${nx}" y="${ny}" width="${nw}" height="${nh}" rx="2" fill="${fill}" fill-opacity="${fo}" stroke="${O}" stroke-width="2"/><rect x="${nx-1}" y="${ny-5}" width="${nw+2}" height="7" rx="2" fill="${sh==='dash'?'#e6e6e6':'#2a1a10'}" stroke="${O}" stroke-width="1.8"/><path d="${body}" fill="${fill}" fill-opacity="${fo}" stroke="${O}" stroke-width="2.4"/><rect x="${lx}" y="${ly}" width="${lw}" height="${lh}" rx="2" fill="${lb}" stroke="${O}" stroke-width="1.4"/><circle cx="${lx+lw/2}" cy="${ly+lh/2}" r="${(Math.min(lw,lh)/4).toFixed(1)}" fill="none" stroke="${O}" stroke-width="1.6" opacity=".55"/><path d="M${lx+lw*.2} ${ly+lh-5}H${lx+lw*.8}" stroke="${O}" stroke-width="1.2" opacity=".45"/><path d="M${lx+2.5} ${ly+lh+4}V90" stroke="#fff" stroke-width="2.4" opacity="${fo<1?.5:.25}" stroke-linecap="round"/>${ex}`}
-function bxGlassSV(g,o,w,h){return `<svg viewBox="0 0 100 120" width="${w}" height="${h}">${bxGlass(g,o)}</svg>`}
 /* 目前這杯的樣子（給加蘇打、倒酒、裝飾用） */
 function bxMlCol(ml){let t=0,a=0,g=0,c=0;for(const l in ml){const v=ml[l]||0;if(!v||!BXL[l])continue;const n=parseInt(BXL[l][1].slice(1),16);a+=(n>>16&255)*v;g+=(n>>8&255)*v;c+=(n&255)*v;t+=v}if(!t)return null;const h=x=>Math.round(x/t).toString(16).padStart(2,'0');return '#'+h(a)+h(g)+h(c)}
 function bxMix(a,b,f){const p=x=>{const n=parseInt(x.slice(1),16);return [n>>16&255,n>>8&255,n&255]},x=p(a),y=p(b);return '#'+x.map((v,i)=>Math.round(v+(y[i]-v)*f).toString(16).padStart(2,'0')).join('')}
 function bxAutoLv(){const d=BX.d,r=BXR[bxOrder().k],cap={high:300,rock:170,coupe:120,martini:110,choko:140,masu:150}[r.g]||200,t=Object.values(d.ml).reduce((a,b)=>a+b,0);return Math.min(.88,t/cap+(d.ice?.12:0))}
 function bxLook(extra){const o=bxOrder(),d=BX.d,r=BXR[o.k],base=bxMlCol(d.ml)||'#e0c080',top=r.st.find(s=>s[0]==='top');
-  let col=base;if(top&&d.lv>(d.lv0||0)+.02)col=BXCLEAR.includes(top[1])?tpShade(base,.45):bxMix(base,BXL[top[1]][1],.65);
+  let col=base;if(top&&d.lv>(d.lv0||0)+.02)col=BXCLEAR.includes(top[1])?tpShade(base,.28):bxMix(base,BXL[top[1]][1],.65);
   return Object.assign({cold:d.tp==='cold',warm:d.tp==='warm',ice:d.pourG?null:d.ice,lv:d.lv,col,fizz:top&&BXFIZZ.includes(top[1])?d.fizz:0,gar:d.gar,foam:!!d.shook},extra||{})}
 /* ---- 整個畫面 ---- */
-function bxRender(){const el=$('barx');if(!el||!BX)return;const o=bxOrder(),st=BX.stage,r=BXR[o.k];
-  const who=CHARS.find(c=>c.spr===o.who),name=who?T(who.name):'';
-  const card=`<div class="bx-card"><h4>${o.tut?'<span class="bx-tag">'+T('教學')+'</span>':''}${dishTitle(o.k)}</h4><div><b>${T('必要條件')}：</b><span class="rq">${o.c.map(c=>bxCondZH(o.k,c)).join('、')}</span></div>${r.opt.length?`<div><b>${T('可選')}：</b>${r.opt.map(g=>T(BXGAR[g][0])).join('／')}？</div>`:''}<div class="bx-rec"><b>${T('酒譜')}：</b>${bxStepsText(o.k)}</div></div>`;
-  const say=st==='arrive'?`「${bxSay(o)}」`:st==='res'||st==='talk'?BX.sayJP||'':`「${bxSay(o)}」`;
-  const sub=st==='arrive'?T('（{0}）{1}',name,o.c.map(c=>bxCondZH(o.k,c)).join('、')):st==='res'||st==='talk'?BX.sayZH||'':name;
-  let html=`<div class="bx-top"><div class="bx-cust">${bxFig(o.who,BX.mood||'ok')}</div><div class="bx-say"><b>${say}</b><small>${sub}</small></div>${card}<button class="bx-book" data-bx="book">📖 ${T('配方手帳')}</button>${st==='arrive'||st==='make'?bxHandHTML(false):''}<div class="bx-cnt">${T('客人 {0}/{1}',BX.i+1,BX.q.length)}</div></div><div class="bx-work">`;
-  if(st==='arrive'){const b=bxSt();html+=`<div class="bx-area bx-col">${BX.tut&&BX.i===0?`<p class="bx-tip">${T('第一天是教學：客人會清楚說要什麼，每一步上面都有說明，跟著做就好。做錯了客人會告訴你哪裡不對，還能重做一次。')}<br>${T('酒放在你背後的酒櫃：按「↻ 轉身」去拿，拿到手邊（最多 3 瓶）才能量。蘇打、茶、果汁、糖漿在吧台下面，不用轉身。')}</p>`:''}<p class="bx-ins">${T('這位客人點了 {0}。材料 {1}・售價 {2}',dishTitle(o.k),yen(ITEMS[o.k].cost),yen(ITEMS[o.k].price))}${b.xp[o.k]?'　'+T('（做過 {0} 杯）',b.xp[o.k]):''}</p><button class="bx-btn big" data-bx="start">${T('開始調酒')}</button></div>`}
-  else if(st==='make')html+=bxStageHTML();
-  else if(st==='res')html+=BX.resHTML;
-  else if(st==='talk')html+=BX.talkHTML;
-  else if(st==='end')html+=BX.endHTML;
-  html+=`</div>`;if(BX.view==='cab')html=bxCabHTML();const fl=BX.flip;BX.flip=0;
-  html=`<div class="bx-face${fl?' flip':''}">${html}</div><div class="bx-msg hide" id="bxmsg"></div>`;const k=Math.max(1,Math.min(W/1000,H/560));el.innerHTML=`<div class="bx-in" style="width:${(100/k).toFixed(3)}%;height:${(100/k).toFixed(3)}%;transform:scale(${k.toFixed(4)})">${html}</div>`;
-  if(st==='make'&&BX.view!=='cab')bxBind();renderHUD()}
-function bxHandHTML(cab){return `<div class="bx-hand${cab?' cab':''}"><div class="bx-hs"><small>${T('手邊')}</small>${[0,1,2].map(i=>{const l=BX.hand[i];return `<span class="bx-slot">${l?`<svg viewBox="0 0 40 100">${bxBottle(l)}</svg><em>${bxLN(l)}</em>`:''}</span>`}).join('')}</div><button class="bx-turn" data-bx="turn">↻ ${cab?T('轉回吧台'):T('轉身')}<small>${cab?'':T('去酒櫃拿酒')}</small></button></div>`}
-function bxCabHTML(){const o=bxOrder(),need=o?bxNeedL(o.k):[];
-  return `<div class="bx-cab"><div class="bx-cabh"><b>🍶 ${T('酒櫃')}</b><span>${T('點酒瓶拿到手邊（最多 3 瓶，滿了會把最早拿的放回去）。這杯要用的酒會亮起來。')}</span>${bxHandHTML(true)}</div>${BXCAB.map(row=>`<div class="bx-shelf">${row.map(l=>{const own=bxBotOwn(l);return `<button class="bx-bot${own?'':' lock'}${BX.hand.includes(l)?' inh':''}${need.includes(l)?' need':''}" data-bx="take" data-v="${l}"><svg viewBox="-2 0 44 100" preserveAspectRatio="xMidYMax meet">${bxBottle(l)}</svg><span>${own?'':'🔒'}${bxLN(l)}</span></button>`}).join('')}</div>`).join('')}</div>`}
 function bxStepsBar(){return `<div class="bx-steps">${BX.stg.map((s,i)=>`<span class="${i<BX.si?'ok':i===BX.si?'on':''}">${bxStageName(s)}</span>`).join('')}</div>`}
 function bxMeter(v,z,lab){const p=Math.max(0,Math.min(100,v));return `<div class="bx-meter"><small>${lab}</small><div class="bx-mbar"><i class="z" style="left:${z[0]}%;width:${z[1]-z[0]}%"></i><i class="v" style="width:${p}%"></i></div></div>`}
-function bxStageHTML(){const s=bxCur(),o=bxOrder(),d=BX.d,r=BXR[o.k];let ins='',area='';
-  if(bxNeedHand(s)){ins=T('手邊沒有{0}：轉身到背後的酒櫃拿',bxLN(s[1]));area=`<button class="bx-btn big" data-bx="turn">↻ ${T('轉身拿{0}',bxLN(s[1]))}</button>`}
-  else if(s[0]==='glass'){ins=T('選杯子，再決定要冰杯、常溫還是溫杯');
-    area=`<div class="bx-row">${Object.keys(BXG).map(g=>`<button class="bx-opt ${d.g===g?'on':''}" data-bx="g" data-v="${g}">${bxGlassSV(g,{},72,88)}<span>${T(BXG[g])}</span></button>`).join('')}</div><div class="bx-colb">${Object.keys(BXTP).map(t=>`<button class="bx-btn alt ${d.tp===t?'on':''}" data-bx="t" data-v="${t}">${t==='cold'?'❄️':t==='warm'?'♨️':'🫙'} ${T(BXTP[t])}</button>`).join('')}</div>`}
-  else if(s[0]==='ice'){ins=T('放冰塊：選這杯要用的冰');
-    area=`<div class="bx-row">${Object.keys(BXI).map(i=>`<button class="bx-opt" data-bx="i" data-v="${i}">${bxGlassSV(r.g,{cold:d.tp==='cold',ice:i},84,100)}<span>${T(BXI[i])}</span></button>`).join('')}</div>`}
-  else if(s[0]==='m'){const sp=bxMSpec(o,s[1],s[2]);
-    ins=sp.cond?T('按住量{0}：客人要{1}，比標準 {2} ml {3}一點，自己抓量放開',bxLN(s[1]),bxCondZH(o.k,o.c.find(c=>['strong','light','sour','sweet'].includes(c))),s[2],sp.lo>s[2]?T('多'):T('少')):T('按住量{0}，到綠色刻度放開（標準 {1} ml）',bxLN(s[1]),s[2]);
-    area=`<div class="bx-vis" id="bxv">${bxJigger(s,sp,d.ml[s[1]]||0)}</div><div class="bx-colc"><div class="bx-read" id="bxread">${Math.round(d.ml[s[1]]||0)} ml</div><button class="bx-hold" id="bxhold">${T('按住倒')}</button><div class="bx-after" id="bxafter"></div></div>`}
-  else if(s[0]==='stir'||s[0]==='lift'){const lift=s[0]==='lift';ins=lift?T('最後在杯子裡輕輕畫一圈就好，拌太多氣泡會跑掉'):T('用手指在杯子裡畫圈攪拌，冰度條到綠色區就按「好了」');
-    area=`<div class="bx-pad round" id="bxpad"><div id="bxv">${bxStirArt(0,null)}</div></div><div class="bx-colc">${lift?`<div class="bx-read" id="bxread">${T('{0} 圈',0)}</div>`:`<div id="bxmet">${bxMeter(d.dil,s[1],T('冰度'))}</div><div class="bx-read" id="bxread">${T('{0} 圈',0)}</div>`}<button class="bx-btn" data-bx="done" ${lift?'':'disabled'} id="bxdone">${T('好了')}</button></div>`}
-  else if(s[0]==='shake'){ins=T('用手指在框裡來回快速滑動搖酒，冰度條到綠色區、大約 4～6 秒就按「好了」');
-    area=`<div class="bx-pad wide" id="bxpad"><div id="bxv">${bxShakerArt(0,0)}</div></div><div class="bx-colc"><div id="bxmet">${bxMeter(d.dil,s[1],T('冰度'))}</div><div class="bx-read" id="bxread">0.0 ${T('秒')}</div><button class="bx-btn" data-bx="done" disabled id="bxdone">${T('好了')}</button></div>`}
-  else if(s[0]==='dash'){const n=d.dash[s[1]]||0;ins=T('把{0}往攪拌杯裡抖 {1} 下：點一下抖一下',bxLN(s[1]),s[2]);
-    area=`<div class="bx-vis"><svg viewBox="-4 0 48 100" width="100" height="210">${bxBottle(s[1])}</svg></div><div class="bx-colc"><div class="bx-read" id="bxread">${T('{0} 下',n)}</div><button class="bx-hold" data-bx="dash">${T('抖一下')}</button></div><div class="bx-colc"><button class="bx-btn alt" data-bx="dashre">${T('重來')}</button><button class="bx-btn" data-bx="done" ${n?'':'disabled'}>${T('好了')}</button></div>`}
-  else if(s[0]==='heat'){const tg=bxHeatT(o);ins=T('按住加熱德利，到 {0}°C 放開（放開後還會再升一點點）',tg);
-    area=`<div class="bx-vis" id="bxv">${bxThermo(d.temp||18,tg)}</div><div class="bx-colc"><div class="bx-read" id="bxread">${Math.round(d.temp||18)}°C</div><button class="bx-hold" id="bxhold">${T('按住加熱')}</button><button class="bx-btn" data-bx="done" id="bxdone" ${(d.temp||18)>30?'':'disabled'}>${T('好了')}</button></div>`}
-  else if(s[0]==='top'||s[0]==='pour'){const pour=s[0]==='pour',tg=pour?s[1]:s[2];
-    if(BX.d.lvFor!==BX.si){BX.d.lvFor=BX.si;if(pour){d.lv=0;d.pourG=true}else{d.lv0=Math.min(.42,Object.values(d.ml).reduce((a,b)=>a+b,0)/(r.g==='rock'?190:260)+(d.ice?.06:0));d.lv=d.lv0}}
-    ins=pour?T('按住右邊倒酒：手指越上面倒越快，接近黃線要放慢，到線就放開'):T('按住右邊倒{0}：手指越上面倒越快，接近黃線要放慢',bxLN(s[1]))+(BXFIZZ.includes(s[1])?T('（倒太快氣泡會跑掉）'):'');
-    area=`<div class="bx-vis" id="bxv">${bxGlassSV(r.g,bxLook({target:tg}),200,240)}</div><div class="bx-pad strip" id="bxpad"><span>${T('快')}</span><span>${T('慢')}</span></div><div class="bx-colc">${!pour&&BXFIZZ.includes(s[1])?`<div id="bxmet">${bxMeter(d.fizz,[75,100],T('氣泡'))}</div>`:''}<button class="bx-btn" data-bx="done" id="bxdone" ${d.lv>(d.lv0||0)+.1?'':'disabled'}>${T('好了')}</button></div>`}
-  else if(s[0]==='gar'){if(!(d.lv>.01))d.lv=bxAutoLv();const pg=d.garPg||0;ins=T('要的話加裝飾（可以不加），然後出酒');
-    area=`<div class="bx-vis">${bxGlassSV(r.g,bxLook(),120,144)}</div><div class="bx-pg">${BXGPG.map((p,i)=>`<button class="bx-btn alt${i===pg?' on':''}" data-bx="garpg" data-v="${i}">${i?T('配料 B'):T('配料 A')}</button>`).join('')}</div><div class="bx-grid">${BXGPG[pg].map(k=>{const own=bxGarOwn(k);return `<button class="bx-chip${d.gar.includes(k)?' on':''}${own?'':' lock'}" data-bx="gar" data-v="${k}" ${own?'':'disabled'}><i style="background:${BXGAR[k][1]}"></i>${own?'':'🔒'}${T(BXGAR[k][0])}</button>`}).join('')}</div><div class="bx-colc"><button class="bx-btn big serve" data-bx="serve">${T('出酒')}</button></div>`}
-  return bxStepsBar()+`<p class="bx-ins">${ins}</p><div class="bx-area">${area}</div>`}
 /* ---- 量酒 ---- */
 function bxMSpec(o,l,base){const c=o.c,first=bxFirst(o.k);let f=null;
   if(l===first&&c.includes('strong'))f=[1.15,1.5,1.2,1.4];
@@ -3338,14 +3296,6 @@ function bxMSpec(o,l,base){const c=o.c,first=bxFirst(o.k);let f=null;
   if(l==='syrup'&&c.includes('sweet'))f=[1.3,1.9,1.4,1.7];
   if(f)return {t:base,lo:base*f[0],hi:base*f[1],plo:base*f[2],phi:base*f[3],cond:true,cap:Math.max(30,base*2)};
   return {t:base,lo:base-5,hi:base+5,plo:base-2,phi:base+2,cond:false,cap:Math.max(30,base*2)}}
-function bxJigger(s,sp,ml){const Y=v=>270-v/sp.cap*240,c=BXL[s[1]][1];let o=`<svg viewBox="0 0 150 290" width="124" height="240">`;
-  o+=`<defs><clipPath id="bxjc"><path d="M30 26L40 270H110L120 26Z"/></clipPath></defs><path d="M30 26L40 270H110L120 26Z" fill="#dfe8ec" fill-opacity=".25"/>`;
-  if(!sp.cond)o+=`<rect x="22" y="${Y(sp.hi)}" width="106" height="${Y(sp.lo)-Y(sp.hi)}" fill="#f0c040" opacity=".25"/><rect x="22" y="${Y(sp.phi)}" width="106" height="${Y(sp.plo)-Y(sp.phi)}" fill="#5fd06a" opacity=".55"/>`;
-  o+=`<g clip-path="url(#bxjc)"><rect x="0" y="${Y(Math.min(ml,sp.cap)).toFixed(1)}" width="150" height="300" fill="${c}" fill-opacity=".9"/></g>`;
-  for(let v=5;v<sp.cap;v+=5){const y=Y(v),big=v%10===0;o+=`<path d="M${big?112:116} ${y}H122" stroke="#f3dfb4" stroke-width="${big?2:1}"/>`+(big?`<text x="126" y="${y+4}" font-size="11" fill="#f3dfb4">${v}</text>`:'')}
-  o+=`<path d="M22 ${Y(sp.t)}H128" stroke="#fff" stroke-width="2" stroke-dasharray="4 3"/><text x="2" y="${Y(sp.t)+4}" font-size="11" fill="#fff">${T('標準')}</text>`;
-  if(sp.cond)o+=`<text x="75" y="${(sp.lo>sp.t?Y(sp.t)-10:Y(sp.t)+20)}" text-anchor="middle" font-size="18" fill="#ffd23a" font-weight="900">${sp.lo>sp.t?'▲':'▼'}</text>`;
-  return o+`<path d="M30 26L40 270H110L120 26Z" fill="none" stroke="#c9ced6" stroke-width="5" stroke-linejoin="round"/><path d="M24 22H126" stroke="#c9ced6" stroke-width="6" stroke-linecap="round"/></svg>`}
 function bxMEval(s){const o=bxOrder(),d=BX.d,sp=bxMSpec(o,s[1],s[2]),v=d.ml[s[1]]||0,n=bxLN(s[1]);
   const q=v>=sp.plo&&v<=sp.phi?1:v>=sp.lo&&v<=sp.hi?.75:Math.max(0,.5-Math.min(Math.abs(v-sp.lo),Math.abs(v-sp.hi))/s[2]);
   bxComp('m'+s[1],q,1.2,T('比例很準'),v<sp.lo?T('{0}倒太少了',n):T('{0}倒太多了',n));
@@ -3357,24 +3307,145 @@ function bxMRelease(){const s=bxCur(),{q,sp,v}=bxMEval(s),a=$('bxafter');if(!a)r
   if(!sp.cond&&q>=.75){a.innerHTML=`<b class="bx-ok">${q>=1?T('完美！'):T('不錯')}</b>`;BXTM=setTimeout(()=>{if(bxCur()===s)bxNext()},650);return}
   a.innerHTML=(!sp.cond&&q<.75?`<b class="bx-bad">${v<sp.lo?T('太少了'):T('太多了')}</b>`:'')+`<button class="bx-btn alt" data-bx="redo">${T('倒掉重量')}</button><button class="bx-btn" data-bx="next">${T('下一步')}</button>`}
 /* ---- 攪拌 ---- */
-function bxStirArt(ang,fp){const o=bxOrder(),d=BX.d,c=Object.keys(d.ml).length?BXL[Object.keys(d.ml)[0]][1]:'#c8781e';let s=`<svg viewBox="0 0 280 280" width="280" height="280"><circle cx="140" cy="140" r="128" fill="${tpShade(c,.15)}" stroke="#c9ced6" stroke-width="8"/><circle cx="140" cy="140" r="118" fill="none" stroke="#fff" stroke-width="2" opacity=".25"/>`;
-  if(d.ice==='ball')s+=`<circle cx="${140+Math.cos(ang)*14}" cy="${140+Math.sin(ang)*14}" r="62" fill="#f2fbff" fill-opacity=".75" stroke="${O}" stroke-width="2"/>`;
-  else for(let i=0;i<5;i++){const a=ang+i*1.257,rr=i%2?58:82;s+=`<rect x="-18" y="-18" width="36" height="36" rx="7" transform="translate(${(140+Math.cos(a)*rr).toFixed(1)} ${(140+Math.sin(a)*rr).toFixed(1)}) rotate(${(a*57).toFixed(0)})" fill="#f2fbff" fill-opacity=".78" stroke="${O}" stroke-width="2"/>`}
-  if(fp)s+=`<circle cx="${fp.x}" cy="${fp.y}" r="11" fill="#c9a24a" stroke="${O}" stroke-width="2"/><path d="M${fp.x} ${fp.y}L${140+(fp.x-140)*.2} ${140+(fp.y-140)*.2}" stroke="#c9a24a" stroke-width="5" stroke-linecap="round" opacity=".5"/>`;
-  else s+=`<text x="140" y="146" text-anchor="middle" font-size="18" fill="#fff" opacity=".7">${T('在這裡畫圈')} ⟳</text>`;
-  return s+'</svg>'}
 /* ---- 搖盪 ---- */
-function bxShakerArt(dx,dy){return `<svg viewBox="0 0 360 250" width="346" height="240"><text x="180" y="236" text-anchor="middle" font-size="16" fill="#fff" opacity=".55">⟵ ${T('來回滑動')} ⟶</text><g transform="translate(${180+dx} ${118+dy}) rotate(${(dx*.3).toFixed(1)})"><path d="M-30 -10L-24 80H24L30 -10Z" fill="#c9ced6" stroke="${O}" stroke-width="4" stroke-linejoin="round"/><path d="M-26 -10L-20 -56H20L26 -10Z" fill="#b8bec8" stroke="${O}" stroke-width="4" stroke-linejoin="round"/><rect x="-11" y="-76" width="22" height="22" rx="6" fill="#b8bec8" stroke="${O}" stroke-width="3.5"/><path d="M-18 0L-14 70" stroke="#fff" stroke-width="5" opacity=".6" stroke-linecap="round"/><path d="M-29 4H29" stroke="#8e959e" stroke-width="3"/></g></svg>`}
 /* ---- 加熱 ---- */
-function bxThermo(t,tg){const Y=v=>262-(v-20)/45*230;let s=`<svg viewBox="0 0 250 290" width="207" height="240"><rect x="20" y="150" width="130" height="120" rx="12" fill="#5a6a78" stroke="${O}" stroke-width="3"/><rect x="26" y="158" width="118" height="22" fill="#9fd0e8" opacity=".6"/>`;
-  s+=`<g transform="translate(40 40)"><path d="M28 20Q22 14 30 10H42Q50 14 44 20Q58 60 56 110Q56 132 36 132Q16 132 16 110Q14 60 28 20Z" fill="#f4ecd8" stroke="${O}" stroke-width="3"/><path d="M20 80Q36 88 52 80" stroke="#3a6aa8" stroke-width="4" fill="none"/></g>`;
-  if(t>34)s+=`<path d="M60 40q-6-10 0-18q6-8 0-16M90 40q-6-10 0-18q6-8 0-16" stroke="#fff" stroke-width="3" fill="none" opacity="${Math.min(.8,(t-34)/20)}" stroke-linecap="round"/>`;
-  s+=`<rect x="190" y="20" width="16" height="246" rx="8" fill="#fff" stroke="${O}" stroke-width="2.5"/><rect x="193" y="${Y(Math.max(20,Math.min(65,t))).toFixed(1)}" width="10" height="${(262-Y(Math.max(20,Math.min(65,t)))).toFixed(1)}" fill="#e0412c"/><circle cx="198" cy="270" r="14" fill="#e0412c" stroke="${O}" stroke-width="2.5"/>`;
-  [[40,'ぬる燗'],[45,'上燗'],[50,'熱燗'],[55,'飛び切り']].forEach(([v,n])=>{s+=`<path d="M180 ${Y(v)}H${v===tg?212:190}" stroke="${v===tg?'#ffd23a':'#f3dfb4'}" stroke-width="${v===tg?3:1.5}"/><text x="176" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="${v===tg?'#ffd23a':'#f3dfb4'}" font-weight="${v===tg?900:400}">${n} ${v}°</text>`});
-  return s+'</svg>'}
 /* ---- 綁定手勢 ---- */
 function bxPt(e,el){const r=el.getBoundingClientRect(),k=r.width/(el.offsetWidth||1)||1;return {x:(e.clientX-r.left)/k,y:(e.clientY-r.top)/k,w:el.offsetWidth,h:el.offsetHeight}}
 function bxLoop(fn){let last=performance.now();cancelAnimationFrame(BXRAF);const f=now=>{const dt=Math.min(.05,(now-last)/1000);last=now;if(fn(dt)!==false)BXRAF=requestAnimationFrame(f);else BXRAF=0};BXRAF=requestAnimationFrame(f)}
+/* ==== 月影酒吧・場景版（2026/11/17）：吧台、酒櫃、酒瓶、工具、杯子、配料全部用作者給的圖（img/bx-*.webp）；
+   酒量、冰塊、氣泡、液面這些會一直變的東西才用程式畫。座標用「場景」的百分比與 em（1em = 場景高度的 1%），
+   場景照背景圖比例 2576×1438 撐滿寬度、貼底；手機橫向太矮時上方多裁一點，平板太高時上方補暗色。 ==== */
+const BXA={"bg":["bx-bg-09c0d1ed.webp",2576,1438],"cab":["bx-cab-20f54f8e.webp",2576,1438],"awamori":["bx-awamori-6024762c.webp",266,360],"bitter":["bx-bitter-44fbca57.webp",106,360],"bitters":["bx-bitters-19e427fe.webp",123,360],"brandy":["bx-brandy-0a32f3db.webp",210,360],"calpis":["bx-calpis-01a1f6ec.webp",135,360],"coffee":["bx-coffee-b6e378fb.webp",129,360],"daiginjo":["bx-daiginjo-e45ce47c.webp",114,360],"darkrum":["bx-darkrum-32cd4c11.webp",174,360],"g_choko":["bx-g_choko-d30027e7.webp",226,277],"g_coupe":["bx-g_coupe-395baab0.webp",185,264],"g_high":["bx-g_high-3116d729.webp",119,277],"g_martini":["bx-g_martini-762fc5dc.webp",196,276],"g_masu":["bx-g_masu-f88686ed.webp",226,287],"g_rock":["bx-g_rock-34766f49.webp",178,240],"gar_cherry":["bx-gar_cherry-4845ad1a.webp",192,240],"gar_cucumber":["bx-gar_cucumber-8d0cca9a.webp",454,220],"gar_ginger":["bx-gar_ginger-b31aa932.webp",259,240],"gar_gold":["bx-gar_gold-7402bc9c.webp",284,163],"gar_kuro":["bx-gar_kuro-ccf33d50.webp",253,240],"gar_lemon":["bx-gar_lemon-028c3bf6.webp",239,240],"gar_lime":["bx-gar_lime-ad96c650.webp",239,240],"gar_matsu":["bx-gar_matsu-08b1e768.webp",223,240],"gar_mint":["bx-gar_mint-d7df08f3.webp",278,240],"gar_olive":["bx-gar_olive-4f08fffc.webp",216,240],"gar_orangepeel":["bx-gar_orangepeel-0abb0685.webp",300,240],"gar_sakura":["bx-gar_sakura-f4d4764d.webp",251,240],"gar_salt":["bx-gar_salt-9a339ceb.webp",363,217],"gar_sansho":["bx-gar_sansho-06d76ca1.webp",217,240],"gar_shiso":["bx-gar_shiso-6f7853c2.webp",204,240],"gar_sudachi":["bx-gar_sudachi-3bc0ff26.webp",259,240],"gar_ume":["bx-gar_ume-dbfded1e.webp",254,240],"gar_yuzupeel":["bx-gar_yuzupeel-0a9f1606.webp",353,240],"gin":["bx-gin-9e5dd751.webp",172,360],"ginger":["bx-ginger-07300f55.webp",123,360],"grapef":["bx-grapef-1b901cc4.webp",298,360],"grenadine":["bx-grenadine-62883a1b.webp",106,360],"honey":["bx-honey-5f7a8136.webp",361,360],"imo":["bx-imo-cc6d5e40.webp",172,360],"kuromitsu":["bx-kuromitsu-f6c2d795.webp",284,360],"lemon":["bx-lemon-d07085b4.webp",125,360],"lime":["bx-lime-ea835587.webp",124,360],"lychee":["bx-lychee-facf705e.webp",123,360],"matchal":["bx-matchal-6ee94bd3.webp",153,360],"nigori":["bx-nigori-259a97f1.webp",118,360],"oolong":["bx-oolong-7a9391bb.webp",298,360],"orange":["bx-orange-80a68a45.webp",298,360],"peach":["bx-peach-8e10eecf.webp",204,360],"rum":["bx-rum-c6eca680.webp",170,360],"sake":["bx-sake-83b7a3e3.webp",114,360],"sakural":["bx-sakural-1a1c6b93.webp",100,360],"shisol":["bx-shisol-080b571b.webp",132,360],"shochu":["bx-shochu-d34113b1.webp",109,360],"smalt":["bx-smalt-a5175425.webp",127,360],"soda":["bx-soda-00711e7a.webp",139,360],"sudachi":["bx-sudachi-55899201.webp",123,360],"syrup":["bx-syrup-685d7337.webp",132,360],"t_bucket":["bx-t_bucket-75602287.webp",431,400],"t_iceball":["bx-t_iceball-1a8c1844.webp",400,400],"t_jigger":["bx-t_jigger-c3643f54.webp",193,400],"t_kan":["bx-t_kan-69ae12e4.webp",453,400],"t_matcha":["bx-t_matcha-05a993e2.webp",439,400],"t_mixglass":["bx-t_mixglass-41571639.webp",290,400],"t_shaker":["bx-t_shaker-4826b5ed.webp",200,400],"t_spoon":["bx-t_spoon-819159da.webp",420,400],"t_strainer":["bx-t_strainer-b832b290.webp",476,400],"tea":["bx-tea-577b1eae.webp",299,360],"tequila":["bx-tequila-f2d2372c.webp",147,360],"tomato":["bx-tomato-1693487e.webp",226,360],"tonic":["bx-tonic-f29b25ca.webp",126,360],"triple":["bx-triple-c5c580ef.webp",199,360],"ume":["bx-ume-6a6d202f.webp",173,360],"vermd":["bx-vermd-4880a9f8.webp",114,360],"vermr":["bx-vermr-17423cee.webp",115,360],"vodka":["bx-vodka-6d621cf1.webp",93,360],"water":["bx-water-263eb650.webp",128,360],"whisky":["bx-whisky-b76e102c.webp",169,360],"yuzu":["bx-yuzu-8f601858.webp",125,360],"yuzushu":["bx-yuzushu-f3f2ce01.webp",173,360]};
+const bxSrc=n=>BXA[n]?'img/'+BXA[n][0]:'';
+const bxImg=(n,c,st)=>`<img class="${c||''}" src="${bxSrc(n)}" alt="" draggable="false"${st?` style="${st}"`:''}>`;
+/* 瓶子在畫面上的相對高度（苦精是小瓶、罐子比較矮） */
+const BXBH={bitters:.62,awamori:.8,sake:1.08,kuromitsu:.68,honey:.7,tomato:.7,tea:.78,oolong:.78,grapef:.78,orange:.78,calpis:.85,soda:.92,tonic:.9,ginger:.9,lime:.82,lemon:.82,yuzu:.82,sudachi:.82,syrup:.85,grenadine:.9};
+/* 杯子：s 圖、p 杯內形狀（圖片像素座標）、t/b 杯口／杯底、l/r 左右、h 放在吧台墊上的高度（場景高度 %） */
+const BXG2={high:{s:'g_high',p:'M6 12L9 218H110L113 12Z',t:12,b:218,l:7,r:112,h:31},
+  rock:{s:'g_rock',p:'M5 14L12 150H166L173 14Z',t:14,b:150,l:8,r:170,h:22},
+  coupe:{s:'g_coupe',p:'M3 16Q8 112 92 118Q177 112 182 16Z',t:16,b:118,l:3,r:182,h:26},
+  martini:{s:'g_martini',p:'M4 16L98 128L192 16Z',t:16,b:128,l:4,r:192,h:26},
+  choko:{s:'g_choko',p:'M147 206Q150 248 184 250Q218 248 221 206Z',t:206,b:250,l:147,r:221,h:24},
+  masu:{s:'g_masu',p:'M67 10L69 178H154L156 10Z',t:10,b:178,l:67,r:156,h:27}};
+const BXGARP_RIM=['yuzupeel','lime','lemon','orangepeel','sudachi','mint','shiso','ginger','matsu'],BXGAR_FLOAT=['sakura','gold','sansho','kuro'];
+/* 杯子裡的液體、冰、氣泡（畫在杯子圖片後面） */
+function bxLiq(g,o){o=o||{};const G=BXG2[g],id='bxq'+(++BXCID),lv=Math.max(0,Math.min(1.02,o.lv||0)),y=G.b-lv*(G.b-G.t),iw=G.r-G.l,mx=(G.l+G.r)/2;
+  let s=`<defs><clipPath id="${id}"><path d="${G.p}"/></clipPath></defs>`;
+  if(o.cold)s+=`<path d="${G.p}" fill="#e6f6ff" fill-opacity=".16"/>`;
+  if(lv>0)s+=`<g clip-path="url(#${id})"><rect x="0" y="${y.toFixed(1)}" width="${G.r+10}" height="${G.b}" fill="${o.col||'#e0c080'}" fill-opacity=".9"/><path d="M0 ${y.toFixed(1)}H${G.r+10}" stroke="#fff" stroke-width="${(iw/40).toFixed(1)}" opacity=".6"/></g>`;
+  const sw=Math.max(1.2,iw/70);
+  if(o.ice==='cube'){const c=iw*(g==='high'?.62:.34);s+=`<g clip-path="url(#${id})">${[0,1,2,3].map(i=>{const cx=mx+(i%2?1:-1)*iw*(g==='high'?.09:.17),cy=G.b-c*.62-i*c*.82,r=[-8,10,4,-12][i];return cy-c/2>G.t-c*.2?`<rect x="${(cx-c/2).toFixed(1)}" y="${(cy-c/2).toFixed(1)}" width="${c.toFixed(1)}" height="${c.toFixed(1)}" rx="${(c*.18).toFixed(1)}" transform="rotate(${r} ${cx.toFixed(1)} ${cy.toFixed(1)})" fill="#f2fbff" fill-opacity=".3" stroke="#cfe6f0" stroke-width="${sw}"/>`:''}).join('')}</g>`}
+  if(o.ice==='ball'){const r=Math.min(iw*.38,(G.b-G.t)*.42);s+=`<circle cx="${mx}" cy="${(G.b-r*1.02).toFixed(1)}" r="${r.toFixed(1)}" fill="#f2fbff" fill-opacity=".5" stroke="#9fc4d6" stroke-width="${sw}"/><path d="M${(mx-r*.5).toFixed(1)} ${(G.b-r*1.5).toFixed(1)}q${(r*.25).toFixed(1)} ${(-r*.3).toFixed(1)} ${(r*.6).toFixed(1)} ${(-r*.25).toFixed(1)}" stroke="#fff" stroke-width="${sw*1.6}" fill="none" stroke-linecap="round" opacity=".8"/>`}
+  if(o.ice==='crush')s+=`<g clip-path="url(#${id})">${Array.from({length:30},(_,i)=>{const x=G.l+iw*.08+((i*37)%Math.round(iw*.84)),yy=G.b-iw*.05-((i*23)%Math.max(8,Math.round((G.b-G.t)*.72))),k=iw/14;return `<path d="M${x} ${yy}l${k} ${-k*.6} ${k*.8} ${k*.8} ${-k*.6} ${k}z" fill="#f2fbff" fill-opacity=".7" stroke="#9fc4d6" stroke-width="${sw*.7}"/>`}).join('')}</g>`;
+  if(o.fizz&&lv>0){const n=Math.round(o.fizz/5);s+=`<g clip-path="url(#${id})">${Array.from({length:n},(_,i)=>{const x=G.l+iw*.08+((i*29)%Math.round(iw*.84)),yy=y+4+((i*17)%Math.max(4,Math.round(G.b-y-6)));return `<circle cx="${x}" cy="${yy.toFixed(1)}" r="${(iw/60+1).toFixed(1)}" fill="none" stroke="#fff" stroke-width="${(sw*.7).toFixed(1)}" opacity=".85"/>`}).join('')}</g>`}
+  if(o.foam&&lv>0)s+=`<g clip-path="url(#${id})"><rect x="0" y="${y.toFixed(1)}" width="${G.r+10}" height="${(iw*.06).toFixed(1)}" fill="#fffdf4" opacity=".85"/></g>`;
+  return s}
+/* 杯子上層：冰杯的霜、溫杯的熱氣、目標線、配料 */
+function bxTopArt(g,o){o=o||{};const G=BXG2[g],lv=Math.max(0,Math.min(1.02,o.lv||0)),y=G.b-lv*(G.b-G.t),iw=G.r-G.l,mx=(G.l+G.r)/2;let s='';
+  if(o.cold)s+=`<path d="${G.p}" fill="none" stroke="#fff" stroke-width="${(iw/45).toFixed(1)}" stroke-dasharray="${(iw/60).toFixed(1)} ${(iw/22).toFixed(1)}" opacity=".7"/>`;
+  if(o.warm)s+=`<path d="M${mx-iw*.15} ${G.t-6}q-8-14 0-26q8-12 0-24M${mx+iw*.12} ${G.t-6}q-8-14 0-26q8-12 0-24" stroke="#fff" stroke-width="${Math.max(2,iw/30)}" fill="none" opacity=".75" stroke-linecap="round"/>`;
+  if(o.target!=null){const ty=G.b-o.target*(G.b-G.t);s+=`<path d="M${G.l-8} ${ty.toFixed(1)}H${G.r+8}" stroke="#ffd23a" stroke-width="${Math.max(2.5,iw/28).toFixed(1)}" stroke-dasharray="${(iw/14).toFixed(1)} ${(iw/22).toFixed(1)}"/>`}
+  const gw=Math.max(46,Math.min(92,iw*.62));let rim=0;
+  (o.gar||[]).forEach(k=>{const n='gar_'+k;if(!BXA[n])return;const a=BXA[n],ar=a[1]/a[2];
+    if(k==='salt'){s+=`<path d="M${G.l} ${G.t}H${G.r}" stroke="#fff" stroke-width="${(iw/14).toFixed(1)}" stroke-dasharray="${(iw/40).toFixed(1)} ${(iw/30).toFixed(1)}" stroke-linecap="round"/>`;return}
+    if(BXGARP_RIM.includes(k)){const w=gw,h=w/ar,x=G.r-w*.55-rim*w*.45,yy=G.t-h*.55;rim++;s+=`<image href="${bxSrc(n)}" x="${x.toFixed(1)}" y="${yy.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"/>`;return}
+    if(BXGAR_FLOAT.includes(k)){const w=gw*.62,h=w/ar;s+=`<image href="${bxSrc(n)}" x="${(mx-w/2).toFixed(1)}" y="${(Math.max(G.t,y)-h*.6).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"/>`;return}
+    if(k==='cucumber'){const h=(G.b-G.t)*.8,w=h*ar;s+=`<image href="${bxSrc(n)}" x="${(G.l+iw*.05).toFixed(1)}" y="${(G.t+(G.b-G.t)*.1).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" opacity=".85" transform="rotate(80 ${(G.l+iw*.3).toFixed(1)} ${((G.t+G.b)/2).toFixed(1)})"/>`;return}
+    const w=gw*.6,h=w/ar,yy=Math.max(G.t+h*.2,y)-h*(k==='ume'?-.6:.55);s+=`<image href="${bxSrc(n)}" x="${(mx-w/2).toFixed(1)}" y="${(k==='ume'?G.b-h*1.1:yy).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"/>`});
+  return s}
+/* 完整的一杯（靜態用：結果、選杯、配方手帳）；w/h 不給就撐滿外框 */
+function bxGlassSV(g,o,w,h){const G=BXG2[g],a=BXA[G.s];return `<svg viewBox="0 0 ${a[1]} ${a[2]}" ${w?`width="${w}" height="${h}"`:'width="100%" height="100%"'} preserveAspectRatio="xMidYMax meet">${bxLiq(g,o)}<image href="${bxSrc(G.s)}" width="${a[1]}" height="${a[2]}"/>${bxTopArt(g,o)}</svg>`}
+function brIcon(k){const r=BXR[k],G=BXG2[r.g],a=BXA[G.s],o={lv:r.g==='choko'?.75:r.g==='masu'?.9:.62,col:bxMlCol(Object.fromEntries(r.st.filter(x=>x[0]==='m').map(x=>[x[1],x[2]])))||BXL[bxFirst(k)][1],ice:r.ice,fizz:r.st.some(s=>s[0]==='top'&&BXFIZZ.includes(s[1]))?60:0,foam:r.st.some(s=>s[0]==='shake'),gar:r.opt.slice(0,1)};
+  return `<ellipse cx="50" cy="94" rx="40" ry="6" fill="#5a3418" opacity=".55"/><svg x="8" y="2" width="84" height="94" viewBox="0 0 ${a[1]} ${a[2]}" preserveAspectRatio="xMidYMax meet">${bxLiq(r.g,o)}<image href="${bxSrc(G.s)}" width="${a[1]}" height="${a[2]}"/>${bxTopArt(r.g,o)}</svg>`}
+/* 吧台墊上正在做的這杯：液體一層（會一直更新）＋杯子圖＋上層 */
+function bxMatHTML(g,o){const G=BXG2[g],a=BXA[G.s];return `<div class="bxs-mat" style="height:${G.h}%;aspect-ratio:${a[1]}/${a[2]}"><svg id="bxmatl" viewBox="0 0 ${a[1]} ${a[2]}" width="100%" height="100%">${bxLiq(g,o)}</svg>${bxImg(G.s)}<svg id="bxmatt" viewBox="0 0 ${a[1]} ${a[2]}" width="100%" height="100%">${bxTopArt(g,o)}</svg></div>`}
+function bxMatUpd(tg){const r=BXR[bxOrder().k],l=$('bxmatl'),t=$('bxmatt'),o=bxLook(tg!=null?{target:tg}:{});if(l)l.innerHTML=bxLiq(r.g,o);if(t)t.innerHTML=bxTopArt(r.g,o)}
+/* 量酒：量酒器旁邊的刻度管 */
+function bxJigger(s,sp,ml){const Y=v=>262-v/sp.cap*236,c=BXL[s[1]][1];let o=`<svg viewBox="0 0 120 280" width="100%" height="100%"><rect x="34" y="20" width="40" height="248" rx="14" fill="#1a0e08" fill-opacity=".55" stroke="#e8d8b0" stroke-width="3"/>`;
+  if(!sp.cond)o+=`<rect x="36" y="${Y(sp.hi)}" width="36" height="${Y(sp.lo)-Y(sp.hi)}" fill="#f0c040" opacity=".3"/><rect x="36" y="${Y(sp.phi)}" width="36" height="${Y(sp.plo)-Y(sp.phi)}" fill="#5fd06a" opacity=".7"/>`;
+  o+=`<clipPath id="bxjc"><rect x="37" y="22" width="34" height="244" rx="12"/></clipPath><g clip-path="url(#bxjc)"><rect x="0" y="${Y(Math.min(ml,sp.cap)).toFixed(1)}" width="120" height="300" fill="${c}" fill-opacity=".9"/></g>`;
+  for(let v=5;v<sp.cap;v+=5){const y=Y(v),big=v%10===0;o+=`<path d="M${big?74:78} ${y}H84" stroke="#f3dfb4" stroke-width="${big?2:1}"/>`+(big?`<text x="88" y="${y+4}" font-size="12" fill="#f3dfb4">${v}</text>`:'')}
+  o+=`<path d="M26 ${Y(sp.t)}H82" stroke="#fff" stroke-width="2.5" stroke-dasharray="4 3"/><text x="30" y="${Y(sp.t)-5}" font-size="12" text-anchor="end" fill="#fff" font-weight="800">${T('標準')}</text>`;
+  if(sp.cond)o+=`<text x="54" y="${(sp.lo>sp.t?Y(sp.t)-12:Y(sp.t)+24)}" text-anchor="middle" font-size="20" fill="#ffd23a" font-weight="900">${sp.lo>sp.t?'▲':'▼'}</text>`;
+  return o+`<path d="M44 30V250" stroke="#fff" stroke-width="3" opacity=".35" stroke-linecap="round"/></svg>`}
+/* 攪拌：攪拌杯裡的冰（畫在 #bxv）、吧勺（#bxspn 只改位置，不重建圖片） */
+function bxStirArt(ang,fp){const d=BX.d,lift=bxCur()[0]==='lift';let s=`<svg viewBox="0 0 280 280" width="100%" height="100%">`;
+  if(!lift){const mc=bxMlCol(d.ml);if(mc)s+=`<path d="M67 170L71 248Q72 254 80 254H210Q218 254 219 248L222 170Z" fill="${mc}" fill-opacity=".62"/><path d="M67 170H222" stroke="#fff" stroke-width="2.5" opacity=".5"/>`;if(d.ice==='ball')s+=`<circle cx="${(140+Math.cos(ang)*14).toFixed(1)}" cy="190" r="50" fill="#f2fbff" fill-opacity=".45" stroke="#9fc4d6" stroke-width="2"/>`;
+    else for(let i=0;i<5;i++){const a=ang+i*1.257,x=140+Math.cos(a)*62,y=150+i*20+Math.sin(a)*8,z=.75+.25*Math.sin(a);s+=`<rect x="-16" y="-16" width="32" height="32" rx="6" transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(a*57).toFixed(0)}) scale(${z.toFixed(2)})" fill="#f2fbff" fill-opacity=".6" stroke="#9fc4d6" stroke-width="2"/>`}}
+  if(fp)s+=`<circle cx="${fp.x.toFixed(0)}" cy="${fp.y.toFixed(0)}" r="16" fill="#ffd23a" fill-opacity=".35" stroke="#ffd23a" stroke-width="3"/>`;
+  else s+=`<ellipse cx="140" cy="${lift?150:120}" rx="96" ry="34" fill="none" stroke="#ffd23a" stroke-width="3" stroke-dasharray="10 8" opacity=".85"/><text x="140" y="${lift?206:62}" text-anchor="middle" font-size="22" font-weight="900" fill="#ffd23a" stroke="#1a0e08" stroke-width="4" paint-order="stroke">${T('在這裡畫圈')} ⟳</text>`;
+  return s+'</svg>'}
+function bxStirShow(ang,fp){const v=$('bxv');if(v)v.innerHTML=bxStirArt(ang,fp);const sp=$('bxspn');if(sp)sp.style.transform=`translate(${(Math.cos(ang)*14).toFixed(1)}%,0) rotate(${(-40+Math.sin(ang)*6).toFixed(1)}deg)`}
+/* 搖盪：只改雪克杯的位置 */
+function bxShakerArt(dx,dy){return ''}
+function bxShk(dx,dy){const e=$('bxshk');if(e)e.style.transform=`translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px) rotate(${(dx*.3).toFixed(1)}deg)`}
+/* 加熱：溫度計 */
+function bxThermo(t,tg){const Y=v=>262-(v-20)/45*230;let s=`<svg viewBox="0 0 120 290" width="100%" height="100%"><rect x="60" y="20" width="18" height="246" rx="9" fill="#fff" stroke="#3a2010" stroke-width="2.5"/><rect x="63.5" y="${Y(Math.max(20,Math.min(65,t))).toFixed(1)}" width="11" height="${(262-Y(Math.max(20,Math.min(65,t)))).toFixed(1)}" fill="#e0412c"/><circle cx="69" cy="270" r="15" fill="#e0412c" stroke="#3a2010" stroke-width="2.5"/>`;
+  [[40,'ぬる燗'],[45,'上燗'],[50,'熱燗'],[55,'飛び切り']].forEach(([v,n])=>{s+=`<path d="M50 ${Y(v)}H${v===tg?84:62}" stroke="${v===tg?'#ffd23a':'#f3dfb4'}" stroke-width="${v===tg?3:1.5}"/><text x="48" y="${Y(v)+4}" text-anchor="end" font-size="13" fill="${v===tg?'#ffd23a':'#f3dfb4'}" font-weight="${v===tg?900:500}" stroke="#1a0e08" stroke-width="3" paint-order="stroke">${n}</text><text x="88" y="${Y(v)+4}" font-size="12" fill="${v===tg?'#ffd23a':'#f3dfb4'}">${v}°</text>`});
+  return s+'</svg>'}
+/* 這一步要倒的東西（瓶子、雪克杯、攪拌杯） */
+function bxPourSrc(){const s=bxCur(),r=BXR[bxOrder().k];if(s[0]==='top'||s[0]==='m'||s[0]==='dash')return s[1];
+  if(r.st.some(x=>x[0]==='shake'))return 't_shaker';if(r.st.some(x=>x[0]==='stir'))return 't_mixglass';if(r.st.some(x=>x[0]==='heat'))return 't_kan';return bxFirst(bxOrder().k)}
+/* ---- 整個畫面 ---- */
+function bxRender(){const el=$('barx');if(!el||!BX)return;const o=bxOrder(),st=BX.stage,r=BXR[o.k];
+  const k=Math.max(1,Math.min(W/1000,H/560)),wl=W/k,hl=H/k,sh=wl*1438/2576,over=sh-hl,bot=over>0?-Math.min(over*.35,sh*.06):0;
+  const who=CHARS.find(c=>c.spr===o.who),name=who?T(who.name):'';
+  const scene=(inner,bg)=>{if(bg==='cab'){const b2=Math.min(0,hl-sh*.73);return `<div class="bxs" style="height:${sh.toFixed(1)}px;bottom:${b2.toFixed(1)}px;--u:${(sh/100).toFixed(3)}px">${bxImg('cab','bxs-bg')}${inner}</div>`}return `<div class="bxs" style="height:${sh.toFixed(1)}px;bottom:${bot.toFixed(1)}px;--u:${(sh/100).toFixed(3)}px">${bxImg('bg','bxs-bg')}${inner}</div>`};
+  let html;
+  if(BX.view==='cab'&&(st==='arrive'||st==='make'))html=scene(bxCabScene(),'cab')+`<div class="bxc-cabh"><b>🍶 ${T('酒櫃')}</b><span>${T('點酒瓶拿到手邊，最多 3 瓶（滿了會放回最早拿的）。亮起來的是這杯要用的酒。')}</span></div><div class="bxc-right">${bxHandChip()}<button class="bxc-turn" data-bx="turn">↻ ${T('轉回吧台')}</button></div>`;
+  else{
+    const card=`<div class="bxc-card"><h4>${o.tut?'<span class="bx-tag">'+T('教學')+'</span>':''}${dishTitle(o.k)}</h4><div><b>${T('必要條件')}：</b><span class="rq">${o.c.map(c=>bxCondZH(o.k,c)).join('、')}</span></div>${r.opt.length?`<div><b>${T('可選')}：</b>${r.opt.map(g=>T(BXGAR[g][0])).join('／')}？</div>`:''}${st==='arrive'?`<div class="bx-rec"><b>${T('酒譜')}：</b>${bxStepsText(o.k)}</div>`:''}</div>`;
+    const say=st==='res'||st==='talk'?BX.sayJP||'':`「${bxSay(o)}」`,sub=st==='arrive'?T('（{0}）{1}',name,o.c.map(c=>bxCondZH(o.k,c)).join('、')):st==='res'||st==='talk'?BX.sayZH||'':name;
+    const sp=SPR[o.who],cust=sp?`<div class="bxs-cust"><img src="${sp[BX.mood||'ok']||sp.ok}" alt="" draggable="false"></div>`:'';
+    let inner=cust,left='',panel='';
+    const mk=st==='make',cur=mk?bxCur():null,z=mk?bxStageHTML():null,showGlass=mk&&BX.d.g&&cur[0]!=='glass';
+    if(showGlass)inner+=bxMatHTML(BX.d.g,bxLook(cur[0]==='top'||cur[0]==='pour'?{target:cur[0]==='pour'?cur[1]:cur[2]}:{}));
+    if(st==='arrive'||mk)inner+=bxHandScene();
+    if(st==='arrive'){left=`<p class="bxc-ins">${T('這位客人點了 {0}。材料 {1}・售價 {2}',dishTitle(o.k),yen(ITEMS[o.k].cost),yen(ITEMS[o.k].price))}${bxSt().xp[o.k]?'　'+T('（做過 {0} 杯）',bxSt().xp[o.k]):''}</p>${BX.tut&&BX.i===0?`<p class="bxc-tip">${T('第一天是教學：客人會清楚說要什麼，每一步上面都有說明，跟著做就好。做錯了客人會告訴你哪裡不對，還能重做一次。')}<br>${T('酒放在你背後的酒櫃：按「↻ 轉身」去拿，拿到手邊（最多 3 瓶）才能量。蘇打、茶、果汁、糖漿在吧台下面，不用轉身。')}</p>`:''}`;
+      inner+=`<div class="bxz bxz-c"><button class="bxb big" data-bx="start">${T('開始調酒')}</button></div>`}
+    else if(mk){left=bxStepsBar()+`<p class="bxc-ins">${z.ins}</p>`;inner+=z.scene}
+    else panel=`<div class="bxc-panel">${st==='res'?BX.resHTML:st==='talk'?BX.talkHTML:BX.endHTML||''}</div>`;
+    html=scene(inner)+`<div class="bxc-left"><div class="bxc-say"><b>${say}</b><small>${sub}</small></div>${left?`<div class="bxc-box">${left}</div>`:''}</div><div class="bxc-rcol">${card}<div class="bxc-right2"><button class="bxc-btn" data-bx="book">📖 ${T('配方手帳')}</button>${st==='arrive'||mk?`<button class="bxc-turn" data-bx="turn">↻ ${T('轉身')}<small>${T('去酒櫃拿酒')}</small></button>`:''}<span class="bxc-cnt">${T('客人 {0}/{1}',BX.i+1,BX.q.length)}</span></div></div>${panel}`}
+  const fl=BX.flip;BX.flip=0;
+  el.innerHTML=`<div class="bx-in bxv2" style="width:${(100/k).toFixed(3)}%;height:${(100/k).toFixed(3)}%;transform:scale(${k.toFixed(4)})"><div class="bx-face${fl?' flip':''}">${html}</div><div class="bx-msg hide" id="bxmsg"></div></div>`;
+  const hd=$('hud'),bi=el.firstElementChild;if(hd&&bi){const hr=hd.getBoundingClientRect(),br=bi.getBoundingClientRect(),sc=br.height/(H/k)||1,ov=Math.max(0,hr.bottom-br.top)/sc;if(hr.height&&ov>0&&ov<H/k/3)bi.style.setProperty('--hudt',ov.toFixed(0)+'px')}
+  if(st==='make'&&BX.view!=='cab')bxBind();renderHUD()}
+/* 吧台右邊：手邊的 3 瓶酒 */
+function bxHandScene(){const cur=BX.stage==='make'?bxCur():null;return [0,1,2].map(i=>{const l=BX.hand[i],x=79+i*8;return `<div class="bxs-hand${l&&cur&&cur[1]===l?' use':''}" style="left:${x}%">${l?bxImg(l,'',`height:${(100*(BXBH[l]||1)).toFixed(0)}%`)+`<em>${bxLN(l)}</em>`:`<i>${T('手邊')}</i>`}</div>`}).join('')}
+function bxHandChip(){return `<div class="bxc-hand"><small>${T('手邊')}</small>${[0,1,2].map(i=>{const l=BX.hand[i];return `<span>${l?bxImg(l):''}</span>`}).join('')}</div>`}
+/* 轉身後：酒櫃三層 */
+function bxCabScene(){const o=bxOrder(),need=o?bxNeedL(o.k):[],Y=[44.6,63.2,82.2];
+  return BXCAB.map((row,ri)=>row.map((l,i)=>{const own=bxBotOwn(l),x=14.6+(83.8-14.6)*(i+.5)/9;
+    return `<button class="bxs-bot${own?'':' lock'}${BX.hand.includes(l)?' inh':''}${need.includes(l)?' need':''}" data-bx="take" data-v="${l}" style="left:${x.toFixed(2)}%;top:${(Y[ri]-15).toFixed(1)}%">${bxImg(l,'',`height:${(100*(BXBH[l]||1)*.88).toFixed(0)}%`)}<span>${own?'':'🔒'}${bxLN(l)}</span></button>`}).join('')).join('')}
+/* 每一步：左邊說明文字＋吧台中間要操作的東西 */
+function bxStageHTML(){const s=bxCur(),o=bxOrder(),d=BX.d,r=BXR[o.k];let ins='',z='',zc='bxz',pre='';
+  if(bxNeedHand(s)){ins=T('手邊沒有{0}：轉身到背後的酒櫃拿',bxLN(s[1]));z=`<button class="bxb big" data-bx="turn">↻ ${T('轉身拿{0}',bxLN(s[1]))}</button>`;zc+=' bxz-c'}
+  else if(s[0]==='glass'){ins=T('選杯子，再決定要冰杯、常溫還是溫杯');zc+=' bxz-w';
+    z=`<div class="bxz-col">${Object.keys(BXTP).map(t=>`<button class="bxb tag${d.tp===t?' on':''}" data-bx="t" data-v="${t}">${t==='cold'?'❄️':t==='warm'?'♨️':'🫙'} ${T(BXTP[t])}</button>`).join('')}</div><div class="bxz-row">${Object.keys(BXG).map(g=>`<button class="bxo${d.g===g?' on':''}" data-bx="g" data-v="${g}"><div class="bxo-p">${bxGlassSV(g,{cold:d.g===g&&d.tp==='cold',warm:d.g===g&&d.tp==='warm'})}</div><span>${T(BXG[g])}</span></button>`).join('')}</div>`}
+  else if(s[0]==='ice'){ins=T('放冰塊：選這杯要用的冰');
+    z=`<div class="bxz-row">${Object.keys(BXI).map(i=>`<button class="bxo ice" data-bx="i" data-v="${i}"><div class="bxo-p">${i==='ball'?bxImg('t_iceball','','height:62%'):bxImg('t_bucket','',i==='crush'?'filter:saturate(.6) brightness(1.08)':'')}</div><span>${T(BXI[i])}</span></button>`).join('')}</div>`}
+  else if(s[0]==='m'){const sp=bxMSpec(o,s[1],s[2]);
+    ins=sp.cond?T('按住量{0}：客人要{1}，比標準 {2} ml {3}一點，自己抓量放開',bxLN(s[1]),bxCondZH(o.k,o.c.find(c=>['strong','light','sour','sweet'].includes(c))),s[2],sp.lo>s[2]?T('多'):T('少')):T('按住量{0}，到綠色刻度放開（標準 {1} ml）',bxLN(s[1]),s[2]);
+    z=`<button class="bxs-src" id="bxhold">${bxImg(s[1],'',`height:${(100*(BXBH[s[1]]||1)).toFixed(0)}%`)}<b>${T('按住倒')}</b></button><div class="bxz-jig">${bxImg('t_jigger')}</div><div class="bxz-gauge" id="bxv">${bxJigger(s,sp,d.ml[s[1]]||0)}</div><div class="bxz-colc"><div class="bxr" id="bxread">${Math.round(d.ml[s[1]]||0)} ml</div><div class="bxz-after" id="bxafter"></div></div>`}
+  else if(s[0]==='stir'){ins=T('用手指在攪拌杯上畫圈攪拌，冰度條到綠色區就按「好了」');
+    z=`<div class="bxz-stir" id="bxpad">${bxImg('t_mixglass','bxz-mg')}<div class="bxz-spn" id="bxspn">${bxImg('t_spoon')}</div><div class="bxz-ov" id="bxv">${bxStirArt(0,null)}</div></div><div class="bxz-colc"><div id="bxmet">${bxMeter(d.dil,s[1],T('冰度'))}</div><div class="bxr" id="bxread">${T('{0} 圈',0)}</div><button class="bxb" data-bx="done" disabled id="bxdone">${T('好了')}</button></div>`}
+  else if(s[0]==='lift'){ins=T('在吧台墊上的杯子裡輕輕畫一圈就好，拌太多氣泡會跑掉');
+    z=`<div class="bxz-colc bxz-solo"><div class="bxr" id="bxread">${T('{0} 圈',0)}</div><button class="bxb" data-bx="done" id="bxdone">${T('好了')}</button></div>`;pre=`<div class="bxs-liftpad" id="bxpad"><div class="bxz-spn lift" id="bxspn">${bxImg('t_spoon')}</div><div class="bxz-ov" id="bxv">${bxStirArt(0,null)}</div></div>`}
+  else if(s[0]==='shake'){ins=T('用手指在雪克杯附近來回快速滑動搖酒，冰度條到綠色區、大約 4～6 秒就按「好了」');
+    z=`<div class="bxz-shake" id="bxpad"><div class="bxz-shk" id="bxshk">${bxImg('t_shaker')}</div><span class="bxz-hint">⟵ ${T('來回滑動')} ⟶</span><div id="bxv"></div></div><div class="bxz-colc"><div id="bxmet">${bxMeter(d.dil,s[1],T('冰度'))}</div><div class="bxr" id="bxread">0.0 ${T('秒')}</div><button class="bxb" data-bx="done" disabled id="bxdone">${T('好了')}</button></div>`}
+  else if(s[0]==='dash'){const n=d.dash[s[1]]||0;ins=T('把{0}往攪拌杯裡抖 {1} 下：點一下抖一下',bxLN(s[1]),s[2]);
+    z=`<div class="bxz-mg2">${bxImg('t_mixglass')}</div><button class="bxs-src tap" data-bx="dash">${bxImg(s[1],'','height:70%')}<b>${T('抖一下')}</b></button><div class="bxz-colc"><div class="bxr" id="bxread">${T('{0} 下',n)}</div><button class="bxb alt" data-bx="dashre">${T('重來')}</button><button class="bxb" data-bx="done" ${n?'':'disabled'}>${T('好了')}</button></div>`}
+  else if(s[0]==='heat'){const tg=bxHeatT(o);ins=T('按住溫酒銅壺加熱德利，到 {0}°C 放開（放開後還會再升一點點）',tg);
+    z=`<button class="bxs-src kan" id="bxhold">${bxImg('t_kan')}<b>${T('按住加熱')}</b></button><div class="bxz-gauge" id="bxv">${bxThermo(d.temp||18,tg)}</div><div class="bxz-colc"><div class="bxr" id="bxread">${Math.round(d.temp||18)}°C</div><button class="bxb" data-bx="done" id="bxdone" ${(d.temp||18)>30?'':'disabled'}>${T('好了')}</button></div>`}
+  else if(s[0]==='top'||s[0]==='pour'){const pour=s[0]==='pour',src=bxPourSrc();
+    if(BX.d.lvFor!==BX.si){BX.d.lvFor=BX.si;if(pour){d.lv=0;d.pourG=true}else{d.lv0=Math.min(.42,Object.values(d.ml).reduce((a,b)=>a+b,0)/(r.g==='rock'?190:260)+(d.ice?.06:0));d.lv=d.lv0}}
+    ins=pour?T('按住中間的長條倒酒：手指越上面倒越快，接近黃線要放慢，到線就放開'):T('按住中間的長條倒{0}：手指越上面倒越快，接近黃線要放慢',bxLN(s[1]))+(BXFIZZ.includes(s[1])?T('（倒太快氣泡會跑掉）'):'');
+    const gh=BXG2[d.g||r.g].h;pre=src==='t_kan'?'':`<div class="bxs-pour${src.startsWith('t_')?' tool':''}" style="--up:${((gh-2.5)/(src.startsWith('t_')?19:21)*100).toFixed(0)}">${bxImg(src,'',src.startsWith('t_')?'':`height:${(100*(BXBH[src]||1)).toFixed(0)}%`)}</div><i class="bxs-stream" style="height:${(gh*.85).toFixed(1)}%;background:${src.startsWith('t_')?(bxMlCol(d.ml)||'#e0c080'):BXL[src][1]}"></i>`;
+    z=`<div class="bxz-strip" id="bxpad"><span>${T('快')}</span><b>${T('按住')}</b><span>${T('慢')}</span></div><div class="bxz-colc">${!pour&&BXFIZZ.includes(s[1])?`<div id="bxmet">${bxMeter(d.fizz,[75,100],T('氣泡'))}</div>`:''}<button class="bxb" data-bx="done" id="bxdone" ${d.lv>(d.lv0||0)+.1?'':'disabled'}>${T('好了')}</button></div>`}
+  else if(s[0]==='gar'){if(!(d.lv>.01))d.lv=bxAutoLv();const pg=d.garPg||0;ins=T('要的話從小碟子放裝飾到杯子上（可以不放），然後出酒');zc+=' bxz-w';
+    z=`<div class="bxz-pg">${BXGPG.map((p,i)=>`<button class="bxb tag${i===pg?' on':''}" data-bx="garpg" data-v="${i}">${i?T('配料 B'):T('配料 A')}</button>`).join('')}</div><div class="bxz-dish">${BXGPG[pg].map(k=>{const own=bxGarOwn(k);return `<button class="bxd${d.gar.includes(k)?' on':''}${own?'':' lock'}" data-bx="gar" data-v="${k}" ${own?'':'disabled'}><i></i>${bxImg('gar_'+k)}<span>${own?'':'🔒'}${T(BXGAR[k][0])}</span></button>`}).join('')}</div><button class="bxb big serve" data-bx="serve">${T('出酒')}</button>`}
+  return {ins,scene:pre+`<div class="${zc}">${z}</div>`}}
+
 function bxBind(){const s=bxCur(),d=BX.d,o=bxOrder(),r=BXR[o.k];if(bxNeedHand(s))return;
   if(s[0]==='m'){const h=$('bxhold'),sp=bxMSpec(o,s[1],s[2]),rate=Math.max(7,Math.min(28,s[2]/2.2));
     const down=e=>{e.preventDefault();clearTimeout(BXTM);try{h.setPointerCapture(e.pointerId)}catch(x){}h.classList.add('on');$('bxafter').innerHTML='';sfx('pour');
@@ -3388,8 +3459,8 @@ function bxBind(){const s=bxCur(),d=BX.d,o=bxOrder(),r=BXR[o.k];if(bxNeedHand(s)
       if(Math.hypot(p.x-140,p.y-140)<18)return;if(!dir&&Math.abs(da)>.05)dir=Math.sign(da);if(Math.sign(da)===dir){acc+=Math.abs(da);ang+=da*.8}
       const now=performance.now();if(now-lt>150){samp.push((acc-lastA)/((now-lt)/1000));lt=now;lastA=acc}
       const rot=acc/(2*Math.PI);if(!lift)d.dil=rot*3.6;else d.lift=rot;
-      $('bxv').innerHTML=bxStirArt(ang,p);$('bxread').textContent=T('{0} 圈',rot.toFixed(1));if(!lift){$('bxmet').innerHTML=bxMeter(d.dil,s[1],T('冰度'));$('bxdone').disabled=d.dil<5}else $('bxdone').disabled=rot<.3});
-    const up=()=>{if(prev==null)return;prev=null;$('bxv').innerHTML=bxStirArt(ang,null);BX.d.samp=samp;if(lift&&(d.lift||0)>=.6&&(d.lift||0)<=1.8){BXTM=setTimeout(()=>{if(bxCur()===s)bxDone()},450)}};
+      bxStirShow(ang,p);$('bxread').textContent=T('{0} 圈',rot.toFixed(1));if(!lift){$('bxmet').innerHTML=bxMeter(d.dil,s[1],T('冰度'));$('bxdone').disabled=d.dil<5}else $('bxdone').disabled=rot<.3});
+    const up=()=>{if(prev==null)return;prev=null;bxStirShow(ang,null);BX.d.samp=samp;if(lift&&(d.lift||0)>=.6&&(d.lift||0)<=1.8){BXTM=setTimeout(()=>{if(bxCur()===s)bxDone()},450)}};
     ['pointerup','pointercancel'].forEach(ev=>pad.addEventListener(ev,up))}
   if(s[0]==='shake'){const pad=$('bxpad');let last=null,vec=null,len=0,dx=0,dy=0,t0=0;d.strokes=d.strokes||[];
     pad.addEventListener('pointerdown',e=>{e.preventDefault();try{pad.setPointerCapture(e.pointerId)}catch(x){}last=bxPt(e,pad)});
@@ -3398,8 +3469,8 @@ function bxBind(){const s=bxCur(),d=BX.d,o=bxOrder(),r=BXR[o.k];if(bxNeedHand(s)
       if(vec&&(mx*vec[0]+my*vec[1])<0&&len>=28){const now=performance.now();if(!d.strokes.length)t0=now;d.strokes.push(now);d.dil=d.strokes.length*3.2;d.shook=true;sfx('pick');len=0}
       if(!vec||(mx*vec[0]+my*vec[1])<0)vec=[mx/m,my/m];else len+=m;
       const sec=d.strokes.length>1?(d.strokes[d.strokes.length-1]-d.strokes[0])/1000:0;d.shSec=sec;
-      $('bxv').innerHTML=bxShakerArt(dx,dy);$('bxmet').innerHTML=bxMeter(d.dil,s[1],T('冰度'));$('bxread').textContent=sec.toFixed(1)+' '+T('秒');$('bxdone').disabled=d.strokes.length<3});
-    ['pointerup','pointercancel'].forEach(ev=>pad.addEventListener(ev,()=>{last=null;dx=dy=0;$('bxv').innerHTML=bxShakerArt(0,0)}))}
+      bxShk(dx,dy);$('bxmet').innerHTML=bxMeter(d.dil,s[1],T('冰度'));$('bxread').textContent=sec.toFixed(1)+' '+T('秒');$('bxdone').disabled=d.strokes.length<3});
+    ['pointerup','pointercancel'].forEach(ev=>pad.addEventListener(ev,()=>{last=null;dx=dy=0;bxShk(0,0)}))}
   if(s[0]==='heat'){const h=$('bxhold'),tg=bxHeatT(o);d.temp=d.temp||18;let held=0;
     const down=e=>{e.preventDefault();try{h.setPointerCapture(e.pointerId)}catch(x){}h.classList.add('on');held=0;bxLoop(dt=>{held+=dt;d.temp=Math.min(80,d.temp+7*dt);bxHeatShow(tg)})};
     const up=()=>{if(!h.classList.contains('on'))return;h.classList.remove('on');let res=Math.min(1.5,held*.5);bxLoop(dt=>{const a=Math.min(res,3*dt);res-=a;d.temp+=a;bxHeatShow(tg);return res>0})};
@@ -3407,7 +3478,7 @@ function bxBind(){const s=bxCur(),d=BX.d,o=bxOrder(),r=BXR[o.k];if(bxNeedHand(s)
   if(s[0]==='top'||s[0]==='pour'){const pad=$('bxpad'),pour=s[0]==='pour',tg=pour?s[1]:s[2],soda=!pour&&BXFIZZ.includes(s[1]);let fy=null,spd=0;
     const go=()=>bxLoop(dt=>{if(fy==null)return false;spd=.03+.32*(1-fy);d.lv+=spd*dt*.9;if(soda&&spd>.12)d.fizz=Math.max(0,d.fizz-(spd-.12)*70*dt);
       if(d.lv>1){d.lv=1;d.over=true;fy=null;pad.classList.remove('on');bxMsg(T('溢出來了！'))}
-      $('bxv').innerHTML=bxGlassSV(r.g,bxLook({target:tg}),200,240);if(soda)$('bxmet').innerHTML=bxMeter(d.fizz,[75,100],T('氣泡'));$('bxdone').disabled=d.lv<=(d.lv0||0)+.1;if(fy==null)return false});
+      bxMatUpd(tg);if(soda)$('bxmet').innerHTML=bxMeter(d.fizz,[75,100],T('氣泡'));$('bxdone').disabled=d.lv<=(d.lv0||0)+.1;if(fy==null)return false});
     pad.addEventListener('pointerdown',e=>{e.preventDefault();try{pad.setPointerCapture(e.pointerId)}catch(x){}if(d.over)return;const p=bxPt(e,pad);fy=Math.max(0,Math.min(1,p.y/p.h));pad.classList.add('on');sfx('pour');go()});
     pad.addEventListener('pointermove',e=>{if(fy==null)return;const p=bxPt(e,pad);fy=Math.max(0,Math.min(1,p.y/p.h))});
     ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>pad.addEventListener(ev,()=>{if(fy==null)return;if(pour&&spd>.25){d.drip=true;d.lv=Math.min(1,d.lv+.015)}fy=null;pad.classList.remove('on')}))}}
@@ -3485,7 +3556,6 @@ function barSlot(){}
 function barServed(){}
 function barHudPills(){if(!BX||!R||R.over)return '';return `<div class="pill staff">🍸 ${T('客人')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${Math.min(BX.i+1,BX.q.length)}/${BX.q.length}</b></div>`}
 function barRecText(k){return bxStepsText(k)}
-function brIcon(k){const r=BXR[k];return `<ellipse cx="50" cy="92" rx="40" ry="7" fill="#5a3418" stroke="${O}" stroke-width="3"/><g transform="translate(10 -6) scale(.8 .8)">${bxGlass(r.g,{lv:r.g==='choko'?.75:r.g==='masu'?.9:.62,col:bxMlCol(Object.fromEntries(r.st.filter(x=>x[0]==='m').map(x=>[x[1],x[2]])))||BXL[bxFirst(k)][1],ice:r.ice,cold:r.t==='cold',warm:r.t==='warm',fizz:r.st.some(s=>s[0]==='top'&&BXFIZZ.includes(s[1]))?60:0,foam:r.st.some(s=>s[0]==='shake')})}</g>`}
 function barArt(k){return brIcon(k)}
 Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('客人會用日式短句說要濃一點、淡一點或溫度，照著調整。')])));
 {const _bxSH=showHome;showHome=function(){bxClose();BX=null;return _bxSH.apply(this,arguments)}}
@@ -3579,7 +3649,142 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bx-pg .bx-btn{min-width:86px;padding:8px 6px;font-size:15px}
 #barx .bx-grid{grid-template-columns:repeat(5,92px)}
 #barx .bx-chip.lock{opacity:.4}
-#barx .bx-btn.serve{min-width:150px}`;document.head.appendChild(st)})();
+#barx .bx-btn.serve{min-width:150px}
+#barx .bxv2{--u:6.2px;background:#140c07;overflow:hidden}
+#barx .bxv2 .bx-face{position:absolute;inset:0}
+#barx .bxs{position:absolute;left:0;right:0}
+#barx .bxs img{-webkit-user-drag:none;pointer-events:none}
+#barx .bxs-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#barx .bxs-cust{position:absolute;left:0;top:0;width:100%;height:63.6%;overflow:hidden;pointer-events:none}
+#barx .bxs-cust img{position:absolute;left:48.7%;bottom:-11%;height:80%;transform:translateX(-50%);filter:drop-shadow(0 0 calc(var(--u)*1.2) #0008)}
+#barx .bxs-mat{position:absolute;left:16%;bottom:10.5%;transform:translateX(-50%);pointer-events:none}
+#barx .bxs-mat::before{content:'';position:absolute;left:5%;right:5%;bottom:-2%;height:6%;border-radius:50%;background:#0009;filter:blur(calc(var(--u)*.6))}
+#barx .bxs-mat>*{position:absolute;inset:0;width:100%;height:100%}
+#barx .bxs-hand{position:absolute;bottom:10%;width:7.4%;height:24%;transform:translateX(-50%);display:flex;align-items:flex-end;justify-content:center;pointer-events:none}
+#barx .bxs-hand img{max-width:100%;object-fit:contain;filter:drop-shadow(0 calc(var(--u)*.8) calc(var(--u)*.6) #000a)}
+#barx .bxs-hand.use img{filter:drop-shadow(0 0 calc(var(--u)*1.2) #ffd23a) drop-shadow(0 0 calc(var(--u)*.4) #ffd23a)}
+#barx .bxs-hand em{z-index:1;position:absolute;left:50%;bottom:calc(var(--u)*-3.4);transform:translateX(-50%);font-style:normal;font-weight:800;font-size:calc(var(--u)*2.1);color:#ffe9c0;white-space:nowrap;max-width:118%;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;text-shadow:0 1px 3px #000;background:#1a0e08a8;border-radius:.6em;padding:0 .5em}
+#barx .bxs-hand i{font-style:normal;align-self:center;font-size:calc(var(--u)*3.3);color:#ffe9c088;border:2px dashed #ffe9c044;border-radius:1em;padding:calc(var(--u)*6) calc(var(--u)*.8)}
+#barx .bxz{position:absolute;left:29%;top:58%;width:45%;height:32%;display:flex;align-items:flex-end;justify-content:center;gap:calc(var(--u)*1.8)}
+#barx .bxz-w{left:26.5%;width:48%;gap:calc(var(--u)*1.4)}
+#barx .bxz-c{align-items:center}
+#barx .bxb{min-height:calc(var(--u)*12);min-width:calc(var(--u)*15);padding:0 calc(var(--u)*2.2);border-radius:calc(var(--u)*1.8);border:calc(var(--u)*.45) solid #5a3420;background:linear-gradient(#ffd67a,#e89a2c);color:#3a1a08;font-weight:900;font-size:calc(var(--u)*3.2);line-height:1.15;font-family:inherit;box-shadow:0 calc(var(--u)*.6) 0 #0009;cursor:pointer;white-space:nowrap}
+#barx .bxb.big{min-height:calc(var(--u)*13);font-size:calc(var(--u)*4);padding:0 calc(var(--u)*4)}
+#barx .bxb.alt{background:linear-gradient(#5a3a26,#3a2214);color:#ffe9c0;border-color:#c9a24a99}
+#barx .bxb.tag{min-height:calc(var(--u)*12);min-width:calc(var(--u)*14);background:linear-gradient(#f6e6c4,#e0c48e);font-size:calc(var(--u)*2.9)}
+#barx .bxb.on{outline:calc(var(--u)*.6) solid #ffd23a;background:linear-gradient(#fff2b0,#ffc83a)}
+#barx .bxb:disabled{opacity:.45;cursor:default}
+#barx .bxb:active:not(:disabled){transform:translateY(calc(var(--u)*.4))}
+#barx .bxz-row{display:flex;gap:calc(var(--u)*.6);align-items:flex-end}
+#barx .bxz-col{display:flex;flex-direction:column;gap:calc(var(--u)*.9)}
+#barx .bxo{width:calc(var(--u)*11.6);height:calc(var(--u)*23);background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;cursor:pointer;transition:transform .15s}
+#barx .bxo-p{height:calc(var(--u)*17.5);width:100%;display:flex;align-items:flex-end;justify-content:center;filter:drop-shadow(0 calc(var(--u)*.6) calc(var(--u)*.5) #000a)}
+#barx .bxo-p img{max-height:100%;max-width:100%;object-fit:contain}
+#barx .bxo span{margin-top:calc(var(--u)*.5);font-weight:800;font-size:calc(var(--u)*2.1);color:#ffe9c0;text-shadow:0 1px 3px #000;white-space:nowrap;background:#1a0e08b0;border-radius:.6em;padding:0 .4em}
+#barx .bxo.on{transform:translateY(calc(var(--u)*-2))}
+#barx .bxo.on .bxo-p{filter:drop-shadow(0 0 calc(var(--u)*1) #ffd23a) drop-shadow(0 0 calc(var(--u)*.4) #ffd23a)}
+#barx .bxo.on span{background:#ffd23a;color:#3a1a08}
+#barx .bxo.ice{width:calc(var(--u)*19)}
+#barx .bxs-src{position:relative;height:calc(var(--u)*26);width:calc(var(--u)*13);background:none;border:0;padding:0;display:flex;align-items:flex-end;justify-content:center;transform-origin:50% 70%;transition:transform .2s;cursor:pointer;touch-action:none}
+#barx .bxs-src img{max-height:100%;max-width:100%;object-fit:contain;filter:drop-shadow(0 calc(var(--u)*.8) calc(var(--u)*.6) #000a)}
+#barx .bxs-src b{position:absolute;left:50%;top:calc(var(--u)*-2);transform:translateX(-50%);background:#ffd23a;color:#3a1a08;border:calc(var(--u)*.35) solid #5a3420;border-radius:1em;padding:.1em .6em;font-size:calc(var(--u)*2.8);white-space:nowrap;box-shadow:0 calc(var(--u)*.4) 0 #0008}
+#barx .bxs-src.on{transform:translate(calc(var(--u)*6),calc(var(--u)*-7)) rotate(105deg)}
+#barx .bxs-src.on b{opacity:0}
+#barx .bxs-src.tap:active{transform:translate(calc(var(--u)*3),calc(var(--u)*-3)) rotate(150deg)}
+#barx .bxs-src.kan{width:calc(var(--u)*26);height:calc(var(--u)*23);transform-origin:50% 100%}
+#barx .bxs-src.kan.on{transform:none;animation:bxkan .5s ease-in-out infinite alternate}
+#barx .bxs-src.kan.on img{filter:drop-shadow(0 0 calc(var(--u)*1.6) #ff8a3a)}
+@keyframes bxkan{from{transform:translateY(0)}to{transform:translateY(calc(var(--u)*-.6))}}
+#barx .bxz-jig{height:calc(var(--u)*19);display:flex;align-items:flex-end}
+#barx .bxz-jig img{height:100%;filter:drop-shadow(0 calc(var(--u)*.8) calc(var(--u)*.6) #000a)}
+#barx .bxz-gauge{height:calc(var(--u)*29);width:calc(var(--u)*12.5)}
+#barx .bxz-colc{display:flex;flex-direction:column;gap:calc(var(--u)*1);align-items:center;justify-content:flex-end;min-width:calc(var(--u)*16)}
+#barx .bxz-after{display:flex;flex-direction:column;gap:calc(var(--u)*.8);align-items:center;min-height:calc(var(--u)*4)}
+#barx .bxz-after .bx-btn,#barx .bxv2 .bx-btn{min-height:calc(var(--u)*12);min-width:calc(var(--u)*15);padding:0 calc(var(--u)*2);border-radius:calc(var(--u)*1.6);border:calc(var(--u)*.4) solid #5a3420;background:linear-gradient(#ffd67a,#e89a2c);color:#3a1a08;font-weight:900;font-size:calc(var(--u)*3);line-height:1.15;font-family:inherit;box-shadow:0 calc(var(--u)*.5) 0 #0009;cursor:pointer}
+#barx .bxv2 .bx-btn.alt{background:linear-gradient(#5a3a26,#3a2214);color:#ffe9c0;border-color:#c9a24a99}
+#barx .bxv2 .bx-btn.big{min-height:calc(var(--u)*12);font-size:calc(var(--u)*3)}
+#barx .bxz-after b{font-size:calc(var(--u)*3);text-shadow:0 1px 4px #000}
+#barx .bxr{font-weight:900;font-size:calc(var(--u)*3.2);color:#fff;background:#1a0e08c0;border:2px solid #c9a24a88;border-radius:.5em;padding:0 .5em;white-space:nowrap;text-shadow:0 1px 3px #000}
+#barx .bxz .bx-meter{width:calc(var(--u)*20)}
+#barx .bxz-stir{position:relative;height:calc(var(--u)*31);aspect-ratio:1;touch-action:none;cursor:pointer}
+#barx .bxz-stir>img{position:absolute;left:50%;bottom:0;height:92%;transform:translateX(-50%);filter:drop-shadow(0 calc(var(--u)*.8) calc(var(--u)*.6) #000a)}
+#barx .bxz-spn{position:absolute;left:36%;top:-22%;width:46%;height:80%;transform-origin:50% 90%;transform:rotate(-40deg);pointer-events:none}
+#barx .bxz-spn img{width:100%}
+#barx .bxz-spn.lift{left:28%;top:-10%;width:50%}
+#barx .bxz-ov{position:absolute;inset:0}
+#barx .bxs-liftpad{position:absolute;left:16%;bottom:9%;height:36%;aspect-ratio:1;transform:translateX(-50%);touch-action:none;cursor:pointer;border-radius:50%}
+#barx .bxz-shake{position:relative;height:calc(var(--u)*31);width:calc(var(--u)*42);touch-action:none;cursor:grab;border-radius:calc(var(--u)*3);background:radial-gradient(closest-side,#ffd23a22,transparent)}
+#barx .bxz-shk{position:absolute;left:calc(50% - var(--u)*6.6);bottom:6%;height:86%;pointer-events:none}
+#barx .bxz-shk img{height:100%;filter:drop-shadow(0 calc(var(--u)*.8) calc(var(--u)*.6) #000a)}
+#barx .bxz-hint{position:absolute;left:0;right:0;bottom:-6%;text-align:center;font-weight:900;font-size:calc(var(--u)*2.7);color:#ffd23a;text-shadow:0 1px 3px #000;pointer-events:none}
+#barx .bxz-mg2{height:calc(var(--u)*20)}
+#barx .bxz-mg2 img{height:100%;filter:drop-shadow(0 calc(var(--u)*.8) calc(var(--u)*.6) #000a)}
+#barx .bxs-pour{position:absolute;left:26%;bottom:10.5%;height:21%;aspect-ratio:.55;transform-origin:50% 60%;transform:none;transition:transform .2s;pointer-events:none;z-index:6;display:flex;align-items:flex-end;justify-content:center}
+#barx .bxs-pour.tool{height:19%}
+#barx .bxs-pour img{max-height:100%;max-width:200%;object-fit:contain;filter:drop-shadow(0 calc(var(--u)*.8) calc(var(--u)*.6) #000a)}
+#barx .bxs:has(#bxpad.on) .bxs-pour{transform:translate(-118%,calc(var(--up)*-1%)) rotate(-112deg)}
+#barx .bxs-stream{position:absolute;left:calc(16% - var(--u)*.5);bottom:12%;width:calc(var(--u)*1);border-radius:1em;opacity:0;transition:opacity .1s;pointer-events:none;z-index:5}
+#barx .bxs:has(#bxpad.on) .bxs-stream{opacity:.85}
+#barx .bxz-strip{height:calc(var(--u)*30);width:calc(var(--u)*12);border-radius:calc(var(--u)*6);background:linear-gradient(#ffd23a66,#ffffff1a);border:calc(var(--u)*.45) solid #ffd23a;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:calc(var(--u)*1) 0;touch-action:none;cursor:pointer;color:#fff;font-weight:900;font-size:calc(var(--u)*2.7);text-shadow:0 1px 3px #000}
+#barx .bxz-strip b{font-size:calc(var(--u)*3.3);opacity:.8}
+#barx .bxz-strip.on{background:linear-gradient(#ffd23acc,#ffd23a44)}
+#barx .bxz-pg{display:flex;flex-direction:column;gap:calc(var(--u)*1);align-self:center}
+#barx .bxz-pg .bxb{min-width:calc(var(--u)*11)}
+#barx .bxz-dish{display:grid;grid-template-columns:repeat(5,calc(var(--u)*10.2));gap:calc(var(--u)*.6);align-self:center}
+#barx .bxd{position:relative;height:calc(var(--u)*11.2);background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;cursor:pointer}
+#barx .bxd i{position:absolute;left:4%;right:4%;bottom:22%;height:34%;border-radius:50%;background:radial-gradient(#fbf6ec 55%,#d8cbb2);border:calc(var(--u)*.3) solid #5a3a26;box-shadow:0 calc(var(--u)*.5) calc(var(--u)*.4) #000a}
+#barx .bxd img{position:relative;max-height:56%;max-width:76%;object-fit:contain;margin-bottom:12%}
+#barx .bxd span{position:relative;font-weight:800;font-size:calc(var(--u)*1.95);color:#ffe9c0;white-space:nowrap;text-shadow:0 1px 3px #000}
+#barx .bxd.on i{border-color:#ffd23a;box-shadow:0 0 calc(var(--u)*1.2) #ffd23a}
+#barx .bxd.on span{color:#ffd23a}
+#barx .bxd.lock{opacity:.45;filter:grayscale(1)}
+#barx .bxb.serve{align-self:center;min-width:calc(var(--u)*15)}
+#barx .bxs-bot{position:absolute;width:7.3%;height:17.5%;transform:translateX(-50%);background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;cursor:pointer;font-family:inherit}
+#barx .bxs-bot img{max-height:calc(100% - var(--u)*2.8);max-width:100%;object-fit:contain;filter:drop-shadow(0 calc(var(--u)*.4) calc(var(--u)*.4) #000c)}
+#barx .bxs-bot span{margin-top:calc(var(--u)*.2);font-size:calc(var(--u)*1.8);font-weight:800;color:#ffe9c0;text-shadow:0 1px 2px #000;white-space:nowrap;background:#1a0e08c8;border-radius:.6em;padding:0 .4em;max-width:104%;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis}
+#barx .bxs-bot.need img{filter:drop-shadow(0 0 calc(var(--u)*1) #ffd23a) drop-shadow(0 0 calc(var(--u)*.4) #ffd23a)}
+#barx .bxs-bot.need span{color:#3a1a08;background:#ffd23a}
+#barx .bxs-bot.inh{opacity:.35}
+#barx .bxs-bot.inh span::after{content:' ✓'}
+#barx .bxs-bot.lock img{filter:grayscale(1) brightness(.45)}
+#barx .bxs-bot.lock span{opacity:.7}
+#barx .bxc-left{position:absolute;left:12px;top:calc(12px + var(--hudt,0px));width:min(34%,560px);display:flex;flex-direction:column;gap:13px}
+#barx .bxc-say{background:#fffaf0f0;border:3px solid #3c1e0a;border-radius:14px;padding:7px 12px;color:#2a1408;box-shadow:0 4px 0 #0007}
+#barx .bxc-say b{display:block;font-size:27px;line-height:1.3}
+#barx .bxc-say small{display:block;font-size:21px;color:#7a5032;margin-top:2px;line-height:1.35}
+#barx .bxc-box{background:#1a0e08e0;border:2px solid #c9a24a88;border-radius:12px;padding:8px 10px}
+#barx .bxc-ins{margin:6px 0 0;font-size:24px;line-height:1.45;font-weight:700;color:#ffe9c0}
+#barx .bxc-tip{margin:6px 0 0;font-size:21px;line-height:1.45;color:#f3dfb4}
+#barx .bxc-box .bx-steps{display:flex;flex-wrap:wrap;gap:6px}#barx .bxc-box .bx-steps span{font-size:16px;padding:3px 9px}
+#barx .bxc-rcol{position:absolute;right:12px;top:calc(12px + var(--hudt,0px));width:min(44%,640px);display:flex;flex-direction:row-reverse;align-items:flex-start;gap:10px}
+#barx .bxc-card{flex:1;min-width:0;box-sizing:border-box;background:#fff8e8f0;color:#2a1408;border:3px solid #3c1e0a;border-radius:14px;padding:7px 12px;font-size:21px;line-height:1.4;box-shadow:0 4px 0 #0007}
+#barx .bxc-card h4{margin:0 0 3px;font-size:29px}
+#barx .bxc-card .rq{color:#b0301a;font-weight:800}
+#barx .bxc-card .bx-rec{font-size:18px;color:#6a4a2a;margin-top:2px}
+#barx .bxc-right2{flex:none;display:flex;flex-direction:column;gap:10px;align-items:stretch}
+#barx .bxc-btn{min-height:106px;padding:0 14px;border-radius:14px;border:3px solid #5a3420;background:#f3dfb4;color:#3a1a08;font-weight:900;font-size:26px;line-height:1.1;font-family:inherit;box-shadow:0 4px 0 #0008;cursor:pointer}
+#barx .bxc-turn{min-height:106px;min-width:166px;padding:0 12px;border-radius:14px;border:3px solid #3a1a5a;background:linear-gradient(#9a6ae0,#6a3ac0);color:#fff;font-weight:900;font-size:29px;line-height:1.15;font-family:inherit;box-shadow:0 4px 0 #0008;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#barx .bxc-turn small{font-size:18px;font-weight:700;opacity:.9}
+#barx .bxc-cnt{font-size:21px;font-weight:800;color:#ffe9c0;background:#1a0e08c0;border-radius:8px;padding:2px 8px}
+#barx .bxc-panel{position:absolute;left:30%;right:26%;bottom:12px;max-height:60%;overflow:auto;background:#1a0e08ee;border:2px solid #c9a24a;border-radius:16px;padding:10px 14px;box-shadow:0 6px 24px #000a}
+#barx .bxc-panel .bx-area{display:flex;flex-direction:column;align-items:center;gap:13px;padding:0;min-height:0}
+#barx .bxc-panel .bx-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+#barx .bxc-panel .bx-ins{margin:2px 0;font-size:24px;line-height:1.45;text-align:center;color:#ffe9c0}
+#barx .bxc-panel .bx-btn{min-height:102px;min-width:224px;font-size:27px;padding:0 16px;border-radius:14px;border-width:5px}
+#barx .bxc-panel .bx-btn.big{min-height:112px;font-size:30px}
+#barx .bxc-panel .bx-btn.wide{min-width:320px;max-width:448px;white-space:normal;padding:6px 14px}
+#barx .bxc-panel .bx-res{display:flex;align-items:center;gap:22px}
+#barx .bxc-panel .bx-res svg{width:176px;height:211px}
+#barx .bxc-panel .bx-story{background:#2a180c;border-left:4px solid #c9a24a;padding:6px 10px;border-radius:8px;font-size:22px;line-height:1.5}
+#barx .bxc-cabh{position:absolute;left:10px;top:calc(12px + var(--hudt,0px));width:12.5%;background:#1a0e08e0;border:2px solid #c9a24a88;border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;box-sizing:border-box}
+#barx .bxc-cabh b{font-size:24px;color:#ffe2a8}
+#barx .bxc-cabh span{font-size:16px;line-height:1.4;color:#f3dfb4}
+#barx .bxc-right{position:absolute;right:10px;top:calc(12px + var(--hudt,0px));width:14%;display:flex;flex-direction:column;gap:10px;align-items:stretch}
+#barx .bxc-hand{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:flex-end;background:#1a0e08e0;border:2px solid #c9a24a88;border-radius:12px;padding:4px 6px}
+#barx .bxc-hand small{width:100%;text-align:center;font-size:16px;font-weight:900;color:#c9a24a}
+#barx .bxc-hand span{width:30%;height:88px;border-radius:8px;border:1px dashed #c9a24a66;display:flex;align-items:flex-end;justify-content:center;padding:2px;box-sizing:border-box}
+#barx .bxc-hand img{max-width:100%;max-height:100%;object-fit:contain}
+`;document.head.appendChild(st)})();
 function drawBarBg(){
   const TY=KY<400?38:0,r=okRng(4242);
   let s=`<defs><linearGradient id="brwall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1a2e"/><stop offset="1" stop-color="#3a2a30"/></linearGradient><radialGradient id="brglow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffcf7a" stop-opacity=".55"/><stop offset="1" stop-color="#ffcf7a" stop-opacity="0"/></radialGradient><linearGradient id="brshelf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a3420"/><stop offset="1" stop-color="#3a2014"/></linearGradient></defs><rect width="${W}" height="${KY}" fill="url(#brwall)"/>`;
@@ -3618,8 +3823,8 @@ function shopBar(){
   const tabs=`<div class="row brtabs" style="gap:6px;flex-wrap:wrap;margin:6px 0 10px">${[['rec','🍸 '+T('酒單')+` ${nR}/${BRKEYS.length}`],['bot','🍶 '+T('酒櫃')+` ${nB}/${BXCABS.length}`],['gar','🍋 '+T('配料')+` ${nG}/${Object.keys(BXGAR).length}`]].map(([k,n])=>`<button class="btn${BRTAB===k?'':' alt'}" data-act="brtab" data-id="${k}">${n}</button>`).join('')}</div>`;
   const uses=f=>BRKEYS.filter(f).map(k=>dishTitle(k)).join('、')||T('（目前沒有）');
   let body='';
-  if(BRTAB==='bot')body=`<p class="hint">${T('酒放在吧台背後的酒櫃，營業時要轉身去拿。買了新酒，用得到它的酒譜湊齊就會解鎖。')}</p>`+BXCAB.map((row,i)=>`<h3 class="sh">${[T('第一層・日本酒類'),T('第二層・調酒基酒'),T('第三層・利口酒')][i]}</h3><div class="shop">${row.map(l=>{const own=!!B.bot[l],p=BXBOTP[l]||0;return `<div class="up" style="display:grid;grid-template-columns:44px 1fr;column-gap:10px;align-items:center"><div style="grid-row:span 3;width:44px;height:100px"><svg viewBox="-2 0 44 100" width="44" height="100">${bxBottle(l)}</svg></div><b>${bxLN(l)}</b><p><small>${T('用在：{0}',uses(k=>bxNeedL(k).includes(l)))}</small></p>${own?`<p>${T('已擁有')}</p>`:`<button class="btn" data-act="brbot" data-id="${l}" ${SV.coins<p?'disabled':''}>${T('買下 {0}',yen(p))}</button>`}</div>`}).join('')}</div>`).join('');
-  else if(BRTAB==='gar')body=`<p class="hint">${T('配料放在吧台旁的配料盤（分 A、B 兩頁）。客人指定要的配料一定要放；酒譜寫的可選配料放了會多一點小費。')}</p>`+BXGPG.map((pg,i)=>`<h3 class="sh">${i?T('配料 B'):T('配料 A')}</h3><div class="shop">${pg.map(g=>{const own=!!B.gar[g],p=BXGARP[g]||0;return `<div class="up"><b><i style="display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid #000;vertical-align:-2px;margin-right:6px;background:${BXGAR[g][1]}"></i>${T(BXGAR[g][0])}</b><p><small>${T('用在：{0}',uses(k=>BXR[k].opt.includes(g)||BXR[k].cond.includes('g:'+g)))}</small></p>${own?`<p>${T('已擁有')}</p>`:`<button class="btn" data-act="brgar" data-id="${g}" ${SV.coins<p?'disabled':''}>${T('買下 {0}',yen(p))}</button>`}</div>`}).join('')}</div>`).join('');
+  if(BRTAB==='bot')body=`<p class="hint">${T('酒放在吧台背後的酒櫃，營業時要轉身去拿。買了新酒，用得到它的酒譜湊齊就會解鎖。')}</p>`+BXCAB.map((row,i)=>`<h3 class="sh">${[T('第一層・日本酒類'),T('第二層・調酒基酒'),T('第三層・利口酒')][i]}</h3><div class="shop">${row.map(l=>{const own=!!B.bot[l],p=BXBOTP[l]||0;return `<div class="up" style="display:grid;grid-template-columns:44px 1fr;column-gap:10px;align-items:center"><div style="grid-row:span 3;width:44px;height:100px;display:flex;align-items:flex-end;justify-content:center">${bxImg(l,'',`max-width:44px;height:${(100*(BXBH[l]||1)).toFixed(0)}px;object-fit:contain`)}</div><b>${bxLN(l)}</b><p><small>${T('用在：{0}',uses(k=>bxNeedL(k).includes(l)))}</small></p>${own?`<p>${T('已擁有')}</p>`:`<button class="btn" data-act="brbot" data-id="${l}" ${SV.coins<p?'disabled':''}>${T('買下 {0}',yen(p))}</button>`}</div>`}).join('')}</div>`).join('');
+  else if(BRTAB==='gar')body=`<p class="hint">${T('配料放在吧台旁的配料盤（分 A、B 兩頁）。客人指定要的配料一定要放；酒譜寫的可選配料放了會多一點小費。')}</p>`+BXGPG.map((pg,i)=>`<h3 class="sh">${i?T('配料 B'):T('配料 A')}</h3><div class="shop">${pg.map(g=>{const own=!!B.gar[g],p=BXGARP[g]||0;return `<div class="up"><b>${bxImg('gar_'+g,'','height:30px;max-width:40px;object-fit:contain;vertical-align:middle;margin-right:6px')}${T(BXGAR[g][0])}</b><p><small>${T('用在：{0}',uses(k=>BXR[k].opt.includes(g)||BXR[k].cond.includes('g:'+g)))}</small></p>${own?`<p>${T('已擁有')}</p>`:`<button class="btn" data-act="brgar" data-id="${g}" ${SV.coins<p?'disabled':''}>${T('買下 {0}',yen(p))}</button>`}</div>`}).join('')}</div>`).join('');
   else body=`<p class="hint">${T('酒譜不用買：酒櫃裡湊齊需要的酒就會自動解鎖。')}</p><div class="shop">${BRKEYS.map(k=>{const ok=bxReady(SV,k),miss=bxNeedL(k).filter(l=>!B.bot[l]);return `<div class="up" style="display:grid;grid-template-columns:64px 1fr;column-gap:10px;align-items:center"><div style="grid-row:span 3;width:64px;height:64px">${sv(brIcon(k))}</div><b>${dishTitle(k)}</b><p>${T('售價 {0}・材料 {1}',yen(ITEMS[k].price),yen(ITEMS[k].cost))}<br><small>${bxStepsText(k)}</small></p>${ok?`<p>✅ ${T('已解鎖')}</p>${ST?`<div style="grid-column:1/-1;white-space:nowrap">${offBtn(k)}</div>`:''}`:`<p style="color:#b0301a;font-weight:800">🔒 ${T('還缺：{0}',miss.map(bxLN).join('、'))}</p>`}</div>`}).join('')}</div>`;
   return `${lock}${tabs}${body}<div class="btns"><button class="btn" data-act="baropen">${T('去月影酒吧營業')}</button></div>`;
 }
