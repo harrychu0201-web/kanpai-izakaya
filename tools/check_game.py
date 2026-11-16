@@ -632,6 +632,46 @@ def sc_sponsor(b, base):
         c.close()
 
 
+def sc_coopcpu(b, base):
+    """多人模式「與電腦配對」：先選店家（居酒屋／屋台／壽司店）三顆按鈕，點進去才選廚房／外場；真實點擊。"""
+    c = Ctx(b, base).open()
+    try:
+        c.dismiss_modals()
+        c.page.evaluate("CL.user={email:'x@y.z',uid:'cpu-check',name:'cpu',photo:''};if(!FB_CONFIG)window.FB_CONFIG=true;const r=loadRec();r.nick='測試員';saveRec(r);FR.data={fl:{},on:{}};FR.t=Date.now();coopPanel()")
+        c.page.wait_for_timeout(500)
+        sel = '.modal [data-act=coopbotv]'
+        if c.page.locator(sel).count() != 3:
+            raise AssertionError('與電腦配對第一層應該只有三顆店家按鈕，實際 %d 顆\n%s' % (c.page.locator(sel).count(), c.diag()))
+        if c.has('.modal [data-act=coopbot]'):
+            raise AssertionError('第一層就出現廚房／外場按鈕（應該點進店家才出現）')
+        txt = c.page.evaluate("document.querySelector('.modal').innerText")
+        for need in ('居酒屋', '屋台', '壽司店'):
+            if need not in txt:
+                raise AssertionError('第一層缺少店家按鈕：%s' % need)
+        for vid, suffix in (('iz', ''), ('ya', 'y'), ('su', 's')):
+            c.click('.modal [data-act=coopbotv][data-id=%s]' % vid)
+            ids = c.page.eval_on_selector_all('.modal [data-act=coopbot]', 'e=>e.map(x=>x.dataset.id)')
+            if sorted(ids) != sorted(['k' + suffix, 'f' + suffix]):
+                raise AssertionError('點進 %s 之後的廚房／外場按鈕不對：%s' % (vid, ids))
+            for bt in c.page.locator('.modal [data-act=coopbot], .modal [data-act=coopbotv]').all():
+                bb = bt.bounding_box()
+                if not bb or bb['height'] < 28 or bb['width'] < 60:
+                    raise AssertionError('二層按鈕太小或看不見：%s' % bb)
+            c.click('.modal [data-act=coopbotv][data-id=""]')  # 返回
+            if c.page.locator(sel).count() != 3:
+                raise AssertionError('二層的「返回」沒有回到三顆店家按鈕')
+        # 真的點「壽司店 → 我當外場」要進得了房間
+        c.page.evaluate("if(!CL.api)CL.api={}")  # 檢查環境擋掉了 Firebase，電腦搭檔不需要連線
+        c.click('.modal [data-act=coopbotv][data-id=su]')
+        c.click('.modal [data-act=coopbot][data-id=fs]', wait=1500)
+        ok = c.page.evaluate("!!(typeof CO!=='undefined'&&CO.bot)")
+        if not ok:
+            raise AssertionError('壽司店・我當外場 沒有開出電腦搭檔的房間\n' + c.diag())
+        c.expect_clean('與電腦配對')
+    finally:
+        c.close()
+
+
 def sc_homedog(b, base):
     """首頁的狗：遇過 3 位神祕訪客只有貓；全部遇過才出現狗狗；兩隻不能重疊；點狗狗真的有叫聲（真實點擊）。"""
     c = Ctx(b, base).open()
@@ -1051,7 +1091,7 @@ def find_chrome():
     return None
 
 
-SCENARIOS = [('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
+SCENARIOS = [('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar),
              ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip)]

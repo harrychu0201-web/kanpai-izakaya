@@ -6973,9 +6973,13 @@ function coopMsgsFill(){const b=document.getElementById('coopmsgs');if(!b)return
     return `<div class="cpm ${mine?'me':''}"><b>${mine?T('我'):esc(coopPN())}</b>：${esc(x.txt||'')}</div>`}).join('')||`<div class="cpm sys">${T('還沒有訊息，打個招呼吧')}</div>`;
   if(near)b.scrollTop=b.scrollHeight}
 /* 隨機配對：兩人同時在 mm/ 排隊（互相同意）才能互發邀請；uid 較小的一方建房，另一方自動接受 */
-const MM={on:false,t0:0,n:0,timer:null,busy:false,msg:'',offer:0};
+const MM={on:false,t0:0,n:0,timer:null,busy:false,msg:'',offer:0,cv:''};
 const MM_BOT_WAIT=20000; /* 排隊 20 秒還沒配到，就讓玩家選擇先跟電腦搭檔 */
-function mmBotRow(){return `<div class="lbme" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px"><span style="grid-column:1/-1">🤖 <b>${T('等太久了嗎？先跟電腦店員搭檔')}</b><br><small>${T('選了就會停止配對。電腦店員會接手另一個位置。')}</small></span><button class="btn" data-act="coopbot" data-id="k">🍳 ${T('我當廚房')}</button><button class="btn" data-act="coopbot" data-id="f">🧾 ${T('我當外場')}</button><button class="btn" data-act="coopbot" data-id="ky">🍜 屋台・我當廚房</button><button class="btn" data-act="coopbot" data-id="fy">🍜 屋台・我當外場</button><button class="btn" data-act="coopbot" data-id="ks">🍣 壽司・我當廚房</button><button class="btn" data-act="coopbot" data-id="fs">🍣 壽司・我當外場</button></div>`}
+const MM_CV={iz:['🏮','居酒屋',''],ya:['🍜','屋台','y'],su:['🍣','壽司店','s']};
+function mmBotPick(title,sub){const cv=MM_CV[MM.cv],g='display:grid;gap:8px;grid-template-columns:repeat('+(cv?2:3)+',minmax(0,1fr))';
+  if(!cv)return `<div class="lbme" style="${g}"><span style="grid-column:1/-1">🤖 <b>${title}</b><br><small>${sub}</small></span>${Object.keys(MM_CV).map(k=>`<button class="btn" data-act="coopbotv" data-id="${k}">${MM_CV[k][0]} ${MM_CV[k][1]}</button>`).join('')}</div>`;
+  return `<div class="lbme" style="${g}"><span style="grid-column:1/-1">🤖 <b>${cv[0]} ${cv[1]}</b>・${T('選你要當哪個位置')}</span><button class="btn" data-act="coopbot" data-id="k${cv[2]}">🍳 ${T('我當廚房')}</button><button class="btn" data-act="coopbot" data-id="f${cv[2]}">🧾 ${T('我當外場')}</button><button class="btn alt" style="grid-column:1/-1" data-act="coopbotv" data-id="">${T('返回')}</button></div>`}
+function mmBotRow(){return mmBotPick(T('等太久了嗎？先跟電腦店員搭檔'),T('選了就會停止配對。電腦店員會接手另一個位置。'))}
 function mmName(){return String((lbEntry()||{}).name||'').slice(0,24)}
 function mmStop(leave){const was=MM.on;MM.on=false;clearInterval(MM.timer);MM.timer=null;MM.busy=false;mwStop();
   if(leave&&was&&CL.user&&CL.api&&CL.api.mmLeave)CL.api.mmLeave(CL.user.uid).catch(()=>{});if(was)coopRender()}
@@ -6984,7 +6988,7 @@ async function mmStart(){if(MM.on)return;if(hideOnIs()){MM.msg='隱藏上線狀�
   if(COOP.code){coopNote('已經在連線中');return}
   MM.msg='';
   try{await CL.api.mmJoin(CL.user.uid,mmName())}catch(e){console.warn('mm join',e);MM.msg='隨機配對暫時還不能用，晚點再試。';coopRender();return}
-  MM.on=true;MM.t0=Date.now();MM.n=0;MM.busy=false;MM.offer=0;clearInterval(MM.timer);MM.timer=setInterval(mmTick,1000);mwStart();coopRender()}
+  MM.on=true;MM.cv='';MM.t0=Date.now();MM.n=0;MM.busy=false;MM.offer=0;clearInterval(MM.timer);MM.timer=setInterval(mmTick,1000);mwStart();coopRender()}
 async function mmTick(){if(!MM.on)return;MM.n++;
   if(COOP.code||!CL.user){mmStop(true);return}
   if(!document.getElementById('coopmark')){mmStop(true);return}
@@ -7029,7 +7033,7 @@ function mwHit(i,ev){if(ev&&ev.preventDefault)ev.preventDefault();if(!MWG.on)ret
 function mwEnd(){clearInterval(MWG.gt);MWG.gt=null;MWG.on=false;const nb=MWG.score>MWG.best;if(nb){MWG.best=MWG.score;try{localStorage.setItem('izakaya-mwbest',MWG.score)}catch(e){}}
   MWG.last=nb?T('新紀錄！抓到 {0} 串',MWG.score):T('抓到 {0} 串',MWG.score);MWG.cells=Array(9).fill(0);coopRender()}
 /* 與電腦配對：沒人在線上時也能直接玩多人模式 */
-function mmCpuRow(){return `<div class="lbme" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px"><span style="grid-column:1/-1">🤖 <b>${T('與電腦配對')}</b><br><small>${T('沒人在線上也能玩，電腦店員接手另一個位置。')}</small></span><button class="btn" data-act="coopbot" data-id="k">🍳 ${T('我當廚房')}</button><button class="btn" data-act="coopbot" data-id="f">🧾 ${T('我當外場')}</button><button class="btn" data-act="coopbot" data-id="ky">🍜 屋台・我當廚房</button><button class="btn" data-act="coopbot" data-id="fy">🍜 屋台・我當外場</button><button class="btn" data-act="coopbot" data-id="ks">🍣 壽司・我當廚房</button><button class="btn" data-act="coopbot" data-id="fs">🍣 壽司・我當外場</button></div>`}
+function mmCpuRow(){return mmBotPick(T('與電腦配對'),T('沒人在線上也能玩，電腦店員接手另一個位置。'))}
 function coopFriendsBlock(){const head=`<p class="lbdesc">${T('邀請在線上的好友一起開店，對方會收到邀請通知。')}</p>`,D=typeof FR!=='undefined'&&FR.data;
   if(!lbEntry())return head+`<div class="lbme"><span>${T('取個暱稱，好友才看得到你。')}</span><button class="btn" data-act="nick">${T('取暱稱')}</button></div>`;
   const mmb=coopMmBlock();
@@ -7101,10 +7105,11 @@ function coopInvStart(){if(COOP.invOn||!CL.api||!CL.api.coopInvList||!coopDev()|
 function coopInvStop(){clearInterval(COOP.invT);COOP.invT=null;coopInvLiveOff();COOP.invOn=false;COOP.invSeen={};coopBannerHide()}
 document.addEventListener('visibilitychange',()=>{if(!COOP.invOn)return;if(document.hidden)coopInvLiveOff();else{COOP.act=Date.now();coopInvTick();if(!COOP.invOff)coopInvPoll(true)}});
 async function coopAct(k,id){if(!coopDev()||!CL.user)return;const me=CL.user.uid;COOP.err='';
+  if(k==='botv'){MM.cv=MM_CV[id]?id:'';coopRender();return}
   try{if(!CL.api)throw new Error('no api');
-    if(k==='open'){coopPanel();try{COOP.inv=await CL.api.coopInvList(me)}catch(e){console.warn('coop inv',e);COOP.inv={};COOP.err='讀不到邀請（規則還沒更新？）'}coopPanel();
+    if(k==='open'){MM.cv='';coopPanel();try{COOP.inv=await CL.api.coopInvList(me)}catch(e){console.warn('coop inv',e);COOP.inv={};COOP.err='讀不到邀請（規則還沒更新？）'}coopPanel();
       if(!COOP.code&&lbEntry()&&(!FR.data||Date.now()-FR.t>20000)){try{await frLoad()}catch(e){console.warn('coop friends',e)}coopRender()}return}
-    if(k==='bot'){const q=String(id);coBotStart(q[0]==='f'?'f':'k',q[1]==='y'?'ya':q[1]==='s'?'su':'iz');return}
+    if(k==='bot'){MM.cv='';const q=String(id);coBotStart(q[0]==='f'?'f':'k',q[1]==='y'?'ya':q[1]==='s'?'su':'iz');return}
     if((k==='make'||k==='accept'||k==='mm')&&CO.bot){if(CO.open)coClose(false);coBotOff()}
     if(k==='hide'){const v=!hideOnIs();hideOnSet(v);ONB.hid=false;if(v){if(MM.on)mmStop(true);onHideApply()}else onBeat(true);coopPanel();return}
     if(k==='mm'){await mmStart();return}
