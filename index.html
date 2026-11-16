@@ -145,6 +145,8 @@ body.ovl .hud .icon-btn.bagbtn{width:auto;min-width:40px;height:36px;padding:0 9
 .hand .gi svg{width:34px;height:22px;display:block}
 .hand{position:absolute;left:8px;top:232px;display:flex;align-items:center;gap:6px;background:#fffaf0;color:var(--soot);border:3px solid var(--soot);border-radius:12px;padding:2px 10px 2px 4px;font-size:13px;z-index:4;pointer-events:none}
 .hand svg{width:34px;height:34px}
+.hand.putback{pointer-events:auto;cursor:pointer;min-height:76px;min-width:150px;padding:6px 16px 6px 8px;font-size:15px;font-weight:900;border-color:#c0392b;background:#fff3e8;touch-action:manipulation}
+.hand.putback .pbtxt{color:#c0392b;margin-left:4px}
 
 /* modal */
 .modal{position:absolute;inset:0;background:#1a0e08b8;display:grid;grid-template-columns:minmax(0,1fr);place-items:center;z-index:10}
@@ -4065,7 +4067,7 @@ function renderStations(){
   {const e=$('st-odenPot');if(e)e.classList.toggle('held',!!R.held&&R.held.src==='oden')}
   const hand=$('hand');
   {const g=$('st-gunT');if(g)g.classList.toggle('held',!!R.aim)}
-  if(R.aim){hand.hidden=false;setHTML(hand,`<span class="gi">${sv(gunArt(ST.weapon),'0 0 100 60')}</span>`+T('手上：{0}',T(GUNS[(ST.weapon||1)-1].zh)))}else if(R.held){hand.hidden=false;setHTML(hand,icon(R.held.key)+T('手上：{0}',itemName(R.held.key)))}else hand.hidden=true;
+  if(R.aim){hand.hidden=false;hand.classList.add('putback');setHTML(hand,`<span class="gi">${sv(gunArt(ST.weapon),'0 0 100 60')}</span>`+T('手上：{0}',T(GUNS[(ST.weapon||1)-1].zh))+`<b class="pbtxt">${T('點這裡放回')}</b>`)}else if(R.held){hand.classList.remove('putback');hand.hidden=false;setHTML(hand,icon(R.held.key)+T('手上：{0}',itemName(R.held.key)))}else{hand.classList.remove('putback');hand.hidden=true}
 }
 
 /* ================= run ================= */
@@ -6431,7 +6433,7 @@ function autoWarm(h){
   if(j<0){toast('保溫台滿了');return}
   R.warm[j]={key:R.held.key};consume(R.held);sfx('warm');R.held=null;toast('放進保溫台了');renderStations();
 }
-$('game').addEventListener('pointerdown',e=>{if(e.button>0)return;if(e.target.closest('.modal')||e.target.closest('#st-suord'))return;if(R&&!R.paused&&!R.over&&ST.weapon&&e.target.closest('#st-gunT')){toggleGun();return}if(R&&R.aim&&!R.paused&&!R.over){shoot(e);return}
+$('game').addEventListener('pointerdown',e=>{if(e.button>0)return;if(e.target.closest('.modal')||e.target.closest('#st-suord'))return;if(R&&!R.paused&&!R.over&&ST.weapon&&(e.target.closest('#st-gunT')||e.target.closest('#hand.putback'))){toggleGun();return}if(R&&R.aim&&!R.paused&&!R.over){shoot(e);return}
   const h=srcOfEl(e.target),key=h?h.src+h.i:'',now=performance.now(),dbl=key&&lastTap.k===key&&now-lastTap.t<380;
   if(dbl&&R&&R.held&&R.held.src===h.src&&R.held.i===h.i&&heldValid()){lastTap={k:'',t:0};autoWarm(h);return} // only a real 'send to warmer' double-tap eats the tap; otherwise fast tappers lost every second tap on the same grill/board/bowl spot
   onTap(e);lastTap={k:key,t:now};});

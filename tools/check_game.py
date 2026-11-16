@@ -1091,10 +1091,40 @@ def find_chrome():
     return None
 
 
+def sc_gun(b, base):
+    """回歸測試：拿起槍（瞄準）後，要能用大的「點這裡放回」按鈕放回去；槍架本身很小，不能只靠它。"""
+    c = Ctx(b, base).open()
+    try:
+        to_day(c, run_ms=600)
+        c.page.evaluate("()=>{ST.weapon=1;save();buildStations();renderStations();renderHUD()}")
+        c.page.evaluate("()=>{robIn()}")
+        c.page.wait_for_timeout(1000)
+
+        def tap(sel):
+            bb = c.page.locator(sel).first.bounding_box()
+            c.page.mouse.click(bb['x'] + bb['width'] / 2, bb['y'] + bb['height'] / 2)
+            c.page.wait_for_timeout(400)
+
+        tap('#st-gunT')
+        if not c.page.evaluate('R.aim'):
+            raise AssertionError('點槍架拿不起槍' + c.diag('槍架點了沒反應'))
+        bb = c.page.locator('#hand.putback').first.bounding_box()
+        if bb['height'] < 44 or bb['width'] < 44:
+            raise AssertionError('放回按鈕太小：%.0fx%.0f' % (bb['width'], bb['height']))
+        tap('#hand.putback')
+        if c.page.evaluate('R.aim'):
+            raise AssertionError('按「點這裡放回」沒有放回槍' + c.diag('瞄準中'))
+        if 'aim' in c.page.evaluate("document.getElementById('game').className"):
+            raise AssertionError('放回後畫面還留著瞄準狀態')
+        c.expect_clean('放回槍')
+    finally:
+        c.close()
+
+
 SCENARIOS = [('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar),
-             ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip)]
+             ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun)]
 
 
 def main():
