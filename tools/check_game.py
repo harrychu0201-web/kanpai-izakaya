@@ -630,9 +630,44 @@ def sc_sponsor(b, base):
         c.close()
 
 
+def sc_homedog(b, base):
+    """首頁的狗：遇過 3 位神祕訪客只有貓；全部遇過才出現狗狗；兩隻不能重疊；點狗狗真的有叫聲（真實點擊）。"""
+    c = Ctx(b, base).open()
+    try:
+        c.dismiss_modals()
+        ids = c.page.evaluate('SGUESTS.map(g=>g.id)')
+
+        def set_sg(keys):
+            c.page.evaluate("""(keys)=>{const k=%s;const r=JSON.parse(localStorage.getItem(k)||'{}');
+                r.sg=Object.fromEntries(keys.map(x=>[x,1]));localStorage.setItem(k,JSON.stringify(r))}""" % json.dumps(REC_KEY), keys)
+            c.page.reload()
+            c.page.wait_for_timeout(2200)
+            c.dismiss_modals()
+
+        set_sg(ids[:3])
+        if not c.has('.homecat.pl'):
+            raise AssertionError('遇過 3 位神祕訪客，首頁的貓應該出現')
+        if c.has('.homedog'):
+            raise AssertionError('只遇過 3 位，首頁就出現狗狗了（應該要全部遇過）')
+        set_sg(ids)
+        if not c.has('.homedog.pl'):
+            raise AssertionError('神祕訪客全部遇過，首頁沒有出現狗狗')
+        cat, dog = c.page.evaluate("""['.homecat.pl','.homedog.pl'].map(s=>{const e=document.querySelector(s).getBoundingClientRect();return [e.left,e.top,e.right,e.bottom]})""")
+        if cat[0] < dog[2] and dog[0] < cat[2] and cat[1] < dog[3] and dog[1] < cat[3]:
+            raise AssertionError('狗狗和貓重疊了：貓 %r 狗 %r' % (cat, dog))
+        c.click('.homedog', wait=400)
+        if not c.has('.catsay.on'):
+            raise AssertionError('點狗狗之後沒有出現叫聲的小對話框')
+        if not c.page.evaluate("(document.querySelector('.catsay')||{}).textContent||''").strip():
+            raise AssertionError('狗狗的小對話框是空的')
+        c.expect_clean('首頁的狗')
+    finally:
+        c.close()
+
+
 SCENARIOS = [('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
-             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor)]
+             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog)]
 
 
 def find_chrome():
