@@ -8425,13 +8425,13 @@ const CO_PG={1:['g','f'],2:['t','p'],3:['y','o'],4:['r','z']};
 Object.assign(CO_ST,{s:{a:'ss',n:'握壽司台',pg:5,max:4},w:{a:'sw',n:'軍艦台',pg:5,max:3},n:{a:'sn',n:'壽司卷台',pg:6,max:4},h:{a:'sx',n:'手卷台',pg:6,max:3},a:{a:'sa',n:'炙燒台',pg:7,max:4},u:{a:'sq',n:'高級軍艦台',pg:7,max:3}});
 Object.assign(CO_PG,{5:['s','w'],6:['n','h'],7:['a','u']});
 /* 多人模式解鎖：雙方一起營業「滿 2:30」的完整天數累計到門檻，就開放下一段的菜（客人只點已開放的菜，廚房分頁也要開放才能用）。單人模式不受影響；電腦店員局不計天數、固定第一段。 */
-const CO_UNLOCK=[{d:0,k:['neg','tsu','kara']},{d:3000,k:['buta','ika','ebi','kaki']},{d:8000,k:['tako','onig']},{d:20000,k:['ram','gyo','kram','eram','bram','miso','dandan']}];
+const CO_UNLOCK=[{d:0,k:['neg','tsu','kara']},{d:0,k:['buta','ika','ebi','kaki']},{d:0,k:['tako','onig']},{d:0,k:['ram','gyo','kram','eram','bram','miso','dandan']}];
 /* 場地：居酒屋（原本的）和拉麵屋台。屋台比照居酒屋，用「一起營業的天數」一段一段解鎖，兩個場地的天數分開算（居酒屋 cp、屋台 cq）。
    屋台沿用同樣的廚房分頁，只是順序不同：麵攤（拉麵＋煎餃）先開，之後才開串燒／唐揚、章魚燒／烤飯糰；鐵板和天婦羅那間屋台沒有。 */
-const CO_UNLOCK_YA=[{d:0,k:['ram','gyo']},{d:3000,k:['neg','tsu','kara']},{d:8000,k:['miso','dandan','kram']},{d:20000,k:['tako','onig']}];
+const CO_UNLOCK_YA=[{d:0,k:['ram','gyo']},{d:0,k:['neg','tsu','kara']},{d:0,k:['miso','dandan','kram']},{d:0,k:['tako','onig']}];
 /* 海風壽司場地：握壽司先開，軍艦和壽司卷、手卷、炙燒和高級軍艦一段一段開；天數另外算（cs） */
-const CO_UNLOCK_SU=[{d:0,k:['sal','tun','tam']},{d:3000,k:['iku','kap','tek']},{d:8000,k:['stm','ttm']},{d:20000,k:['asal','atun','negi','uni']}];
-/* 多人模式營收門檻（2026-11-16）：每局從 0 開始，雙方營收合計（S.w）到門檻就開放下一段；門檻是 CO_UNLOCK* 的 d 欄（元） */
+const CO_UNLOCK_SU=[{d:0,k:['sal','tun','tam']},{d:0,k:['iku','kap','tek']},{d:0,k:['stm','ttm']},{d:0,k:['asal','atun','negi','uni']}];
+/* 多人模式（2026-11-16 起全部開放）：各段門檻都是 0，每局一開始就全部廚房與菜色可用；coStageOf 保留給之後想改回營收門檻時用（門檻寫在 CO_UNLOCK* 的 d 欄） */
 const CO_VEN={iz:{n:'居酒屋',ic:'🏮',un:CO_UNLOCK,pgs:[1,2,3,4],ps:{1:0,2:1,3:2,4:3},rk:'cp'},ya:{n:'拉麵屋台',ic:'🍜',un:CO_UNLOCK_YA,pgs:[4,1,3],ps:{4:0,1:1,3:3},rk:'cq'},su:{n:'海風壽司',ic:'🍣',un:CO_UNLOCK_SU,pgs:[5,6,7],ps:{5:0,6:1,7:3},rk:'cs'}};
 const CO_VORD=['iz','ya','su'];
 const coVN=v=>v==='ya'||v==='su'?v:'iz';
@@ -8570,7 +8570,7 @@ function coPush(){const S=CO.S;if(!S||!coHost()||!COOP.code||!CL.api||!CL.api.co
   COOP.w++;CL.api.coopStSet(COOP.code,JSON.stringify(S)).catch(e=>console.warn('co push',e))}
 async function coStart(){if(!coHost()||!COOP.code||!CL.api)return;if(!coBothRdy()){coopNote('雙方都要先按準備');return}const o=coopOther();
   if(!(o&&COOP.p[o]&&COOP.p[o].on)){coopNote('對方不在線');return}
-  coLobbyInit();const v=coVN(CO.L.v),S=coNewState(COOP.hostRole==='f'?'f':'k',v);S.stg=0;CO.pu=o;CO.puRid=S.rid;CO.S=S;CO.off=0;CO.rid=S.rid;CO.closedRid=0;CO.seen={};CO.lastTick=0;CO.fxSeen=0;CO.lastHtml='';
+  coLobbyInit();const v=coVN(CO.L.v),S=coNewState(COOP.hostRole==='f'?'f':'k',v);S.stg=coStageOf(0,v);CO.pu=o;CO.puRid=S.rid;CO.S=S;CO.off=0;CO.rid=S.rid;CO.closedRid=0;CO.seen={};CO.lastTick=0;CO.fxSeen=0;CO.lastHtml='';
   coPush();
   try{if(!COOP.room||COOP.room.state!=='playing')await CL.api.coopState(COOP.code,'playing')}catch(e){console.warn('co state',e)}
   coOpen();clearInterval(CO.tickT);CO.tickT=setInterval(coTick,250)}
@@ -8587,7 +8587,7 @@ function coBotOff(){if(CO.bot){clearInterval(CO.bot.t);CO.bot=null}}
 function coBotStart(hk,v){if(typeof mmStop==='function')mmStop(true);if(COOP.code){coopNote('已經在連線中');return}
   if(CO.open){clearInterval(CO.paintT);CO.paintT=null;CO.open=false;const ov=document.getElementById('cogame');if(ov)ov.remove()}
   const msgs=CO.bot?CO.bot.msgs:[];coBotOff();if(typeof closeModal==='function')closeModal();
-  const S=coNewState(hk==='f'?'f':'k',v);S.bot=1;S.rd={h:0,g:1};S.stg=0;
+  const S=coNewState(hk==='f'?'f':'k',v);S.bot=1;S.rd={h:0,g:1};S.stg=coStageOf(0,v);
   CO.bot={msgs,next:S.t0+600,said:{},t:0,clAt:0};CO.S=S;CO.off=0;CO.rid=S.rid;CO.closedRid=0;CO.seen={};CO.lastTick=0;CO.fxSeen=0;CO.lastHtml='';CO.hintDay=0;
   coOpen();clearInterval(CO.tickT);CO.tickT=setInterval(coTick,250);CO.bot.t=setInterval(coBotTick,150);
   coBotMsg('bot',S.hk==='k'?'外場交給我！你負責做菜，我會在點單幫你記。':'廚房交給我！你負責接客，點單我會照著做。')}
@@ -8674,8 +8674,8 @@ function coReset(){CO.L=null;CO.lobby=null;CO.lobbyPushed=false;if(typeof voStop
 function coLobbyView(){if(coHost()){coLobbyInit();return{hk:CO.L.hk,rd:CO.L.rd,v:CO.L.v}}return CO.lobby?{hk:CO.lobby.hk,rd:CO.lobby.rd,v:coVN(CO.lobby.v)}:null}
 function coLobbyBlock(){const v=coLobbyView(),host=coHost(),me=v?(host?v.hk:(v.hk==='k'?'f':'k')):null,nm=r=>r==='k'?'🍳 廚房':'🧾 外場';let s='';
   if(!me)s+=`<p class="lbdesc">等房主選角色…</p>`;
-  else s+=`<div class="lbme"><span>你的角色：<b>${nm(me)}</b></span><small>${esc(coopPN())}：${nm(me==='k'?'f':'k')}</small></div><p class="lbdesc">${v&&v.v==='su'&&me==='k'?'你負責捏壽司：點材料放上壽司台 → 跳出「捏緊／捲緊／炙燒」點一下 → 好了拿起放進保溫台。壽司不會焦，但客人等太久會生氣！軍艦、壽司卷、手卷、炙燒賺到營收門檻就開放。你看不到客人，照「📋 點單」做！':v&&v.v==='ya'&&me==='k'?'你負責煮麵和下鍋：生麵下鍋 → 熟了拿起 → 放進保溫台。串燒、唐揚等新菜賺到營收門檻就開放；熟的拉麵和熟的唐揚放進保溫台，會自動合成唐揚拉麵！你看不到客人，照「📋 點單」做菜！':CO_TASK[me]}</p>`;
-  if(v){const V=CO_VEN[coVN(v.v)];s+=`<div class="lbme"><span>場地：<b>${V.ic} ${V.n}</b></span></div>`+(v.v==='su'?'<p class="lbdesc">海風壽司：先賣鮭魚、鮪魚、玉子握壽司；本局營收夠了，才會開放軍艦和壽司卷、手卷，最後是炙燒握壽司和高級軍艦。</p>':'')+(v.v==='ya'?'<p class="lbdesc">屋台：先賣拉麵和煎餃；本局營收夠了，才會開放串燒、唐揚、味噌／擔擔麵，最後是章魚燒和烤飯糰。</p>':'');const a=host?'h':'g',b=host?'g':'h';s+=`<div class="lbme"><span>你：${v.rd[a]?'✅ 已準備':'⏳ 未準備'}</span><span>${esc(coopPN())}：${v.rd[b]?'✅ 已準備':'⏳ 未準備'}</span></div>${voLobbyLine()}<p class="lbdesc">雙方都按「準備」後，由房主按「開始營業」，兩邊會一起倒數 3、2、1 開店。</p><p class="lbdesc">🌙 營業沒有時間限制；想結束時，按上方正中間的「打烊」，雙方都同意就能休息並結算。</p>`}
+  else s+=`<div class="lbme"><span>你的角色：<b>${nm(me)}</b></span><small>${esc(coopPN())}：${nm(me==='k'?'f':'k')}</small></div><p class="lbdesc">${v&&v.v==='su'&&me==='k'?'你負責捏壽司：點材料放上壽司台 → 跳出「捏緊／捲緊／炙燒」點一下 → 好了拿起放進保溫台。壽司不會焦，但客人等太久會生氣！軍艦、壽司卷、手卷、炙燒一開始就全部可以用。你看不到客人，照「📋 點單」做！':v&&v.v==='ya'&&me==='k'?'你負責煮麵和下鍋：生麵下鍋 → 熟了拿起 → 放進保溫台。串燒、唐揚等新菜一開始就全部可以用；熟的拉麵和熟的唐揚放進保溫台，會自動合成唐揚拉麵！你看不到客人，照「📋 點單」做菜！':CO_TASK[me]}</p>`;
+  if(v){const V=CO_VEN[coVN(v.v)];s+=`<div class="lbme"><span>場地：<b>${V.ic} ${V.n}</b></span></div>`+(v.v==='su'?'<p class="lbdesc">海風壽司：鮭魚、鮪魚、玉子握壽司，還有軍艦、壽司卷、手卷、炙燒握壽司和高級軍艦，一開始就都能做。</p>':'')+(v.v==='ya'?'<p class="lbdesc">屋台：拉麵、煎餃、串燒、唐揚、味噌／擔擔麵、章魚燒和烤飯糰，一開始就都能賣。</p>':'');const a=host?'h':'g',b=host?'g':'h';s+=`<div class="lbme"><span>你：${v.rd[a]?'✅ 已準備':'⏳ 未準備'}</span><span>${esc(coopPN())}：${v.rd[b]?'✅ 已準備':'⏳ 未準備'}</span></div>${voLobbyLine()}<p class="lbdesc">雙方都按「準備」後，由房主按「開始營業」，兩邊會一起倒數 3、2、1 開店。</p><p class="lbdesc">🌙 營業沒有時間限制；想結束時，按上方正中間的「打烊」，雙方都同意就能休息並結算。</p>`}
   return s}
 function coLobbyBtns(){const v=coLobbyView();let s=voLobbyBtns();
   if(coHost()){const nx=CO_VEN[coVNext(v&&v.v)];s+=`<button class="btn alt" data-act="coopven">${nx.ic} 換成${nx.n}場地</button>`}
