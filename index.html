@@ -5548,7 +5548,7 @@ document.addEventListener('click',e=>{
   else if(act==='cstkt'){CHT.stkOpen=!CHT.stkOpen;const p=$('cstkp');if(p){if(CHT.stkOpen&&!p.innerHTML)p.innerHTML=stkGrid();p.style.display=CHT.stkOpen?'grid':'none'}}
   else if(act==='cstk'){const n=+a.dataset.id;if(n>=1&&n<=STK_N)chatSend(n)}
   else if(act==='cemo'){const i=$('cin');if(i){i.value=(i.value+a.dataset.id).slice(0,100);i.focus()}}
-  else if(act==='cmsg'){if(chatSel())return;CHT.open=CHT.open===a.dataset.id?null:a.dataset.id;chatDraw()}
+  else if(act==='cmsg'){if(chatSel())return;CHT.open=CHT.open===a.dataset.id?null:a.dataset.id;chatDraw();chatShowMenu()}
   else if(act==='creply'){const m=CHT.msgs.find(x=>x.id===CHT.open);CHT.open=null;if(m){CHT.replyTo={id:m.id,uid:m.uid,name:m.name||'?',text:chatStk(m.text)?chatClean(m.text):[...chatClean(m.text)].slice(0,30).join('')};chatReplyDraw();const i=$('cin');if(i)i.focus()}chatDraw()}
   else if(act==='crpx'){CHT.replyTo=null;chatReplyDraw()}
   else if(act==='clike'){const m=CHT.msgs.find(x=>x.id===CHT.open);CHT.open=null;if(m&&CL.user&&CL.api)chatLike(m,CL.user.uid);chatDraw()}
@@ -7770,6 +7770,8 @@ function chatDraw(scroll){const l=$('chatlist');if(!l)return;const near=l.scroll
     :`<p style="font-size:14px">${T(CHT.live?'還沒有人說話，來打聲招呼吧！':(off?'目前離線，還沒有可以顯示的紀錄':'載入中…'))}</p>`);
   if(scroll===true?near||!CHT.drawn:false)l.scrollTop=l.scrollHeight;
   if(!CHT.drawn&&rows.length){CHT.drawn=true;const jump=()=>{const dv=$('cdiv');if(dv)l.scrollTop+=dv.getBoundingClientRect().top-l.getBoundingClientRect().top-6;else l.scrollTop=l.scrollHeight};jump();requestAnimationFrame(jump);setTimeout(jump,250)}}
+/* 最新的留言在列表最底下，它的選單會接在後面、落在可視範圍外，點了看起來沒反應；打開後把選單捲進來 */
+function chatShowMenu(){const l=$('chatlist'),m=l&&l.querySelector('.cmenu');if(!m)return;const lr=l.getBoundingClientRect(),mr=m.getBoundingClientRect(),d=mr.bottom-lr.bottom+6;if(d>0)l.scrollTop+=d}
 async function chatAddFriend(m){const me=CL.user;if(!me||!CL.api||!m||!m.uid)return;
   if(m.uid===me.uid){toast(T('不能加自己當好友。'));chatDraw();return}
   if(FR.data&&FR.data.fl[m.uid]){toast(T('已經是好友了。'));chatDraw();return}
