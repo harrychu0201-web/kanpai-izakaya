@@ -6706,7 +6706,17 @@ function compVV(){
   el.style.transformOrigin='0 0';
   el.style.transform=`translate(${vv.offsetLeft}px,${vv.offsetTop}px) scale(${1/sc})`;
 }
-function visH(){let d=document.getElementById('dvhProbe');if(!d){d=document.createElement('div');d.id='dvhProbe';d.style.cssText='position:fixed;left:0;top:0;width:1px;height:100vh;height:100dvh;visibility:hidden;pointer-events:none';document.body.appendChild(d)}const a=window.innerHeight,b=window.visualViewport?visualViewport.height:a;return Math.max(200,Math.min(a,b))}
+function visH(){let d=document.getElementById('dvhProbe');if(!d){d=document.createElement('div');d.id='dvhProbe';d.style.cssText='position:fixed;left:0;top:0;width:1px;height:100vh;height:100dvh;visibility:hidden;pointer-events:none';document.body.appendChild(d)}const a=window.innerHeight,b=window.visualViewport?visualViewport.height:a;return Math.max(200,Math.min(a,b,VISCLIP||a))}
+/* 內嵌在遊戲入口網站（iframe）時，外層網頁可能把 iframe 做得比畫面看得到的範圍高（被外層裁掉、或 iPad 工具列佔掉一塊），
+   遊戲量到的 innerHeight 就比實際看得到的高，舞台下半部（料理台）被切掉點不到。
+   這裡用 IntersectionObserver 量出 iframe 實際可見的高度（跨網域也能量），舞台縮到看得到的範圍內；視窗恢復後會自動長回來。 */
+let VISCLIP=null;
+(function visClipInit(){try{if(window.top===window||!window.IntersectionObserver)return}catch(e){}
+  setTimeout(()=>{try{const d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;width:2px;height:100%;opacity:0;pointer-events:none';document.body.appendChild(d);
+    const th=[];for(let i=0;i<=50;i++)th.push(i/50);
+    new IntersectionObserver(es=>{const e=es[es.length-1],r=e.intersectionRect;let v=null;
+      if(e.isIntersecting&&r.height>0&&r.top<=2&&r.bottom<innerHeight-6)v=Math.max(200,Math.round(r.bottom));
+      if(v!==VISCLIP){VISCLIP=v;STAB={o:'',h:0}; /* 外層可見高度變了：清掉「營業中只縮不放」的記錄，重新採用目前的高度，才長得回來 */ try{fit()}catch(x){}setTimeout(()=>{try{fit()}catch(x){}},650)}},{threshold:th}).observe(d)}catch(e){}},0)})();
 /* fit() only ran on resize events; on Android the fullscreen / rotation animation reports a stale height first, so the board stayed too tall until the next HUD change (end of day). Re-run it a few times while the viewport settles. */
 function refitBurst(){[0,100,300,700,1400,2500].forEach(t=>setTimeout(fit,t))}
 /* 手機橫向時，瀏覽器的網址列／底部工具列一滑出一收起，可見高度就會跟著變，遊戲會整個跟著縮放（甚至重排）。

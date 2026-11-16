@@ -993,6 +993,56 @@ def sc_pausewalk(b, base):
         c.close()
 
 
+def sc_iframeclip(b, base):
+    """內嵌在入口網站（iframe）：iframe 比外層看得到的範圍高時，舞台不能被切掉（2026/11/16 PlayStalls iPad 玩家：下面料理點不到）；
+    外層恢復高度後舞台要長回來。外層裁切用 overflow:hidden 的容器模擬。"""
+    ua = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) '
+          'Version/18.0 Safari/605.1.15')
+    for vis, ih, ipad in ((450, 700, True), (400, 640, True), (380, 800, False), (450, 700, False)):  # ipad=True：iPadOS 用桌面版 UA，靠 platform+觸控點數判斷
+        ctx = b.new_context(viewport={'width': 820, 'height': 1180}, has_touch=True, user_agent=ua, locale='zh-TW')
+        ctx.route('**/*', lambda r: r.continue_() if r.request.url.startswith(base) else r.abort())
+        ctx.add_init_script("if(!localStorage.getItem('__s')){localStorage.setItem('%s',%s);localStorage.setItem('%s',%s);localStorage.setItem('__s','1')}"
+                            % (SAVE_KEY, json.dumps(json.dumps(SEED_SAVE)), REC_KEY, json.dumps(json.dumps(SEED_REC))))
+        if ipad:
+            ctx.add_init_script("Object.defineProperty(navigator,'platform',{get:()=>'MacIntel'});Object.defineProperty(navigator,'maxTouchPoints',{get:()=>5})")
+        pg = ctx.new_page()
+        errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.route('**/wrap.html', lambda r: r.fulfill(
+            body='<body style="margin:0"><div id=c style="height:%dpx;overflow:hidden;width:620px"><iframe src="%s/index.html" '
+                 'style="width:620px;height:%dpx;border:0"></iframe></div></body>' % (vis, base, ih), content_type='text/html'))
+        try:
+            pg.goto(base + '/wrap.html')
+            pg.wait_for_timeout(3000)
+            f = pg.frames[1]
+            jc = lambda sel: f.evaluate('s=>document.querySelector(s).click()', sel)
+            for _ in range(3):
+                if f.locator('.modal').count():
+                    pg.mouse.click(616, 4)
+                    pg.wait_for_timeout(300)
+            jc('[data-act=cont]'); pg.wait_for_timeout(900)
+            if f.locator('[data-act=start]').count() == 0 and f.locator('.modal [data-act=back]').count():
+                jc('.modal [data-act=back]'); pg.wait_for_timeout(600)
+            jc('[data-act=start]'); pg.wait_for_timeout(2500)
+            for _ in range(3):
+                if f.locator('[data-act=iostipok]').count():
+                    jc('[data-act=iostipok]'); pg.wait_for_timeout(400)
+            pg.wait_for_timeout(2500)
+            bot = lambda: f.evaluate("document.getElementById('box').getBoundingClientRect().bottom")
+            b1 = bot()
+            if b1 > vis + 1:
+                raise AssertionError('iframe 高 %d、外層只看得到 %d：舞台底部 %.0f，被切掉了（下面的料理點不到）' % (ih, vis, b1))
+            pg.evaluate("document.getElementById('c').style.height='%dpx'" % ih)
+            pg.wait_for_timeout(2600)
+            b2 = bot()
+            if b2 < b1 + 20:
+                raise AssertionError('外層恢復到 %d 後舞台沒有長回來（%.0f → %.0f）' % (ih, b1, b2))
+            if errs:
+                raise AssertionError('JS 錯誤：%s' % errs[:3])
+        finally:
+            ctx.close()
+
+
 def find_chrome():
     for p in (os.environ.get('CHROME'), shutil.which('google-chrome'), shutil.which('chromium'),
               shutil.which('chromium-browser'), '/usr/bin/google-chrome'):
@@ -1004,7 +1054,7 @@ def find_chrome():
 SCENARIOS = [('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar),
-             ('pausewalk', sc_pausewalk)]
+             ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip)]
 
 
 def main():
