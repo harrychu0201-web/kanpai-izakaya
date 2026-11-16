@@ -11,6 +11,8 @@
   shops     每家店的商店：每個分頁、每個買／升級按鈕都真的點過，買到全部擁有後再逐頁重開
   layout    橫向手機、iOS 縮放（layout viewport 約螢幕 2 倍）、Android、平板、桌機：舞台不能縮成一小塊、不能被切掉
   pick      選店橫向卡片、說明預設收合、設定「進遊戲後先到哪」（店家選單／暖簾街）
+  bar       月影酒吧（作者限定）：教學三杯用真實按住／畫圈／來回滑做完（含轉身到酒櫃拿酒）、打烊結算；第二天在商店買酒和配料、
+            故意做錯 → 重做、再做曼哈頓（抖苦精、馬丁尼杯、手邊滿三瓶要換）和瑪格麗特（配料 B 頁的鹽口）；第三天暫停回主頁
   saves     玩完整條路徑後，玩家原本的存檔欄位一個都不能少、不認得的欄位原封不動
 """
 import argparse, functools, http.server, json, os, shutil, socketserver, sys, threading, time, traceback
@@ -665,9 +667,290 @@ def sc_homedog(b, base):
         c.close()
 
 
+# ------------------------------------------------------------------ 月影酒吧（作者／管理員限定，用作者身分真實點擊、真實手勢）
+BAR_KEYS = ['brhigh', 'brume', 'brcha', 'brmizu', 'bryuzu', 'bratsu', 'brgimlet', 'brmatcha']
+
+
+def bx_box(c, sel):
+    b = c.page.locator(sel).first.bounding_box()
+    if not b:
+        raise AssertionError('月影酒吧：找不到 %s\n%s' % (sel, c.diag()))
+    return b
+
+
+def bx_hold_until(c, sel, js_done, at=(0.5, 0.5), limit=20000):
+    """在元素上按住，邊看畫面數值邊等，到了就放開（跟真人看刻度一樣）。"""
+    b = bx_box(c, sel)
+    c.page.mouse.move(b['x'] + b['width'] * at[0], b['y'] + b['height'] * at[1])
+    c.page.mouse.down()
+    t0 = time.time()
+    while not c.page.evaluate(js_done):
+        if (time.time() - t0) * 1000 > limit:
+            c.page.mouse.up()
+            raise AssertionError('月影酒吧：按住 %s 超過 %d 秒還沒到 (%s)' % (sel, limit // 1000, js_done))
+        c.page.wait_for_timeout(16)
+    c.page.mouse.up()
+    c.page.wait_for_timeout(250)
+
+
+def bx_circles(c, n, release=True):
+    import math
+    b = bx_box(c, '#bxpad')
+    cx, cy, r = b['x'] + b['width'] / 2, b['y'] + b['height'] / 2, b['width'] * 0.32
+    c.page.mouse.move(cx + r, cy)
+    c.page.mouse.down()
+    steps = int(24 * n)
+    for i in range(1, steps + 1):
+        a = 2 * math.pi * i / 24
+        c.page.mouse.move(cx + r * math.cos(a), cy + r * math.sin(a))
+        c.page.wait_for_timeout(12)
+    if release:
+        c.page.mouse.up()
+    c.page.wait_for_timeout(200)
+
+
+def bx_shake(c, strokes):
+    b = bx_box(c, '#bxpad')
+    cx, cy, w = b['x'] + b['width'] / 2, b['y'] + b['height'] / 2, b['width'] * 0.3
+    c.page.mouse.move(cx - w, cy)
+    c.page.mouse.down()
+    for i in range(strokes + 1):
+        x0, x1 = (cx - w, cx + w) if i % 2 == 0 else (cx + w, cx - w)
+        for k in range(1, 9):
+            c.page.mouse.move(x0 + (x1 - x0) * k / 8, cy)
+            c.page.wait_for_timeout(28)
+    c.page.mouse.up()
+    c.page.wait_for_timeout(200)
+
+
+def bx_stage(c):
+    return c.page.evaluate("BX?(BX.stage==='make'?bxCur()[0]:BX.stage):'none'")
+
+
+SHOTS = os.environ.get('BAR_SHOTS')
+
+
+def bx_shot(c, name):
+    if SHOTS:
+        c.page.wait_for_timeout(400)
+        c.page.screenshot(path=os.path.join(SHOTS, name + '.png'))
+
+
+def bx_fetch(c, l):
+    """轉身到酒櫃拿酒，再轉回吧台（拿到這一步要用的酒會自己轉回來）。"""
+    c.click('[data-bx=turn]', wait=500)
+    if c.page.evaluate("BX.view") != 'cab':
+        raise AssertionError('月影酒吧：按了轉身沒有看到酒櫃\n%s' % c.diag())
+    bx_shot(c, 'cab-' + l)
+    c.click('[data-bx=take][data-v=%s]' % l, wait=1100)
+    if l not in c.page.evaluate("BX.hand"):
+        raise AssertionError('月影酒吧：在酒櫃點了 %s 但沒拿到手邊（手邊：%s）' % (l, c.page.evaluate("BX.hand")))
+    if c.page.evaluate("BX.view") == 'cab':
+        c.click('[data-bx=turn]', wait=500)
+    if c.page.evaluate("BX.view") != 'bar':
+        raise AssertionError('月影酒吧：拿完酒轉不回吧台\n%s' % c.diag())
+
+
+def bx_make(c, wrong=False, started=False):
+    """照客人的單把這杯做完（wrong=True 故意選錯杯、量錯）。"""
+    o = c.page.evaluate("(()=>{const o=bxOrder(),r=BXR[o.k];return {k:o.k,c:o.c,g:r.g,t:r.t,ice:r.ice}})()")
+    if not started:
+        c.click('[data-bx=start]', wait=300)
+    for _ in range(22):
+        st = bx_stage(c)
+        if st in ('m', 'dash') and c.page.evaluate("bxNeedHand(bxCur())"):
+            bx_fetch(c, c.page.evaluate("bxCur()[1]"))
+            continue
+        bx_shot(c, 'st-%s-%s' % (o['k'], st))
+        if st == 'glass':
+            c.click('[data-bx=g][data-v=%s]' % ('coupe' if wrong and o['g'] != 'coupe' else 'high' if wrong else o['g']), wait=150)
+            c.click('[data-bx=t][data-v=%s]' % o['t'], wait=650)
+        elif st == 'ice':
+            c.click('[data-bx=i][data-v=%s]' % o['ice'], wait=350)
+        elif st == 'm':
+            js = "(()=>{const s=bxCur(),sp=bxMSpec(bxOrder(),s[1],s[2]);return {l:s[1],lo:sp.lo,hi:sp.hi,plo:sp.plo,phi:sp.phi,cond:sp.cond,cap:sp.cap}})()"
+            sp = c.page.evaluate(js)
+            goal = min(sp['hi'] * 1.6, sp['cap'] * 0.95) if wrong else (sp['plo'] + sp['phi']) / 2
+            bx_hold_until(c, '#bxhold', "(BX.d.ml['%s']||0)>=%f||bxCur()[0]!=='m'" % (sp['l'], goal - 0.6))
+            c.page.wait_for_timeout(800)
+            if bx_stage(c) == 'm' and c.page.evaluate("bxCur()[1]") == sp['l']:
+                if c.has('[data-bx=next]'):
+                    c.click('[data-bx=next]', wait=300)
+                else:
+                    raise AssertionError('月影酒吧：量好酒後沒有自動下一步，也沒有「下一步」按鈕\n%s' % c.diag())
+        elif st == 'dash':
+            n = c.page.evaluate("bxCur()[2]") + (2 if wrong else 0)
+            for _ in range(n):
+                c.click('[data-bx=dash]', wait=120)
+            c.click('[data-bx=done]', wait=300)
+        elif st == 'stir':
+            z = c.page.evaluate("bxCur()[1]")
+            bx_circles(c, ((z[0] + z[1]) / 2) / 3.6)
+            c.click('[data-bx=done]', wait=300)
+        elif st == 'lift':
+            bx_circles(c, 1.05)
+            c.page.wait_for_timeout(700)
+            if bx_stage(c) == 'lift':
+                c.click('[data-bx=done]', wait=300)
+        elif st == 'shake':
+            bx_shake(c, 18)
+            c.click('[data-bx=done]', wait=300)
+        elif st == 'heat':
+            tg = c.page.evaluate("bxHeatT(bxOrder())")
+            bx_hold_until(c, '#bxhold', "BX.d.temp>=%f" % (tg - 1.4))
+            c.page.wait_for_timeout(700)
+            c.click('[data-bx=done]', wait=300)
+        elif st in ('top', 'pour'):
+            tg = c.page.evaluate("(()=>{const s=bxCur();return s[0]==='pour'?s[1]:s[2]})()")
+            bx_hold_until(c, '#bxpad', "BX.d.lv>=%f" % (tg - 0.012), at=(0.5, 0.78))
+            c.click('[data-bx=done]', wait=300)
+        elif st == 'gar':
+            need = [x[2:] for x in o['c'] if x.startswith('g:')]
+            for g in need:
+                if not c.has('[data-bx=gar][data-v=%s]' % g):
+                    c.click('[data-bx=garpg][data-v="%d"]' % (1 - c.page.evaluate("BX.d.garPg||0")), wait=200)
+                c.click('[data-bx=gar][data-v=%s]' % g, wait=150)
+            c.click('[data-bx=serve]', wait=500)
+        elif st == 'res':
+            return c.page.evaluate("BX.passed")
+        else:
+            raise AssertionError('月影酒吧：做酒時卡在奇怪的階段 %s\n%s' % (st, c.diag()))
+        c.expect_clean('月影酒吧做 %s 的 %s 階段' % (o['k'], st))
+    raise AssertionError('月影酒吧：%s 做了 22 步還沒出酒\n%s' % (o['k'], c.diag()))
+
+
+def bx_finish_cust(c):
+    """過關後：繼續 → 回應客人 → 下一位。"""
+    c.click('[data-bx=totalk]', wait=300)
+    v = c.page.evaluate("BXCH[bxOrder().who][0]")
+    c.click('[data-bx=say][data-v=%s]' % v, wait=300)
+    c.click('[data-bx=nextc]', wait=700)
+
+
+def sc_bar(b, base):
+    seed = dict(SEED_SAVE)
+    seed.update({'bar': {'up': {}}, 'where': 'bar', 'menu': {k: 1 for k in BAR_KEYS}})
+    c = Ctx(b, base, seed=False)
+    c.ctx.add_init_script("if(!localStorage.getItem('__barseed')){localStorage.setItem('%s',%s);localStorage.setItem('%s',%s);localStorage.setItem('__barseed','1')}"
+                          % (SAVE_KEY, json.dumps(json.dumps(seed)), REC_KEY, json.dumps(json.dumps(SEED_REC))))
+    c.open()
+    try:
+        c.dismiss_modals()
+        c.page.evaluate("CL.user={email:ADMIN_EMAIL,uid:'check-admin',name:'Author Check',photo:''};showHome()")
+        c.page.wait_for_timeout(500)
+        c.dismiss_modals()
+        c.click('[data-act=cont]', wait=900)
+        if c.page.evaluate("CUR") != 'bar':
+            raise AssertionError('月影酒吧：作者繼續營業後沒有進到酒吧（CUR=%s）' % c.page.evaluate("CUR"))
+        c.click('[data-act=start]', wait=900)
+        c.expect_clean('月影酒吧開店')
+        if not c.has('#barx'):
+            raise AssertionError('月影酒吧：開店後沒有出現調酒畫面\n%s' % c.diag())
+        q = c.page.evaluate("BX.q.map(o=>o.k)")
+        if q != ['brhigh', 'bratsu', 'brgimlet']:
+            raise AssertionError('月影酒吧：第一天教學的客人不對：%s' % q)
+        # 觸控目標：844x390 橫向手機實際大小至少 44px
+        small = c.page.evaluate("[...document.querySelectorAll('#barx button')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&r.height<43.5).length")
+        if small:
+            which = c.page.evaluate("[...document.querySelectorAll('#barx button')].filter(e=>{const r=e.getBoundingClientRect();return r.width&&r.height<43.5}).map(e=>(e.dataset.bx||e.className)+':'+e.getBoundingClientRect().height.toFixed(1)).join(', ')")
+            raise AssertionError('月影酒吧：有 %d 顆按鈕在手機上不到 44px 高（%s）' % (small, which))
+        c.click('[data-bx=book]', wait=400)
+        if '配方手帳' not in c.page.evaluate("(document.querySelector('.modal')||{innerText:''}).innerText"):
+            raise AssertionError('月影酒吧：配方手帳打不開')
+        c.click('.modal [data-act=closem]', wait=400)
+        if c.has('.modal') or not c.has('[data-bx=start]'):
+            raise AssertionError('月影酒吧：關掉配方手帳後回不到調酒畫面\n%s' % c.diag())
+        bx_shot(c, 'arrive')
+        c.click('[data-bx=turn]', wait=500)
+        small = c.page.evaluate("[...document.querySelectorAll('#barx button')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&(r.height<43.5||r.width<43.5)).length")
+        n_bot = c.page.evaluate("document.querySelectorAll('#barx [data-bx=take]').length")
+        if small or n_bot != 27:
+            raise AssertionError('月影酒吧：酒櫃有 %d 顆按鈕不到 44px，酒瓶 %d 瓶（應該 27）\n%s' % (small, n_bot, c.diag()))
+        c.click('[data-bx=take][data-v=vodka]', wait=400)
+        if 'vodka' in c.page.evaluate("BX.hand"):
+            raise AssertionError('月影酒吧：還沒買的伏特加居然拿得到')
+        c.click('[data-bx=turn]', wait=500)
+        for i in range(3):
+            if not bx_make(c):
+                sc = c.page.evaluate("BX.d.comps.map(x=>x.key+':'+x.q.toFixed(2)).join(' ')+' | '+BX.d.pref.map(x=>x.key+':'+x.q).join(' ')")
+                raise AssertionError('月影酒吧：照做的第 %d 杯沒過關（%s）\n%s' % (i + 1, sc, c.diag()))
+            bx_finish_cust(c)
+        c.page.wait_for_timeout(900)
+        c.expect_clean('月影酒吧教學三杯')
+        if c.has('#barx') or not c.page.evaluate("R&&R.settled"):
+            raise AssertionError('月影酒吧：最後一位客人送走後沒有打烊結算\n%s' % c.diag())
+        st = c.page.evaluate("({tut:ST.bar.tut,xp:ST.bar.xp,served:R.served,earned:R.earned,zz:!!ST.zz_future_field,old:ST.menu.brmojito===undefined})")
+        if st['tut'] != 1 or st['served'] != 3 or st['earned'] <= 0 or not st['zz']:
+            raise AssertionError('月影酒吧：打烊後的紀錄不對 %s' % st)
+        # 第二天：開店前先到商店（真實點擊）買伏特加和薄荷葉，酒譜要自動解鎖
+        c.click('.modal [data-act=next]', wait=900)
+        c.dismiss_modals(1)
+        c.click('.modal [data-act=barhome]', wait=600)
+        c.click('.modal [data-act=brtab][data-id=bot]', wait=400)
+        bx_shot(c, 'shop-bot')
+        coins = c.page.evaluate("ST.coins")
+        c.click('.modal [data-act=brbot][data-id=vodka]', wait=500)
+        r = c.page.evaluate("({v:!!ST.bar.bot.vodka,m:!!ST.menu.brmoscow,c:ST.coins})")
+        if not r['v'] or not r['m'] or coins - r['c'] != 80000:
+            raise AssertionError('月影酒吧：買伏特加後狀態不對 %s（買前 %s）' % (r, coins))
+        c.click('.modal [data-act=brtab][data-id=gar]', wait=400)
+        c.click('.modal [data-act=brgar][data-id=mint]', wait=500)
+        if not c.page.evaluate("!!ST.bar.gar.mint"):
+            raise AssertionError('月影酒吧：買薄荷葉沒有記到存檔')
+        c.click('.modal [data-act=brtab][data-id=rec]', wait=400)
+        txt = c.page.evaluate("document.querySelector('.modal').innerText")
+        if '莫斯科騾子' not in txt or '還缺' not in txt:
+            raise AssertionError('月影酒吧：酒單分頁沒有顯示解鎖狀態')
+        bx_shot(c, 'shop-rec')
+        c.click('.modal [data-act=back], .modal [data-act=closem]', wait=600)
+        c.dismiss_modals(1)
+        c.click('[data-act=start]', wait=900)
+        n = c.page.evaluate("BX.q.length")
+        if not 3 <= n <= 5 or c.page.evaluate("BX.tut"):
+            raise AssertionError('月影酒吧：第二天客人數不對或還在教學（%s 位）' % n)
+        if bx_make(c, wrong=True):
+            raise AssertionError('月影酒吧：故意選錯杯、量錯酒居然過關')
+        if not c.has('[data-bx=retry]'):
+            raise AssertionError('月影酒吧：第一次沒過關沒有「重做一杯」\n%s' % c.diag())
+        c.click('[data-bx=retry]', wait=300)
+        if not bx_make(c, started=True):
+            raise AssertionError('月影酒吧：重做照做還是沒過關\n%s' % c.diag())
+        # 接下來兩位指定曼哈頓（三瓶酒、抖苦精、馬丁尼杯）和瑪格麗特（鹽口在配料 B 頁）；酒和配料用存檔補上
+        c.page.evaluate("Object.assign(ST.bar.bot,{vermr:1,bitters:1,tequila:1,triple:1});Object.assign(ST.bar.gar,{cherry:1,salt:1});bxMig(ST);"
+                        "BX.q.splice(BX.i+1,BX.q.length,{k:'brmanhattan',c:['g:cherry'],who:'kuroda'},{k:'brmarg',c:['g:salt'],who:'emily'})")
+        bx_finish_cust(c)
+        for k in ('brmanhattan', 'brmarg'):
+            if c.page.evaluate("bxOrder().k") != k:
+                raise AssertionError('月影酒吧：客人順序不對（%s）' % c.page.evaluate("bxOrder().k"))
+            if not bx_make(c):
+                sc = c.page.evaluate("BX.d.comps.map(x=>x.key+':'+x.q.toFixed(2)).join(' ')+' | '+BX.d.pref.map(x=>x.key+':'+x.q).join(' ')")
+                raise AssertionError('月影酒吧：照做 %s 沒過關（%s）\n%s' % (k, sc, c.diag()))
+            if k == 'brmarg':
+                h = c.page.evaluate("BX.hand")
+                if len(h) != 3 or 'whisky' in h or 'tequila' not in h:
+                    raise AssertionError('月影酒吧：手邊滿三瓶時沒有把最早拿的放回去（%s）' % h)
+            bx_shot(c, 'res-' + k)
+            bx_finish_cust(c)
+        c.page.wait_for_timeout(900)
+        c.expect_clean('月影酒吧第二天')
+        if c.has('#barx') or not c.page.evaluate("R&&R.settled"):
+            raise AssertionError('月影酒吧：第二天最後一位送走後沒有打烊\n%s' % c.diag())
+        # 第三天：開店後暫停回主頁，調酒畫面要收掉
+        c.click('.modal [data-act=next]', wait=900)
+        c.dismiss_modals(1)
+        c.click('[data-act=start]', wait=900)
+        c.click('[data-act=pause]', wait=500)
+        c.click('.modal [data-act=home]', wait=1000)
+        if c.has('#barx'):
+            raise AssertionError('月影酒吧：暫停回主頁後調酒畫面沒有收掉')
+        c.expect_clean('月影酒吧第三天')
+    finally:
+        c.close()
+
+
 SCENARIOS = [('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
-             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog)]
+             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar)]
 
 
 def find_chrome():
