@@ -3227,11 +3227,11 @@ function bxGen(prev){const b=bxSt();
   const reikoOk=own.some(k=>k==='brmizu'||k==='brhigh')&&prev.length>=2&&!prev.some(o=>o.who==='reiko')&&((b.story.reiko||0)<3||Math.random()<.4)&&Math.random()<.35;
   const who=reikoOk?'reiko':pick(pool.length?pool:all);const fav=(BXFAV[who]||[]).filter(k=>own.includes(k));const k=fav.length&&Math.random()<.7?pick(fav):pick(own);
   const cs=BXR[k].cond.filter(c=>!c.startsWith('g:')||bxGarOwn(c.slice(2)));return {k,c:[pick(cs.length?cs:['none'])],who}}
-const BXTS=.3; /* 酒吧的時間走得比居酒屋慢（一杯要專心做）：16:00～00:30 大約 9 分鐘 */
+const BXTS=1; /* 酒吧的時間跟居酒屋一樣快（2026/11/18 使用者說 9 分鐘太久） */
 /* ---- 開店：蓋上 #barx 圖層 ---- */
 function barBegin(){bxClose();const b=bxSt(),q=bxPlan();
   BX={q,i:0,tut:!b.tut,res:[],hand:[],view:'bar'};
-  const ks=q.map(o=>o.k).concat(BRKEYS.filter(k=>has(k)&&!isOff(k))),avg=ks.reduce((s,k)=>s+ITEMS[k].price,0)/ks.length,P=6*avg;R.goals=[Math.round(P*.35/100)*100,Math.round(P*.62/100)*100,Math.round(P*.9/100)*100];
+  const ks=q.map(o=>o.k).concat(BRKEYS.filter(k=>has(k)&&!isOff(k))),avg=ks.reduce((s,k)=>s+ITEMS[k].price,0)/ks.length,P=3*avg;R.goals=[Math.round(P*.35/100)*100,Math.round(P*.62/100)*100,Math.round(P*.9/100)*100];
   const el=document.createElement('div');el.id='barx';el.addEventListener('pointerdown',e=>e.stopPropagation());el.addEventListener('click',bxClick);
   $('game').insertBefore(el,$('modalLayer'));$('game').classList.add('barmode');['custLayer','counter','stations'].forEach(id=>{const x=$(id);if(x)x.innerHTML=''});bxArrive()}
 function bxClose(){if(BXVN)bxVNEnd();cancelAnimationFrame(BXRAF);BXRAF=0;clearTimeout(BXTM);{const g=$('game');if(g)g.classList.remove('barmode')}if(BX)clearTimeout(BX.tmTurn);const e=$('barx');if(e)e.remove()}
@@ -3545,9 +3545,9 @@ function bxReply(v){const o=bxOrder(),c=BXCH[o.who]||['quiet','','','（客人�
   let extra=0,story='';if(right){extra=Math.round(ITEMS[o.k].price*.15*(R.fxTip?2:1)/10)*10;R.earned+=extra;
     if(BXSTORY[o.who]){b.aff[o.who]=(b.aff[o.who]||0)+1;const n=b.story[o.who]||0;if(n<BXSTORY[o.who].length){story=BXSTORY[o.who][n];b.story[o.who]=n+1;if(n+1===BXSTORY[o.who].length){extra+=ITEMS[o.k].price;R.earned+=ITEMS[o.k].price}}}}
   R.served++;save();BX.mood=right?'happy':'ok';BX.sayJP='';BX.sayZH=T(right?c[3]:c[4]);sfx(right?'star':'pick');
-  const last=!!R&&hourNow()>=lastHr();
+  const last=!!R&&hourNow()>=lastHr()&&!(BX.tut&&BX.q[BX.i+1]&&BX.q[BX.i+1].tut);
   BX.talkHTML=`<div class="bx-area bx-col">${story?`<div class="bx-story"><b>📖 ${T('熟客故事')} ${b.story[o.who]}/${BXSTORY[o.who].length}</b><p>「${T(story)}」</p></div>`:''}<p class="bx-ins">${right?T('聊得來！共情 +10，多給小費 {0}',yen(extra)):T('客人比較想要{0}。共情只影響小費和熟客故事，不影響過關。',c[0]==='quiet'?T('安靜地喝'):T('有人陪他聊'))}</p><button class="bx-btn big" data-bx="nextc">${last?T('打烊'):T('下一位客人')}</button></div>`;bxRender()}
-function bxNextCust(){BX.i++;if(R&&hourNow()>=lastHr()){barFinish();return}if(!BX.q[BX.i])BX.q.push(bxGen(BX.q));bxArrive()}
+function bxNextCust(){BX.i++;if(R&&hourNow()>=lastHr()&&!(BX.tut&&BX.q[BX.i]&&BX.q[BX.i].tut)){barFinish();return}if(!BX.q[BX.i])BX.q.push(bxGen(BX.q));bxArrive()}
 function barFinish(){const b=bxSt();if(BX&&BX.tut)b.tut=1;save();bxClose();BX=null;if(R&&!R.over){R.over=true;renderHUD();setTimeout(endDay,200)}}
 function bxBook(){const ks=BRKEYS.filter(has).concat(BRKEYS.filter(k=>!has(k)));modal(`<h2>📖 ${T('配方手帳')}</h2><p class="hint">${T('客人說「濃いめ」就多倒一點基酒、「薄め」就少一點；熱燗：ぬる燗 40°C、上燗 45°C、熱燗 50°C、飛び切り燗 55°C。酒櫃湊齊需要的酒，酒譜就會解鎖（{0}/{1}）。',BRKEYS.filter(has).length,BRKEYS.length)}</p>${ks.map(k=>{const own=has(k),miss=bxNeedL(k).filter(l=>!bxBotOwn(l));return `<div style="display:flex;align-items:center;gap:10px;margin:8px 0;${own?'':'opacity:.55'}"><div style="width:52px;height:60px;flex:none">${sv(brIcon(k))}</div><div style="min-width:0"><b>${dishTitle(k)}</b>${own?'':' <small>🔒 '+T('還缺：{0}',miss.map(bxLN).join('、'))+'</small>'}<div style="font-size:13px;margin-top:2px">${bxStepsText(k)}</div>${bxSt().xp[k]?`<small>${T('做過 {0} 杯',bxSt().xp[k])}</small>`:''}</div></div>`}).join('')}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
 function bxClick(e){const b=e.target.closest('[data-bx]');if(!b||b.disabled||!BX)return;const a=b.dataset.bx,v=b.dataset.v,d=BX.d;

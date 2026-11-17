@@ -1011,10 +1011,21 @@ def sc_bar(b, base):
                 raise AssertionError('月影酒吧：照做的第 %d 杯沒過關（%s）\n%s' % (i + 1, sc, c.diag()))
             if i == 2:
                 # 時間要會走（不再卡在 16:00），而且不能還沒到 00:20 就打烊
-                if not c.page.evaluate("R.t>0&&hourNow()>16&&hourNow()<lastHr()"):
+                if not c.page.evaluate("R.t>0&&hourNow()>16"):
                     raise AssertionError('月影酒吧：營業時間沒有在走（R.t=%s）' % c.page.evaluate("R.t"))
+                # 時間跟居酒屋一樣快：酒吧每秒走的量要等於 1（BXTS=1）
+                if c.page.evaluate("BXTS") != 1:
+                    raise AssertionError('月影酒吧：時間速度不是跟居酒屋一樣（BXTS=%s）' % c.page.evaluate("BXTS"))
                 c.page.evaluate("BX.q.splice(BX.i+1,BX.q.length,{k:'brhigh',c:['none'],who:'misaki'})")
+            if i == 1:
+                # 教學三杯就算時間過了 00:20 也要讓教學做完（第三杯不能被打烊切掉）
+                c.page.evaluate("R.t=DAYLEN*.99")
+                c.page.wait_for_timeout(300)
             bx_finish_cust(c)
+            if i == 1:
+                if not c.has('#barx') or c.page.evaluate("BX.i") != 2:
+                    raise AssertionError('月影酒吧：時間到了，教學第三杯被打烊切掉\n%s' % c.diag())
+                c.page.evaluate("R.t=DAYLEN*.3;R.lastCall=false")
         # 客人不限 3 位：教學三杯後還在營業，第 4 位客人進來
         if not c.has('#barx') or c.page.evaluate("BX.i") != 3 or c.page.evaluate("R.settled"):
             raise AssertionError('月影酒吧：教學三杯做完就打烊了，客人應該不限人數\n%s' % c.diag())
