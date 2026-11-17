@@ -1677,11 +1677,12 @@ function dkArtDeco(){
   return o?defs+o:''}
 
 function drawBg(){
+  if(!$('barx')){const g=$('game');if(g&&g.classList.contains('barmode'))g.classList.remove('barmode')}
   if(CUR==='rm'&&ST&&ST.rm){drawYatai();return}
   if(CUR==='sushi'){drawSushiBg();return}
   if(CUR==='tep'){drawTepBg();return}
   if(CUR==='oko'){drawOkoBg();return}
-  if(CUR==='bar'){drawBarBg();return}
+  if(CUR==='bar'){const b=$('bg');if(b)b.innerHTML='';return} /* 月影酒吧：畫面全在 #barx，底下的舊舞台不畫 */
   const TY=KY<400?38:0;
   const day=ST?UDAY():1,P=LAY==='port'?{ts:27,ls:.8,tv:[372,168,.82],rec:[500,210,.6],bar:[480,266,.5],sx:186,sw:168,tag:118,sake:562,lx:[402,482],lp:[150,316],chime:176,scroll:116,board:186,sham:[290,226],notes:[262,250],cat:W-76}:(()=>{const d=(W-960)/2,wx=KY<400?440:330+d,ww=KY<400?Math.min(520,W-238-24-440):300,shx=(wx+ww+W-238)/2;return {ts:29,ls:1,tv:[KY<400?196:190+d*.3,KY<400?150:104,KY<400?.9:1],rec:[KY<400?330:210+d*.3,KY<400?228:214,.7],bar:[shx+50,192,.72],sx:wx,sw:ww,tag:KY<400?190:150+Math.min(d,60),sake:650+d,lx:[734+d*1.4,820+d*1.6],lp:[300+d,588+d],chime:262+d*.4,scroll:128,board:shx+58,sham:[shx,106],notes:[shx-28,132],cat:W-76}})();
   const TW_=theme('wall'),TL=theme('light').c;
@@ -3203,14 +3204,13 @@ function bxPlan(){const b=bxSt();
   for(let i=0;i<n;i++){const who=withReiko&&i===Math.min(2,n-1)?'reiko':pool.pop();const fav=(BXFAV[who]||[]).filter(k=>own.includes(k));const k=fav.length&&Math.random()<.7?pick(fav):pick(own);
     const cs=BXR[k].cond.filter(c=>!c.startsWith('g:')||bxGarOwn(c.slice(2)));out.push({k,c:[pick(cs.length?cs:['none'])],who})}
   return out}
-function bxFig(spr,mood){const s=SPR[spr];if(!s)return '';return `<img src="${s[mood]||s.ok}" alt="" draggable="false">`}
 /* ---- 開店：蓋上 #barx 圖層 ---- */
 function barBegin(){bxClose();const b=bxSt(),q=bxPlan();
   BX={q,i:0,tut:!b.tut,res:[],hand:[],view:'bar'};R.extH=3;
   const avg=q.reduce((s,o)=>s+ITEMS[o.k].price,0)/q.length,P=q.length*avg;R.goals=[Math.round(P*.35/100)*100,Math.round(P*.62/100)*100,Math.round(P*.9/100)*100];
   const el=document.createElement('div');el.id='barx';el.addEventListener('pointerdown',e=>e.stopPropagation());el.addEventListener('click',bxClick);
-  $('game').insertBefore(el,$('modalLayer'));bxArrive()}
-function bxClose(){cancelAnimationFrame(BXRAF);BXRAF=0;clearTimeout(BXTM);if(BX)clearTimeout(BX.tmTurn);const e=$('barx');if(e)e.remove()}
+  $('game').insertBefore(el,$('modalLayer'));$('game').classList.add('barmode');['custLayer','counter','stations'].forEach(id=>{const x=$(id);if(x)x.innerHTML=''});bxArrive()}
+function bxClose(){cancelAnimationFrame(BXRAF);BXRAF=0;clearTimeout(BXTM);{const g=$('game');if(g)g.classList.remove('barmode')}if(BX)clearTimeout(BX.tmTurn);const e=$('barx');if(e)e.remove()}
 function bxOrder(){return BX&&BX.q[BX.i]}
 function bxArrive(){const o=bxOrder();o.tries=o.tries||0;BX.mood='ok';BX.stage='arrive';BX.d=null;sfx('open');bxRender()}
 function bxStages(o){const r=BXR[o.k];return [['glass']].concat(r.ice?[['ice']]:[],r.st,[['gar']])}
@@ -3225,59 +3225,6 @@ function bxComp(key,q,w,good,bad){BX.d.comps=BX.d.comps.filter(c=>c.key!==key);B
 function bxPref(key,q,bad){BX.d.pref=BX.d.pref.filter(c=>c.key!==key);BX.d.pref.push({key,q,bad})}
 /* ---- 畫杯子：viewBox 0 0 100 120，lv 0～1 是液面高度 ---- */
 let BXCID=0;
-const BXGEO={high:{p:'M30 14L33 108Q33 112 37 112H63Q67 112 67 108L70 14Z',t:14,b:112,l:30,r:70},rock:{p:'M20 50L23 108Q23 112 27 112H73Q77 112 77 108L80 50Z',t:50,b:112,l:20,r:80},
-  coupe:{p:'M12 38Q15 76 50 78Q85 76 88 38Z',t:38,b:78,l:12,r:88},martini:{p:'M8 22L50 72L92 22Z',t:22,b:72,l:8,r:92},masu:{p:'M33 12L35 104Q35 106 38 106H62Q65 106 65 104L67 12Z',t:12,b:106,l:33,r:67},choko:{p:'M52 78Q53 106 71 108Q89 106 90 78Z',t:78,b:108,l:52,r:90}};
-function bxGlass(g,o){o=o||{};const G=BXGEO[g],id='bxc'+(++BXCID),lv=Math.max(0,Math.min(1.02,o.lv||0)),y=G.b-lv*(G.b-G.t);let s=`<defs><clipPath id="${id}"><path d="${G.p}"/></clipPath></defs>`;
-  if(g==='choko')s+=`<path d="M18 30Q13 24 20 20H30Q37 24 32 30Q43 60 41 92Q41 110 25 110Q9 110 9 92Q7 60 18 30Z" fill="#f4ecd8" stroke="${O}" stroke-width="3"/><path d="M14 70Q25 76 37 70" stroke="#3a6aa8" stroke-width="4" fill="none"/><path d="M15 44V88" stroke="#fff" stroke-width="3" opacity=".6" stroke-linecap="round"/>`;
-  s+=`<path d="${G.p}" fill="${o.cold?'#e8f6fb':'#dfeef2'}" fill-opacity="${o.cold?.75:.45}"/>`;
-  if(lv>0)s+=`<g clip-path="url(#${id})"><rect x="0" y="${y.toFixed(1)}" width="100" height="120" fill="${o.col||'#e0c080'}" fill-opacity=".88"/><path d="M0 ${y.toFixed(1)}H100" stroke="#fff" stroke-width="2.5" opacity=".7"/></g>`;
-  if(o.ice==='cube')s+=`<g clip-path="url(#${id})">${[[g==='high'?42:36,G.b-16,-8],[g==='high'?57:60,G.b-30,10],[g==='high'?45:48,G.b-44,4],[g==='high'?56:40,G.b-60,-12]].filter(a=>a[1]>G.t+6).map(([x,yy,r])=>`<rect x="${x-9}" y="${yy-9}" width="18" height="18" rx="4" transform="rotate(${r} ${x} ${yy})" fill="#f2fbff" fill-opacity=".8" stroke="${O}" stroke-width="1.6"/>`).join('')}</g>`;
-  if(o.ice==='ball')s+=`<circle cx="50" cy="${G.b-26}" r="24" fill="#f2fbff" fill-opacity=".78" stroke="${O}" stroke-width="2"/><path d="M38 ${G.b-38}q6-6 14-6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>`;
-  if(o.ice==='crush')s+=`<g clip-path="url(#${id})">${Array.from({length:22},(_,i)=>{const x=G.l+6+((i*37)%(G.r-G.l-12)),yy=G.b-6-((i*13)%Math.max(8,(G.b-G.t)*.7));return `<path d="M${x} ${yy}l5 -3 4 4 -3 5z" fill="#f2fbff" stroke="${O}" stroke-width="1"/>`}).join('')}</g>`;
-  if(o.fizz&&lv>0){const n=Math.round(o.fizz/8);s+=`<g clip-path="url(#${id})">${Array.from({length:n},(_,i)=>{const x=G.l+5+((i*29)%(G.r-G.l-10)),yy=y+4+((i*17)%Math.max(4,G.b-y-6));return `<circle cx="${x}" cy="${yy.toFixed(1)}" r="1.6" fill="none" stroke="#fff" stroke-width="1"/>`}).join('')}</g>`}
-  if(o.foam&&lv>0)s+=`<g clip-path="url(#${id})"><rect x="0" y="${y.toFixed(1)}" width="100" height="5" fill="#fffdf4" opacity=".9"/></g>`;
-  if(g==='coupe')s+=`<rect x="47" y="77" width="6" height="30" fill="#e8f4f8" stroke="${O}" stroke-width="2"/><ellipse cx="50" cy="109" rx="20" ry="5" fill="#e8f4f8" stroke="${O}" stroke-width="2.4"/>`;
-  if(g==='martini')s+=`<rect x="47" y="70" width="6" height="37" fill="#e8f4f8" stroke="${O}" stroke-width="2"/><ellipse cx="50" cy="109" rx="20" ry="5" fill="#e8f4f8" stroke="${O}" stroke-width="2.4"/>`;
-  s+=`<path d="${G.p}" fill="none" stroke="${O}" stroke-width="3" stroke-linejoin="round"/>`;
-  if(g==='high'||g==='rock'||g==='masu')s+=`<path d="M${G.l+5} ${G.t+8}L${G.l+7} ${G.b-8}" stroke="#fff" stroke-width="3" opacity=".55" stroke-linecap="round"/>`;
-  if(g==='masu')s+=`<path d="M16 70L24 62H84L76 70Z" fill="#e8c890" stroke="${O}" stroke-width="2.4" stroke-linejoin="round"/><path d="M76 70L84 62V104L76 112Z" fill="#b88a50" stroke="${O}" stroke-width="2.4" stroke-linejoin="round"/><rect x="16" y="70" width="60" height="42" fill="#d9b27a" stroke="${O}" stroke-width="2.6"/><path d="M22 80H70M22 92H70" stroke="#b88a50" stroke-width="1.5" opacity=".7"/>`;
-  if(o.cold)s+=`<path d="${G.p}" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="2 5" opacity=".9"/>`;
-  if(o.warm)s+=`<path d="M60 70q-5-8 0-14q5-6 0-12M74 70q-5-8 0-14q5-6 0-12" stroke="#fff" stroke-width="2.5" fill="none" opacity=".7" stroke-linecap="round"/>`;
-  if(o.target!=null){const ty=G.b-o.target*(G.b-G.t);s+=`<path d="M${G.l-6} ${ty.toFixed(1)}H${G.r+6}" stroke="#ffd23a" stroke-width="2.5" stroke-dasharray="5 4"/>`}
-  (o.gar||[]).forEach(k=>s+=bxGarArt(k,g,G,y));
-  return s}
-function bxGarArt(k,g,G,y){const c=BXGAR[k][1],rx=G.r-4,ry=G.t;
-  if(k==='yuzupeel')return `<path d="M${rx-4} ${ry-10}q10 4 4 12q-6 8 4 14" stroke="${c}" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M${rx-4} ${ry-10}q10 4 4 12q-6 8 4 14" stroke="${O}" stroke-width="1.2" fill="none"/>`;
-  if(k==='lime')return `<circle cx="${rx}" cy="${ry}" r="9" fill="${c}" stroke="${O}" stroke-width="2"/><circle cx="${rx}" cy="${ry}" r="6.5" fill="#d9f08e"/><path d="M${rx-6} ${ry}h12M${rx} ${ry-6}v12" stroke="${c}" stroke-width="1.2"/>`;
-  if(k==='ume')return `<circle cx="50" cy="${G.b-9}" r="8" fill="${c}" stroke="${O}" stroke-width="2"/><circle cx="47" cy="${G.b-12}" r="2" fill="#fff" opacity=".6"/>`;
-  if(k==='shiso')return `<path d="M${rx-14} ${ry+2}Q${rx-4} ${ry-14} ${rx+8} ${ry-6}Q${rx-2} ${ry+8} ${rx-14} ${ry+2}Z" fill="${c}" stroke="${O}" stroke-width="1.8"/>`;
-  if(k==='sansho')return [0,1,2,3,4].map(i=>`<circle cx="${44+i*3}" cy="${(y-2-(i%2)*2).toFixed(1)}" r="1.8" fill="${c}" stroke="${O}" stroke-width=".8"/>`).join('');
-  if(k==='sakura')return `<g transform="translate(50 ${(y-1).toFixed(1)})">${[0,72,144,216,288].map(a=>`<ellipse cx="0" cy="-5" rx="3.6" ry="5.5" transform="rotate(${a})" fill="${c}" stroke="${O}" stroke-width="1"/>`).join('')}<circle r="2" fill="#e05a7a"/></g>`;
-  if(k==='matsu')return `<path d="M${rx-16} ${ry-4}L${rx+4} ${ry-14}M${rx-14} ${ry}L${rx+6} ${ry-8}" stroke="${c}" stroke-width="2.4" stroke-linecap="round"/>`;
-  if(k==='kuro')return `<path d="M${G.l+2} ${G.t}H${G.r-2}" stroke="${c}" stroke-width="4" stroke-dasharray="2 2"/>`;
-  if(k==='lemon')return `<circle cx="${rx}" cy="${ry}" r="9" fill="${c}" stroke="${O}" stroke-width="2"/><circle cx="${rx}" cy="${ry}" r="6.5" fill="#fbf0a0"/><path d="M${rx-6} ${ry}h12M${rx} ${ry-6}v12" stroke="${c}" stroke-width="1.2"/>`;
-  if(k==='orangepeel')return `<path d="M${rx-4} ${ry-10}q10 4 4 12q-6 8 4 14" stroke="${c}" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M${rx-4} ${ry-10}q10 4 4 12q-6 8 4 14" stroke="${O}" stroke-width="1.2" fill="none"/>`;
-  if(k==='sudachi')return `<path d="M${rx-9} ${ry}A9 9 0 0 1 ${rx+9} ${ry}Z" fill="${c}" stroke="${O}" stroke-width="2"/><path d="M${rx-6.5} ${ry}A6.5 6.5 0 0 1 ${rx+6.5} ${ry}Z" fill="#d6ec8a"/>`;
-  if(k==='mint')return `<path d="M${rx-12} ${ry}Q${rx-8} ${ry-14} ${rx} ${ry-8}Q${rx-4} ${ry+2} ${rx-12} ${ry}Z" fill="${c}" stroke="${O}" stroke-width="1.6"/><path d="M${rx-2} ${ry-2}Q${rx+4} ${ry-16} ${rx+10} ${ry-6}Q${rx+4} ${ry+4} ${rx-2} ${ry-2}Z" fill="${c}" stroke="${O}" stroke-width="1.6"/>`;
-  if(k==='ginger')return `<ellipse cx="${rx}" cy="${ry}" rx="8" ry="6" fill="${c}" stroke="${O}" stroke-width="1.8"/><path d="M${rx-4} ${ry}h8" stroke="#c9a060" stroke-width="1.2"/>`;
-  if(k==='cherry')return `<path d="M50 ${(y-8).toFixed(1)}q4-12 14-16" stroke="#5a3a1a" stroke-width="2" fill="none"/><circle cx="50" cy="${(y-2).toFixed(1)}" r="6" fill="${c}" stroke="${O}" stroke-width="1.8"/><circle cx="48" cy="${(y-4).toFixed(1)}" r="1.6" fill="#fff" opacity=".7"/>`;
-  if(k==='olive')return `<path d="M${rx+6} ${ry-14}L44 ${(y+10).toFixed(1)}" stroke="#c9a060" stroke-width="2"/><ellipse cx="48" cy="${(y+4).toFixed(1)}" rx="6" ry="4.5" fill="${c}" stroke="${O}" stroke-width="1.6"/><circle cx="51" cy="${(y+4).toFixed(1)}" r="1.6" fill="#c0302a"/>`;
-  if(k==='cucumber')return `<path d="M${G.l+8} ${(y+6).toFixed(1)}Q50 ${(y-4).toFixed(1)} ${G.r-8} ${(y+10).toFixed(1)}" stroke="${c}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
-  if(k==='salt')return `<path d="M${G.l} ${G.t}H${G.r}" stroke="#fff" stroke-width="4" stroke-dasharray="1.5 2.5" stroke-linecap="round"/>`;
-  if(k==='gold')return [0,1,2,3,4,5].map(i=>`<rect x="${40+i*4}" y="${(y-2-(i%3)).toFixed(1)}" width="2.6" height="2.6" transform="rotate(${i*25} ${41+i*4} ${(y-1).toFixed(1)})" fill="${c}"/>`).join('');
-  return ''}
-function bxBottle(l){const b=BXL[l],sh=b[2]||'tl',lb=b[3]||'#f6f0e0';let fill=b[1],fo=.92,body,nk,lab,ex='';
-  if(sh==='sq'){body='M5 40Q5 34 12 32H28Q35 34 35 40V93Q35 96 32 96H8Q5 96 5 93Z';nk=[15,12,10,22];lab=[8,52,24,28]}
-  else if(sh==='rd'){body='M6 66Q6 40 20 38Q34 40 34 66V92Q34 96 30 96H10Q6 96 6 92Z';nk=[16,14,8,26];lab=[9,62,22,22]}
-  else if(sh==='fr'){body='M6 52Q6 46 12 46H28Q34 46 34 52V92Q34 96 30 96H10Q6 96 6 92Z';nk=[14,32,12,16];lab=[9,60,22,22];fo=.75}
-  else if(sh==='sl'){body='M11 40Q11 30 20 28Q29 30 29 40V92Q29 96 25 96H15Q11 96 11 92Z';nk=[17,8,6,22];lab=[12,52,16,26]}
-  else if(sh==='big'){body='M4 40Q4 28 20 26Q36 28 36 40V92Q36 96 32 96H8Q4 96 4 92Z';nk=[15,6,10,22];lab=[7,46,26,38];fill='#3a2210';fo=1;ex=`<path d="M13 30Q20 34 27 30" stroke="#e8d8b0" stroke-width="2.4" fill="none"/>`}
-  else if(sh==='jar'){body='M4 62Q4 36 20 36Q36 36 36 62V90Q36 96 30 96H10Q4 96 4 90Z';nk=[14,22,12,16];lab=[9,58,22,24];fill='#9a6a42';fo=1;ex=`<path d="M12 39Q20 45 28 39" stroke="#c0302a" stroke-width="3" fill="none"/>`}
-  else if(sh==='ce'){body='M7 42Q7 34 15 34H25Q33 34 33 42V90Q33 96 27 96H13Q7 96 7 90Z';nk=[15,14,10,22];lab=[10,50,20,30];fill='#4a2e1e';fo=1}
-  else if(sh==='dash'){body='M10 60Q10 56 14 56H26Q30 56 30 60V93Q30 96 27 96H13Q10 96 10 93Z';nk=[16,46,8,12];lab=[7,60,26,30]}
-  else{body='M9 40Q9 32 16 30H24Q31 32 31 40V93Q31 96 28 96H12Q9 96 9 93Z';nk=[16,10,8,22];lab=[11,50,18,30]}
-  const [nx,ny,nw,nh]=nk,[lx,ly,lw,lh]=lab;
-  return `<rect x="${nx}" y="${ny}" width="${nw}" height="${nh}" rx="2" fill="${fill}" fill-opacity="${fo}" stroke="${O}" stroke-width="2"/><rect x="${nx-1}" y="${ny-5}" width="${nw+2}" height="7" rx="2" fill="${sh==='dash'?'#e6e6e6':'#2a1a10'}" stroke="${O}" stroke-width="1.8"/><path d="${body}" fill="${fill}" fill-opacity="${fo}" stroke="${O}" stroke-width="2.4"/><rect x="${lx}" y="${ly}" width="${lw}" height="${lh}" rx="2" fill="${lb}" stroke="${O}" stroke-width="1.4"/><circle cx="${lx+lw/2}" cy="${ly+lh/2}" r="${(Math.min(lw,lh)/4).toFixed(1)}" fill="none" stroke="${O}" stroke-width="1.6" opacity=".55"/><path d="M${lx+lw*.2} ${ly+lh-5}H${lx+lw*.8}" stroke="${O}" stroke-width="1.2" opacity=".45"/><path d="M${lx+2.5} ${ly+lh+4}V90" stroke="#fff" stroke-width="2.4" opacity="${fo<1?.5:.25}" stroke-linecap="round"/>${ex}`}
 /* 目前這杯的樣子（給加蘇打、倒酒、裝飾用） */
 function bxMlCol(ml){let t=0,a=0,g=0,c=0;for(const l in ml){const v=ml[l]||0;if(!v||!BXL[l])continue;const n=parseInt(BXL[l][1].slice(1),16);a+=(n>>16&255)*v;g+=(n>>8&255)*v;c+=(n&255)*v;t+=v}if(!t)return null;const h=x=>Math.round(x/t).toString(16).padStart(2,'0');return '#'+h(a)+h(g)+h(c)}
 function bxMix(a,b,f){const p=x=>{const n=parseInt(x.slice(1),16);return [n>>16&255,n>>8&255,n&255]},x=p(a),y=p(b);return '#'+x.map((v,i)=>Math.round(v+(y[i]-v)*f).toString(16).padStart(2,'0')).join('')}
@@ -3378,6 +3325,7 @@ function bxStirArt(ang,fp){const d=BX.d,lift=bxCur()[0]==='lift';let s=`<svg vie
 function bxStirShow(ang,fp){const v=$('bxv');if(v)v.innerHTML=bxStirArt(ang,fp);const sp=$('bxspn');if(sp)sp.style.transform=`translate(${(Math.cos(ang)*14).toFixed(1)}%,0) rotate(${(-40+Math.sin(ang)*6).toFixed(1)}deg)`}
 /* 搖盪：只改雪克杯的位置 */
 function bxShakerArt(dx,dy){return ''}
+function bxPouring(on){const e=document.querySelector('#barx .bxs');if(e)e.classList.toggle('pouring',!!on)}
 function bxShk(dx,dy){const e=$('bxshk');if(e)e.style.transform=`translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px) rotate(${(dx*.3).toFixed(1)}deg)`}
 /* 加熱：溫度計 */
 function bxThermo(t,tg){const Y=v=>262-(v-20)/45*230;let s=`<svg viewBox="0 0 120 290" width="100%" height="100%"><rect x="60" y="20" width="18" height="246" rx="9" fill="#fff" stroke="#3a2010" stroke-width="2.5"/><rect x="63.5" y="${Y(Math.max(20,Math.min(65,t))).toFixed(1)}" width="11" height="${(262-Y(Math.max(20,Math.min(65,t)))).toFixed(1)}" fill="#e0412c"/><circle cx="69" cy="270" r="15" fill="#e0412c" stroke="#3a2010" stroke-width="2.5"/>`;
@@ -3448,9 +3396,9 @@ function bxStageHTML(){const s=bxCur(),o=bxOrder(),d=BX.d,r=BXR[o.k];let ins='',
 
 function bxBind(){const s=bxCur(),d=BX.d,o=bxOrder(),r=BXR[o.k];if(bxNeedHand(s))return;
   if(s[0]==='m'){const h=$('bxhold'),sp=bxMSpec(o,s[1],s[2]),rate=Math.max(7,Math.min(28,s[2]/2.2));
-    const down=e=>{e.preventDefault();clearTimeout(BXTM);try{h.setPointerCapture(e.pointerId)}catch(x){}h.classList.add('on');$('bxafter').innerHTML='';sfx('pour');
-      bxLoop(dt=>{d.ml[s[1]]=(d.ml[s[1]]||0)+rate*dt;const v=d.ml[s[1]];$('bxv').innerHTML=bxJigger(s,sp,v);$('bxread').textContent=Math.round(v)+' ml';if(v>sp.cap*1.08){h.classList.remove('on');bxMRelease();return false}})};
-    const up=()=>{if(!h.classList.contains('on'))return;h.classList.remove('on');cancelAnimationFrame(BXRAF);BXRAF=0;bxMRelease()};
+    const down=e=>{e.preventDefault();clearTimeout(BXTM);try{h.setPointerCapture(e.pointerId)}catch(x){}(h.classList.add('on'),bxPouring(1));$('bxafter').innerHTML='';sfx('pour');
+      bxLoop(dt=>{d.ml[s[1]]=(d.ml[s[1]]||0)+rate*dt;const v=d.ml[s[1]];$('bxv').innerHTML=bxJigger(s,sp,v);$('bxread').textContent=Math.round(v)+' ml';if(v>sp.cap*1.08){(h.classList.remove('on'),bxPouring(0));bxMRelease();return false}})};
+    const up=()=>{if(!h.classList.contains('on'))return;(h.classList.remove('on'),bxPouring(0));cancelAnimationFrame(BXRAF);BXRAF=0;bxMRelease()};
     h.addEventListener('pointerdown',down);['pointerup','pointercancel','lostpointercapture'].forEach(ev=>h.addEventListener(ev,up))}
   if(s[0]==='stir'||s[0]==='lift'){const pad=$('bxpad'),lift=s[0]==='lift';let ang=0,prev=null,acc=lift?(d.lift||0)*2*Math.PI:(d.dil||0)/3.6*2*Math.PI,dir=0,samp=[],lt=0,lastA=0;
     const P=e=>{const p=bxPt(e,pad);return {x:p.x/p.w*280,y:p.y/p.h*280}};
@@ -3472,16 +3420,16 @@ function bxBind(){const s=bxCur(),d=BX.d,o=bxOrder(),r=BXR[o.k];if(bxNeedHand(s)
       bxShk(dx,dy);$('bxmet').innerHTML=bxMeter(d.dil,s[1],T('冰度'));$('bxread').textContent=sec.toFixed(1)+' '+T('秒');$('bxdone').disabled=d.strokes.length<3});
     ['pointerup','pointercancel'].forEach(ev=>pad.addEventListener(ev,()=>{last=null;dx=dy=0;bxShk(0,0)}))}
   if(s[0]==='heat'){const h=$('bxhold'),tg=bxHeatT(o);d.temp=d.temp||18;let held=0;
-    const down=e=>{e.preventDefault();try{h.setPointerCapture(e.pointerId)}catch(x){}h.classList.add('on');held=0;bxLoop(dt=>{held+=dt;d.temp=Math.min(80,d.temp+7*dt);bxHeatShow(tg)})};
-    const up=()=>{if(!h.classList.contains('on'))return;h.classList.remove('on');let res=Math.min(1.5,held*.5);bxLoop(dt=>{const a=Math.min(res,3*dt);res-=a;d.temp+=a;bxHeatShow(tg);return res>0})};
+    const down=e=>{e.preventDefault();try{h.setPointerCapture(e.pointerId)}catch(x){}(h.classList.add('on'),bxPouring(1));held=0;bxLoop(dt=>{held+=dt;d.temp=Math.min(80,d.temp+7*dt);bxHeatShow(tg)})};
+    const up=()=>{if(!h.classList.contains('on'))return;(h.classList.remove('on'),bxPouring(0));let res=Math.min(1.5,held*.5);bxLoop(dt=>{const a=Math.min(res,3*dt);res-=a;d.temp+=a;bxHeatShow(tg);return res>0})};
     h.addEventListener('pointerdown',down);['pointerup','pointercancel','lostpointercapture'].forEach(ev=>h.addEventListener(ev,up))}
   if(s[0]==='top'||s[0]==='pour'){const pad=$('bxpad'),pour=s[0]==='pour',tg=pour?s[1]:s[2],soda=!pour&&BXFIZZ.includes(s[1]);let fy=null,spd=0;
     const go=()=>bxLoop(dt=>{if(fy==null)return false;spd=.03+.32*(1-fy);d.lv+=spd*dt*.9;if(soda&&spd>.12)d.fizz=Math.max(0,d.fizz-(spd-.12)*70*dt);
-      if(d.lv>1){d.lv=1;d.over=true;fy=null;pad.classList.remove('on');bxMsg(T('溢出來了！'))}
+      if(d.lv>1){d.lv=1;d.over=true;fy=null;(pad.classList.remove('on'),bxPouring(0));bxMsg(T('溢出來了！'))}
       bxMatUpd(tg);if(soda)$('bxmet').innerHTML=bxMeter(d.fizz,[75,100],T('氣泡'));$('bxdone').disabled=d.lv<=(d.lv0||0)+.1;if(fy==null)return false});
-    pad.addEventListener('pointerdown',e=>{e.preventDefault();try{pad.setPointerCapture(e.pointerId)}catch(x){}if(d.over)return;const p=bxPt(e,pad);fy=Math.max(0,Math.min(1,p.y/p.h));pad.classList.add('on');sfx('pour');go()});
+    pad.addEventListener('pointerdown',e=>{e.preventDefault();try{pad.setPointerCapture(e.pointerId)}catch(x){}if(d.over)return;const p=bxPt(e,pad);fy=Math.max(0,Math.min(1,p.y/p.h));(pad.classList.add('on'),bxPouring(1));sfx('pour');go()});
     pad.addEventListener('pointermove',e=>{if(fy==null)return;const p=bxPt(e,pad);fy=Math.max(0,Math.min(1,p.y/p.h))});
-    ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>pad.addEventListener(ev,()=>{if(fy==null)return;if(pour&&spd>.25){d.drip=true;d.lv=Math.min(1,d.lv+.015)}fy=null;pad.classList.remove('on')}))}}
+    ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>pad.addEventListener(ev,()=>{if(fy==null)return;if(pour&&spd>.25){d.drip=true;d.lv=Math.min(1,d.lv+.015)}fy=null;(pad.classList.remove('on'),bxPouring(0))}))}}
 function bxHeatShow(tg){const d=BX.d;$('bxv').innerHTML=bxThermo(d.temp,tg);$('bxread').textContent=Math.round(d.temp)+'°C';$('bxdone').disabled=d.temp<=30}
 /* ---- 每一步做完的判定 ---- */
 function bxDone(){const s=bxCur(),o=bxOrder(),d=BX.d;
@@ -3656,7 +3604,7 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bxs img{-webkit-user-drag:none;pointer-events:none}
 #barx .bxs-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 #barx .bxs-cust{position:absolute;left:0;top:0;width:100%;height:63.6%;overflow:hidden;pointer-events:none}
-#barx .bxs-cust img{position:absolute;left:48.7%;bottom:-11%;height:80%;transform:translateX(-50%);filter:drop-shadow(0 0 calc(var(--u)*1.2) #0008)}
+#barx .bxs-cust img{position:absolute;left:48.7%;bottom:-11%;height:80%;transform:translateX(-50%)}
 #barx .bxs-mat{position:absolute;left:16%;bottom:10.5%;transform:translateX(-50%);pointer-events:none}
 #barx .bxs-mat::before{content:'';position:absolute;left:5%;right:5%;bottom:-2%;height:6%;border-radius:50%;background:#0009;filter:blur(calc(var(--u)*.6))}
 #barx .bxs-mat>*{position:absolute;inset:0;width:100%;height:100%}
@@ -3666,7 +3614,7 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bxs-hand em{z-index:1;position:absolute;left:50%;bottom:calc(var(--u)*-3.4);transform:translateX(-50%);font-style:normal;font-weight:800;font-size:calc(var(--u)*2.1);color:#ffe9c0;white-space:nowrap;max-width:118%;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;text-shadow:0 1px 3px #000;background:#1a0e08a8;border-radius:.6em;padding:0 .5em}
 #barx .bxs-hand i{font-style:normal;align-self:center;font-size:calc(var(--u)*3.3);color:#ffe9c088;border:2px dashed #ffe9c044;border-radius:1em;padding:calc(var(--u)*6) calc(var(--u)*.8)}
 #barx .bxz{position:absolute;left:29%;top:58%;width:45%;height:32%;display:flex;align-items:flex-end;justify-content:center;gap:calc(var(--u)*1.8)}
-#barx .bxz-w{left:26.5%;width:48%;gap:calc(var(--u)*1.4)}
+#barx .bxz>*{flex:none}#game.barmode>#bg,#game.barmode>#custLayer,#game.barmode>#counter,#game.barmode>#stations{display:none}#barx .bxz-w{left:26.5%;width:48%;gap:calc(var(--u)*1.4)}
 #barx .bxz-c{align-items:center}
 #barx .bxb{min-height:calc(var(--u)*12);min-width:calc(var(--u)*15);padding:0 calc(var(--u)*2.2);border-radius:calc(var(--u)*1.8);border:calc(var(--u)*.45) solid #5a3420;background:linear-gradient(#ffd67a,#e89a2c);color:#3a1a08;font-weight:900;font-size:calc(var(--u)*3.2);line-height:1.15;font-family:inherit;box-shadow:0 calc(var(--u)*.6) 0 #0009;cursor:pointer;white-space:nowrap}
 #barx .bxb.big{min-height:calc(var(--u)*13);font-size:calc(var(--u)*4);padding:0 calc(var(--u)*4)}
@@ -3678,7 +3626,7 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bxz-row{display:flex;gap:calc(var(--u)*.6);align-items:flex-end}
 #barx .bxz-col{display:flex;flex-direction:column;gap:calc(var(--u)*.9)}
 #barx .bxo{width:calc(var(--u)*11.6);height:calc(var(--u)*23);background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;cursor:pointer;transition:transform .15s}
-#barx .bxo-p{height:calc(var(--u)*17.5);width:100%;display:flex;align-items:flex-end;justify-content:center;filter:drop-shadow(0 calc(var(--u)*.6) calc(var(--u)*.5) #000a)}
+#barx .bxo-p{height:calc(var(--u)*17.5);width:100%;display:flex;align-items:flex-end;justify-content:center}
 #barx .bxo-p img{max-height:100%;max-width:100%;object-fit:contain}
 #barx .bxo span{margin-top:calc(var(--u)*.5);font-weight:800;font-size:calc(var(--u)*2.1);color:#ffe9c0;text-shadow:0 1px 3px #000;white-space:nowrap;background:#1a0e08b0;border-radius:.6em;padding:0 .4em}
 #barx .bxo.on{transform:translateY(calc(var(--u)*-2))}
@@ -3695,7 +3643,7 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bxs-src.kan.on{transform:none;animation:bxkan .5s ease-in-out infinite alternate}
 #barx .bxs-src.kan.on img{filter:drop-shadow(0 0 calc(var(--u)*1.6) #ff8a3a)}
 @keyframes bxkan{from{transform:translateY(0)}to{transform:translateY(calc(var(--u)*-.6))}}
-#barx .bxz-jig{position:relative;height:calc(var(--u)*19);display:flex;align-items:flex-end}#barx .bxs-mstream{position:absolute;left:calc(50% - var(--u)*.5);bottom:96%;width:calc(var(--u)*1);height:calc(var(--u)*5.5);border-radius:1em;opacity:0;transition:opacity .1s;pointer-events:none}#barx .bxs:has(#bxhold.on) .bxs-mstream{opacity:.9}
+#barx .bxz-jig{position:relative;height:calc(var(--u)*19);display:flex;align-items:flex-end}#barx .bxs-mstream{position:absolute;left:calc(50% - var(--u)*.5);bottom:96%;width:calc(var(--u)*1);height:calc(var(--u)*5.5);border-radius:1em;opacity:0;transition:opacity .1s;pointer-events:none}#barx .bxs.pouring .bxs-mstream{opacity:.9}
 #barx .bxz-jig img{height:100%;filter:drop-shadow(0 calc(var(--u)*.8) calc(var(--u)*.6) #000a)}
 #barx .bxz-gauge{height:calc(var(--u)*29);width:calc(var(--u)*12.5)}
 #barx .bxz-colc{display:flex;flex-direction:column;gap:calc(var(--u)*1);align-items:center;justify-content:flex-end;min-width:calc(var(--u)*16)}
@@ -3722,9 +3670,9 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bxs-pour{position:absolute;left:26%;bottom:10.5%;height:21%;aspect-ratio:.55;transform-origin:50% 60%;transform:none;transition:transform .2s;pointer-events:none;z-index:6;display:flex;align-items:flex-end;justify-content:center}
 #barx .bxs-pour.tool{height:19%}
 #barx .bxs-pour img{max-height:100%;max-width:200%;object-fit:contain;filter:drop-shadow(0 calc(var(--u)*.8) calc(var(--u)*.6) #000a)}
-#barx .bxs:has(#bxpad.on) .bxs-pour{transform:translate(-118%,calc(var(--up)*-1%)) rotate(-112deg)}
+#barx .bxs.pouring .bxs-pour{transform:translate(-118%,calc(var(--up)*-1%)) rotate(-112deg)}
 #barx .bxs-stream{position:absolute;left:calc(16% - var(--u)*.5);bottom:12%;width:calc(var(--u)*1);border-radius:1em;opacity:0;transition:opacity .1s;pointer-events:none;z-index:5}
-#barx .bxs:has(#bxpad.on) .bxs-stream{opacity:.85}
+#barx .bxs.pouring .bxs-stream{opacity:.85}
 #barx .bxz-strip{height:calc(var(--u)*30);width:calc(var(--u)*12);border-radius:calc(var(--u)*6);background:linear-gradient(#ffd23a66,#ffffff1a);border:calc(var(--u)*.45) solid #ffd23a;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:calc(var(--u)*1) 0;touch-action:none;cursor:pointer;color:#fff;font-weight:900;font-size:calc(var(--u)*2.7);text-shadow:0 1px 3px #000}
 #barx .bxz-strip b{font-size:calc(var(--u)*3.3);opacity:.8}
 #barx .bxz-strip.on{background:linear-gradient(#ffd23acc,#ffd23a44)}
@@ -3740,7 +3688,7 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bxd.lock{opacity:.45;filter:grayscale(1)}
 #barx .bxb.serve{align-self:center;min-width:calc(var(--u)*15)}
 #barx .bxs-bot{position:absolute;width:7.3%;height:17.5%;transform:translateX(-50%);background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;cursor:pointer;font-family:inherit}
-#barx .bxs-bot img{max-height:calc(100% - var(--u)*2.8);max-width:100%;object-fit:contain;filter:drop-shadow(0 calc(var(--u)*.4) calc(var(--u)*.4) #000c)}
+#barx .bxs-bot img{max-height:calc(100% - var(--u)*2.8);max-width:100%;object-fit:contain}
 #barx .bxs-bot span{margin-top:calc(var(--u)*.2);font-size:calc(var(--u)*1.8);font-weight:800;color:#ffe9c0;text-shadow:0 1px 2px #000;white-space:nowrap;background:#1a0e08c8;border-radius:.6em;padding:0 .4em;max-width:104%;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis}
 #barx .bxs-bot.need img{filter:drop-shadow(0 0 calc(var(--u)*1) #ffd23a) drop-shadow(0 0 calc(var(--u)*.4) #ffd23a)}
 #barx .bxs-bot.need span{color:#3a1a08;background:#ffd23a}
@@ -3785,31 +3733,6 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bxc-hand span{width:30%;height:88px;border-radius:8px;border:1px dashed #c9a24a66;display:flex;align-items:flex-end;justify-content:center;padding:2px;box-sizing:border-box}
 #barx .bxc-hand img{max-width:100%;max-height:100%;object-fit:contain}
 `;document.head.appendChild(st)})();
-function drawBarBg(){
-  const TY=KY<400?38:0,r=okRng(4242);
-  let s=`<defs><linearGradient id="brwall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1a2e"/><stop offset="1" stop-color="#3a2a30"/></linearGradient><radialGradient id="brglow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffcf7a" stop-opacity=".55"/><stop offset="1" stop-color="#ffcf7a" stop-opacity="0"/></radialGradient><linearGradient id="brshelf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a3420"/><stop offset="1" stop-color="#3a2014"/></linearGradient></defs><rect width="${W}" height="${KY}" fill="url(#brwall)"/>`;
-  for(let x=0;x<W;x+=72)s+=`<path d="M${x} 0v${KY}" stroke="#0e0c18" stroke-width="2" opacity=".45"/>`;
-  s+=`<rect x="0" y="0" width="${W}" height="${22+TY}" fill="#120f1c"/><rect x="0" y="${18+TY}" width="${W}" height="7" fill="#c9a24a" opacity=".8"/>`;
-  /* 中間招牌：月亮＋店名 */
-  const nw=Math.min(300,W*.3),nx=(W-nw)/2,ny=(TY?30:26)+TY;
-  s+=`<rect x="${nx}" y="${ny}" width="${nw}" height="58" rx="8" fill="#14121f" stroke="#c9a24a" stroke-width="3"/><circle cx="${nx+34}" cy="${ny+29}" r="17" fill="#ffe9a8"/><circle cx="${nx+42}" cy="${ny+23}" r="15" fill="#14121f"/><text x="${W/2+16}" y="${ny+40}" text-anchor="middle" font-family="Noto Sans TC,Zen Maru Gothic,sans-serif" font-weight="900" font-size="27" fill="#ffe9a8" letter-spacing="3">${CJK()?T('月影酒吧'):'BAR TSUKIKAGE'}</text>`;
-  /* 兩側圓窗（月亮） */
-  for(const px of [W*.12,W*.88]){const cy=ny+36,rr=30;s+=`<circle cx="${px}" cy="${cy}" r="${rr}" fill="#24304e" stroke="#5a3420" stroke-width="7"/><circle cx="${px}" cy="${cy}" r="${rr+3.5}" fill="none" stroke="${O}" stroke-width="2"/><circle cx="${px+9}" cy="${cy-8}" r="10" fill="#ffe9a8"/><path d="M${px-rr} ${cy}h${rr*2}M${px} ${cy-rr}v${rr*2}" stroke="#5a3420" stroke-width="3.5"/>${[0,1,2,3,4].map(i=>`<circle cx="${px-20+r()*40}" cy="${cy-22+r()*42}" r="1.2" fill="#fff" opacity=".8"/>`).join('')}`}
-  /* 吊燈 */
-  for(const px of [W*.3,W*.7])s+=`<path d="M${px} ${22+TY}v${44}" stroke="#0e0c18" stroke-width="2.5"/><ellipse cx="${px}" cy="${92+TY}" rx="70" ry="60" fill="url(#brglow)"/><path d="M${px-20} ${84+TY}Q${px} ${58+TY} ${px+20} ${84+TY}Z" fill="#c9a24a" stroke="${O}" stroke-width="2.5"/><ellipse cx="${px}" cy="${86+TY}" rx="8" ry="4" fill="#fff3c0"/>`;
-  /* 酒櫃層板＋酒瓶 */
-  const cols=['#c8781e','#e9f1f6','#3f7a3a','#9c3e1a','#f0e2a0','#5a2a6a','#cfe6f0','#d08a2a','#2a5a7a'];
-  [KY-150,KY-82].forEach((sy,row)=>{s+=`<rect x="0" y="${sy-52}" width="${W}" height="52" fill="#ffcf7a" opacity=".07"/>`;
-    for(let x=10;x<W-20;x+=22+r()*10){const h=24+r()*18,w=12+r()*8,c=cols[Math.floor(r()*cols.length)];
-      s+=`<rect x="${x}" y="${sy-h}" width="${w}" height="${h}" rx="3" fill="${c}" fill-opacity=".9" stroke="${O}" stroke-width="2"/><rect x="${x+w/2-2.5}" y="${sy-h-10}" width="5" height="11" rx="1.5" fill="${c}" stroke="${O}" stroke-width="1.6"/><rect x="${x+2}" y="${sy-h*.6}" width="${w-4}" height="${h*.28}" fill="#fff6e0" opacity=".75"/><path d="M${x+3} ${sy-h+4}v${h-8}" stroke="#fff" stroke-width="1.6" opacity=".4"/>`}
-    s+=`<rect x="0" y="${sy}" width="${W}" height="10" fill="url(#brshelf)" stroke="${O}" stroke-width="2"/><rect x="0" y="${sy+10}" width="${W}" height="3" fill="#ffcf7a" opacity=".35"/>`});
-  s+=`<rect x="0" y="${KY-70}" width="${W}" height="6" fill="#3a2014"/>`;
-  $('bg').innerHTML=s;['bg','counter'].forEach(id=>{const e=$(id);e.setAttribute('viewBox',`0 0 ${W} ${H}`);e.setAttribute('width',W);e.setAttribute('height',H)});
-  $('counter').innerHTML=`<g transform="translate(0 ${KY-400})"><defs><linearGradient id="brct" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a3a22"/><stop offset="1" stop-color="#3e2014"/></linearGradient><linearGradient id="brkit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1a14"/><stop offset="1" stop-color="#160e0a"/></linearGradient></defs>
-  <rect x="-4" y="348" width="${W+8}" height="26" fill="url(#brct)" stroke="${O}" stroke-width="3"/><path d="M0 353h${W}" stroke="#fff" stroke-width="3" opacity=".22"/>
-  <rect x="-4" y="374" width="${W+8}" height="26" fill="#2a160e" stroke="${O}" stroke-width="3"/><rect x="-4" y="381" width="${W+8}" height="5" rx="2" fill="#c9a24a" stroke="${O}" stroke-width="1.5"/>
-  <rect x="0" y="400" width="${W}" height="${H-KY}" fill="url(#brkit)"/>${Array.from({length:Math.ceil(W/64)},(_,i)=>`<path d="M${i*64} 400v${H-KY}" stroke="#0a0604" stroke-width="2" opacity=".6"/>`).join('')}</g>`;
-}
 /* ---- 版面：營業畫面全部在 #barx 圖層裡，原本的站位只留保溫台（被蓋住，不會用到） ---- */
 const BR_LAND={warmT:{x:262,y:346,w:440,h:54},pgbtn:{x:880,y:354,w:166,h:44,pg:0}};
 const BR_PORT={warmT:{x:8,y:340,w:360,h:54,k:1.12},pgbtn:{x:482,y:350,w:174,h:46,pg:0}};
@@ -6847,7 +6770,7 @@ function loop(now){
   custPzSync();
   if(R&&R.held!==lastHeld){if(R.held&&(!lastHeld||lastHeld.key!==R.held.key||lastHeld.src!==R.held.src))sfx('pick');lastHeld=R.held}
   const dt=Math.min(.1,(now-last)/1000);last=now;
-  if(R&&!R.paused&&!R.over){const sp=CHEAT()?TSPD:1;for(let i=0;i<sp&&R&&!R.over;i++)step(dt);acc+=dt;if(acc>(TOUCH?.1:.07)){acc=0;renderStations();renderCust();renderHUD();sky()}}
+  if(R&&!R.paused&&!R.over){const sp=CHEAT()?TSPD:1;for(let i=0;i<sp&&R&&!R.over;i++)step(dt);acc+=dt;if(acc>(TOUCH?.1:.07)){acc=0;if(CUR==='bar'&&$('barx')){renderHUD()}else{renderStations();renderCust();renderHUD();sky()}}}
   stmT+=dt;if(stmT>(TOUCH?.3:.1)){stmT=0;steamTick()}
 }
 const TOUCH=matchMedia('(pointer:coarse)').matches||'ontouchstart' in window;

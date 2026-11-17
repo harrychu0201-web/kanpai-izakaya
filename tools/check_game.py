@@ -901,6 +901,9 @@ def sc_bar(b, base):
         if c.has('.modal') or not c.has('[data-bx=start]'):
             raise AssertionError('月影酒吧：關掉配方手帳後回不到調酒畫面\n%s' % c.diag())
         bx_shot(c, 'arrive')
+        hid = c.page.evaluate("['bg','custLayer','counter','stations'].map(id=>getComputedStyle($(id)).display).join(',')")
+        if hid != 'none,none,none,none':
+            raise AssertionError('月影酒吧：營業時底下的舊舞台沒有藏起來（%s），會跟著重畫、變卡' % hid)
         c.click('[data-bx=turn]', wait=500)
         small = c.page.evaluate("[...document.querySelectorAll('#barx button')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&(r.height<43.5||r.width<43.5)).length")
         n_bot = c.page.evaluate("document.querySelectorAll('#barx [data-bx=take]').length")
@@ -983,6 +986,8 @@ def sc_bar(b, base):
         c.click('.modal [data-act=home]', wait=1000)
         if c.has('#barx'):
             raise AssertionError('月影酒吧：暫停回主頁後調酒畫面沒有收掉')
+        if c.page.evaluate("$('game').classList.contains('barmode')||getComputedStyle($('stations')).display==='none'"):
+            raise AssertionError('月影酒吧：離開酒吧後底下的舞台還被藏著（barmode 沒拿掉）')
         c.expect_clean('月影酒吧第三天')
     finally:
         c.close()
