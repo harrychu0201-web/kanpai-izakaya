@@ -13,6 +13,7 @@
   pick      選店橫向卡片、說明預設收合、設定「進遊戲後先到哪」（店家選單／暖簾街）
   bar       月影酒吧（作者限定）：右邊卡片的步驟清單（不蓋到手邊酒瓶、做酒時標出目前這步）、教學三杯用真實按住／畫圈／來回滑做完（含轉身到酒櫃拿酒）、打烊結算；第二天在商店買酒和配料、
             故意做錯 → 重做、再做曼哈頓（抖苦精、馬丁尼杯、手邊滿三瓶要換）和瑪格麗特（配料 B 頁的鹽口）；第三天暫停回主頁
+  tut       新手教學（小夜對話框）：居酒屋真實點擊進入並點完、上一步、海風壽司教學點完、製作教學跳過；立繪載入、對話框不超出、按鈕 44px
   saves     玩完整條路徑後，玩家原本的存檔欄位一個都不能少、不認得的欄位原封不動
 """
 import argparse, functools, http.server, json, os, shutil, socketserver, sys, threading, time, traceback
@@ -765,7 +766,28 @@ def bx_shake(c, strokes):
     c.page.wait_for_timeout(200)
 
 
+VN_CLICKS = [0]
+
+
+def bx_vn(c, limit=12):
+    """月影酒吧教學的小夜對話框：真實點擊對話框一句一句點完（對話框擋住時其他按鈕點不到）。"""
+    c.page.wait_for_timeout(120)
+    for _ in range(limit):
+        if not c.has('#tut .vn'):
+            return
+        if not c.page.evaluate("(()=>{const i=document.querySelector('#tut .vn img');return !i||i.complete&&i.naturalWidth>0})()"):
+            raise AssertionError('月影酒吧：教學對話框的立繪圖片載不出來')
+        if SHOTS:
+            c.page.screenshot(path=os.path.join(SHOTS, 'vn-%02d.png' % VN_CLICKS[0]))
+        box = c.page.locator('#tut .vn-tx').bounding_box()
+        c.page.mouse.click(box['x'] + box['width'] * 0.5, box['y'] + box['height'] * 0.5)
+        VN_CLICKS[0] += 1
+        c.page.wait_for_timeout(260)
+    raise AssertionError('月影酒吧：教學對話框點了 %d 下還關不掉\n%s' % (limit, c.diag()))
+
+
 def bx_stage(c):
+    bx_vn(c)
     return c.page.evaluate("BX?(BX.stage==='make'?bxCur()[0]:BX.stage):'none'")
 
 
@@ -780,14 +802,17 @@ def bx_shot(c, name):
 
 def bx_fetch(c, l):
     """轉身到酒櫃拿酒，再轉回吧台（拿到這一步要用的酒會自己轉回來）。"""
+    bx_vn(c)
     c.click('[data-bx=turn]', wait=500)
     if c.page.evaluate("BX.view") != 'cab':
         raise AssertionError('月影酒吧：按了轉身沒有看到酒櫃\n%s' % c.diag())
+    bx_vn(c)
     bx_shot(c, 'cab-' + l)
     c.click('[data-bx=take][data-v=%s]' % l, wait=1100)
     if l not in c.page.evaluate("BX.hand"):
         raise AssertionError('月影酒吧：在酒櫃點了 %s 但沒拿到手邊（手邊：%s）' % (l, c.page.evaluate("BX.hand")))
     if c.page.evaluate("BX.view") == 'cab':
+        bx_vn(c)
         c.click('[data-bx=turn]', wait=500)
     if c.page.evaluate("BX.view") != 'bar':
         raise AssertionError('月影酒吧：拿完酒轉不回吧台\n%s' % c.diag())
@@ -797,6 +822,7 @@ def bx_make(c, wrong=False, started=False):
     """照客人的單把這杯做完（wrong=True 故意選錯杯、量錯）。"""
     o = c.page.evaluate("(()=>{const o=bxOrder(),r=BXR[o.k];return {k:o.k,c:o.c,g:r.g,t:r.t,ice:r.ice}})()")
     if not started:
+        bx_vn(c)
         c.click('[data-bx=start]', wait=300)
     for _ in range(22):
         st = bx_stage(c)
@@ -865,9 +891,12 @@ def bx_make(c, wrong=False, started=False):
 
 def bx_finish_cust(c):
     """過關後：繼續 → 回應客人 → 下一位。"""
+    bx_vn(c)
     c.click('[data-bx=totalk]', wait=300)
+    bx_vn(c)
     v = c.page.evaluate("BXCH[bxOrder().who][0]")
     c.click('[data-bx=say][data-v=%s]' % v, wait=300)
+    bx_vn(c)
     c.click('[data-bx=nextc]', wait=700)
 
 
@@ -893,11 +922,23 @@ def sc_bar(b, base):
         q = c.page.evaluate("BX.q.map(o=>o.k)")
         if q != ['brhigh', 'bratsu', 'brgimlet']:
             raise AssertionError('月影酒吧：第一天教學的客人不對：%s' % q)
+        c.page.wait_for_timeout(300)
+        if not c.has('#tut .vn img.vn-por') or '月影酒吧' not in c.page.evaluate("document.querySelector('#tut .vn').innerText"):
+            raise AssertionError('月影酒吧：第一天教學一開始沒有出現小夜的對話框\n%s' % c.diag())
+        bx_shot(c, 'vn-arr0')
         # 觸控目標：844x390 橫向手機實際大小至少 44px
         small = c.page.evaluate("[...document.querySelectorAll('#barx button')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&r.height<43.5).length")
         if small:
             which = c.page.evaluate("[...document.querySelectorAll('#barx button')].filter(e=>{const r=e.getBoundingClientRect();return r.width&&r.height<43.5}).map(e=>(e.dataset.bx||e.className)+':'+e.getBoundingClientRect().height.toFixed(1)).join(', ')")
             raise AssertionError('月影酒吧：有 %d 顆按鈕在手機上不到 44px 高（%s）' % (small, which))
+        bx_vn(c)
+        # 右邊卡片、說明框可以收起和展開（真實點擊），收起狀態記住
+        c.click('[data-bx=fold][data-v=card]', wait=300)
+        if not c.page.evaluate("document.querySelector('#barx .bxc-card').classList.contains('fold')&&!document.querySelector('#barx .bxc-st').offsetParent"):
+            raise AssertionError('月影酒吧：按了收起，卡片沒有收起來')
+        c.click('[data-bx=fold][data-v=card]', wait=300)
+        if not c.page.evaluate("!!document.querySelector('#barx .bxc-st').offsetParent"):
+            raise AssertionError('月影酒吧：卡片收起後展不開')
         c.click('[data-bx=book]', wait=400)
         if '配方手帳' not in c.page.evaluate("(document.querySelector('.modal')||{innerText:''}).innerText"):
             raise AssertionError('月影酒吧：配方手帳打不開')
@@ -918,6 +959,7 @@ def sc_bar(b, base):
         if hid != 'none,none,none,none':
             raise AssertionError('月影酒吧：營業時底下的舊舞台沒有藏起來（%s），會跟著重畫、變卡' % hid)
         c.click('[data-bx=turn]', wait=500)
+        bx_vn(c)
         small = c.page.evaluate("[...document.querySelectorAll('#barx button')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&(r.height<43.5||r.width<43.5)).length")
         n_bot = c.page.evaluate("document.querySelectorAll('#barx [data-bx=take]').length")
         if small or n_bot != 27:
@@ -927,12 +969,28 @@ def sc_bar(b, base):
             raise AssertionError('月影酒吧：還沒買的伏特加居然拿得到')
         c.click('[data-bx=turn]', wait=500)
         for i in range(3):
-            if not bx_make(c):
+            if i == 0:
+                bx_vn(c)
+                c.click('[data-bx=start]', wait=400)
+                bx_vn(c)
+                if c.page.evaluate("BX.stage") != 'make' or not c.has('#barx .bxc-box'):
+                    raise AssertionError('月影酒吧：開始調酒後沒有說明框\n%s' % c.diag())
+                c.click('[data-bx=fold][data-v=ins]', wait=300)
+                if not c.page.evaluate("document.querySelector('#barx .bxc-box').classList.contains('fold')&&!document.querySelector('#barx .bxc-ins').offsetParent&&JSON.parse(localStorage.getItem('izakaya-bxfold')).ins"):
+                    raise AssertionError('月影酒吧：說明框收不起來或沒記住')
+                c.click('[data-bx=fold][data-v=ins]', wait=300)
+                if not c.page.evaluate("!!document.querySelector('#barx .bxc-ins').offsetParent"):
+                    raise AssertionError('月影酒吧：說明框收起後展不開')
+            if not bx_make(c, started=(i == 0)):
                 sc = c.page.evaluate("BX.d.comps.map(x=>x.key+':'+x.q.toFixed(2)).join(' ')+' | '+BX.d.pref.map(x=>x.key+':'+x.q).join(' ')")
                 raise AssertionError('月影酒吧：照做的第 %d 杯沒過關（%s）\n%s' % (i + 1, sc, c.diag()))
             bx_finish_cust(c)
         c.page.wait_for_timeout(900)
         c.expect_clean('月影酒吧教學三杯')
+        if VN_CLICKS[0] < 12:
+            raise AssertionError('月影酒吧：教學三杯只點了 %d 下小夜的對話框，教學台詞好像沒出來' % VN_CLICKS[0])
+        if c.has('#tut .vn'):
+            raise AssertionError('月影酒吧：打烊後小夜的對話框還留在畫面上')
         if c.has('#barx') or not c.page.evaluate("R&&R.settled"):
             raise AssertionError('月影酒吧：最後一位客人送走後沒有打烊結算\n%s' % c.diag())
         st = c.page.evaluate("({tut:ST.bar.tut,xp:ST.bar.xp,served:R.served,earned:R.earned,zz:!!ST.zz_future_field,old:ST.menu.brmojito===undefined})")
@@ -1139,10 +1197,70 @@ def sc_gun(b, base):
         c.close()
 
 
+def vn_click_text(c):
+    box = c.page.locator('#tut .vn-tx').bounding_box()
+    c.page.mouse.click(box['x'] + box['width'] * 0.5, box['y'] + box['height'] * 0.5)
+    c.page.wait_for_timeout(300)
+
+
+def sc_tut(b, base):
+    """新手教學（小夜的對話框）：居酒屋從「說明 → 新手教學」真實點擊進去、點完每一句回主頁；
+    上一步、跳過教學按鈕；海風壽司教學與「📖 製作教學」也要能點完／跳過；立繪圖片要載得出來。"""
+    for prof in ({}, {'viewport': {'width': 1280, 'height': 720}}):
+        c = Ctx(b, base, profile=prof or None)
+        c.open()
+        try:
+            c.dismiss_modals()
+            c.page.evaluate("showHowto('tut')")
+            c.page.wait_for_timeout(300)
+            c.click('.modal [data-act=tut]', wait=900)
+            if not c.has('#tut .vn img.vn-por') or not c.page.evaluate("TUT&&TUT.i===0"):
+                raise AssertionError('新手教學：按了新手教學沒有出現小夜的對話框\n%s' % c.diag())
+            if not c.page.evaluate("[...document.querySelectorAll('#tut .vn img')].every(i=>i.complete&&i.naturalWidth>0)"):
+                raise AssertionError('新手教學：小夜的立繪圖片載不出來')
+            n = c.page.evaluate("TUTS.length")
+            vn_click_text(c)
+            vn_click_text(c)
+            c.click('#tut [data-tut=prev]', wait=300)
+            if c.page.evaluate("TUT.i") != 1:
+                raise AssertionError('新手教學：上一步沒有回到上一句（現在第 %s 句）' % c.page.evaluate("TUT.i"))
+            # 每一句：對話框不能超出畫面、按鈕實際至少 44px 高
+            for i in range(n + 3):
+                if not c.page.evaluate("!!TUT"):
+                    break
+                bad = c.page.evaluate("""(()=>{const v=document.querySelector('#tut .vn'),r=[...v.querySelectorAll('.vn-box')].map(e=>e.getBoundingClientRect())[0];
+                  const sm=[...v.querySelectorAll('button')].filter(e=>e.getBoundingClientRect().height<43.5).length;
+                  return (r.top<-1||r.bottom>innerHeight+1?'對話框超出畫面 ':'')+(sm?sm+' 顆按鈕不到 44px':'')})()""")
+                if bad:
+                    raise AssertionError('新手教學第 %d 句：%s' % (c.page.evaluate("TUT.i") + 1, bad))
+                vn_click_text(c)
+            if c.page.evaluate("!!TUT") or not c.page.evaluate("HOME"):
+                raise AssertionError('新手教學：點完最後一句沒有回到主頁\n%s' % c.diag())
+            c.expect_clean('居酒屋新手教學')
+            # 海風壽司新手教學：點完；製作教學：按跳過
+            c.page.evaluate("startSushiTut(false)")
+            c.page.wait_for_timeout(900)
+            for i in range(20):
+                if not c.page.evaluate("!!TUT"):
+                    break
+                vn_click_text(c)
+            if c.page.evaluate("!!TUT") or not c.page.evaluate("HOME"):
+                raise AssertionError('海風壽司教學：點完沒有回到主頁\n%s' % c.diag())
+            c.page.evaluate("startSushiLesson(false)")
+            c.page.wait_for_timeout(900)
+            vn_click_text(c)
+            c.click('#tut [data-tut=skip]', wait=700)
+            if c.page.evaluate("!!TUT") or c.has('#tut .vn'):
+                raise AssertionError('海風壽司製作教學：按跳過教學沒有結束\n%s' % c.diag())
+            c.expect_clean('海風壽司教學')
+        finally:
+            c.close()
+
+
 SCENARIOS = [('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar),
-             ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun)]
+             ('tut', sc_tut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun)]
 
 
 def main():
