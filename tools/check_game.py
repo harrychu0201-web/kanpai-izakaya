@@ -11,7 +11,7 @@
   shops     每家店的商店：每個分頁、每個買／升級按鈕都真的點過，買到全部擁有後再逐頁重開
   layout    橫向手機、iOS 縮放（layout viewport 約螢幕 2 倍）、Android、平板、桌機：舞台不能縮成一小塊、不能被切掉
   pick      選店橫向卡片、說明預設收合、設定「進遊戲後先到哪」（店家選單／暖簾街）
-  bar       月影酒吧（作者限定）：教學三杯用真實按住／畫圈／來回滑做完（含轉身到酒櫃拿酒）、打烊結算；第二天在商店買酒和配料、
+  bar       月影酒吧（作者限定）：右邊卡片的步驟清單（不蓋到手邊酒瓶、做酒時標出目前這步）、教學三杯用真實按住／畫圈／來回滑做完（含轉身到酒櫃拿酒）、打烊結算；第二天在商店買酒和配料、
             故意做錯 → 重做、再做曼哈頓（抖苦精、馬丁尼杯、手邊滿三瓶要換）和瑪格麗特（配料 B 頁的鹽口）；第三天暫停回主頁
   saves     玩完整條路徑後，玩家原本的存檔欄位一個都不能少、不認得的欄位原封不動
 """
@@ -804,6 +804,8 @@ def bx_make(c, wrong=False, started=False):
             bx_fetch(c, c.page.evaluate("bxCur()[1]"))
             continue
         bx_shot(c, 'st-%s-%s' % (o['k'], st))
+        if not c.page.evaluate("BX.stage!=='make'||document.querySelectorAll('#barx .bxc-st li.on').length===1"):
+            raise AssertionError('月影酒吧：做酒時右邊步驟清單沒有標出目前這一步（%s）' % st)
         if st == 'glass':
             c.click('[data-bx=g][data-v=%s]' % ('coupe' if wrong and o['g'] != 'coupe' else 'high' if wrong else o['g']), wait=150)
             c.click('[data-bx=t][data-v=%s]' % o['t'], wait=650)
@@ -903,6 +905,10 @@ def sc_bar(b, base):
         if c.has('.modal') or not c.has('[data-bx=start]'):
             raise AssertionError('月影酒吧：關掉配方手帳後回不到調酒畫面\n%s' % c.diag())
         bx_shot(c, 'arrive')
+        sv = c.page.evaluate("""(()=>{const li=document.querySelectorAll('#barx .bxc-card .bxc-st li'),cd=document.querySelector('#barx .bxc-card').getBoundingClientRect(),h=document.querySelector('#barx [data-lyk=hand0]').getBoundingClientRect();
+          return {n:li.length,want:bxStages({k:bxOrder().k,c:['none']}).length,old:document.querySelectorAll('#barx .bxc-left .bx-steps').length,over:cd.bottom>h.top+2}})()""")
+        if sv['n'] != sv['want'] or sv['old'] or sv['over']:
+            raise AssertionError('月影酒吧：右邊卡片的步驟清單不對或蓋到手邊酒瓶 %s' % sv)
         ly = c.page.evaluate("""(()=>{const bg=document.querySelector('#barx .bxs-bg'),r=bg.getBoundingClientRect();
           const a=lyPick(bg,r.left+5,r.top+5),say=document.querySelector('#barx [data-lyk=say]'),h=document.querySelector('#barx [data-lyk=hand0]');
           return {bg:a===null,say:lyPick(say)===say&&lyQ(say).q,hand:lyPick(h)===h&&lyQ(h).q,up:lyUp(say)&&lyUp(say).dataset.lyk||''}})()""")
