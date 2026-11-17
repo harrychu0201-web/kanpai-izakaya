@@ -888,7 +888,16 @@ def bx_make(c, wrong=False, started=False):
             c.click('[data-bx=done]', wait=300)
         elif st in ('top', 'pour'):
             tg = c.page.evaluate("(()=>{const s=bxCur();return s[0]==='pour'?s[1]:s[2]})()")
+            # 倒酒長條旁邊要有刻度管（黃線＝滿），小杯子（熱燗）看不到液面也知道什麼時候滿
+            gv = c.page.evaluate("(()=>{const g=document.querySelector('#bxv[data-lyk=pourgauge]');if(!g)return null;const r=g.getBoundingClientRect(),p=document.querySelector('#bxpad').getBoundingClientRect();return {h:r.height,w:r.width,line:!!g.querySelector('path[stroke=\"#ffd23a\"]'),side:r.left>=p.right-2}})()")
+            if not gv or not gv['line'] or gv['h'] < 80 or not gv['side']:
+                raise AssertionError('月影酒吧：倒酒時長條旁邊沒有看得到的刻度管和黃線（%s）\n%s' % (gv, c.diag()))
             bx_hold_until(c, '#bxpad', "BX.d.lv>=%f" % (tg - 0.012), at=(0.5, 0.78))
+            fy = c.page.evaluate("(()=>{const r=document.querySelector('#bxv rect[fill-opacity=\".9\"]');return r?+r.getAttribute('y'):-1})()")
+            want = 262 - tg * 236
+            if abs(fy - want) > 12:
+                raise AssertionError('月影酒吧：倒到黃線了，刻度管的液面卻沒跟著到黃線（液面 %.0f，黃線 %.0f）' % (fy, want))
+            bx_shot(c, 'poured-%s-%s' % (o['k'], st))
             c.click('[data-bx=done]', wait=300)
         elif st == 'gar':
             need = [x[2:] for x in o['c'] if x.startswith('g:')]
