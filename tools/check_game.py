@@ -14,6 +14,7 @@
   bar       月影酒吧（作者限定）：右邊卡片的步驟清單（不蓋到手邊酒瓶、做酒時標出目前這步）、教學三杯用真實按住／畫圈／來回滑做完（含轉身到酒櫃拿酒）、打烊結算；第二天在商店買酒和配料、
             故意做錯 → 重做、再做曼哈頓（抖苦精、馬丁尼杯、手邊滿三瓶要換）和瑪格麗特（配料 B 頁的鹽口）；第三天暫停回主頁
   tut       新手教學（小夜對話框）：居酒屋真實點擊進入並點完、上一步、海風壽司教學點完、製作教學跳過；立繪載入、對話框不超出、按鈕 44px
+  oko       御好燒店（作者限定）：從麵糊開始真實點擊加料做完四道菜、順序錯加不進去、空手連點倒掉、放太久會焦、做好放保溫台、📖 做法暫停
   saves     玩完整條路徑後，玩家原本的存檔欄位一個都不能少、不認得的欄位原封不動
 """
 import argparse, functools, http.server, json, os, shutil, socketserver, sys, threading, time, traceback
@@ -1356,9 +1357,149 @@ def sc_barbuy(b, base):
         c.close()
 
 
+# ------------------------------------------------------------------ 御好燒店（作者／管理員限定）：從麵糊開始自己加料
+OK_KEYS = ['okosaka', 'okhiro', 'okmoji', 'okmoder']
+OK_TILE = {'bat': 'okBat', 'cab': 'okCab', 'spr': 'okSpr', 'pork': 'okPork', 'nood': 'okNood', 'egg': 'okEgg',
+           'mc': 'okMc', 'spat': 'okSpat', 'sauce': 'okSauce', 'mayo': 'okMayo', 'top': 'okTop'}
+
+
+def ok_shot(c, name):
+    try:
+        c.page.screenshot(path='/tmp/check-oko-%s.png' % name)
+    except Exception:
+        pass
+
+
+def ok_make(c, slot, k, shots=False):
+    """真實點擊：一步一步拿食材 → 點鐵板，要煎的步驟等到可以做（金色）再點；刷醬點三下。"""
+    steps = c.page.evaluate("OKR[%s]" % json.dumps(k))
+    for n, st in enumerate(steps):
+        ing = st[0]
+        if c.page.evaluate("R.okHand") != ing:
+            c.click('#st-%s' % OK_TILE[ing], wait=120)
+            if c.page.evaluate("R.okHand") != ing:
+                raise AssertionError('御好燒：點了 %s 沒有拿起來（手上：%s）' % (ing, c.page.evaluate("R.okHand")))
+        if n > 0:
+            for _ in range(80):
+                if c.page.evaluate("(()=>{const g=R.tpn[%d];return !!g&&g.ct>=okCook(g)})()" % slot):
+                    break
+                c.page.wait_for_timeout(100)
+        taps = 3 if ing == 'sauce' else 1
+        for _ in range(taps):
+            c.click('[data-tpn="%d"]' % slot, wait=120)
+        g = c.page.evaluate("(()=>{const g=R.tpn[%d];return g?{n:g.n,fin:!!g.fin,bad:!!g.bad,kind:g.kind,br:g.br}:null})()" % slot)
+        if not g or g['bad'] or g['n'] != n + 1:
+            raise AssertionError('御好燒：做 %s 第 %d 步（%s）後狀態不對：%s\n%s' % (k, n + 1, st[1], g, c.diag()))
+        if shots and n in (0, 2, 4):
+            ok_shot(c, '%s-%d' % (k, n + 1))
+    g = c.page.evaluate("(()=>{const g=R.tpn[%d];return {fin:!!g.fin,kind:g.kind,st:cookState(g.t,g.kind)}})()" % slot)
+    if not g['fin'] or g['kind'] != k or g['st'] != 'done':
+        raise AssertionError('御好燒：%s 全部步驟做完卻不是做好的狀態 %s' % (k, g))
+    if not c.page.evaluate("!!R.tpn[%d].star" % slot):
+        raise AssertionError('御好燒：%s 每一步都在金色時做，卻沒有變成職人之作' % k)
+
+
+def sc_oko(b, base):
+    seed = dict(SEED_SAVE)
+    seed.update({'oko': {'up': {}}, 'where': 'oko', 'menu': {k: 1 for k in OK_KEYS}})
+    c = Ctx(b, base, seed=False)
+    c.ctx.add_init_script("if(!localStorage.getItem('__okseed')){localStorage.setItem('%s',%s);localStorage.setItem('%s',%s);localStorage.setItem('__okseed','1')}"
+                          % (SAVE_KEY, json.dumps(json.dumps(seed)), REC_KEY, json.dumps(json.dumps(SEED_REC))))
+    c.open()
+    try:
+        c.dismiss_modals()
+        c.page.evaluate("CL.user={email:ADMIN_EMAIL,uid:'check-admin',name:'Author Check',photo:''};showHome()")
+        c.page.wait_for_timeout(500)
+        c.dismiss_modals()
+        c.click('[data-act=cont]', wait=900)
+        if c.page.evaluate("CUR") != 'oko':
+            raise AssertionError('御好燒：作者繼續營業後沒有進到御好燒店（CUR=%s）' % c.page.evaluate("CUR"))
+        c.click('[data-act=start]', wait=1200)
+        c.dismiss_modals()
+        c.expect_clean('御好燒開店')
+        # 食材盤 12 格都在、都在舞台裡、實際大小至少 44px
+        tiles = list(OK_TILE.values()) + ['okBook']
+        bad = c.page.evaluate("""(ts=>{const W=innerWidth,H=innerHeight;return ts.filter(t=>{const e=document.getElementById('st-'+t);if(!e||e.hidden)return true;const r=e.getBoundingClientRect();return r.width<44||r.height<44||r.right>W+1||r.bottom>H+1||r.left<-1})})(%s)""" % json.dumps(tiles))
+        if bad:
+            raise AssertionError('御好燒：食材盤這些格子不見、太小或超出畫面：%s\n%s' % (bad, c.diag()))
+        ok_shot(c, 'open')
+        # 沒拿東西點空鐵板：不能下料；拿豬五花點空鐵板：不能（要先倒麵糊）
+        c.click('[data-tpn="0"]', wait=150)
+        c.click('#st-okPork', wait=150)
+        c.click('[data-tpn="0"]', wait=150)
+        if c.page.evaluate("!!R.tpn[0]"):
+            raise AssertionError('御好燒：沒倒麵糊就能直接放豬五花')
+        # 順序錯的料加不進去
+        c.click('#st-okBat', wait=150)
+        c.click('[data-tpn="0"]', wait=150)
+        c.click('#st-okPork', wait=150)
+        c.click('[data-tpn="0"]', wait=150)
+        if c.page.evaluate("R.tpn[0].n") != 1:
+            raise AssertionError('御好燒：倒完麵糊直接放豬五花居然加得進去（大阪燒要先加高麗菜、拌勻）')
+        # 點兩下空手 = 倒掉重來
+        c.click('#st-okPork', wait=150)  # 放下手上的
+        c.click('[data-tpn="0"]', wait=150)
+        c.click('[data-tpn="0"]', wait=150)
+        if c.page.evaluate("!!R.tpn[0]"):
+            raise AssertionError('御好燒：空手連點兩下做到一半的餅沒有倒掉')
+        c.expect_clean('御好燒順序檢查')
+        # 四道菜各做一次（真實點擊），第一道留截圖
+        ok_make(c, 0, 'okosaka', shots=True)
+        ok_shot(c, 'osaka-done')
+        # 職人之作直接送給點大阪燒的客人：多拿三成（真實點擊菜和客人）
+        seat = c.page.evaluate("(()=>{const i=R.seats.findIndex(x=>x&&x.st==='wait');if(i<0)return -1;const q=R.seats[i];q.order=['okosaka'];q.filled=[false];q.taken=true;q.extra=null;return i})()")
+        if seat >= 0:
+            e0 = c.page.evaluate("R.earned")
+            c.click('[data-tpn="0"]', wait=200)
+            c.click('.cust[data-seat="%d"]' % seat, wait=500)
+            got = c.page.evaluate("R.earned") - e0
+            want = c.page.evaluate("Math.round(ITEMS.okosaka.price*.3/10)*10")
+            if got < want:
+                raise AssertionError('御好燒：職人之作送給客人，收入只多了 %s（至少要 %s）\n%s' % (got, want, c.diag()))
+            c.expect_clean('御好燒送職人之作')
+            ok_make(c, 0, 'okosaka')
+        c.click('[data-tpn="0"]', wait=200)
+        if c.page.evaluate("R.held&&R.held.key") != 'okosaka':
+            raise AssertionError('御好燒：做好的大阪燒點不起來')
+        c.click('#st-warmT [data-warm="0"]', wait=200)
+        if c.page.evaluate("!!R.tpn[0]||!(R.warm[0]&&R.warm[0].key==='okosaka')"):
+            raise AssertionError('御好燒：大阪燒放不上保溫台\n%s' % c.diag())
+        ok_make(c, 1, 'okhiro', shots=True)
+        ok_shot(c, 'hiro-done')
+        ok_make(c, 2, 'okmoji', shots=True)
+        ok_make(c, 0, 'okmoder', shots=True)
+        ok_shot(c, 'all-done')
+        c.expect_clean('御好燒四道菜')
+        # 放太久會焦：倒麵糊、加高麗菜、拌勻、鋪肉後不翻面
+        c.click('[data-tpn="1"]', wait=150)
+        c.click('[data-tpn="2"]', wait=150)
+        c.page.evaluate("R.held=null;R.tpn[1]=R.tpn[2]=null")
+        for ing in ['bat', 'cab', 'spat', 'pork']:
+            c.click('#st-%s' % OK_TILE[ing], wait=100)
+            c.click('[data-tpn="1"]', wait=100)
+        c.page.wait_for_timeout(int((3.5 + 7 + 1) * 1000))
+        if not c.page.evaluate("!!(R.tpn[1]&&R.tpn[1].bad)"):
+            raise AssertionError('御好燒：鋪肉後放著不翻面，過很久也沒焦')
+        c.click('[data-tpn="1"]', wait=200)
+        if c.page.evaluate("!!R.tpn[1]"):
+            raise AssertionError('御好燒：焦掉的點了丟不掉')
+        # 📖 做法：營業中打開會暫停，按繼續營業回來
+        c.click('#st-okBook', wait=400)
+        if not c.page.evaluate("R.paused") or '大阪燒' not in c.page.evaluate("(document.querySelector('.modal')||{innerText:''}).innerText"):
+            raise AssertionError('御好燒：📖 做法打不開或沒暫停\n%s' % c.diag())
+        ok_shot(c, 'book')
+        c.click('.modal [data-act=resume]', wait=400)
+        if c.page.evaluate("R.paused") or c.has('.modal'):
+            raise AssertionError('御好燒：做法關掉後沒有繼續營業')
+        c.expect_clean('御好燒做法')
+        day_to_home(c)
+    finally:
+        c.close()
+
+
 SCENARIOS = [('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
-             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barbuy', sc_barbuy),
+             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barbuy', sc_barbuy), ('oko', sc_oko),
              ('tut', sc_tut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun)]
 
 
