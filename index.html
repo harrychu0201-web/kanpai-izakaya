@@ -3219,16 +3219,19 @@ function bxHeatT(o){const c=o.c.find(x=>BXHEAT[x]);return c?BXHEAT[c]:50}
 /* ---- 今天的客人 ---- */
 function bxPlan(){const b=bxSt();
   if(!b.tut)return [{k:'brhigh',c:['fizz','light'],who:'ren',tut:1},{k:'bratsu',c:['nurume'],who:'taizo',tut:1},{k:'brgimlet',c:['none'],who:'kuroda',tut:1}];
+  return [bxGen([])]}
+/* 客人不限人數：一位做完才生下一位，00:20 最後點餐後送走手上這位就打烊（2026/11/18） */
+function bxGen(prev){const b=bxSt();
   let own=BRKEYS.filter(k=>has(k)&&!isOff(k));if(!own.length)own=BRKEYS.filter(has);if(!own.length)own=['brhigh'];
-  const n=3+(Math.random()<.5?1:0)+(ST.day>=10&&Math.random()<.35?1:0),pool=Object.keys(BXCH).filter(s=>s!=='reiko').sort(()=>Math.random()-.5),out=[];
-  const withReiko=own.some(k=>k==='brmizu'||k==='brhigh')&&((b.story.reiko||0)<3||Math.random()<.4);
-  for(let i=0;i<n;i++){const who=withReiko&&i===Math.min(2,n-1)?'reiko':pool.pop();const fav=(BXFAV[who]||[]).filter(k=>own.includes(k));const k=fav.length&&Math.random()<.7?pick(fav):pick(own);
-    const cs=BXR[k].cond.filter(c=>!c.startsWith('g:')||bxGarOwn(c.slice(2)));out.push({k,c:[pick(cs.length?cs:['none'])],who})}
-  return out}
+  const all=Object.keys(BXCH).filter(s=>s!=='reiko'),recent=prev.slice(-3).map(o=>o.who),pool=all.filter(s=>!recent.includes(s));
+  const reikoOk=own.some(k=>k==='brmizu'||k==='brhigh')&&prev.length>=2&&!prev.some(o=>o.who==='reiko')&&((b.story.reiko||0)<3||Math.random()<.4)&&Math.random()<.35;
+  const who=reikoOk?'reiko':pick(pool.length?pool:all);const fav=(BXFAV[who]||[]).filter(k=>own.includes(k));const k=fav.length&&Math.random()<.7?pick(fav):pick(own);
+  const cs=BXR[k].cond.filter(c=>!c.startsWith('g:')||bxGarOwn(c.slice(2)));return {k,c:[pick(cs.length?cs:['none'])],who}}
+const BXTS=.3; /* 酒吧的時間走得比居酒屋慢（一杯要專心做）：16:00～00:30 大約 9 分鐘 */
 /* ---- 開店：蓋上 #barx 圖層 ---- */
 function barBegin(){bxClose();const b=bxSt(),q=bxPlan();
-  BX={q,i:0,tut:!b.tut,res:[],hand:[],view:'bar'};R.extH=3;
-  const avg=q.reduce((s,o)=>s+ITEMS[o.k].price,0)/q.length,P=q.length*avg;R.goals=[Math.round(P*.35/100)*100,Math.round(P*.62/100)*100,Math.round(P*.9/100)*100];
+  BX={q,i:0,tut:!b.tut,res:[],hand:[],view:'bar'};
+  const ks=q.map(o=>o.k).concat(BRKEYS.filter(k=>has(k)&&!isOff(k))),avg=ks.reduce((s,k)=>s+ITEMS[k].price,0)/ks.length,P=6*avg;R.goals=[Math.round(P*.35/100)*100,Math.round(P*.62/100)*100,Math.round(P*.9/100)*100];
   const el=document.createElement('div');el.id='barx';el.addEventListener('pointerdown',e=>e.stopPropagation());el.addEventListener('click',bxClick);
   $('game').insertBefore(el,$('modalLayer'));$('game').classList.add('barmode');['custLayer','counter','stations'].forEach(id=>{const x=$(id);if(x)x.innerHTML=''});bxArrive()}
 function bxClose(){if(BXVN)bxVNEnd();cancelAnimationFrame(BXRAF);BXRAF=0;clearTimeout(BXTM);{const g=$('game');if(g)g.classList.remove('barmode')}if(BX)clearTimeout(BX.tmTurn);const e=$('barx');if(e)e.remove()}
@@ -3425,7 +3428,7 @@ function bxRender(){const el=$('barx');if(!el||!BX)return;const o=bxOrder(),st=B
       inner+=`<div class="bxz bxz-c" data-lyk="zone-arrive"><button class="bxb big" data-bx="start">${T('開始調酒')}</button></div>`}
     else if(mk){left=`<p class="bxc-ins">${z.ins}</p>`;inner+=z.scene}
     else panel=`<div class="bxc-panel" data-lyk="panel">${st==='res'?BX.resHTML:st==='talk'?BX.talkHTML:BX.endHTML||''}</div>`;
-    html=scene(inner)+`<div class="bxc-left" data-lyk="left"><div class="bxc-say" data-lyk="say"><b>${say}</b><small>${sub}</small></div>${left?`<div class="bxc-box${BXFOLD.ins?' fold':''}" data-lyk="box">${bxFoldBtn('ins','💬 '+T('說明'))}${left}</div>`:''}</div><div class="bxc-rcol" data-lyk="rcol">${card}<div class="bxc-right2" data-lyk="btns"><button class="bxc-btn" data-bx="book">📖 ${T('配方手帳')}</button>${st==='arrive'||mk?`<button class="bxc-turn" data-bx="turn" data-lyk="turn">↻ ${T('轉身')}<small>${T('去酒櫃拿酒')}</small></button>`:''}<span class="bxc-cnt" data-lyk="cnt">${T('客人 {0}/{1}',BX.i+1,BX.q.length)}</span></div></div>${panel}`}
+    html=scene(inner)+`<div class="bxc-left" data-lyk="left"><div class="bxc-say${bxF('say')?' fold':''}" data-lyk="say">${bxFoldBtn('say','💬 '+T('客人說'))}<b>${say}</b><small>${sub}</small></div>${left?`<div class="bxc-box${BXFOLD.ins?' fold':''}" data-lyk="box">${bxFoldBtn('ins','💬 '+T('說明'))}${left}</div>`:''}</div><div class="bxc-rcol" data-lyk="rcol">${card}<div class="bxc-right2" data-lyk="btns"><button class="bxc-btn" data-bx="book">📖 ${T('配方手帳')}</button>${st==='arrive'||mk?`<button class="bxc-turn" data-bx="turn" data-lyk="turn">↻ ${T('轉身')}<small>${T('去酒櫃拿酒')}</small></button>`:''}<span class="bxc-cnt" data-lyk="cnt">${T('第 {0} 位客人',BX.i+1)}</span></div></div>${panel}`}
   const fl=BX.flip;BX.flip=0;
   el.innerHTML=`<div class="bx-in bxv2" style="width:${(100/k).toFixed(3)}%;height:${(100/k).toFixed(3)}%;transform:scale(${k.toFixed(4)})"><div class="bx-face${fl?' flip':''}">${html}</div><div class="bx-msg hide" id="bxmsg"></div></div>`;
   const hd=$('hud'),bi=el.firstElementChild;if(hd&&bi){const hr=hd.getBoundingClientRect(),br=bi.getBoundingClientRect(),sc=br.height/(H/k)||1,ov=Math.max(0,hr.bottom-br.top)/sc;if(hr.height&&ov>0&&ov<H/k/3)bi.style.setProperty('--hudt',ov.toFixed(0)+'px')}
@@ -3542,9 +3545,9 @@ function bxReply(v){const o=bxOrder(),c=BXCH[o.who]||['quiet','','','（客人�
   let extra=0,story='';if(right){extra=Math.round(ITEMS[o.k].price*.15*(R.fxTip?2:1)/10)*10;R.earned+=extra;
     if(BXSTORY[o.who]){b.aff[o.who]=(b.aff[o.who]||0)+1;const n=b.story[o.who]||0;if(n<BXSTORY[o.who].length){story=BXSTORY[o.who][n];b.story[o.who]=n+1;if(n+1===BXSTORY[o.who].length){extra+=ITEMS[o.k].price;R.earned+=ITEMS[o.k].price}}}}
   R.served++;save();BX.mood=right?'happy':'ok';BX.sayJP='';BX.sayZH=T(right?c[3]:c[4]);sfx(right?'star':'pick');
-  const last=BX.i>=BX.q.length-1;
+  const last=!!R&&hourNow()>=lastHr();
   BX.talkHTML=`<div class="bx-area bx-col">${story?`<div class="bx-story"><b>📖 ${T('熟客故事')} ${b.story[o.who]}/${BXSTORY[o.who].length}</b><p>「${T(story)}」</p></div>`:''}<p class="bx-ins">${right?T('聊得來！共情 +10，多給小費 {0}',yen(extra)):T('客人比較想要{0}。共情只影響小費和熟客故事，不影響過關。',c[0]==='quiet'?T('安靜地喝'):T('有人陪他聊'))}</p><button class="bx-btn big" data-bx="nextc">${last?T('打烊'):T('下一位客人')}</button></div>`;bxRender()}
-function bxNextCust(){BX.i++;if(BX.i>=BX.q.length){barFinish();return}bxArrive()}
+function bxNextCust(){BX.i++;if(R&&hourNow()>=lastHr()){barFinish();return}if(!BX.q[BX.i])BX.q.push(bxGen(BX.q));bxArrive()}
 function barFinish(){const b=bxSt();if(BX&&BX.tut)b.tut=1;save();bxClose();BX=null;if(R&&!R.over){R.over=true;renderHUD();setTimeout(endDay,200)}}
 function bxBook(){const ks=BRKEYS.filter(has).concat(BRKEYS.filter(k=>!has(k)));modal(`<h2>📖 ${T('配方手帳')}</h2><p class="hint">${T('客人說「濃いめ」就多倒一點基酒、「薄め」就少一點；熱燗：ぬる燗 40°C、上燗 45°C、熱燗 50°C、飛び切り燗 55°C。酒櫃湊齊需要的酒，酒譜就會解鎖（{0}/{1}）。',BRKEYS.filter(has).length,BRKEYS.length)}</p>${ks.map(k=>{const own=has(k),miss=bxNeedL(k).filter(l=>!bxBotOwn(l));return `<div style="display:flex;align-items:center;gap:10px;margin:8px 0;${own?'':'opacity:.55'}"><div style="width:52px;height:60px;flex:none">${sv(brIcon(k))}</div><div style="min-width:0"><b>${dishTitle(k)}</b>${own?'':' <small>🔒 '+T('還缺：{0}',miss.map(bxLN).join('、'))+'</small>'}<div style="font-size:13px;margin-top:2px">${bxStepsText(k)}</div>${bxSt().xp[k]?`<small>${T('做過 {0} 杯',bxSt().xp[k])}</small>`:''}</div></div>`}).join('')}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
 function bxClick(e){const b=e.target.closest('[data-bx]');if(!b||b.disabled||!BX)return;const a=b.dataset.bx,v=b.dataset.v,d=BX.d;
@@ -3576,7 +3579,7 @@ function barStHTML(){return null}
 function barPick(){return true}
 function barSlot(){}
 function barServed(){}
-function barHudPills(){if(!BX||!R||R.over)return '';return `<div class="pill staff">🍸 ${T('客人')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${Math.min(BX.i+1,BX.q.length)}/${BX.q.length}</b></div>`}
+function barHudPills(){if(!BX||!R||R.over)return '';return `<div class="pill staff">🍸 ${T('客人')} <b style="font-size:14px;font-family:var(--f-ui);font-weight:900">${BX.i+1}</b></div>`}
 function barRecText(k){return bxStepsText(k)}
 function barArt(k){return brIcon(k)}
 Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('客人會用日式短句說要濃一點、淡一點或溫度，照著調整。')])));
@@ -3678,7 +3681,7 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bxs img{-webkit-user-drag:none;pointer-events:none}
 #barx .bxs-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 #barx .bxs-cust{position:absolute;left:0;top:0;width:100%;height:63.6%;overflow:hidden;pointer-events:none}
-#barx .bxs-cust img{position:absolute;left:48.7%;bottom:-11%;height:80%;transform:translateX(-50%)}
+#barx .bxs-cust img{position:absolute;left:48.7%;bottom:-30%;height:95%;transform:translateX(-50%)}
 #barx .bxs-mat{position:absolute;left:16%;bottom:10.5%;transform:translateX(-50%);pointer-events:none}
 #barx .bxs-mat::before{content:'';position:absolute;left:5%;right:5%;bottom:-2%;height:6%;border-radius:50%;background:#0009;filter:blur(calc(var(--u)*.6))}
 #barx .bxs-mat>*{position:absolute;inset:0;width:100%;height:100%}
@@ -3773,6 +3776,8 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bxc-left{position:absolute;left:12px;top:calc(12px + var(--hudt,0px));width:min(34%,560px);display:flex;flex-direction:column;gap:13px}
 #barx .bxc-say{background:#fffaf0f0;border:3px solid #3c1e0a;border-radius:14px;padding:7px 12px;color:#2a1408;box-shadow:0 4px 0 #0007}
 #barx .bxc-say b{display:block;font-size:27px;line-height:1.3}
+#barx .bxc-say{position:relative}#barx .bxc-say>.bxc-fold{float:right;margin:-26px -16px -26px 4px;min-width:72px}#barx .bxc-say>.bxc-fold span{background:#3c1e0a1a;color:#3c1e0a}
+#barx .bxc-say.fold{align-self:flex-start;padding:0;background:none;border:0;box-shadow:none}#barx .bxc-say.fold>:not(.bxc-fold){display:none}#barx .bxc-say.fold>.bxc-fold{float:none;margin:-20px 0}#barx .bxc-say.fold>.bxc-fold span{background:#fffaf0f0;border:3px solid #3c1e0a;font-size:20px;padding:6px 14px}
 #barx .bxc-say small{display:block;font-size:21px;color:#7a5032;margin-top:2px;line-height:1.35}
 #barx .bxc-box{background:#1a0e08e0;border:2px solid #c9a24a88;border-radius:12px;padding:8px 10px}
 #barx .bxc-ins{margin:0;font-size:25px;line-height:1.45;font-weight:700;color:#ffe9c0}
@@ -4396,7 +4401,8 @@ function spawn(){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.transform='translateX(0)'}));
 }
 function step(dt){
-  if(CUR==='bar')return; /* 月影酒吧：營業畫面在 #barx，不跑即時迴圈 */
+  if(CUR==='bar'){ /* 月影酒吧：畫面在 #barx，這裡只走時間；客人沒有耐心限制，最後點餐後送走手上這位就打烊 */
+    if(BX&&!BXVN){R.t=Math.min(DAYLEN,R.t+dt*BXTS);if(hourNow()>=lastHr()&&!R.lastCall){R.lastCall=true;toast(T('最後點餐！這位是最後一位客人'))}}return}
   R.t+=dt;if(chOn()){CHG.sec+=dt;if(hourNow()>=24)chCycle()}
   R.taps.slice(0,CUR==='bar'?0:tapsN()).forEach((tp,i)=>{
     if(tp.st==='empty'&&live()>=costOf('beer')){R.taps[i]={st:'filling',t:0};sfx('pour');charge(costOf('beer'),L.tap.x+(tapsN()===1?50:25+i*50),L.tap.y+60)}
@@ -5880,9 +5886,9 @@ function showDayIntro(arrive){
   ${TD.ev?`<details class="evchip"${TD.ev==='sale'?' open':''}><summary><span class="ei">${EVS[TD.ev][0]}</span><b>${T('今日事件：{0}',T(EVS[TD.ev][1]))}</b></summary><div>${evDesc(TD)}${TD.ev==='sale'?`<div class="salepick"><small>${T('想讓哪道菜特價？點一下就能換：')}</small><div>${saleCands().map(k=>`<button class="btn ${TD.sale===k?'':'alt'}" data-act="salepick" data-id="${k}">${dishTitle(k)} ¥${Math.round(ITEMS[k].cost*(1+.25*lvOf(k))*.5/10)*10}</button>`).join('')}</div></div>`:''}</div></details>`:''}
   ${TD.rob?`<p class="hint">${T('聽說附近最近不太平靜……')}${ST.weapon?'':T('（商店「武器」分頁有賣防身用品）')}</p>`:''}
   ${DESC?`<details class="infowrap"${ST.day===1?' open':''}><summary>📖 ${T('這家店的營業說明')}</summary><div>`:''}
-  ${DESC?`<p>${rentOf()?T('今天店租 {0}（每週調漲），打烊時會從淨利扣掉。',yen(rentOf()))+T('存到 {0} 後，到商店按「買下店面」就不用再付房租。',yen(GOAL)):''}${CUR==='bar'?T('客人一位一位來，最後一位送走就打烊。淨利（營收扣掉材料成本）越高星星越多，拿到一顆星就能進到下一天。'):T('營業時間 16:00 到凌晨 00:30，晚餐（18–20 點）和續攤（21–22 點）客人最多，00:20 最後點餐，之後不再接新客人。淨利（營收扣掉食材成本）越高星星越多，拿到一顆星就能進到下一天。')}</p>`:''}
+  ${DESC?`<p>${rentOf()?T('今天店租 {0}（每週調漲），打烊時會從淨利扣掉。',yen(rentOf()))+T('存到 {0} 後，到商店按「買下店面」就不用再付房租。',yen(GOAL)):''}${CUR==='bar'?T('營業時間 16:00 到 00:30，客人一位一位來、不限人數，也不用擔心客人等太久；00:20 最後點餐，送走當時那位就打烊。淨利（營收扣掉材料成本）越高星星越多，拿到一顆星就能進到下一天。'):T('營業時間 16:00 到凌晨 00:30，晚餐（18–20 點）和續攤（21–22 點）客人最多，00:20 最後點餐，之後不再接新客人。淨利（營收扣掉食材成本）越高星星越多，拿到一顆星就能進到下一天。')}</p>`:''}
   ${DESC&&CUR==='oko'?`<p style="font-size:14px;line-height:1.6">${T('御好燒店的菜在<b>鐵板</b>上一步一步做。點<b>大阪燒料、廣島燒料、文字燒料、摩登燒料</b>下到鐵板，煎到一半會依序跳出<b>拌勻、鋪肉、翻面、炒麵、疊起來、擠醬撒料</b>之類的提示（每道菜不一樣），跳出來就點一下，等太久就失敗。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
-  ${DESC&&CUR==='bar'?`<p style="font-size:14px;line-height:1.6">${T('月影酒吧是安靜的日式 BAR，一天只有 3～5 位客人，<b>一次專心做一杯</b>。客人會用日式短句點酒和要求（濃いめ＝基酒多一點、薄め＝少一點、ぬるめ＝溫溫的），照流程<b>選杯、備冰、按住量酒、畫圈攪拌或來回滑動搖盪、加蘇打</b>，最後出酒。技術＋偏好 54 分以上就過關；沒過客人會說哪裡不對，可以重做一次。喝完客人會說說話，回應得好有小費，熟客還會慢慢說出自己的故事。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
+  ${DESC&&CUR==='bar'?`<p style="font-size:14px;line-height:1.6">${T('月影酒吧是安靜的日式 BAR，客人一位一位來，<b>一次專心做一杯</b>。客人會用日式短句點酒和要求（濃いめ＝基酒多一點、薄め＝少一點、ぬるめ＝溫溫的），照流程<b>選杯、備冰、按住量酒、畫圈攪拌或來回滑動搖盪、加蘇打</b>，最後出酒。技術＋偏好 54 分以上就過關；沒過客人會說哪裡不對，可以重做一次。喝完客人會說說話，回應得好有小費，熟客還會慢慢說出自己的故事。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
   ${DESC&&CUR==='tep'?`<p style="font-size:14px;line-height:1.6">${T('炎舞鐵板燒的菜在<b>大鐵板</b>上煎。煎到一半會跳出<b>翻炒／翻面／刷醬／點火</b>，一定要點，等太久就失敗。提示剛跳出、標籤還是<b>金色</b>時點下去就是<b>完美</b>；連續完美 6 次會來一場<b>🔥 火焰秀</b>：全場等餐的客人耐心回滿，每位還多給一筆賞錢。每次點到完美，那一格鐵板還會噴火。失手或煎焦會讓連擊歸零（店員處理過的料煎焦不算）。')}</p>`:''}
   ${DESC&&CUR==='sushi'?`<p style="font-size:14px;line-height:1.6">${T('海風壽司的菜是在<b>壽司台</b>上一層一層疊出來的，<b>順序很重要</b>：先放的材料在下面，後放的在上面，每一種壽司的順序都不一樣，照下面的製作教學來。')}</p>`:''}
   ${DESC&&show.length?`<details class="howwrap"${howOpen()?' open':''} ontoggle="howSave(this.open)"><summary class="howsum">${T('📖 製作做法（點一下收起／展開）')}</summary><div class="how">${show.map(k=>`<div class="how-row">${icon(k==='chazuke'?'chazuke:salmon':k==='sashimi'?'sashimi:maguro+tai':k)}<div><b>${dishTitle(k)}</b>${ST.day>1?`<span class="new">${T('新菜')}</span>`:''}<br>${T(HOW[k])}</div></div>`).join('')}</div></details>`:''}

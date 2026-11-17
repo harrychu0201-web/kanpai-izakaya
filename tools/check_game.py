@@ -1009,9 +1009,45 @@ def sc_bar(b, base):
             if not bx_make(c, started=(i == 0)):
                 sc = c.page.evaluate("BX.d.comps.map(x=>x.key+':'+x.q.toFixed(2)).join(' ')+' | '+BX.d.pref.map(x=>x.key+':'+x.q).join(' ')")
                 raise AssertionError('月影酒吧：照做的第 %d 杯沒過關（%s）\n%s' % (i + 1, sc, c.diag()))
+            if i == 2:
+                # 時間要會走（不再卡在 16:00），而且不能還沒到 00:20 就打烊
+                if not c.page.evaluate("R.t>0&&hourNow()>16&&hourNow()<lastHr()"):
+                    raise AssertionError('月影酒吧：營業時間沒有在走（R.t=%s）' % c.page.evaluate("R.t"))
+                c.page.evaluate("BX.q.splice(BX.i+1,BX.q.length,{k:'brhigh',c:['none'],who:'misaki'})")
             bx_finish_cust(c)
+        # 客人不限 3 位：教學三杯後還在營業，第 4 位客人進來
+        if not c.has('#barx') or c.page.evaluate("BX.i") != 3 or c.page.evaluate("R.settled"):
+            raise AssertionError('月影酒吧：教學三杯做完就打烊了，客人應該不限人數\n%s' % c.diag())
+        if '第 4 位客人' not in c.page.evaluate("document.querySelector('#barx').innerText"):
+            raise AssertionError('月影酒吧：畫面上沒有顯示第 4 位客人')
+        # 有日文的客人對話框可以收起／展開（真實點擊）
+        c.click('[data-bx=fold][data-v=say]', wait=300)
+        if not c.page.evaluate("(()=>{const e=document.querySelector('#barx .bxc-say');return e.classList.contains('fold')&&e.querySelector('b').offsetParent===null})()"):
+            raise AssertionError('月影酒吧：日文對話框按了收起沒有收起來')
+        c.click('[data-bx=fold][data-v=say]', wait=300)
+        if c.page.evaluate("document.querySelector('#barx .bxc-say').classList.contains('fold')"):
+            raise AssertionError('月影酒吧：日文對話框收起後按不回來')
+        # 客人沒有耐心限制：時間走過去也不會走掉
+        c.page.wait_for_timeout(1500)
+        if c.page.evaluate("BX.stage") != 'arrive' or c.page.evaluate("BX.i") != 3:
+            raise AssertionError('月影酒吧：客人等一下就走了（應該沒有耐心限制）')
+        # 時間快轉到最後點餐之後：手上這位送走就打烊
+        c.page.evaluate("R.t=DAYLEN*.99")
+        c.page.wait_for_timeout(400)
+        if not c.page.evaluate("R.lastCall") or c.page.evaluate("clockStr()") not in ('00:20', '00:25', '00:30'):
+            raise AssertionError('月影酒吧：過了 00:20 沒有最後點餐（%s）' % c.page.evaluate("clockStr()"))
+        if not bx_make(c):
+            raise AssertionError('月影酒吧：第 4 位的嗨棒照做沒過關\n%s' % c.diag())
+        bx_vn(c)
+        c.click('[data-bx=totalk]', wait=300)
+        bx_vn(c)
+        c.click('[data-bx=say][data-v=%s]' % c.page.evaluate("BXCH[bxOrder().who][0]"), wait=300)
+        if '打烊' not in c.page.evaluate("(document.querySelector('[data-bx=nextc]')||{innerText:''}).innerText"):
+            raise AssertionError('月影酒吧：最後點餐後的最後一位，按鈕應該是「打烊」')
+        bx_vn(c)
+        c.click('[data-bx=nextc]', wait=700)
         c.page.wait_for_timeout(900)
-        c.expect_clean('月影酒吧教學三杯')
+        c.expect_clean('月影酒吧教學三杯＋第四位')
         if VN_CLICKS[0] < 12:
             raise AssertionError('月影酒吧：教學三杯只點了 %d 下小夜的對話框，教學台詞好像沒出來' % VN_CLICKS[0])
         if c.has('#tut .vn'):
@@ -1019,7 +1055,7 @@ def sc_bar(b, base):
         if c.has('#barx') or not c.page.evaluate("R&&R.settled"):
             raise AssertionError('月影酒吧：最後一位客人送走後沒有打烊結算\n%s' % c.diag())
         st = c.page.evaluate("({tut:ST.bar.tut,xp:ST.bar.xp,served:R.served,earned:R.earned,zz:!!ST.zz_future_field,old:ST.menu.brmojito===undefined})")
-        if st['tut'] != 1 or st['served'] != 3 or st['earned'] <= 0 or not st['zz']:
+        if st['tut'] != 1 or st['served'] != 4 or st['earned'] <= 0 or not st['zz']:
             raise AssertionError('月影酒吧：打烊後的紀錄不對 %s' % st)
         # 第二天：開店前先到商店（真實點擊）買伏特加和薄荷葉，酒譜要自動解鎖
         c.click('.modal [data-act=next]', wait=900)
@@ -1044,9 +1080,8 @@ def sc_bar(b, base):
         c.click('.modal [data-act=back], .modal [data-act=closem]', wait=600)
         c.dismiss_modals(1)
         c.click('[data-act=start]', wait=900)
-        n = c.page.evaluate("BX.q.length")
-        if not 3 <= n <= 5 or c.page.evaluate("BX.tut"):
-            raise AssertionError('月影酒吧：第二天客人數不對或還在教學（%s 位）' % n)
+        if c.page.evaluate("BX.q.length") != 1 or c.page.evaluate("BX.tut") or c.page.evaluate("clockStr()") != '16:00':
+            raise AssertionError('月影酒吧：第二天開店狀態不對（客人 %s、時間 %s）' % (c.page.evaluate("BX.q.length"), c.page.evaluate("clockStr()")))
         if bx_make(c, wrong=True):
             raise AssertionError('月影酒吧：故意選錯杯、量錯酒居然過關')
         if not c.has('[data-bx=retry]'):
@@ -1069,6 +1104,9 @@ def sc_bar(b, base):
                 if len(h) != 3 or 'whisky' in h or 'tequila' not in h:
                     raise AssertionError('月影酒吧：手邊滿三瓶時沒有把最早拿的放回去（%s）' % h)
             bx_shot(c, 'res-' + k)
+            if k == 'brmarg':
+                c.page.evaluate("R.t=DAYLEN*.99")
+                c.page.wait_for_timeout(300)
             bx_finish_cust(c)
         c.page.wait_for_timeout(900)
         c.expect_clean('月影酒吧第二天')
