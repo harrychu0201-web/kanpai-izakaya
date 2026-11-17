@@ -736,7 +736,7 @@ def bx_hold_until(c, sel, js_done, at=(0.5, 0.5), limit=20000):
     c.page.wait_for_timeout(250)
 
 
-def bx_circles(c, n, release=True):
+def bx_circles(c, n, release=True, ccw=False):
     import math
     b = bx_box(c, '#bxpad')
     cx, cy, r = b['x'] + b['width'] / 2, b['y'] + b['height'] / 2, b['width'] * 0.32
@@ -744,7 +744,7 @@ def bx_circles(c, n, release=True):
     c.page.mouse.down()
     steps = int(24 * n)
     for i in range(1, steps + 1):
-        a = 2 * math.pi * i / 24
+        a = 2 * math.pi * i / 24 * (-1 if ccw else 1)
         c.page.mouse.move(cx + r * math.cos(a), cy + r * math.sin(a))
         c.page.wait_for_timeout(12)
     if release:
@@ -855,7 +855,23 @@ def bx_make(c, wrong=False, started=False):
             c.click('[data-bx=done]', wait=300)
         elif st == 'stir':
             z = c.page.evaluate("bxCur()[1]")
-            bx_circles(c, ((z[0] + z[1]) / 2) / 3.6)
+            tot = ((z[0] + z[1]) / 2) / 3.6
+            # 吧勺的匙要在攪拌杯裡（杯子圖片的中間、下半部），不能跑到杯子外面
+            sp = c.page.evaluate("""(()=>{const g=document.querySelector('#bxpad .bxz-mg').getBoundingClientRect(),p=document.querySelector('#bxpad').getBoundingClientRect(),b=(document.querySelector('#bxspn').dataset.bowl||'').split(',').map(Number);
+              if(b.length<2)return {ok:false,g:[],s:'沒有位置'};const x=p.left+p.width*b[0]/100,y=p.top+p.height*b[1]/100;
+              return {ok:y>g.top+g.height*.55&&y<g.bottom-g.height*.08&&x>g.left+g.width*.15&&x<g.right-g.width*.15,g:[g.left,g.top,g.right,g.bottom].map(Math.round),s:[x,y].map(Math.round)}})()""")
+            if not sp['ok']:
+                raise AssertionError('月影酒吧：攪拌時吧勺的匙不在攪拌杯裡（杯 %s，匙 %s）\n%s' % (sp['g'], sp['s'], c.diag()))
+            # 順時針畫一半、逆時針畫一半，兩個方向都要算圈數
+            bx_circles(c, tot / 2)
+            d1 = c.page.evaluate("BX.d.dil")
+            bx_circles(c, tot / 2, release=False, ccw=True)
+            bx_shot(c, 'stirring-%s' % o['k'])
+            c.page.mouse.up()
+            c.page.wait_for_timeout(200)
+            d2 = c.page.evaluate("BX.d.dil")
+            if not d1 > 0 or not d2 > d1 + (tot / 2) * 3.6 * 0.6:
+                raise AssertionError('月影酒吧：逆時針畫圈沒有算進攪拌（順時針後 %.1f，逆時針後 %.1f）' % (d1, d2))
             c.click('[data-bx=done]', wait=300)
         elif st == 'lift':
             bx_circles(c, 1.05)
