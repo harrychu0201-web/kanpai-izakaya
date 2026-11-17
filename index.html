@@ -3305,7 +3305,7 @@ function bxGlassSV(g,o,w,h){const G=BXG2[g],a=BXA[G.s];return `<svg viewBox="0 0
 function brIcon(k){const r=BXR[k],G=BXG2[r.g],a=BXA[G.s],o={lv:r.g==='choko'?.75:r.g==='masu'?.9:.62,col:bxMlCol(Object.fromEntries(r.st.filter(x=>x[0]==='m').map(x=>[x[1],x[2]])))||BXL[bxFirst(k)][1],ice:r.ice,fizz:r.st.some(s=>s[0]==='top'&&BXFIZZ.includes(s[1]))?60:0,foam:r.st.some(s=>s[0]==='shake'),gar:r.opt.slice(0,1)};
   return `<ellipse cx="50" cy="94" rx="40" ry="6" fill="#5a3418" opacity=".55"/><svg x="8" y="2" width="84" height="94" viewBox="0 0 ${a[1]} ${a[2]}" preserveAspectRatio="xMidYMax meet">${bxLiq(r.g,o)}<image href="${bxSrc(G.s)}" width="${a[1]}" height="${a[2]}"/>${bxTopArt(r.g,o)}</svg>`}
 /* 吧台墊上正在做的這杯：液體一層（會一直更新）＋杯子圖＋上層 */
-function bxMatHTML(g,o){const G=BXG2[g],a=BXA[G.s];return `<div class="bxs-mat" style="height:${G.h}%;aspect-ratio:${a[1]}/${a[2]}"><svg id="bxmatl" viewBox="0 0 ${a[1]} ${a[2]}" width="100%" height="100%">${bxLiq(g,o)}</svg>${bxImg(G.s)}<svg id="bxmatt" viewBox="0 0 ${a[1]} ${a[2]}" width="100%" height="100%">${bxTopArt(g,o)}</svg></div>`}
+function bxMatHTML(g,o){const G=BXG2[g],a=BXA[G.s];return `<div class="bxs-mat" data-lyk="mat" style="height:${G.h}%;aspect-ratio:${a[1]}/${a[2]}"><svg id="bxmatl" viewBox="0 0 ${a[1]} ${a[2]}" width="100%" height="100%">${bxLiq(g,o)}</svg>${bxImg(G.s)}<svg id="bxmatt" viewBox="0 0 ${a[1]} ${a[2]}" width="100%" height="100%">${bxTopArt(g,o)}</svg></div>`}
 function bxMatUpd(tg){const r=BXR[bxOrder().k],l=$('bxmatl'),t=$('bxmatt'),o=bxLook(tg!=null?{target:tg}:{});if(l)l.innerHTML=bxLiq(r.g,o);if(t)t.innerHTML=bxTopArt(r.g,o)}
 /* 量酒：量酒器旁邊的刻度管 */
 function bxJigger(s,sp,ml){const Y=v=>262-v/sp.cap*236,c=BXL[s[1]][1];let o=`<svg viewBox="0 0 120 280" width="100%" height="100%"><rect x="34" y="20" width="40" height="248" rx="14" fill="#1a0e08" fill-opacity=".55" stroke="#e8d8b0" stroke-width="3"/>`;
@@ -3340,26 +3340,26 @@ function bxRender(){const el=$('barx');if(!el||!BX)return;const o=bxOrder(),st=B
   const who=CHARS.find(c=>c.spr===o.who),name=who?T(who.name):'';
   const scene=(inner,bg)=>{if(bg==='cab'){const b2=Math.min(0,hl-sh*.73);return `<div class="bxs" style="height:${sh.toFixed(1)}px;bottom:${b2.toFixed(1)}px;--u:${(sh/100).toFixed(3)}px">${bxImg('cab','bxs-bg')}${inner}</div>`}return `<div class="bxs" style="height:${sh.toFixed(1)}px;bottom:${bot.toFixed(1)}px;--u:${(sh/100).toFixed(3)}px">${bxImg('bg','bxs-bg')}${inner}</div>`};
   let html;
-  if(BX.view==='cab'&&(st==='arrive'||st==='make'))html=scene(bxCabScene(),'cab')+`<div class="bxc-cabh"><b>🍶 ${T('酒櫃')}</b><span>${T('點酒瓶拿到手邊，最多 3 瓶（滿了會放回最早拿的）。亮起來的是這杯要用的酒。')}</span></div><div class="bxc-right">${bxHandChip()}<button class="bxc-turn" data-bx="turn">↻ ${T('轉回吧台')}</button></div>`;
+  if(BX.view==='cab'&&(st==='arrive'||st==='make'))html=scene(bxCabScene(),'cab')+`<div class="bxc-cabh" data-lyk="cabh"><b>🍶 ${T('酒櫃')}</b><span>${T('點酒瓶拿到手邊，最多 3 瓶（滿了會放回最早拿的）。亮起來的是這杯要用的酒。')}</span></div><div class="bxc-right" data-lyk="cabr">${bxHandChip()}<button class="bxc-turn" data-bx="turn" data-lyk="turnback">↻ ${T('轉回吧台')}</button></div>`;
   else{
-    const card=`<div class="bxc-card"><h4>${o.tut?'<span class="bx-tag">'+T('教學')+'</span>':''}${dishTitle(o.k)}</h4><div><b>${T('必要條件')}：</b><span class="rq">${o.c.map(c=>bxCondZH(o.k,c)).join('、')}</span></div>${r.opt.length?`<div><b>${T('可選')}：</b>${r.opt.map(g=>T(BXGAR[g][0])).join('／')}？</div>`:''}${st==='arrive'?`<div class="bx-rec"><b>${T('酒譜')}：</b>${bxStepsText(o.k)}</div>`:''}</div>`;
+    const card=`<div class="bxc-card" data-lyk="card"><h4>${o.tut?'<span class="bx-tag">'+T('教學')+'</span>':''}${dishTitle(o.k)}</h4><div><b>${T('必要條件')}：</b><span class="rq">${o.c.map(c=>bxCondZH(o.k,c)).join('、')}</span></div>${r.opt.length?`<div><b>${T('可選')}：</b>${r.opt.map(g=>T(BXGAR[g][0])).join('／')}？</div>`:''}${st==='arrive'?`<div class="bx-rec"><b>${T('酒譜')}：</b>${bxStepsText(o.k)}</div>`:''}</div>`;
     const say=st==='res'||st==='talk'?BX.sayJP||'':`「${bxSay(o)}」`,sub=st==='arrive'?T('（{0}）{1}',name,o.c.map(c=>bxCondZH(o.k,c)).join('、')):st==='res'||st==='talk'?BX.sayZH||'':name;
-    const sp=SPR[o.who],cust=sp?`<div class="bxs-cust"><img src="${sp[BX.mood||'ok']||sp.ok}" alt="" draggable="false"></div>`:'';
+    const sp=SPR[o.who],cust=sp?`<div class="bxs-cust"><img data-lyk="cust" src="${sp[BX.mood||'ok']||sp.ok}" alt="" draggable="false"></div>`:'';
     let inner=cust,left='',panel='';
     const mk=st==='make',cur=mk?bxCur():null,z=mk?bxStageHTML():null,showGlass=mk&&BX.d.g&&cur[0]!=='glass';
     if(showGlass)inner+=bxMatHTML(BX.d.g,bxLook(cur[0]==='top'||cur[0]==='pour'?{target:cur[0]==='pour'?cur[1]:cur[2]}:{}));
     if(st==='arrive'||mk)inner+=bxHandScene();
     if(st==='arrive'){left=`<p class="bxc-ins">${T('這位客人點了 {0}。材料 {1}・售價 {2}',dishTitle(o.k),yen(ITEMS[o.k].cost),yen(ITEMS[o.k].price))}${bxSt().xp[o.k]?'　'+T('（做過 {0} 杯）',bxSt().xp[o.k]):''}</p>${BX.tut&&BX.i===0?`<p class="bxc-tip">${T('第一天是教學：客人會清楚說要什麼，每一步上面都有說明，跟著做就好。做錯了客人會告訴你哪裡不對，還能重做一次。')}<br>${T('酒放在你背後的酒櫃：按「↻ 轉身」去拿，拿到手邊（最多 3 瓶）才能量。蘇打、茶、果汁、糖漿在吧台下面，不用轉身。')}</p>`:''}`;
-      inner+=`<div class="bxz bxz-c"><button class="bxb big" data-bx="start">${T('開始調酒')}</button></div>`}
+      inner+=`<div class="bxz bxz-c" data-lyk="zone-arrive"><button class="bxb big" data-bx="start">${T('開始調酒')}</button></div>`}
     else if(mk){left=bxStepsBar()+`<p class="bxc-ins">${z.ins}</p>`;inner+=z.scene}
-    else panel=`<div class="bxc-panel">${st==='res'?BX.resHTML:st==='talk'?BX.talkHTML:BX.endHTML||''}</div>`;
-    html=scene(inner)+`<div class="bxc-left"><div class="bxc-say"><b>${say}</b><small>${sub}</small></div>${left?`<div class="bxc-box">${left}</div>`:''}</div><div class="bxc-rcol">${card}<div class="bxc-right2"><button class="bxc-btn" data-bx="book">📖 ${T('配方手帳')}</button>${st==='arrive'||mk?`<button class="bxc-turn" data-bx="turn">↻ ${T('轉身')}<small>${T('去酒櫃拿酒')}</small></button>`:''}<span class="bxc-cnt">${T('客人 {0}/{1}',BX.i+1,BX.q.length)}</span></div></div>${panel}`}
+    else panel=`<div class="bxc-panel" data-lyk="panel">${st==='res'?BX.resHTML:st==='talk'?BX.talkHTML:BX.endHTML||''}</div>`;
+    html=scene(inner)+`<div class="bxc-left" data-lyk="left"><div class="bxc-say" data-lyk="say"><b>${say}</b><small>${sub}</small></div>${left?`<div class="bxc-box" data-lyk="box">${left}</div>`:''}</div><div class="bxc-rcol" data-lyk="rcol">${card}<div class="bxc-right2" data-lyk="btns"><button class="bxc-btn" data-bx="book">📖 ${T('配方手帳')}</button>${st==='arrive'||mk?`<button class="bxc-turn" data-bx="turn" data-lyk="turn">↻ ${T('轉身')}<small>${T('去酒櫃拿酒')}</small></button>`:''}<span class="bxc-cnt" data-lyk="cnt">${T('客人 {0}/{1}',BX.i+1,BX.q.length)}</span></div></div>${panel}`}
   const fl=BX.flip;BX.flip=0;
   el.innerHTML=`<div class="bx-in bxv2" style="width:${(100/k).toFixed(3)}%;height:${(100/k).toFixed(3)}%;transform:scale(${k.toFixed(4)})"><div class="bx-face${fl?' flip':''}">${html}</div><div class="bx-msg hide" id="bxmsg"></div></div>`;
   const hd=$('hud'),bi=el.firstElementChild;if(hd&&bi){const hr=hd.getBoundingClientRect(),br=bi.getBoundingClientRect(),sc=br.height/(H/k)||1,ov=Math.max(0,hr.bottom-br.top)/sc;if(hr.height&&ov>0&&ov<H/k/3)bi.style.setProperty('--hudt',ov.toFixed(0)+'px')}
   if(st==='make'&&BX.view!=='cab')bxBind();renderHUD()}
 /* 吧台右邊：手邊的 3 瓶酒 */
-function bxHandScene(){const cur=BX.stage==='make'?bxCur():null;return [0,1,2].map(i=>{const l=BX.hand[i],x=79+i*8;return `<div class="bxs-hand${l&&cur&&cur[1]===l?' use':''}" style="left:${x}%">${l?bxImg(l,'',`height:${(100*(BXBH[l]||1)).toFixed(0)}%`)+`<em>${bxLN(l)}</em>`:`<i>${T('手邊')}</i>`}</div>`}).join('')}
+function bxHandScene(){const cur=BX.stage==='make'?bxCur():null;return [0,1,2].map(i=>{const l=BX.hand[i],x=79+i*8;return `<div class="bxs-hand${l&&cur&&cur[1]===l?' use':''}" data-lyk="hand${i}" style="left:${x}%">${l?bxImg(l,'',`height:${(100*(BXBH[l]||1)).toFixed(0)}%`)+`<em>${bxLN(l)}</em>`:`<i>${T('手邊')}</i>`}</div>`}).join('')}
 function bxHandChip(){return `<div class="bxc-hand"><small>${T('手邊')}</small>${[0,1,2].map(i=>{const l=BX.hand[i];return `<span>${l?bxImg(l):''}</span>`}).join('')}</div>`}
 /* 轉身後：酒櫃三層 */
 function bxCabScene(){const o=bxOrder(),need=o?bxNeedL(o.k):[],Y=[44.6,63.2,82.2];
@@ -3388,11 +3388,11 @@ function bxStageHTML(){const s=bxCur(),o=bxOrder(),d=BX.d,r=BXR[o.k];let ins='',
   else if(s[0]==='top'||s[0]==='pour'){const pour=s[0]==='pour',src=bxPourSrc();
     if(BX.d.lvFor!==BX.si){BX.d.lvFor=BX.si;if(pour){d.lv=0;d.pourG=true}else{d.lv0=Math.min(.42,Object.values(d.ml).reduce((a,b)=>a+b,0)/(r.g==='rock'?190:260)+(d.ice?.06:0));d.lv=d.lv0}}
     ins=pour?T('按住中間的長條倒酒：手指越上面倒越快，接近黃線要放慢，到線就放開'):T('按住中間的長條倒{0}：手指越上面倒越快，接近黃線要放慢',bxLN(s[1]))+(BXFIZZ.includes(s[1])?T('（倒太快氣泡會跑掉）'):'');
-    const gh=BXG2[d.g||r.g].h;pre=src==='t_kan'?'':`<div class="bxs-pour${src.startsWith('t_')?' tool':''}" style="--up:${((gh-2.5)/(src.startsWith('t_')?19:21)*100).toFixed(0)}">${bxImg(src,'',src.startsWith('t_')?'':`height:${(100*(BXBH[src]||1)).toFixed(0)}%`)}</div><i class="bxs-stream" style="height:${(gh*.85).toFixed(1)}%;background:${src.startsWith('t_')?(bxMlCol(d.ml)||'#e0c080'):BXL[src][1]}"></i>`;
+    const gh=BXG2[d.g||r.g].h;pre=src==='t_kan'?'':`<div data-lyk="pour" class="bxs-pour${src.startsWith('t_')?' tool':''}" style="--up:${((gh-2.5)/(src.startsWith('t_')?19:21)*100).toFixed(0)}">${bxImg(src,'',src.startsWith('t_')?'':`height:${(100*(BXBH[src]||1)).toFixed(0)}%`)}</div><i class="bxs-stream" style="height:${(gh*.85).toFixed(1)}%;background:${src.startsWith('t_')?(bxMlCol(d.ml)||'#e0c080'):BXL[src][1]}"></i>`;
     z=`<div class="bxz-strip" id="bxpad"><span>${T('快')}</span><b>${T('按住')}</b><span>${T('慢')}</span></div><div class="bxz-colc">${!pour&&BXFIZZ.includes(s[1])?`<div id="bxmet">${bxMeter(d.fizz,[75,100],T('氣泡'))}</div>`:''}<button class="bxb" data-bx="done" id="bxdone" ${d.lv>(d.lv0||0)+.1?'':'disabled'}>${T('好了')}</button></div>`}
   else if(s[0]==='gar'){if(!(d.lv>.01))d.lv=bxAutoLv();const pg=d.garPg||0;ins=T('要的話從小碟子放裝飾到杯子上（可以不放），然後出酒');zc+=' bxz-w';
     z=`<div class="bxz-pg">${BXGPG.map((p,i)=>`<button class="bxb tag${i===pg?' on':''}" data-bx="garpg" data-v="${i}">${i?T('配料 B'):T('配料 A')}</button>`).join('')}</div><div class="bxz-dish">${BXGPG[pg].map(k=>{const own=bxGarOwn(k);return `<button class="bxd${d.gar.includes(k)?' on':''}${own?'':' lock'}" data-bx="gar" data-v="${k}" ${own?'':'disabled'}><i></i>${bxImg('gar_'+k)}<span>${own?'':'🔒'}${T(BXGAR[k][0])}</span></button>`}).join('')}</div><button class="bxb big serve" data-bx="serve">${T('出酒')}</button>`}
-  return {ins,scene:pre+`<div class="${zc}">${z}</div>`}}
+  return {ins,scene:pre+`<div class="${zc}" data-lyk="zone-${bxNeedHand(s)?'fetch':s[0]}">${z}</div>`}}
 
 function bxBind(){const s=bxCur(),d=BX.d,o=bxOrder(),r=BXR[o.k];if(bxNeedHand(s))return;
   if(s[0]==='m'){const h=$('bxhold'),sp=bxMSpec(o,s[1],s[2]),rate=Math.max(7,Math.min(28,s[2]/2.2));
@@ -10478,7 +10478,7 @@ function lyCardOk(card,sig){if(sig==='*')return true;if(sig.startsWith('h:')){co
   return sig.split(',').some(v=>card.querySelector('[data-act="'+CSS.escape(v)+'"]'))}
 function lyMatch(r){if(r.sc&&r.sc!==lyScopeNow())return [];if(r.st&&r.st!==(typeof ARTSTYLE!=='undefined'?ARTSTYLE:''))return [];
   try{if(r.c){const out=[];lyCards().forEach(cd=>{if(!lyCardOk(cd,r.c))return;if(!r.q)out.push(cd);else cd.querySelectorAll(r.q).forEach(e=>out.push(e))});return out}
-    return Array.from(document.querySelectorAll(r.q))}catch(e){return []}}
+    return Array.from(document.querySelectorAll(r.q)).filter(e=>!lyBarFrame(e))}catch(e){return []}}
 /* SVG 群組本身常帶 transform="translate() scale()"，CSS 的 scale 屬性會套在它外面又以「沒套 transform 的位置」當中心，縮放時整個飄走。
    所以 SVG 的縮放自己組：以它現在在畫面上的中心縮放，再接回原本的 transform（位移仍用 translate 屬性）。 */
 function lySvgXf(e,sc){try{const b=e.getBBox(),t=e.transform&&e.transform.baseVal,m=t&&t.numberOfItems?t.consolidate().matrix:{a:1,b:0,c:0,d:1,e:0,f:0},cx0=b.x+b.width/2,cy0=b.y+b.height/2,
@@ -10492,8 +10492,10 @@ function lyApply(){const now=new Map();
 function lyObserve(){if(LY.obs)return;LY.obs=new MutationObserver(()=>lyApply());LY.obs.observe(document.body,{childList:true,subtree:true})}
 /* ---- 點到哪一個 ---- */
 const LY_BAN=new Set(['wrap','box','game','bg','counter','custLayer','stations','fx','modalLayer','homeModal','homeLayer','lyBar','lyOv','lyOut']);
-const LY_MEAN='button,[data-act],[data-ast],[id],.st,.pgbtn,img,.up,.plaque,.card,.lbl,.bubble,.btn,h2,h3,p,label,input,select,textarea,canvas';
-function lyOk(e){return e&&e.nodeType===1&&e!==document.body&&e!==document.documentElement&&!LY_BAN.has(e.id)&&!e.classList.contains('modal')&&!e.classList.contains('layer')}
+const LY_MEAN='[data-lyk],button,[data-act],[data-ast],[id],.st,.pgbtn,img,.up,.plaque,.card,.lbl,.bubble,.btn,h2,h3,p,label,input,select,textarea,canvas';
+function lyOk(e){return e&&e.nodeType===1&&e!==document.body&&e!==document.documentElement&&!LY_BAN.has(e.id)&&!e.classList.contains('modal')&&!e.classList.contains('layer')&&!lyBarFrame(e)}
+/* 月影酒吧：背景圖、整個場景、外框都不能選；吧台上的東西、文字框、按鈕可以 */
+function lyBarFrame(e){return e.id==='barx'||!!(e.closest&&e.closest('#barx')&&e.matches('.bx-in,.bx-face,.bxs,.bxs-bg,.bxs-cust,#bxmsg'))}
 /* 背景是 SVG（pointer-events:none，點不到），用座標找裡面最小的圖形群組：菜單木牌、舊畫風的燈籠／酒瓶／招牌都能選。
    新畫風的燈籠、電視、暖簾是畫在同一張背景圖裡的像素，沒有獨立的東西可以選。 */
 function lyBgPick(x,y){const bg=document.getElementById('bg');if(!bg)return null;const gr=document.getElementById('game')||bg,G=gr.getBoundingClientRect();let best=null,ba=1e12;
@@ -10503,6 +10505,7 @@ function lyBgPick(x,y){const bg=document.getElementById('bg');if(!bg)return null
 function lyBgHint(x,y){const bg=document.getElementById('bg');if(!bg||!bg.querySelector(':scope > svg image'))return false;const r=bg.getBoundingClientRect();return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom}
 function lyPick(t,x,y){let e=t;while(e&&e instanceof SVGElement&&e.ownerSVGElement)e=e.ownerSVGElement;
   while(e&&e!==document.body){if(lyOk(e)&&e.matches(LY_MEAN))return e;e=e.parentElement}
+  if(t&&t.closest&&t.closest('#barx')){lyMsg('這是酒吧的背景圖，不能移動；請點吧台上的東西、文字框或按鈕');return null}
   if(x!=null){const g=lyBgPick(x,y);if(g)return g;if(lyBgHint(x,y))lyMsg('這是整張背景圖裡的圖案，沒辦法單獨移動（舊畫風可以）')}
   return null}
 function lyUp(el){let p=el&&el.parentElement;while(p&&p!==document.body){if(lyOk(p))return p;p=p.parentElement}return el}

@@ -556,10 +556,12 @@ def sc_lyed(b, base):
         if abs(pg.evaluate("(()=>{const r=LY.el.getBoundingClientRect();return r.left+r.width/2})()") - cx0) > 1.5:
             raise AssertionError('背景木牌縮放時中心飄走')
         r = pg.evaluate("(()=>{const r=document.getElementById('bg').getBoundingClientRect();return [r.left+r.width*0.676,r.top+r.height*0.21]})()")
+        pg.evaluate("$('custLayer').style.visibility='hidden'")  # 客人走到那個位置時點單泡泡會蓋住燈籠（會偶發選到泡泡）
         pg.touchscreen.tap(*r)
         pg.wait_for_timeout(250)
+        pg.evaluate("$('custLayer').style.visibility=''")
         if pg.evaluate("!!LY.el"):
-            raise AssertionError('畫在背景圖裡的燈籠不該被選到')
+            raise AssertionError('畫在背景圖裡的燈籠不該被選到（選到：%s）' % pg.evaluate("LY.el.outerHTML.slice(0,160)"))
         pg.evaluate("lyClose()")
         c.expect_clean('營業中進排版')
         # 草稿清掉後（玩家視角），營業畫面不該再有被排版移動過的元素
@@ -901,6 +903,11 @@ def sc_bar(b, base):
         if c.has('.modal') or not c.has('[data-bx=start]'):
             raise AssertionError('月影酒吧：關掉配方手帳後回不到調酒畫面\n%s' % c.diag())
         bx_shot(c, 'arrive')
+        ly = c.page.evaluate("""(()=>{const bg=document.querySelector('#barx .bxs-bg'),r=bg.getBoundingClientRect();
+          const a=lyPick(bg,r.left+5,r.top+5),say=document.querySelector('#barx [data-lyk=say]'),h=document.querySelector('#barx [data-lyk=hand0]');
+          return {bg:a===null,say:lyPick(say)===say&&lyQ(say).q,hand:lyPick(h)===h&&lyQ(h).q,up:lyUp(say)&&lyUp(say).dataset.lyk||''}})()""")
+        if not ly['bg'] or ly['say'] != 'div[data-lyk="say"]' or ly['hand'] != 'div[data-lyk="hand0"]' or ly['up'] != 'left':
+            raise AssertionError('月影酒吧：排版工具選取不對（背景圖要選不到、文字框和手邊酒瓶要各自能選）%s' % ly)
         hid = c.page.evaluate("['bg','custLayer','counter','stations'].map(id=>getComputedStyle($(id)).display).join(',')")
         if hid != 'none,none,none,none':
             raise AssertionError('月影酒吧：營業時底下的舊舞台沒有藏起來（%s），會跟著重畫、變卡' % hid)
