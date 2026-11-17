@@ -3426,7 +3426,7 @@ function bxStageHTML(){const s=bxCur(),o=bxOrder(),d=BX.d,r=BXR[o.k];let ins='',
     z=`<div class="bxz-row">${Object.keys(BXI).map(i=>`<button class="bxo ice" data-bx="i" data-v="${i}"><div class="bxo-p">${i==='ball'?bxImg('t_iceball','','height:62%'):bxImg('t_bucket','',i==='crush'?'filter:saturate(.6) brightness(1.08)':'')}</div><span>${T(BXI[i])}</span></button>`).join('')}</div>`}
   else if(s[0]==='m'){const sp=bxMSpec(o,s[1],s[2]);
     ins=sp.cond?T('按住量{0}：客人要{1}，比標準 {2} ml {3}一點，自己抓量放開',bxLN(s[1]),bxCondZH(o.k,o.c.find(c=>['strong','light','sour','sweet'].includes(c))),s[2],sp.lo>s[2]?T('多'):T('少')):T('按住量{0}，到綠色刻度放開（標準 {1} ml）',bxLN(s[1]),s[2]);
-    z=`<button class="bxs-src" id="bxhold">${bxImg(s[1],'',`height:${(100*(BXBH[s[1]]||1)).toFixed(0)}%`)}<b>${T('按住倒')}</b></button><div class="bxz-jig">${bxImg('t_jigger')}</div><div class="bxz-gauge" id="bxv">${bxJigger(s,sp,d.ml[s[1]]||0)}</div><div class="bxz-colc"><div class="bxr" id="bxread">${Math.round(d.ml[s[1]]||0)} ml</div><div class="bxz-after" id="bxafter"></div></div>`}
+    z=`<button class="bxs-src" id="bxhold">${bxImg(s[1],'',`height:${(100*(BXBH[s[1]]||1)).toFixed(0)}%`)}<b>${T('按住倒')}</b></button><div class="bxz-jig">${bxImg('t_jigger')}<i class="bxs-mstream" style="background:${BXL[s[1]][1]}"></i></div><div class="bxz-gauge" id="bxv">${bxJigger(s,sp,d.ml[s[1]]||0)}</div><div class="bxz-colc"><div class="bxr" id="bxread">${Math.round(d.ml[s[1]]||0)} ml</div><div class="bxz-after" id="bxafter"></div></div>`}
   else if(s[0]==='stir'){ins=T('用手指在攪拌杯上畫圈攪拌，冰度條到綠色區就按「好了」');
     z=`<div class="bxz-stir" id="bxpad">${bxImg('t_mixglass','bxz-mg')}<div class="bxz-spn" id="bxspn">${bxImg('t_spoon')}</div><div class="bxz-ov" id="bxv">${bxStirArt(0,null)}</div></div><div class="bxz-colc"><div id="bxmet">${bxMeter(d.dil,s[1],T('冰度'))}</div><div class="bxr" id="bxread">${T('{0} 圈',0)}</div><button class="bxb" data-bx="done" disabled id="bxdone">${T('好了')}</button></div>`}
   else if(s[0]==='lift'){ins=T('在吧台墊上的杯子裡輕輕畫一圈就好，拌太多氣泡會跑掉');
@@ -3688,14 +3688,14 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bxs-src{position:relative;height:calc(var(--u)*26);width:calc(var(--u)*13);background:none;border:0;padding:0;display:flex;align-items:flex-end;justify-content:center;transform-origin:50% 70%;transition:transform .2s;cursor:pointer;touch-action:none}
 #barx .bxs-src img{max-height:100%;max-width:100%;object-fit:contain;filter:drop-shadow(0 calc(var(--u)*.8) calc(var(--u)*.6) #000a)}
 #barx .bxs-src b{position:absolute;left:50%;top:calc(var(--u)*-2);transform:translateX(-50%);background:#ffd23a;color:#3a1a08;border:calc(var(--u)*.35) solid #5a3420;border-radius:1em;padding:.1em .6em;font-size:calc(var(--u)*2.8);white-space:nowrap;box-shadow:0 calc(var(--u)*.4) 0 #0008}
-#barx .bxs-src.on{transform:translate(calc(var(--u)*6),calc(var(--u)*-7)) rotate(105deg)}
+#barx .bxs-src.on{z-index:6;transform:translate(calc(var(--u)*-3.2),calc(var(--u)*-21)) rotate(115deg)}
 #barx .bxs-src.on b{opacity:0}
 #barx .bxs-src.tap:active{transform:translate(calc(var(--u)*3),calc(var(--u)*-3)) rotate(150deg)}
 #barx .bxs-src.kan{width:calc(var(--u)*26);height:calc(var(--u)*23);transform-origin:50% 100%}
 #barx .bxs-src.kan.on{transform:none;animation:bxkan .5s ease-in-out infinite alternate}
 #barx .bxs-src.kan.on img{filter:drop-shadow(0 0 calc(var(--u)*1.6) #ff8a3a)}
 @keyframes bxkan{from{transform:translateY(0)}to{transform:translateY(calc(var(--u)*-.6))}}
-#barx .bxz-jig{height:calc(var(--u)*19);display:flex;align-items:flex-end}
+#barx .bxz-jig{position:relative;height:calc(var(--u)*19);display:flex;align-items:flex-end}#barx .bxs-mstream{position:absolute;left:calc(50% - var(--u)*.5);bottom:96%;width:calc(var(--u)*1);height:calc(var(--u)*5.5);border-radius:1em;opacity:0;transition:opacity .1s;pointer-events:none}#barx .bxs:has(#bxhold.on) .bxs-mstream{opacity:.9}
 #barx .bxz-jig img{height:100%;filter:drop-shadow(0 calc(var(--u)*.8) calc(var(--u)*.6) #000a)}
 #barx .bxz-gauge{height:calc(var(--u)*29);width:calc(var(--u)*12.5)}
 #barx .bxz-colc{display:flex;flex-direction:column;gap:calc(var(--u)*1);align-items:center;justify-content:flex-end;min-width:calc(var(--u)*16)}
