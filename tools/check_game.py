@@ -1257,9 +1257,34 @@ def sc_tut(b, base):
             c.close()
 
 
+def sc_barbuy(b, base):
+    """月影酒吧解鎖（管理員帳號＝admins/ 名單，不是作者信箱）：選店對話框真實點擊 → 買下 ¥5,000,000；一般玩家看不到酒吧。"""
+    c = Ctx(b, base)
+    c.open()
+    try:
+        c.dismiss_modals()
+        c.page.evaluate("CL.user={email:'staff@example.com',uid:'check-staff',name:'Staff',photo:''};CL.isStaff=false;showHome()")
+        c.page.wait_for_timeout(300)
+        c.click('[data-act=cont]', wait=900)
+        if c.has('.modal [data-act=barhome]'):
+            raise AssertionError('月影酒吧：一般玩家的選店畫面看得到月影酒吧')
+        c.page.evaluate("closeModal();CL.isStaff=true;showHome()")
+        c.page.wait_for_timeout(300)
+        c.click('[data-act=cont]', wait=900)
+        c.click('.modal [data-act=barhome]', wait=600)
+        coins = c.page.evaluate("load().coins")
+        c.click('.modal [data-act=buybar]', wait=600)
+        r = c.page.evaluate("(()=>{const o=load();return {bar:!!o.bar,spent:%d-o.coins}})()" % coins)
+        if not r['bar'] or r['spent'] != 5000000:
+            raise AssertionError('月影酒吧：管理員買酒吧後狀態不對 %s（應該花 ¥5,000,000）' % r)
+        c.expect_clean('管理員買月影酒吧')
+    finally:
+        c.close()
+
+
 SCENARIOS = [('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
-             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar),
+             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barbuy', sc_barbuy),
              ('tut', sc_tut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun)]
 
 

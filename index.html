@@ -3108,7 +3108,7 @@ function okoActs(act,a){
    熱燗溫度照日本的分法：ぬる燗 40°C、上燗 45°C、熱燗 50°C、飛び切り燗 55°C。
    營業畫面是蓋在舞台上的 #barx 圖層，這家店不跑原本的即時營業迴圈（step 一開頭就 return），最後一位客人送走後直接打烊結算。
    存檔：ST.bar = {up, tut:看過教學, xp:{酒:做過幾杯}, aff:{常客:好感}, story:{常客:看到第幾段}}，只新增欄位；舊版的 ST.menu 酒款鍵原封不動留著。 */
-const BAR_PRICE=3000000,BARSEATS=1,BARN=4;
+const BAR_PRICE=5000000,BARSEATS=1,BARN=4;
 function barDev(){try{return !pview()&&canView()}catch(e){return false}}
 const BRKEYS=['brhigh','brume','brcha','brmizu','bryuzu','bratsu','brgimlet','brmatcha','brsudachi','brlemon','brginton','brnigori','bryuzushu','brimo','bryuzuhot','brawamori','brdaiginjo','brsmalt','brpeach','brlychee','brsakura','brshiso','brmoscow','brdark','brblackr','brbloody','brmojito','brdaiq','brmarg','brside','brsunrise','brmartini','brmanhattan','brnegroni','brold','bramericano','bruji'];
 COOK.brwip=1e9;BRKEYS.forEach(k=>{COOK[k]=1;STN[k]='tpn'});
