@@ -1261,6 +1261,10 @@ def sc_bar(b, base):
             raise AssertionError('月影酒吧：故意選錯杯、量錯酒居然過關')
         if not c.has('[data-bx=retry]'):
             raise AssertionError('月影酒吧：第一次沒過關沒有「重做一杯」\n%s' % c.diag())
+        # 評分面板要一次看完：不能出現捲軸，「重做一杯」「抱歉，就這樣」要整顆在面板裡（2026/11/18 使用者說還要上下滑）
+        pn = c.page.evaluate("(()=>{const p=document.querySelector('#barx .bxc-panel'),r=p.getBoundingClientRect();return {over:p.scrollHeight-p.clientHeight,bad:[...p.querySelectorAll('button')].filter(b=>{const q=b.getBoundingClientRect();return q.top<r.top-1||q.bottom>r.bottom+1}).length}})()")
+        if pn['over'] > 1 or pn['bad']:
+            raise AssertionError('月影酒吧：評分面板要上下滑才看得到按鈕（多出 %spx、%s 顆按鈕在面板外）' % (pn['over'], pn['bad']))
         c.click('[data-bx=retry]', wait=300)
         if not bx_make(c, started=True):
             raise AssertionError('月影酒吧：重做照做還是沒過關\n%s' % c.diag())

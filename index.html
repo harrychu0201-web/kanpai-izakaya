@@ -3751,11 +3751,11 @@ function bxServe(){const o=bxOrder(),d=BX.d,r=BXR[o.k];
       BX.mood='happy';BX.sayJP='……え、なにこれ。うまい！';BX.sayZH=sname?T('咦？這是……{0}？意外地好喝！',T(sname)):T('咦，這杯跟平常不一樣……意外地好喝！');
       BX.passed=true;BX.stage='res';BX.resHTML=`<div class="bx-area bx-col">${glass}<p class="bx-ins">${isNew?`<b class="bx-ok">${T('發現隱藏配方「{0}」！已經記在酒譜',T(sname))}</b><br>`:''}${T('客人驚喜地付了 {0}，小費 {1}',yen(price),yen(tip))}</p><button class="bx-btn big" data-bx="totalk">${T('繼續')}</button></div>`;bxRender();return}
     /* 配對了，但技術沒過關：照一般沒過關處理（可以重做） */}
-  let html=`<div class="bx-area bx-col"><div class="bx-res">${bxGlassSV(d.g||r.g,bxLook(),110,132)}<div><div class="bx-score">${T('技術')} <b>${tech}</b>/60　${T('偏好')} <b>${pref}</b>/30</div><div class="bx-bars"><i style="width:${tech/60*100}%"></i></div><div class="bx-bars p"><i style="width:${pref/30*100}%"></i></div>${forced?`<small>${T('（教學的第一杯，客人很捧場）')}</small>`:''}</div></div>`;
+  let html=`<div class="bx-area bx-col"><div class="bx-res">${bxGlassSV(d.g||r.g,bxLook(),110,132)}<div><div class="bx-score">${T('技術')} <b>${tech}</b>/60　${T('偏好')} <b>${pref}</b>/30</div><div class="bx-bars"><i style="width:${tech/60*100}%"></i></div><div class="bx-bars p"><i style="width:${pref/30*100}%"></i></div>${forced?`<small>${T('（教學的第一杯，客人很捧場）')}</small>`:''}${!pass&&o.tries<2&&badMsg?`<p class="bx-ins bx-saybad"><b class="bx-bad">${T('客人說')}：${badMsg}</b></p>`:''}</div></div>`;
   if(pass){const optOk=d.gar.some(g=>r.opt.includes(g)),tip=Math.round(price*(.05+.35*Math.max(0,tot-54)/36+(optOk?.05:0))*(R.fxTip?2:1)/10)*10;BX.pay={price,tip};
     R.earned+=price;sfx('coin');const b=bxSt();b.xp[o.k]=(b.xp[o.k]||0)+1;
     html+=`<p class="bx-ins">${T('客人付了 {0}',yen(price))}${tip?T('，小費 {0}',yen(tip)):''}${optOk?T('（裝飾加分）'):''}</p><button class="bx-btn big" data-bx="totalk">${T('繼續')}</button></div>`;R.earned+=tip}
-  else if(o.tries<2){BX.sayZH=line+T('……可以再做一次嗎？');html+=`${badMsg?`<p class="bx-ins"><b class="bx-bad">${T('客人說')}：${badMsg}</b></p>`:''}<p class="bx-ins">${T('沒過關（技術＋偏好要 54 分，而且杯子、比例、冰度、溫度、份量不能差太多）。照客人說的地方改，可以重做一次（材料再算一次）。')}</p><div class="bx-row"><button class="bx-btn alt" data-bx="giveup">${T('抱歉，就這樣')}</button><button class="bx-btn big" data-bx="retry">${T('重做一杯')}</button></div></div>`}
+  else if(o.tries<2){BX.sayZH=line+T('……可以再做一次嗎？');html+=`<p class="bx-ins bx-hint">${T('沒過關（技術＋偏好要 54 分，而且杯子、比例、冰度、溫度、份量不能差太多）。照客人說的地方改，可以重做一次（材料再算一次）。')}</p><div class="bx-row"><button class="bx-btn alt" data-bx="giveup">${T('抱歉，就這樣')}</button><button class="bx-btn big" data-bx="retry">${T('重做一杯')}</button></div></div>`}
   else{html+=`<p class="bx-ins">${T('客人搖搖頭，沒付錢就走了。')}</p><button class="bx-btn big" data-bx="leave">${T('下一位')}</button></div>`;R.lost++;sfx('angry')}
   BX.passed=pass;BX.stage='res';BX.resHTML=html;bxRender()}
 function bxTalk(){const o=bxOrder(),c=BXCH[o.who]||['quiet','……','今天辛苦了','（客人點點頭）','……嗯。'];BX.sayJP='';BX.sayZH=T(c[1]);BX.mood='ok';
@@ -4049,15 +4049,18 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bxf-it .bxf-im{height:62px;display:flex;align-items:flex-end}#barx .bxf-it .bxf-im img{max-height:62px;max-width:60px;object-fit:contain}#barx .bxf-it b{font-size:18px;line-height:1.15}#barx .bxf-it small{font-size:15px;min-height:18px;color:#ffd23a}
 #barx .bxf-it.on{border-color:#ffd23a;background:#3a2410}#barx .bxf-it:disabled{opacity:.42;cursor:default}#barx .bxf-it:disabled small{color:#c9a24a}
 #barx .bxf-row{display:flex;gap:14px;justify-content:center;margin-top:12px}#barx .bxf-row .bxb{min-height:106px;min-width:200px;font-size:26px;border-radius:14px;border:3px solid #5a3420;padding:0 16px}
-#barx .bxc-panel{position:absolute;left:30%;right:26%;bottom:12px;max-height:60%;overflow:auto;background:#1a0e08ee;border:2px solid #c9a24a;border-radius:16px;padding:10px 14px;box-shadow:0 6px 24px #000a}
-#barx .bxc-panel .bx-area{display:flex;flex-direction:column;align-items:center;gap:13px;padding:0;min-height:0}
+#barx .bxc-panel{position:absolute;left:29%;right:24%;bottom:6px;max-height:calc(100% - 16px);overflow:auto;background:#1a0e08f2;border:2px solid #c9a24a;border-radius:16px;padding:10px 14px;box-shadow:0 6px 24px #000a}
+#barx .bxc-panel .bx-area{display:flex;flex-direction:column;align-items:center;gap:10px;padding:0;min-height:0}
 #barx .bxc-panel .bx-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
 #barx .bxc-panel .bx-ins{margin:2px 0;font-size:24px;line-height:1.45;text-align:center;color:#ffe9c0}
-#barx .bxc-panel .bx-btn{min-height:102px;min-width:224px;font-size:27px;padding:0 16px;border-radius:14px;border-width:5px}
-#barx .bxc-panel .bx-btn.big{min-height:112px;font-size:30px}
+#barx .bxc-panel .bx-hint{font-size:17px;line-height:1.4;opacity:.9}
+#barx .bxc-panel .bx-saybad{font-size:20px;text-align:left;margin:8px 0 0;line-height:1.35}
+#barx .bxc-panel .bx-saybad .bx-bad{font-size:inherit}
+#barx .bxc-panel .bx-btn{min-height:84px;min-width:200px;font-size:26px;padding:0 16px;border-radius:14px;border-width:5px}
+#barx .bxc-panel .bx-btn.big{min-height:90px;font-size:28px}
 #barx .bxc-panel .bx-btn.wide{min-width:320px;max-width:448px;white-space:normal;padding:6px 14px}
-#barx .bxc-panel .bx-res{display:flex;align-items:center;gap:22px}
-#barx .bxc-panel .bx-res svg{width:176px;height:211px}
+#barx .bxc-panel .bx-res{display:flex;align-items:center;gap:18px}
+#barx .bxc-panel .bx-res svg{width:130px;height:156px;flex:none}
 #barx .bxc-panel .bx-story{background:#2a180c;border-left:4px solid #c9a24a;padding:6px 10px;border-radius:8px;font-size:22px;line-height:1.5}
 #barx .bxc-cabh{position:absolute;left:10px;top:calc(12px + var(--hudt,0px));width:15.5%;background:#1a0e08e0;border:2px solid #c9a24a88;border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;box-sizing:border-box}
 #barx .bxc-cabh b{font-size:24px;color:#ffe2a8}
