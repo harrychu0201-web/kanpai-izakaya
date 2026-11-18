@@ -3769,7 +3769,8 @@ function bxBook(){const ks=BRKEYS.filter(has).concat(BRKEYS.filter(k=>!has(k)));
 /* 加料面板開著時，按空白鍵就關掉（不用往下滑找「關閉」） */
 document.addEventListener('keydown',e=>{if((e.code!=='Space'&&e.key!==' ')||!BX||!BX.free||!document.querySelector('#barx .bxc-free'))return;if(/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''))return;e.preventDefault();if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();if(!e.repeat){BX.free=false;sfx('pick');bxRender()}},true);
 document.addEventListener('keyup',e=>{if((e.code==='Space'||e.key===' ')&&BX&&document.querySelector('#barx'))e.preventDefault()},true);
-function bxClick(e){const b=e.target.closest('[data-bx]');if(!b||b.disabled||!BX)return;const a=b.dataset.bx,v=b.dataset.v,d=BX.d;
+function bxClick(e){if(BX&&BX.free&&!e.target.closest('.bxc-free,[data-bx=under]')){BX.free=false;bxRender();if(!e.target.closest('[data-bx]'))return}
+  const b=e.target.closest('[data-bx]');if(!b||b.disabled||!BX)return;const a=b.dataset.bx,v=b.dataset.v,d=BX.d;
   if(a==='book')return bxBook();
   if(a==='back'){bxBack();return}
   if(a==='fold'){BXFOLD[v]=!bxF(v);try{localStorage.setItem('izakaya-bxfold',JSON.stringify(BXFOLD))}catch(x){}bxRender();return}
