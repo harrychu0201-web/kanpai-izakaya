@@ -3352,7 +3352,7 @@ const BXSTORY={reiko:['年輕的時候，我在銀座的一間酒吧唱歌。那
 const BXNOIMG=['hot','matcha']; /* 沒有圖的材料：不放進加料面板，用到它們的酒譜暫不出給客人 */
 function bxUnderNeed(s){return !!(s&&s[0]==='mix'&&s[1].some(x=>!BXCABS.includes(x[1])))}
 /* 「加料」鈕只在輪到加吧台下材料時出現：這步背後酒櫃的酒（量酒、抖苦精）都倒過了才顯示，選酒、倒酒時不顯示 */
-function bxUnderTurn(s){return bxUnderNeed(s)&&s[1].filter(x=>BXCABS.includes(x[1])).every(x=>(BX.d.ml[x[1]]||0)>0||(BX.d.dash[x[1]]||0)>0)} /* 這步要用吧台下的材料才顯示「加料」鈕 */
+function bxUnderTurn(s){return !!s&&s[0]==='top'||bxUnderNeed(s)&&s[1].filter(x=>BXCABS.includes(x[1])).every(x=>(BX.d.ml[x[1]]||0)>0||(BX.d.dash[x[1]]||0)>0)} /* 這步要用吧台下的材料才顯示「加料」鈕 */
 const BXSPOON=5,BXFREE_MAX=30,BXLUCK=[0,.1,.04];
 const BXSWAP={brgimlet:{gin:{rum:'蘭姆琴蕾（其實就是黛綺莉）',vodka:'伏特加琴蕾',shochu:'燒酎琴蕾'}},brdaiq:{rum:{gin:'琴酒黛綺莉（其實就是琴蕾）',darkrum:'黑蘭姆黛綺莉'}},brmoscow:{vodka:{gin:'琴酒騾子',whisky:'威士忌騾子',shochu:'燒酎騾子'}},
   brginton:{gin:{vodka:'伏特加通寧',shochu:'燒酎通寧'}},brhigh:{whisky:{smalt:'單一麥芽高球',brandy:'白蘭地高球'}},brside:{brandy:{whisky:'威士忌側車',darkrum:'蘭姆側車'}},brmarg:{tequila:{rum:'蘭姆瑪格麗特'}},
@@ -3368,9 +3368,9 @@ function bxTool(l){return l==='bitters'?'dash':BXSWEET.includes(l)?'spoon':'pour
 function bxAmt(l,v){return bxTool(l)==='spoon'?T('{0} 匙',Math.round(v/BXSPOON)):bxTool(l)==='dash'?T('{0} 下',v):Math.round(v)+'ml'}
 function bxSpecs(k){return BXR[k].st.filter(x=>x[0]==='m'||x[0]==='dash')}
 /* 吧台下的材料（不在背後酒櫃）：按「加料」打開，點一下拿上吧台當現在要倒的東西 */
-function bxUnderHTML(){const s=bxCur(),here=s&&s[0]==='mix'?s[1].map(x=>x[1]):[],under=Object.keys(BXL).filter(l=>!BXCABS.includes(l)&&!BXNOIMG.includes(l));
+function bxUnderHTML(){const s=bxCur(),here=s&&s[0]==='mix'?s[1].map(x=>x[1]):s&&s[0]==='top'?[s[1]]:[],under=Object.keys(BXL).filter(l=>!BXCABS.includes(l)&&!BXNOIMG.includes(l));
   return `<div class="bxc-free" data-lyk="underp"><div class="bxf-hd"><div><h4>${T('加料')}</h4><p>${T('點一下拿上吧台。果汁、汽水按住倒；糖漿、蜂蜜用湯匙挖')}</p></div></div>
-    <div class="bxf-g">${under.map(l=>`<button class="bxf-it${BX.src===l?' on':''}" data-bx="pick" data-v="${l}"><span class="bxf-im">${bxImg(l)}</span><b>${bxLN(l)}</b><small>${here.includes(l)?T('這步會用到'):''}</small></button>`).join('')}</div>
+    <div class="bxf-g">${under.map(l=>`<button class="bxf-it${BX.src===l?' on':''}" data-bx="pick" data-v="${l}"><span class="bxf-im">${bxImg(l)}</span><b>${bxLN(l)}</b><small>${here.includes(l)?T('這步會用到'):BX.d.ml[l]>0?T('已加 {0}',bxAmt(l,BX.d.ml[l])):''}</small></button>`).join('')}</div>
     <div class="bxf-row"><button class="bxb" data-bx="under">${T('關閉')}</button></div></div>`}
 function bxAllMl(d){return d.ml||{}}
 let BX=null,BXRAF=0,BXTM=0;
@@ -3622,7 +3622,7 @@ function bxRender(){const el=$('barx');if(!el||!BX)return;const o=bxOrder(),st=B
       inner+=`<div class="bxz bxz-c" data-lyk="zone-arrive"><button class="bxb big" data-bx="start">${T('開始調酒')}</button></div>`}
     else if(mk){left=`<p class="bxc-ins">${z.ins}</p>`;inner+=z.scene}
     else panel=`<div class="bxc-panel" data-lyk="panel">${st==='res'?BX.resHTML:st==='talk'?BX.talkHTML:BX.endHTML||''}</div>`;
-    html=scene(inner)+`<div class="bxc-left" data-lyk="left"><div class="bxc-say${bxF('say')?' fold':''}" data-lyk="say">${bxFoldBtn('say','💬 '+T('客人說'))}<b>${say}</b></div>${left?`<div class="bxc-box${BXFOLD.ins?' fold':''}" data-lyk="box">${bxFoldBtn('ins','💬 '+T('說明'))}${left}</div>`:''}${mk&&BX.hist&&BX.hist.length>1?`<button class="bxc-back" data-bx="back" data-lyk="back">↩ ${T('返回上一步')}</button>`:''}</div><div class="bxc-rcol" data-lyk="rcol">${card}<div class="bxc-right2" data-lyk="btns"><button class="bxc-btn" data-bx="book">📖 ${T('酒譜')}</button>${st==='arrive'||mk?`<button class="bxc-turn" data-bx="turn" data-lyk="turn">↻ ${T('轉身')}<small>${T('去酒櫃拿酒')}</small></button>`:''}${mk&&(bxUnderTurn(cur)||(BX.free&&bxUnderNeed(cur)))?`<button class="bxc-turn bxc-under${BX.free?' on':''}" data-bx="under" data-lyk="under">${T('加料')}</button>`:''}</div></div>${panel}${mk&&BX.free&&bxUnderNeed(cur)?bxUnderHTML():''}`}
+    html=scene(inner)+`<div class="bxc-left" data-lyk="left"><div class="bxc-say${bxF('say')?' fold':''}" data-lyk="say">${bxFoldBtn('say','💬 '+T('客人說'))}<b>${say}</b></div>${left?`<div class="bxc-box${BXFOLD.ins?' fold':''}" data-lyk="box">${bxFoldBtn('ins','💬 '+T('說明'))}${left}</div>`:''}${mk&&BX.hist&&BX.hist.length>1?`<button class="bxc-back" data-bx="back" data-lyk="back">↩ ${T('返回上一步')}</button>`:''}</div><div class="bxc-rcol" data-lyk="rcol">${card}<div class="bxc-right2" data-lyk="btns"><button class="bxc-btn" data-bx="book">📖 ${T('酒譜')}</button>${st==='arrive'||mk?`<button class="bxc-turn" data-bx="turn" data-lyk="turn">↻ ${T('轉身')}<small>${T('去酒櫃拿酒')}</small></button>`:''}${mk&&bxUnderTurn(cur)?`<button class="bxc-turn bxc-under${BX.free?' on':''}" data-bx="under" data-lyk="under">${T('加料')}</button>`:''}</div></div>${panel}${mk&&BX.free&&bxUnderTurn(cur)?bxUnderHTML():''}`}
   const fl=BX.flip;BX.flip=0;
   el.innerHTML=`<div class="bx-in bxv2" style="width:${(100/k).toFixed(3)}%;height:${(100/k).toFixed(3)}%;transform:scale(${k.toFixed(4)})"><div class="bx-face${fl?' flip':''}">${html}</div><div class="bx-msg hide" id="bxmsg"></div></div>`;
   const hd=$('hud'),bi=el.firstElementChild;if(hd&&bi){const hr=hd.getBoundingClientRect(),br=bi.getBoundingClientRect(),sc=br.height/(H/k)||1,ov=Math.max(0,hr.bottom-br.top)/sc;if(hr.height&&ov>0&&ov<H/k/3)bi.style.setProperty('--hudt',ov.toFixed(0)+'px')}
@@ -3785,7 +3785,7 @@ function bxClick(e){if(BX&&BX.free&&!e.target.closest('.bxc-free,[data-bx=under]
   if(a==='dash'){if(!BX.src)return;d.dash[BX.src]=(d.dash[BX.src]||0)+1;sfx('pour');bxRender();return}
   if(a==='garpg'){d.garPg=+v;sfx('pick');bxRender();return}
   if(a==='under'){if(BX.stage!=='make')return;BX.free=!BX.free;sfx('pick');bxRender();return}
-  if(a==='pick'){if(BX.stage!=='make')return;BX.src=v;BX.free=false;sfx('pick');bxRender();bxMsg(T('拿了{0}',bxLN(v)));return}
+  if(a==='pick'){if(BX.stage!=='make')return;const cs0=bxCur();if(cs0[0]==='top'){if(v===cs0[1]){bxMsg(T('這步本來就要倒這個，按住長條倒就好'));return}const dd=BX.d;dd.ml[v]=(dd.ml[v]||0)+(bxTool(v)==='spoon'?BXSPOON:10);sfx('pick');bxRender();bxMsg(T('加了{0}',bxLN(v))+' '+bxAmt(v,dd.ml[v]));return}BX.src=v;BX.free=false;sfx('pick');bxRender();bxMsg(T('拿了{0}',bxLN(v)));return}
   if(a==='src'){if(BX.stage!=='make'||bxCur()[0]!=='mix')return;BX.src=v;sfx('pick');bxRender();return}
   if(a==='scoop'){if(!BX.src)return;d.ml[BX.src]=(d.ml[BX.src]||0)+BXSPOON;sfx('pour');bxRender();return}
   if(a==='start')return bxStart();
