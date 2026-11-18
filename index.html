@@ -3456,7 +3456,7 @@ function bxMEval(s,vv){const o=bxOrder(),d=BX.d,sp=bxMSpec(o,s[1],s[2]),v=vv!=nu
   const q=v>=sp.plo&&v<=sp.phi?1:v>=sp.lo&&v<=sp.hi?.75:Math.max(0,.5-Math.min(Math.abs(v-sp.lo),Math.abs(v-sp.hi))/s[2]);
   bxComp('m'+s[1],q,1.2,T('比例很準'),v<sp.lo?T('{0}倒太少了',n):T('{0}倒太多了',n));
   if(sp.cond){const c=o.c.find(x=>['strong','light','sour','sweet'].includes(x)),ok=v>=sp.lo&&v<=sp.hi,near=v>=sp.lo-s[2]*.1&&v<=sp.hi+s[2]*.1;
-    bxPref('c'+c,ok?1:near?.5:0,c==='strong'?T('我說要濃一點，{0}還不夠',n):c==='light'?(o.k==='brume'?T('還是太甜了，梅酒再少一點'):T('太濃了，我想要淡一點的')):c==='sour'?T('再酸一點會更好'):T('再甜一點會更好'))}
+    bxPref('c'+c,ok?1:near?.5:0,c==='strong'?(v>sp.hi?T('我說要濃一點，也不用濃成這樣，{0}多太多了',n):T('我說要濃一點，{0}還不夠',n)):c==='light'?(v<sp.lo?T('我只要淡一點，{0}倒得太少了',n):o.k==='brume'?T('還是太甜了，梅酒再少一點'):T('太濃了，我想要淡一點的')):c==='sour'?T('再酸一點會更好'):T('再甜一點會更好'))}
   return {q,sp,v}}
 function bxMRelease(){const l=BX.src,a=$('bxafter'),d=BX.d,sp=bxSrcSpec();if(!a||!l)return;const v=d.ml[l]||0;const rb=document.querySelector('#barx [data-bx="redo"]');if(rb)rb.disabled=!v;
   if(v>(sp?sp.cap:60)){d.ml[l]=0;bxMsg(T('滿出來了！倒掉重量'));bxRender();return}
@@ -3749,7 +3749,7 @@ function bxServe(){const o=bxOrder(),d=BX.d,r=BXR[o.k];
   if(pass){const optOk=d.gar.some(g=>r.opt.includes(g)),tip=Math.round(price*(.05+.35*Math.max(0,tot-54)/36+(optOk?.05:0))*(R.fxTip?2:1)/10)*10;BX.pay={price,tip};
     R.earned+=price;sfx('coin');const b=bxSt();b.xp[o.k]=(b.xp[o.k]||0)+1;
     html+=`<p class="bx-ins">${T('客人付了 {0}',yen(price))}${tip?T('，小費 {0}',yen(tip)):''}${optOk?T('（裝飾加分）'):''}</p><button class="bx-btn big" data-bx="totalk">${T('繼續')}</button></div>`;R.earned+=tip}
-  else if(o.tries<2){BX.sayZH=line+T('……可以再做一次嗎？');html+=`<p class="bx-ins">${T('沒過關（技術＋偏好要 54 分，而且杯子、比例、冰度、溫度、份量不能差太多）。照客人說的地方改，可以重做一次（材料再算一次）。')}</p><div class="bx-row"><button class="bx-btn alt" data-bx="giveup">${T('抱歉，就這樣')}</button><button class="bx-btn big" data-bx="retry">${T('重做一杯')}</button></div></div>`}
+  else if(o.tries<2){BX.sayZH=line+T('……可以再做一次嗎？');html+=`${badMsg?`<p class="bx-ins"><b class="bx-bad">${T('客人說')}：${badMsg}</b></p>`:''}<p class="bx-ins">${T('沒過關（技術＋偏好要 54 分，而且杯子、比例、冰度、溫度、份量不能差太多）。照客人說的地方改，可以重做一次（材料再算一次）。')}</p><div class="bx-row"><button class="bx-btn alt" data-bx="giveup">${T('抱歉，就這樣')}</button><button class="bx-btn big" data-bx="retry">${T('重做一杯')}</button></div></div>`}
   else{html+=`<p class="bx-ins">${T('客人搖搖頭，沒付錢就走了。')}</p><button class="bx-btn big" data-bx="leave">${T('下一位')}</button></div>`;R.lost++;sfx('angry')}
   BX.passed=pass;BX.stage='res';BX.resHTML=html;bxRender()}
 function bxTalk(){const o=bxOrder(),c=BXCH[o.who]||['quiet','……','今天辛苦了','（客人點點頭）','……嗯。'];BX.sayJP='';BX.sayZH=T(c[1]);BX.mood='ok';
