@@ -529,6 +529,7 @@ def sc_lyed(b, base):
                 raise AssertionError('進排版後對話框沒關')
             if pg.evaluate("R.paused"):
                 raise AssertionError('進排版後遊戲還停在暫停')
+            saved0 = pg.evaluate("localStorage.getItem(LYKEY)")
             x, y = center('#st-edamame')
             pg.touchscreen.tap(x, y)
             pg.wait_for_timeout(250)
@@ -537,6 +538,39 @@ def sc_lyed(b, base):
                 pg.tap('#lyBar [data-ly="mv"][data-d="1,0"]')
             if pg.evaluate('LY.el.getBoundingClientRect().left') - l0 < 1:
                 raise AssertionError('營業中的排版移不動')
+            # 2026/11/18：移動不能自動存；回去玩（⏸操作）或關掉（✕）時要問要不要儲存
+            if pg.evaluate("localStorage.getItem(LYKEY)") != saved0:
+                raise AssertionError('排版一移動就自動存了（應該等離開時問）')
+            pg.tap('#lyBar [data-ly="%s"]' % ('close' if how == 'pause' else 'min'))
+            pg.wait_for_timeout(300)
+            if not c.has('#lyOut.lyask [data-lyo=save]') or not c.has('#lyOut.lyask [data-lyo=nosave]'):
+                raise AssertionError('排版改過後按%s，沒有問要不要儲存' % ('✕' if how == 'pause' else '⏸操作'))
+            bx_shot(c, 'ly-ask')
+            pg.tap('#lyOut.lyask [data-lyo=stay]')
+            pg.wait_for_timeout(200)
+            if c.has('#lyOut.lyask') or not pg.evaluate("LY.on&&LY.sel"):
+                raise AssertionError('按「繼續排版」沒有回到排版')
+            pg.tap('#lyBar [data-ly="%s"]' % ('close' if how == 'pause' else 'min'))
+            pg.wait_for_timeout(300)
+            if how == 'pause':
+                pg.tap('#lyOut.lyask [data-lyo=nosave]')
+                pg.wait_for_timeout(300)
+                if pg.evaluate("localStorage.getItem(LYKEY)") != saved0 or pg.evaluate("LY.on"):
+                    raise AssertionError('選「不儲存」後還是存了，或排版沒關')
+                if abs(pg.evaluate("$('st-edamame').getBoundingClientRect().left") - l0) > 1:
+                    raise AssertionError('選「不儲存」後毛豆沒有回到原位')
+            else:
+                pg.tap('#lyOut.lyask [data-lyo=save]')
+                pg.wait_for_timeout(300)
+                if not pg.evaluate("(()=>{const v=JSON.parse(localStorage.getItem(LYKEY)||'null');return !!v&&v.r.some(r=>(r.x||0)>0)})()") or pg.evaluate("LY.sel"):
+                    raise AssertionError('選「儲存」後沒有存到，或沒有回到遊戲')
+                # 沒改東西時按 ⏸操作／✕ 不用問
+                pg.tap('#lyBar [data-ly="max"]')
+                pg.wait_for_timeout(200)
+                pg.tap('#lyBar [data-ly="close"]')
+                pg.wait_for_timeout(300)
+                if c.has('#lyOut.lyask') or pg.evaluate("LY.on"):
+                    raise AssertionError('沒改東西按 ✕ 也跳出儲存詢問，或沒關掉')
             pg.evaluate("lyClose()")
         # 背景裡的獨立圖形（菜單木牌）要能選、能移動；畫在背景圖裡的燈籠不能選，要有提示
         c.click('[data-act=pause]', wait=500)
@@ -819,55 +853,57 @@ def bx_fetch(c, l):
         raise AssertionError('月影酒吧：拿完酒轉不回吧台\n%s' % c.diag())
 
 
-def bx_free_add(c, adds):
-    """自由加料：真實點擊「🧪 自由加料」打開面板，每種材料點指定下數，再按「好了」收起。"""
+def bx_pick_src(c, l):
+    """量酒時換成材料 l：手邊的酒直接點酒瓶；吧台下的按「加料」再點（真實點擊）。"""
+    if c.page.evaluate("BX.src") == l:
+        return
+    if c.page.evaluate("BXCABS.includes('%s')" % l):
+        if l not in c.page.evaluate("BX.hand"):
+            bx_fetch(c, l)
+        if c.page.evaluate("BX.src") != l:
+            bx_vn(c)
+            c.click('#barx [data-bx=src][data-v=%s]' % l, wait=250)
+    else:
+        bx_vn(c)
+        c.click('#barx [data-bx=under]', wait=300)
+        if not c.has('#barx .bxc-free [data-bx=pick][data-v=%s]' % l):
+            raise AssertionError('月影酒吧：按「加料」沒有看到吧台下的 %s\n%s' % (l, c.diag()))
+        bx_shot(c, 'under-panel')
+        small = c.page.evaluate("[...document.querySelectorAll('#barx .bxc-free button')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&(r.height<43.5||r.width<43.5)).length")
+        if small:
+            raise AssertionError('月影酒吧：加料面板有 %d 顆按鈕小於 44px' % small)
+        c.click('#barx .bxc-free [data-bx=pick][data-v=%s]' % l, wait=300)
+        if c.has('#barx .bxc-free'):
+            raise AssertionError('月影酒吧：從吧台下拿了材料，面板沒有收起來')
+    if c.page.evaluate("BX.src") != l:
+        raise AssertionError('月影酒吧：換成 %s 失敗（現在是 %s）' % (l, c.page.evaluate("BX.src")))
+
+
+def bx_pour(c, l, goal):
+    """把材料 l 倒到 goal（ml；苦精是下數）：一般按住倒、糖漿用湯匙挖、苦精抖。"""
+    bx_pick_src(c, l)
     bx_vn(c)
-    c.click('[data-bx=free][data-lyk=freeb]', wait=300)
-    if not c.has('#barx .bxc-free'):
-        raise AssertionError('月影酒吧：按了自由加料沒有打開面板\n%s' % c.diag())
-    bx_shot(c, 'free-panel')
-    # 面板裡的按鈕實際也要 44px 以上
-    small = c.page.evaluate("[...document.querySelectorAll('#barx .bxc-free button')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&(r.height<43.5||r.width<43.5)).length")
-    if small:
-        raise AssertionError('月影酒吧：自由加料面板有 %d 顆按鈕小於 44px' % small)
-    # 酒譜裡本來就有的材料不能從這裡加（要照步驟倒）
-    rec = c.page.evaluate("BXR[bxOrder().k].st.filter(x=>x[0]==='top'||x[0]==='m').map(x=>x[1]).filter(l=>!BXCABS.includes(l))")
-    for l in rec:
-        if not c.page.evaluate("(document.querySelector('#barx .bxc-free [data-bx=add][data-v=%s]')||{}).disabled===true" % l):
-            raise AssertionError('月影酒吧：酒譜裡的 %s 在自由加料面板沒有被停用' % l)
-    for l, n in adds:
-        for _ in range(n):
-            c.click('#barx .bxc-free [data-bx=add][data-v=%s]' % l, wait=150)
-    want = {l: n * 10 for l, n in adds}
-    got = c.page.evaluate("BX.d.ex")
-    if got != want:
-        raise AssertionError('月影酒吧：自由加料加進去的量不對（要 %s，實際 %s）' % (want, got))
-    if not c.page.evaluate("!!document.querySelector('#barx .bxc-free .bxf-it.on')"):
-        raise AssertionError('月影酒吧：加了料的材料在面板上沒有標出來')
-    c.click('#barx .bxc-free .bxf-row [data-bx=free]', wait=300)
-    if c.has('#barx .bxc-free'):
-        raise AssertionError('月影酒吧：自由加料按「好了」沒有收起面板')
+    tool = c.page.evaluate("bxTool('%s')" % l)
+    if tool == 'spoon':
+        for _ in range(int(round(goal / 5))):
+            c.click('#barx [data-bx=scoop]', wait=120)
+    elif tool == 'dash':
+        for _ in range(int(goal)):
+            c.click('#barx [data-bx=dash]', wait=120)
+    else:
+        bx_hold_until(c, '#bxhold', "(BX.d.ml['%s']||0)>=%f" % (l, goal - 0.6))
+        c.page.wait_for_timeout(300)
 
 
-def bx_make(c, wrong=False, started=False, adds=None):
-    """照客人的單把這杯做完（wrong=True 故意選錯杯、量錯；adds=[(材料, 點幾下)] 在選完杯子後自由加料）。"""
+def bx_make(c, wrong=False, started=False, adds=None, swap=None):
+    """照客人的單把這杯做完（wrong=True 故意選錯杯、量錯；adds=[(材料, 量)] 量酒時多加；swap=(酒譜的酒, 換成的酒)）。"""
     o = c.page.evaluate("(()=>{const o=bxOrder(),r=BXR[o.k];return {k:o.k,c:o.c,g:r.g,t:r.t,ice:r.ice}})()")
     if not started:
         bx_vn(c)
         c.click('[data-bx=start]', wait=300)
     for _ in range(22):
         st = bx_stage(c)
-        if st in ('m', 'dash') and c.page.evaluate("bxNeedHand(bxCur())"):
-            bx_fetch(c, c.page.evaluate("bxCur()[1]"))
-            continue
-        if adds and st != 'glass':
-            bx_free_add(c, adds)
-            adds = None
         bx_shot(c, 'st-%s-%s' % (o['k'], st))
-        ov = c.page.evaluate("""(()=>{const f=document.querySelector('#barx [data-lyk=freeb]');if(!f)return '';const r=f.getBoundingClientRect();
-          return [...document.querySelectorAll('#barx .bxs-hand,#barx .bxz button,#barx .bxz-gauge,#barx .bxs-src,#barx .bxd,#barx .bxs-mat')].filter(e=>{const q=e.getBoundingClientRect();return q.width&&q.left<r.right-2&&q.right>r.left+2&&q.top<r.bottom-2&&q.bottom>r.top+2}).map(e=>e.className||e.id).join(',')})()""")
-        if ov:
-            raise AssertionError('月影酒吧：「自由加料」按鈕蓋到 %s（%s 階段）' % (ov, st))
         if not c.page.evaluate("BX.stage!=='make'||document.querySelectorAll('#barx .bxc-st li.on').length===1"):
             raise AssertionError('月影酒吧：做酒時右邊步驟清單沒有標出目前這一步（%s）' % st)
         if st == 'glass':
@@ -875,22 +911,30 @@ def bx_make(c, wrong=False, started=False, adds=None):
             c.click('[data-bx=t][data-v=%s]' % o['t'], wait=650)
         elif st == 'ice':
             c.click('[data-bx=i][data-v=%s]' % o['ice'], wait=350)
-        elif st == 'm':
-            js = "(()=>{const s=bxCur(),sp=bxMSpec(bxOrder(),s[1],s[2]);return {l:s[1],lo:sp.lo,hi:sp.hi,plo:sp.plo,phi:sp.phi,cond:sp.cond,cap:sp.cap}})()"
-            sp = c.page.evaluate(js)
-            goal = min(sp['hi'] * 1.6, sp['cap'] * 0.95) if wrong else (sp['plo'] + sp['phi']) / 2
-            bx_hold_until(c, '#bxhold', "(BX.d.ml['%s']||0)>=%f||bxCur()[0]!=='m'" % (sp['l'], goal - 0.6))
-            c.page.wait_for_timeout(800)
-            if bx_stage(c) == 'm' and c.page.evaluate("bxCur()[1]") == sp['l']:
-                if c.has('[data-bx=next]'):
-                    c.click('[data-bx=next]', wait=300)
-                else:
-                    raise AssertionError('月影酒吧：量好酒後沒有自動下一步，也沒有「下一步」按鈕\n%s' % c.diag())
-        elif st == 'dash':
-            n = c.page.evaluate("bxCur()[2]") + (2 if wrong else 0)
-            for _ in range(n):
-                c.click('[data-bx=dash]', wait=120)
-            c.click('[data-bx=done]', wait=300)
+        elif st == 'mix':
+            specs = c.page.evaluate("bxCur()[1].map(x=>[x[0],x[1],x[2]])")
+            for n, (kind, l, amt) in enumerate(specs):
+                if swap and l == swap[0]:
+                    l = swap[1]
+                if kind == 'dash':
+                    bx_pour(c, l, amt + (2 if wrong else 0))
+                    continue
+                sp = c.page.evaluate("(()=>{const sp=bxMSpec(bxOrder(),'%s',%s);return {lo:sp.lo,hi:sp.hi,plo:sp.plo,phi:sp.phi,cap:sp.cap}})()" % (specs[n][1], amt))
+                goal = min(sp['hi'] * 1.6, sp['cap'] * 0.95) if (wrong and n == 0) else (sp['plo'] + sp['phi']) / 2
+                if c.page.evaluate("bxTool('%s')" % l) == 'spoon':
+                    goal = 5 * max(1, round(goal / 5))
+                bx_pour(c, l, goal)
+            for l, amt in (adds or []):
+                bx_pour(c, l, amt)
+            adds = None
+            bx_shot(c, 'mixed-%s' % o['k'])
+            # 「下一步」按鈕、加料按鈕不能蓋到吧台上的東西
+            ov = c.page.evaluate("""(()=>{const out=[];['[data-lyk=under]','[data-lyk=turn]','.bxc-btn'].forEach(q=>{const f=document.querySelector('#barx '+q);if(!f)return;const r=f.getBoundingClientRect();
+              [...document.querySelectorAll('#barx .bxs-hand,#barx .bxz button,#barx .bxz-gauge,#barx .bxs-src,#barx .bxs-mat,#barx .bxz-jig')].forEach(e=>{const p=e.getBoundingClientRect();if(p.width&&p.left<r.right-2&&p.right>r.left+2&&p.top<r.bottom-2&&p.bottom>r.top+2)out.push(q+'×'+(e.className||e.id))})});return out.join(',')})()""")
+            if ov:
+                raise AssertionError('月影酒吧：右邊按鈕蓋到吧台上的東西：%s' % ov)
+            bx_vn(c)
+            c.click('#barx [data-bx=next]', wait=350)
         elif st == 'stir':
             z = c.page.evaluate("bxCur()[1]")
             tot = ((z[0] + z[1]) / 2) / 3.6
@@ -1164,19 +1208,27 @@ def sc_bar(b, base):
             bx_finish_cust(c)
         # 自由加料（2026/11/18）：亂加兩種 → 客人生氣走掉、不付錢、不能重做
         lost0, earn0 = c.page.evaluate("R.lost"), c.page.evaluate("R.earned")
-        if bx_make(c, adds=[('tomato', 1), ('grenadine', 2)]):
-            raise AssertionError('月影酒吧：嗨棒亂加番茄汁和紅石榴糖漿，客人居然滿意')
+        if bx_make(c, adds=[('tomato', 10), ('grenadine', 10), ('vodka', 10)]):
+            raise AssertionError('月影酒吧：嗨棒亂加番茄汁、紅石榴糖漿、伏特加，客人居然滿意')
         if c.has('[data-bx=retry]') or not c.has('[data-bx=leave]') or c.page.evaluate("R.lost") != lost0 + 1 or c.page.evaluate("R.earned") != earn0 or c.page.evaluate("BX.mood") != 'angry':
             raise AssertionError('月影酒吧：亂加料後客人應該生氣走掉、不付錢、不能重做\n%s' % c.diag())
         bx_shot(c, 'free-angry')
         bx_vn(c)
         c.click('[data-bx=leave]', wait=700)
         # 隱藏配方：嗨棒加一點蜂蜜 → 驚喜、付錢＋小費、記進配方手帳
-        if bx_make(c, adds=[('honey', 1)]) is not True:
+        if bx_make(c, adds=[('honey', 5)]) is not True:
             raise AssertionError('月影酒吧：嗨棒加蜂蜜（隱藏配方）客人沒有驚喜\n%s' % c.diag())
         if not c.page.evaluate("ST.bar.disc['brhigh:honey']===1") or '隱藏配方' not in c.page.evaluate("document.querySelector('#barx .bxc-panel').innerText") or c.page.evaluate("R.earned") <= earn0:
             raise AssertionError('月影酒吧：發現隱藏配方後沒有記到存檔／沒顯示／沒付錢\n%s' % c.diag())
         bx_shot(c, 'free-surprise')
+        # 換基酒的隱藏配方：嗨棒把調和威士忌換成白蘭地
+        c.page.evaluate("ST.bar.bot.brandy=1;BX.q.splice(BX.i+1,BX.q.length,{k:'brhigh',c:['none'],who:'ryuji'})")
+        c.page.evaluate("R.t=DAYLEN*.3;R.lastCall=false")
+        bx_finish_cust(c)
+        if bx_make(c, swap=('whisky', 'brandy')) is not True:
+            raise AssertionError('月影酒吧：嗨棒換成白蘭地（隱藏配方）客人沒有驚喜\n%s' % c.diag())
+        if not c.page.evaluate("ST.bar.disc['brhigh:whisky>brandy']===1"):
+            raise AssertionError('月影酒吧：換基酒的隱藏配方沒有記到存檔（%s）' % c.page.evaluate("JSON.stringify(ST.bar.disc)"))
         c.page.evaluate("R.t=DAYLEN*.99")
         c.page.wait_for_timeout(300)
         bx_finish_cust(c)
