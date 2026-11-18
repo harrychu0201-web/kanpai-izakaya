@@ -3433,7 +3433,7 @@ function bxMsg(t){const m=$('bxmsg');if(m){m.textContent=t;m.classList.remove('h
 function bxCur(){return BX.stg[BX.si]}
 function bxNext(){cancelAnimationFrame(BXRAF);BXRAF=0;BX.free=false;BX.si++;BX.hold=null;BX.pad=null;if(BX.si>=BX.stg.length){bxServe();return}bxSrcAuto();bxSnap();bxRender()}
 /* 進到量酒步驟：先拿這步第一個「手上有／在吧台下」的材料 */
-function bxSrcAuto(){const s=bxCur();if(!s||s[0]!=='mix')return;if(BX.src&&(BX.hand.includes(BX.src)||!BXCABS.includes(BX.src)))return;const f=s[1].map(x=>x[1]).find(l=>!BXCABS.includes(l)||BX.hand.includes(l));BX.src=f||BX.hand[0]||null}
+function bxSrcAuto(){const s=bxCur();if(!s||s[0]!=='mix')return;if(BX.src&&BX.hand.includes(BX.src))return;const f=s[1].map(x=>x[1]).find(l=>BX.hand.includes(l));BX.src=f||BX.hand[0]||null} /* 吧台下的料（汽水、果汁、糖漿）要玩家自己按「加料」拿，不自動放上吧台 */
 function bxComp(key,q,w,good,bad){BX.d.comps=BX.d.comps.filter(c=>c.key!==key);BX.d.comps.push({key,q:Math.max(0,Math.min(1,q)),w,good,bad})}
 function bxPref(key,q,bad){BX.d.pref=BX.d.pref.filter(c=>c.key!==key);BX.d.pref.push({key,q,bad})}
 /* ---- 畫杯子：viewBox 0 0 100 120，lv 0～1 是液面高度 ---- */
@@ -3564,7 +3564,7 @@ function bxThermo(t,tg){const Y=v=>262-(v-20)/45*230;let s=`<svg viewBox="0 0 12
   [[40,T('溫燗')],[45,T('上燗')],[50,T('熱燗')],[55,T('特燙')]].forEach(([v,n])=>{s+=`<path d="M50 ${Y(v)}H${v===tg?84:62}" stroke="${v===tg?'#ffd23a':'#f3dfb4'}" stroke-width="${v===tg?3:1.5}"/><text x="48" y="${Y(v)+4}" text-anchor="end" font-size="13" fill="${v===tg?'#ffd23a':'#f3dfb4'}" font-weight="${v===tg?900:500}" stroke="#1a0e08" stroke-width="3" paint-order="stroke">${n}</text><text x="88" y="${Y(v)+4}" font-size="12" fill="${v===tg?'#ffd23a':'#f3dfb4'}">${v}°</text>`});
   return s+'</svg>'}
 /* 這一步要倒的東西（瓶子、雪克杯、攪拌杯） */
-function bxPourSrc(){const s=bxCur(),r=BXR[bxOrder().k];if(s[0]==='top')return s[1];
+function bxPourSrc(){const s=bxCur(),r=BXR[bxOrder().k];if(s[0]==='top'){const t=BX.tsrc;return t&&t.si===BX.si?t.l:null}
   if(r.st.some(x=>x[0]==='shake'))return 't_shaker';if(r.st.some(x=>x[0]==='stir'))return 't_mixglass';if(r.st.some(x=>x[0]==='heat'))return 't_kan';return bxFirst(bxOrder().k)}
 /* ---- 月影酒吧教學：小夜在每一種新動作第一次出現時講一次（只在第一天教學），點一下下一句，講完對話框收起來讓玩家自己做 ---- */
 let BXVN=null;
@@ -3658,7 +3658,7 @@ function bxStageHTML(){const s=bxCur(),o=bxOrder(),d=BX.d,r=BXR[o.k];let ins='',
   else if(s[0]==='top'||s[0]==='pour'){const pour=s[0]==='pour',src=bxPourSrc();
     if(BX.d.lvFor!==BX.si){BX.d.lvFor=BX.si;if(pour){d.lv=0;d.pourG=true}else{d.lv0=Math.min(.42,Object.values(d.ml).reduce((a,b)=>a+b,0)/((d.g||r.g)==='rock'?190:260)+(d.ice?.06:0));d.lv=d.lv0}}
     ins=pour?T('按住長條倒酒，看旁邊刻度，到黃線放開'):T('按住長條倒{0}，看旁邊刻度，到黃線放開',bxLN(s[1]))+(BXFIZZ.includes(s[1])?T('（慢慢倒）'):'');
-    const gh=BXG2[d.g||r.g].h,GG=BXG2[d.g||r.g],sb=Math.max(12,10.5+GG.h*(BXA[GG.s][2]-GG.b)/BXA[GG.s][2]);/* 水柱從杯子內側底部開始，不要穿出枡酒杯外盒 */pre=src==='t_kan'?'':`<div data-lyk="pour" class="bxs-pour${src.startsWith('t_')?' tool':''}" style="--up:${((gh-2.5)/(src.startsWith('t_')?19:21)*100).toFixed(0)}">${bxImg(src,'',src.startsWith('t_')?'':`height:${(100*(BXBH[src]||1)).toFixed(0)}%`)}</div><i class="bxs-stream" style="bottom:${sb.toFixed(1)}%;height:${(12+gh*.85-sb).toFixed(1)}%;background:${src.startsWith('t_')?(bxMlCol(bxAllMl(d))||'#e0c080'):BXL[src][1]}"></i>`;
+    const gh=BXG2[d.g||r.g].h,GG=BXG2[d.g||r.g],sb=Math.max(12,10.5+GG.h*(BXA[GG.s][2]-GG.b)/BXA[GG.s][2]);/* 水柱從杯子內側底部開始，不要穿出枡酒杯外盒 */pre=!src?`<div class="bxs-src none" data-lyk="pour">${T('先按「加料」拿{0}',bxLN(s[1]))}</div>`:src==='t_kan'?'':`<div data-lyk="pour" class="bxs-pour${src.startsWith('t_')?' tool':''}" style="--up:${((gh-2.5)/(src.startsWith('t_')?19:21)*100).toFixed(0)}">${bxImg(src,'',src.startsWith('t_')?'':`height:${(100*(BXBH[src]||1)).toFixed(0)}%`)}</div><i class="bxs-stream" style="bottom:${sb.toFixed(1)}%;height:${(12+gh*.85-sb).toFixed(1)}%;background:${src.startsWith('t_')?(bxMlCol(bxAllMl(d))||'#e0c080'):BXL[src][1]}"></i>`;
     z=`<div class="bxz-strip" id="bxpad"><span>${T('快')}</span><b>${T('按住')}</b><span>${T('慢')}</span></div><div class="bxz-gauge pg" id="bxv" data-lyk="pourgauge">${bxPourGauge(d.lv,pour?s[1]:s[2],d.lv0||0,bxLook().col)}</div><div class="bxz-colc">${!pour&&BXFIZZ.includes(s[1])?`<div id="bxmet">${bxMeter(d.fizz,[75,100],T('氣泡'))}</div>`:''}<button class="bxb" data-bx="done" id="bxdone" ${d.lv>(d.lv0||0)+.1?'':'disabled'}>${T('好了')}</button></div>`}
   else if(s[0]==='gar'){if(!(d.lv>.01))d.lv=bxAutoLv();const pg=d.garPg||0;ins=T('放裝飾（可不放），然後出酒');zc+=' bxz-w';
     z=`<div class="bxz-pg">${BXGPG.map((p,i)=>`<button class="bxb tag${i===pg?' on':''}" data-bx="garpg" data-v="${i}">${i?T('配料 B'):T('配料 A')}</button>`).join('')}</div><div class="bxz-dish">${BXGPG[pg].map(k=>{const own=bxGarOwn(k);return `<button class="bxd${d.gar.includes(k)?' on':''}${own?'':' lock'}" data-bx="gar" data-v="${k}" ${own?'':'disabled'}><i></i>${bxImg('gar_'+k)}<span>${own?'':'🔒'}${T(BXGAR[k][0])}</span></button>`}).join('')}</div><button class="bxb big serve" data-bx="serve">${T('出酒')}</button>`}
@@ -3698,7 +3698,7 @@ function bxBind(){const s=bxCur(),d=BX.d,o=bxOrder(),r=BXR[o.k];
     const go=()=>bxLoop(dt=>{if(fy==null)return false;spd=.03+.32*(1-fy);d.lv+=spd*dt*.9;if(soda&&spd>.12)d.fizz=Math.max(0,d.fizz-(spd-.12)*70*dt);
       if(d.lv>1){d.lv=1;d.over=true;fy=null;(pad.classList.remove('on'),bxPouring(0));bxMsg(T('溢出來了！'))}
       bxMatUpd(tg);$('bxv').innerHTML=bxPourGauge(d.lv,tg,d.lv0||0,bxLook().col);if(soda)$('bxmet').innerHTML=bxMeter(d.fizz,[75,100],T('氣泡'));$('bxdone').disabled=d.lv<=(d.lv0||0)+.1;if(fy==null)return false});
-    pad.addEventListener('pointerdown',e=>{e.preventDefault();try{pad.setPointerCapture(e.pointerId)}catch(x){}if(d.over)return;const p=bxPt(e,pad);fy=Math.max(0,Math.min(1,p.y/p.h));(pad.classList.add('on'),bxPouring(1));sfx('pour');go()});
+    pad.addEventListener('pointerdown',e=>{e.preventDefault();if(!pour&&!bxPourSrc()){bxMsg(T('先按「加料」拿{0}',bxLN(s[1])));return}try{pad.setPointerCapture(e.pointerId)}catch(x){}if(d.over)return;const p=bxPt(e,pad);fy=Math.max(0,Math.min(1,p.y/p.h));(pad.classList.add('on'),bxPouring(1));sfx('pour');go()});
     pad.addEventListener('pointermove',e=>{if(fy==null)return;const p=bxPt(e,pad);fy=Math.max(0,Math.min(1,p.y/p.h))});
     ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>pad.addEventListener(ev,()=>{if(fy==null)return;if(pour&&spd>.25){d.drip=true;d.lv=Math.min(1,d.lv+.015)}fy=null;bxMatUpd(tg);$('bxv').innerHTML=bxPourGauge(d.lv,tg,d.lv0||0,bxLook().col);(pad.classList.remove('on'),bxPouring(0))}))}}
 function bxHeatShow(tg){const d=BX.d;$('bxv').innerHTML=bxThermo(d.temp,tg);$('bxread').textContent=Math.round(d.temp)+'°C';$('bxdone').disabled=d.temp<=30}
@@ -3785,7 +3785,7 @@ function bxClick(e){if(BX&&BX.free&&!e.target.closest('.bxc-free,[data-bx=under]
   if(a==='dash'){if(!BX.src)return;d.dash[BX.src]=(d.dash[BX.src]||0)+1;sfx('pour');bxRender();return}
   if(a==='garpg'){d.garPg=+v;sfx('pick');bxRender();return}
   if(a==='under'){if(BX.stage!=='make')return;BX.free=!BX.free;sfx('pick');bxRender();return}
-  if(a==='pick'){if(BX.stage!=='make')return;const cs0=bxCur();if(cs0[0]==='top'||cs0[0]==='pour'){if(cs0[0]==='top'&&v===cs0[1]){bxMsg(T('這步本來就要倒這個，按住長條倒就好'));return}const dd=BX.d;dd.ml[v]=(dd.ml[v]||0)+(bxTool(v)==='spoon'?BXSPOON:10);sfx('pick');bxRender();bxMsg(T('加了{0}',bxLN(v))+' '+bxAmt(v,dd.ml[v]));return}BX.src=v;BX.free=false;sfx('pick');bxRender();bxMsg(T('拿了{0}',bxLN(v)));return}
+  if(a==='pick'){if(BX.stage!=='make')return;const cs0=bxCur();if(cs0[0]==='top'||cs0[0]==='pour'){if(cs0[0]==='top'&&v===cs0[1]){BX.tsrc={si:BX.si,l:v};BX.free=false;sfx('pick');bxRender();bxMsg(T('拿了{0}',bxLN(v)));return}const dd=BX.d;dd.ml[v]=(dd.ml[v]||0)+(bxTool(v)==='spoon'?BXSPOON:10);sfx('pick');bxRender();bxMsg(T('加了{0}',bxLN(v))+' '+bxAmt(v,dd.ml[v]));return}BX.src=v;BX.free=false;sfx('pick');bxRender();bxMsg(T('拿了{0}',bxLN(v)));return}
   if(a==='src'){if(BX.stage!=='make'||bxCur()[0]!=='mix')return;BX.src=v;sfx('pick');bxRender();return}
   if(a==='scoop'){if(!BX.src)return;d.ml[BX.src]=(d.ml[BX.src]||0)+BXSPOON;sfx('pour');bxRender();return}
   if(a==='start')return bxStart();
