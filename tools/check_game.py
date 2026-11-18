@@ -751,6 +751,7 @@ def sc_homedog(b, base):
 
 
 # ------------------------------------------------------------------ 月影酒吧（作者／管理員限定，用作者身分真實點擊、真實手勢）
+HAND_CLICKED = []
 BAR_KEYS = ['brhigh', 'brume', 'brcha', 'brmizu', 'bryuzu', 'bratsu', 'brgimlet', 'brmatcha']
 
 
@@ -918,6 +919,15 @@ def bx_make(c, wrong=False, started=False, adds=None, swap=None):
             c.click('[data-bx=i][data-v=%s]' % o['ice'], wait=350)
         elif st == 'mix':
             specs = c.page.evaluate("bxCur()[1].map(x=>[x[0],x[1],x[2]])")
+            # 手邊有兩瓶以上時，每一瓶都要能真實點擊切換（手邊酒瓶曾經被 pointer-events:none 蓋住，只能靠轉身去酒櫃拿才換得了）
+            hand = c.page.evaluate("BX.hand")
+            if len(hand) >= 2 and not HAND_CLICKED:
+                HAND_CLICKED.append(1)
+                for i, hl in list(enumerate(hand))[::-1]:
+                    bx_vn(c)
+                    c.click('#barx [data-lyk=hand%d]' % i, wait=250)
+                    if c.page.evaluate("BX.src") != hl:
+                        raise AssertionError('月影酒吧：點手邊第 %d 瓶（%s）沒有換成那瓶（現在是 %s）' % (i + 1, hl, c.page.evaluate("BX.src")))
             for n, (kind, l, amt) in enumerate(specs):
                 if swap and l == swap[0]:
                     l = swap[1]
@@ -933,6 +943,9 @@ def bx_make(c, wrong=False, started=False, adds=None, swap=None):
                 bx_pour(c, l, amt)
             adds = None
             bx_shot(c, 'mixed-%s' % o['k'])
+            ut = c.page.evaluate("(document.querySelector('#barx [data-lyk=under]')||{innerText:''}).innerText.trim()")
+            if ut != '加料':
+                raise AssertionError('月影酒吧：加料按鈕上只能寫「加料」（現在是 %r）' % ut)
             # 「下一步」按鈕、加料按鈕不能蓋到吧台上的東西
             ov = c.page.evaluate("""(()=>{const out=[];['[data-lyk=under]','[data-lyk=turn]','.bxc-btn'].forEach(q=>{const f=document.querySelector('#barx '+q);if(!f)return;const r=f.getBoundingClientRect();
               [...document.querySelectorAll('#barx .bxs-hand,#barx .bxz button,#barx .bxz-gauge,#barx .bxs-src,#barx .bxs-mat,#barx .bxz-jig')].forEach(e=>{const p=e.getBoundingClientRect();if(p.width&&p.left<r.right-2&&p.right>r.left+2&&p.top<r.bottom-2&&p.bottom>r.top+2)out.push(q+'×'+(e.className||e.id))})});return out.join(',')})()""")
@@ -1024,6 +1037,13 @@ def sc_bar(b, base):
         # 冰杯不能再畫一圈白色虛線（2026/11/18 使用者說杯子旁邊都有虛線）
         if 'dasharray' in c.page.evaluate("Object.keys(BXG).map(g=>bxTopArt(g,{cold:true})).join('')"):
             raise AssertionError('月影酒吧：冰杯旁邊還有虛線')
+        # 碎冰要像一堆碎冰（2026/11/18 使用者說原本畫成斜線排列的菱形）：片數夠多、位置散開、不是整齊的斜線
+        ci = c.page.evaluate("(()=>{const pts=[];for(const g of ['high','rock']){const m=[...bxLiq(g,{ice:'crush',lv:.5}).matchAll(/<polygon points=\"([^\"]+)\"/g)].map(x=>x[1].split(' ').slice(0,2).map(Number));pts.push(m)}return pts.map(m=>({n:m.length,xs:new Set(m.map(p=>Math.round(p[0]/4))).size,ys:new Set(m.map(p=>Math.round(p[1]/4))).size}))})()")
+        for g, v in zip(['高球杯', '威士忌杯'], ci):
+            if v['n'] < 30 or v['xs'] < 10 or v['ys'] < 8:
+                raise AssertionError('月影酒吧：%s的碎冰不像一堆碎冰（%s）' % (g, v))
+        if '配方手帳' in c.page.evaluate("String(bxBook)+String(bxRender)+String(bxServe)"):
+            raise AssertionError('月影酒吧：還有「配方手帳」字樣，已改名為「酒譜」')
         # 隱藏配方的材料不能本來就在酒譜裡（不然永遠加不了）
         bad = c.page.evaluate("Object.entries(BXSURP).flatMap(([k,h])=>Object.keys(h).filter(l=>!BXR[k]||bxInRec(k,l)||!BXL[l]).map(l=>k+':'+l))")
         if bad:
@@ -1059,11 +1079,11 @@ def sc_bar(b, base):
         if not c.page.evaluate("!!document.querySelector('#barx .bxc-st').offsetParent"):
             raise AssertionError('月影酒吧：卡片收起後展不開')
         c.click('[data-bx=book]', wait=400)
-        if '配方手帳' not in c.page.evaluate("(document.querySelector('.modal')||{innerText:''}).innerText"):
-            raise AssertionError('月影酒吧：配方手帳打不開')
+        if '酒譜' not in c.page.evaluate("(document.querySelector('.modal')||{innerText:''}).innerText"):
+            raise AssertionError('月影酒吧：酒譜打不開')
         c.click('.modal [data-act=closem]', wait=400)
         if c.has('.modal') or not c.has('[data-bx=start]'):
-            raise AssertionError('月影酒吧：關掉配方手帳後回不到調酒畫面\n%s' % c.diag())
+            raise AssertionError('月影酒吧：關掉酒譜後回不到調酒畫面\n%s' % c.diag())
         bx_shot(c, 'arrive')
         sv = c.page.evaluate("""(()=>{const li=document.querySelectorAll('#barx .bxc-card .bxc-st li'),cd=document.querySelector('#barx .bxc-card').getBoundingClientRect(),h=document.querySelector('#barx [data-lyk=hand0]').getBoundingClientRect();
           return {n:li.length,want:bxStages({k:bxOrder().k,c:['none']}).length,old:document.querySelectorAll('#barx .bxc-left .bx-steps').length,over:cd.bottom>h.top+2}})()""")
@@ -1220,7 +1240,7 @@ def sc_bar(b, base):
         bx_shot(c, 'free-angry')
         bx_vn(c)
         c.click('[data-bx=leave]', wait=700)
-        # 隱藏配方：嗨棒加一點蜂蜜 → 驚喜、付錢＋小費、記進配方手帳
+        # 隱藏配方：嗨棒加一點蜂蜜 → 驚喜、付錢＋小費、記進酒譜
         if bx_make(c, adds=[('honey', 5)]) is not True:
             raise AssertionError('月影酒吧：嗨棒加蜂蜜（隱藏配方）客人沒有驚喜\n%s' % c.diag())
         if not c.page.evaluate("ST.bar.disc['brhigh:honey']===1") or '隱藏配方' not in c.page.evaluate("document.querySelector('#barx .bxc-panel').innerText") or c.page.evaluate("R.earned") <= earn0:

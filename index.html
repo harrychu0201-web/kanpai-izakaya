@@ -3348,7 +3348,7 @@ const BXSTORY={reiko:['年輕的時候，我在銀座的一間酒吧唱歌。那
    評分：照酒譜倒照常打分。換掉酒譜的酒、加了酒譜以外的東西＝「亂配」：
      大部分客人像居酒屋送錯菜一樣生氣走掉（不付錢、不能重做）；
      只改一樣、量不多時，碰到隱藏配方（BXSURP 多加一樣／BXSWAP 換掉基酒）一定驚喜；其他亂配有小機會「意外地好喝」（改一樣 10%、兩樣 4%、三樣以上 0）。
-   驚喜的話照樣要技術過關，客人付錢＋大筆小費；隱藏配方記在配方手帳（ST.bar.disc）。 */
+   驚喜的話照樣要技術過關，客人付錢＋大筆小費；隱藏配方記在酒譜（ST.bar.disc）。 */
 const BXSPOON=5,BXFREE_MAX=30,BXLUCK=[0,.1,.04];
 const BXSWAP={brgimlet:{gin:{rum:'蘭姆琴蕾（其實就是黛綺莉）',vodka:'伏特加琴蕾',shochu:'燒酎琴蕾'}},brdaiq:{rum:{gin:'琴酒黛綺莉（其實就是琴蕾）',darkrum:'黑蘭姆黛綺莉'}},brmoscow:{vodka:{gin:'琴酒騾子',whisky:'威士忌騾子',shochu:'燒酎騾子'}},
   brginton:{gin:{vodka:'伏特加通寧',shochu:'燒酎通寧'}},brhigh:{whisky:{smalt:'單一麥芽高球',brandy:'白蘭地高球'}},brside:{brandy:{whisky:'威士忌側車',darkrum:'蘭姆側車'}},brmarg:{tequila:{rum:'蘭姆瑪格麗特'}},
@@ -3365,7 +3365,7 @@ function bxAmt(l,v){return bxTool(l)==='spoon'?T('{0} 匙',Math.round(v/BXSPOON)
 function bxSpecs(k){return BXR[k].st.filter(x=>x[0]==='m'||x[0]==='dash')}
 /* 吧台下的材料（不在背後酒櫃）：按「加料」打開，點一下拿上吧台當現在要倒的東西 */
 function bxUnderHTML(){const s=bxCur(),here=s&&s[0]==='mix'?s[1].map(x=>x[1]):[],under=Object.keys(BXL).filter(l=>!BXCABS.includes(l));
-  return `<div class="bxc-free" data-lyk="underp"><div class="bxf-hd"><div><h4>${T('吧台下')}</h4><p>${T('點一下拿上吧台。果汁、汽水按住倒；糖漿、蜂蜜用湯匙挖')}</p></div></div>
+  return `<div class="bxc-free" data-lyk="underp"><div class="bxf-hd"><div><h4>${T('加料')}</h4><p>${T('點一下拿上吧台。果汁、汽水按住倒；糖漿、蜂蜜用湯匙挖')}</p></div></div>
     <div class="bxf-g">${under.map(l=>`<button class="bxf-it${BX.src===l?' on':''}" data-bx="pick" data-v="${l}"><span class="bxf-im">${bxImg(l)}</span><b>${bxLN(l)}</b><small>${here.includes(l)?T('這步會用到'):''}</small></button>`).join('')}</div>
     <div class="bxf-row"><button class="bxb" data-bx="under">${T('關閉')}</button></div></div>`}
 function bxAllMl(d){return d.ml||{}}
@@ -3489,7 +3489,14 @@ function bxLiq(g,o){o=o||{};const G=BXG2[g],id='bxq'+(++BXCID),lv=Math.max(0,Mat
   const sw=Math.max(1.2,iw/70);
   if(o.ice==='cube'){const c=iw*(g==='high'?.62:.34);s+=`<g clip-path="url(#${id})">${[0,1,2,3].map(i=>{const cx=mx+(i%2?1:-1)*iw*(g==='high'?.09:.17),cy=G.b-c*.62-i*c*.82,r=[-8,10,4,-12][i];return cy-c/2>G.t-c*.2?`<rect x="${(cx-c/2).toFixed(1)}" y="${(cy-c/2).toFixed(1)}" width="${c.toFixed(1)}" height="${c.toFixed(1)}" rx="${(c*.18).toFixed(1)}" transform="rotate(${r} ${cx.toFixed(1)} ${cy.toFixed(1)})" fill="#f2fbff" fill-opacity=".3" stroke="#cfe6f0" stroke-width="${sw}"/>`:''}).join('')}</g>`}
   if(o.ice==='ball'){const r=Math.min(iw*.38,(G.b-G.t)*.42);s+=`<circle cx="${mx}" cy="${(G.b-r*1.02).toFixed(1)}" r="${r.toFixed(1)}" fill="#f2fbff" fill-opacity=".5" stroke="#9fc4d6" stroke-width="${sw}"/><path d="M${(mx-r*.5).toFixed(1)} ${(G.b-r*1.5).toFixed(1)}q${(r*.25).toFixed(1)} ${(-r*.3).toFixed(1)} ${(r*.6).toFixed(1)} ${(-r*.25).toFixed(1)}" stroke="#fff" stroke-width="${sw*1.6}" fill="none" stroke-linecap="round" opacity=".8"/>`}
-  if(o.ice==='crush')s+=`<g clip-path="url(#${id})">${Array.from({length:30},(_,i)=>{const x=G.l+iw*.08+((i*37)%Math.round(iw*.84)),yy=G.b-iw*.05-((i*23)%Math.max(8,Math.round((G.b-G.t)*.72))),k=iw/14;return `<path d="M${x} ${yy}l${k} ${-k*.6} ${k*.8} ${k*.8} ${-k*.6} ${k}z" fill="#f2fbff" fill-opacity=".7" stroke="#9fc4d6" stroke-width="${sw*.7}"/>`}).join('')}</g>`;
+  if(o.ice==='crush'){/* 碎冰：大小不一、邊角不規則的冰塊堆，下面密、上面疏，位置用固定亂數（重畫不會閃） */
+    let sd=g.length*97+13;const rn=()=>{sd=(sd*1664525+1013904223)>>>0;return sd/4294967296};
+    const top=G.t+(G.b-G.t)*(g==='high'?.18:g==='rock'||g==='masu'?.3:.4),p=iw/6.2,n=Math.round(iw*(G.b-top)/(p*p)*2.1);let pcs='',hl='';
+    for(let i=0;i<n;i++){const x=G.l+iw*(.04+.92*rn()),yy=G.b-p*.15-(G.b-top-p*.3)*Math.pow(rn(),1.35),sz=p*(.5+.6*rn()),m=5+Math.floor(rn()*2),a0=rn()*6.28,el=.65+.5*rn();
+      const pts=Array.from({length:m},(_,j)=>{const a=a0+j*6.2832/m+(rn()-.5)*.6,r=sz*(.55+.45*rn());return (x+Math.cos(a)*r*el*1.2).toFixed(1)+' '+(yy+Math.sin(a)*r*.85).toFixed(1)});
+      pcs+=`<polygon points="${pts.join(' ')}" fill="#eef9ff" fill-opacity="${(.34+.22*rn()).toFixed(2)}" stroke="#bcdbea" stroke-width="${(sw*.75).toFixed(1)}" stroke-linejoin="round"/>`;
+      if(rn()<.45)hl+=`<path d="M${(x-sz*.35).toFixed(1)} ${(yy-sz*.15).toFixed(1)}l${(sz*.3).toFixed(1)} ${(-sz*.18).toFixed(1)}" stroke="#fff" stroke-width="${(sw*.9).toFixed(1)}" stroke-linecap="round" opacity=".75"/>`}
+    s+=`<g clip-path="url(#${id})">${pcs}${hl}</g>`}
   if(o.fizz&&lv>0){const n=Math.round(o.fizz/5);s+=`<g clip-path="url(#${id})">${Array.from({length:n},(_,i)=>{const x=G.l+iw*.08+((i*29)%Math.round(iw*.84)),yy=y+4+((i*17)%Math.max(4,Math.round(G.b-y-6)));return `<circle cx="${x}" cy="${yy.toFixed(1)}" r="${(iw/60+1).toFixed(1)}" fill="none" stroke="#fff" stroke-width="${(sw*.7).toFixed(1)}" opacity=".85"/>`}).join('')}</g>`}
   if(o.foam&&lv>0)s+=`<g clip-path="url(#${id})"><rect x="0" y="${y.toFixed(1)}" width="${G.r+10}" height="${(iw*.06).toFixed(1)}" fill="#fffdf4" opacity=".85"/></g>`;
   return s}
@@ -3505,7 +3512,7 @@ function bxTopArt(g,o){o=o||{};const G=BXG2[g],lv=Math.max(0,Math.min(1.02,o.lv|
     if(k==='cucumber'){const h=(G.b-G.t)*.8,w=h*ar;s+=`<image href="${bxSrc(n)}" x="${(G.l+iw*.05).toFixed(1)}" y="${(G.t+(G.b-G.t)*.1).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" opacity=".85" transform="rotate(80 ${(G.l+iw*.3).toFixed(1)} ${((G.t+G.b)/2).toFixed(1)})"/>`;return}
     const w=gw*.6,h=w/ar,yy=Math.max(G.t+h*.2,y)-h*(k==='ume'?-.6:.55);s+=`<image href="${bxSrc(n)}" x="${(mx-w/2).toFixed(1)}" y="${(k==='ume'?G.b-h*1.1:yy).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"/>`});
   return s}
-/* 完整的一杯（靜態用：結果、選杯、配方手帳）；w/h 不給就撐滿外框 */
+/* 完整的一杯（靜態用：結果、選杯、酒譜）；w/h 不給就撐滿外框 */
 function bxGlassSV(g,o,w,h){const G=BXG2[g],a=BXA[G.s];return `<svg viewBox="0 0 ${a[1]} ${a[2]}" ${w?`width="${w}" height="${h}"`:'width="100%" height="100%"'} preserveAspectRatio="xMidYMax meet">${bxLiq(g,o)}<image href="${bxSrc(G.s)}" width="${a[1]}" height="${a[2]}"/>${bxTopArt(g,o)}</svg>`}
 function brIcon(k){const r=BXR[k],G=BXG2[r.g],a=BXA[G.s],o={lv:r.g==='choko'?.75:r.g==='masu'?.9:.62,col:bxMlCol(Object.fromEntries(r.st.filter(x=>x[0]==='m').map(x=>[x[1],x[2]])))||BXL[bxFirst(k)][1],ice:r.ice,fizz:r.st.some(s=>s[0]==='top'&&BXFIZZ.includes(s[1]))?60:0,foam:r.st.some(s=>s[0]==='shake'),gar:r.opt.slice(0,1)};
   return `<ellipse cx="50" cy="94" rx="40" ry="6" fill="#5a3418" opacity=".55"/><svg x="8" y="2" width="84" height="94" viewBox="0 0 ${a[1]} ${a[2]}" preserveAspectRatio="xMidYMax meet">${bxLiq(r.g,o)}<image href="${bxSrc(G.s)}" width="${a[1]}" height="${a[2]}"/>${bxTopArt(r.g,o)}</svg>`}
@@ -3605,7 +3612,7 @@ function bxRender(){const el=$('barx');if(!el||!BX)return;const o=bxOrder(),st=B
       inner+=`<div class="bxz bxz-c" data-lyk="zone-arrive"><button class="bxb big" data-bx="start">${T('開始調酒')}</button></div>`}
     else if(mk){left=`<p class="bxc-ins">${z.ins}</p>`;inner+=z.scene}
     else panel=`<div class="bxc-panel" data-lyk="panel">${st==='res'?BX.resHTML:st==='talk'?BX.talkHTML:BX.endHTML||''}</div>`;
-    html=scene(inner)+`<div class="bxc-left" data-lyk="left"><div class="bxc-say${bxF('say')?' fold':''}" data-lyk="say">${bxFoldBtn('say','💬 '+T('客人說'))}<b>${say}</b><small>${sub}</small></div>${left?`<div class="bxc-box${BXFOLD.ins?' fold':''}" data-lyk="box">${bxFoldBtn('ins','💬 '+T('說明'))}${left}</div>`:''}</div><div class="bxc-rcol" data-lyk="rcol">${card}<div class="bxc-right2" data-lyk="btns"><button class="bxc-btn" data-bx="book">📖 ${T('配方手帳')}</button>${st==='arrive'||mk?`<button class="bxc-turn" data-bx="turn" data-lyk="turn">↻ ${T('轉身')}<small>${T('去酒櫃拿酒')}</small></button>`:''}${mk&&cur[0]==='mix'?`<button class="bxc-turn bxc-under${BX.free?' on':''}" data-bx="under" data-lyk="under">${T('加料')}<small>${T('吧台下')}</small></button>`:''}</div></div>${panel}${mk&&BX.free&&cur[0]==='mix'?bxUnderHTML():''}`}
+    html=scene(inner)+`<div class="bxc-left" data-lyk="left"><div class="bxc-say${bxF('say')?' fold':''}" data-lyk="say">${bxFoldBtn('say','💬 '+T('客人說'))}<b>${say}</b><small>${sub}</small></div>${left?`<div class="bxc-box${BXFOLD.ins?' fold':''}" data-lyk="box">${bxFoldBtn('ins','💬 '+T('說明'))}${left}</div>`:''}</div><div class="bxc-rcol" data-lyk="rcol">${card}<div class="bxc-right2" data-lyk="btns"><button class="bxc-btn" data-bx="book">📖 ${T('酒譜')}</button>${st==='arrive'||mk?`<button class="bxc-turn" data-bx="turn" data-lyk="turn">↻ ${T('轉身')}<small>${T('去酒櫃拿酒')}</small></button>`:''}${mk&&cur[0]==='mix'?`<button class="bxc-turn bxc-under${BX.free?' on':''}" data-bx="under" data-lyk="under">${T('加料')}</button>`:''}</div></div>${panel}${mk&&BX.free&&cur[0]==='mix'?bxUnderHTML():''}`}
   const fl=BX.flip;BX.flip=0;
   el.innerHTML=`<div class="bx-in bxv2" style="width:${(100/k).toFixed(3)}%;height:${(100/k).toFixed(3)}%;transform:scale(${k.toFixed(4)})"><div class="bx-face${fl?' flip':''}">${html}</div><div class="bx-msg hide" id="bxmsg"></div></div>`;
   const hd=$('hud'),bi=el.firstElementChild;if(hd&&bi){const hr=hd.getBoundingClientRect(),br=bi.getBoundingClientRect(),sc=br.height/(H/k)||1,ov=Math.max(0,hr.bottom-br.top)/sc;if(hr.height&&ov>0&&ov<H/k/3)bi.style.setProperty('--hudt',ov.toFixed(0)+'px')}
@@ -3730,7 +3737,7 @@ function bxServe(){const o=bxOrder(),d=BX.d,r=BXR[o.k];
     if(pass){const b=bxSt(),isNew=!!key&&!b.disc[key];if(key)b.disc[key]=1;
       const tip=Math.round(price*(.5+.3*Math.max(0,tot-54)/36)*(R.fxTip?2:1)/10)*10;BX.pay={price,tip};R.earned+=price+tip;b.xp[o.k]=(b.xp[o.k]||0)+1;sfx('star');
       BX.mood='happy';BX.sayJP='……え、なにこれ。うまい！';BX.sayZH=sname?T('咦？這是……{0}？意外地好喝！',T(sname)):T('咦，這杯跟平常不一樣……意外地好喝！');
-      BX.passed=true;BX.stage='res';BX.resHTML=`<div class="bx-area bx-col">${glass}<p class="bx-ins">${isNew?`<b class="bx-ok">${T('發現隱藏配方「{0}」！已經記在配方手帳',T(sname))}</b><br>`:''}${T('客人驚喜地付了 {0}，小費 {1}',yen(price),yen(tip))}</p><button class="bx-btn big" data-bx="totalk">${T('繼續')}</button></div>`;bxRender();return}
+      BX.passed=true;BX.stage='res';BX.resHTML=`<div class="bx-area bx-col">${glass}<p class="bx-ins">${isNew?`<b class="bx-ok">${T('發現隱藏配方「{0}」！已經記在酒譜',T(sname))}</b><br>`:''}${T('客人驚喜地付了 {0}，小費 {1}',yen(price),yen(tip))}</p><button class="bx-btn big" data-bx="totalk">${T('繼續')}</button></div>`;bxRender();return}
     /* 配對了，但技術沒過關：照一般沒過關處理（可以重做） */}
   let html=`<div class="bx-area bx-col"><div class="bx-res">${bxGlassSV(r.g,bxLook(),110,132)}<div><div class="bx-score">${T('技術')} <b>${tech}</b>/60　${T('偏好')} <b>${pref}</b>/30</div><div class="bx-bars"><i style="width:${tech/60*100}%"></i></div><div class="bx-bars p"><i style="width:${pref/30*100}%"></i></div>${forced?`<small>${T('（教學的第一杯，客人很捧場）')}</small>`:''}</div></div>`;
   if(pass){const optOk=d.gar.some(g=>r.opt.includes(g)),tip=Math.round(price*(.05+.35*Math.max(0,tot-54)/36+(optOk?.05:0))*(R.fxTip?2:1)/10)*10;BX.pay={price,tip};
@@ -3752,7 +3759,7 @@ function bxNextCust(){BX.i++;if(R&&hourNow()>=lastHr()&&!(BX.tut&&BX.q[BX.i]&&BX
 function barFinish(){const b=bxSt();if(BX&&BX.tut)b.tut=1;save();bxClose();BX=null;if(R&&!R.over){R.over=true;renderHUD();setTimeout(endDay,200)}}
 function bxDiscName(x){const [k,c]=x.split(':');if(!c)return '';if(c.includes('>')){const [a,b]=c.split('>');const n=BXSWAP[k]&&BXSWAP[k][a]&&BXSWAP[k][a][b];return n?T(n)+'（'+T('{0}換成{1}',bxLN(a),bxLN(b))+'）':''}
   const n=BXSURP[k]&&BXSURP[k][c];return n?T(n)+'（+'+bxLN(c)+'）':''}
-function bxBook(){const ks=BRKEYS.filter(has).concat(BRKEYS.filter(k=>!has(k)));modal(`<h2>📖 ${T('配方手帳')}</h2><p class="hint">${T('客人說「濃いめ」就多倒一點基酒、「薄め」就少一點；熱燗：ぬる燗 40°C、上燗 45°C、熱燗 50°C、飛び切り燗 55°C。酒櫃湊齊需要的酒，酒譜就會解鎖（{0}/{1}）。',BRKEYS.filter(has).length,BRKEYS.length)}</p><p class="hint">🧪 ${T('量酒時手邊的酒都能倒，「加料」可以拿吧台下的材料。換酒、亂加大部分客人會生氣走掉，但有些組合是隱藏配方（已發現 {0}/{1}）。',Object.keys(bxSt().disc).filter(x=>bxDiscName(x)).length,Object.values(BXSURP).reduce((a,h)=>a+Object.keys(h).length,0)+Object.values(BXSWAP).reduce((a,h)=>a+Object.values(h).reduce((b,t)=>b+Object.keys(t).length,0),0))}</p>${ks.map(k=>{const own=has(k),miss=bxNeedL(k).filter(l=>!bxBotOwn(l));return `<div style="display:flex;align-items:center;gap:10px;margin:8px 0;${own?'':'opacity:.55'}"><div style="width:52px;height:60px;flex:none">${sv(brIcon(k))}</div><div style="min-width:0"><b>${dishTitle(k)}</b>${own?'':' <small>🔒 '+T('還缺：{0}',miss.map(bxLN).join('、'))+'</small>'}<div style="font-size:13px;margin-top:2px">${bxStepsText(k)}</div>${bxSt().xp[k]?`<small>${T('做過 {0} 杯',bxSt().xp[k])}</small>`:''}${(()=>{const f=Object.keys(bxSt().disc).filter(x=>x.startsWith(k+':')&&bxDiscName(x));return f.length?`<div style="font-size:13px;color:#2f7a3a">🧪 ${T('隱藏配方')}：${f.map(bxDiscName).join('、')}</div>`:''})()}</div></div>`}).join('')}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
+function bxBook(){const ks=BRKEYS.filter(has).concat(BRKEYS.filter(k=>!has(k)));modal(`<h2>📖 ${T('酒譜')}</h2><p class="hint">${T('客人說「濃いめ」就多倒一點基酒、「薄め」就少一點；熱燗：ぬる燗 40°C、上燗 45°C、熱燗 50°C、飛び切り燗 55°C。酒櫃湊齊需要的酒，酒譜就會解鎖（{0}/{1}）。',BRKEYS.filter(has).length,BRKEYS.length)}</p><p class="hint">🧪 ${T('量酒時手邊的酒都能倒，「加料」可以拿吧台下的材料。換酒、亂加大部分客人會生氣走掉，但有些組合是隱藏配方（已發現 {0}/{1}）。',Object.keys(bxSt().disc).filter(x=>bxDiscName(x)).length,Object.values(BXSURP).reduce((a,h)=>a+Object.keys(h).length,0)+Object.values(BXSWAP).reduce((a,h)=>a+Object.values(h).reduce((b,t)=>b+Object.keys(t).length,0),0))}</p>${ks.map(k=>{const own=has(k),miss=bxNeedL(k).filter(l=>!bxBotOwn(l));return `<div style="display:flex;align-items:center;gap:10px;margin:8px 0;${own?'':'opacity:.55'}"><div style="width:52px;height:60px;flex:none">${sv(brIcon(k))}</div><div style="min-width:0"><b>${dishTitle(k)}</b>${own?'':' <small>🔒 '+T('還缺：{0}',miss.map(bxLN).join('、'))+'</small>'}<div style="font-size:13px;margin-top:2px">${bxStepsText(k)}</div>${bxSt().xp[k]?`<small>${T('做過 {0} 杯',bxSt().xp[k])}</small>`:''}${(()=>{const f=Object.keys(bxSt().disc).filter(x=>x.startsWith(k+':')&&bxDiscName(x));return f.length?`<div style="font-size:13px;color:#2f7a3a">🧪 ${T('隱藏配方')}：${f.map(bxDiscName).join('、')}</div>`:''})()}</div></div>`}).join('')}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
 function bxClick(e){const b=e.target.closest('[data-bx]');if(!b||b.disabled||!BX)return;const a=b.dataset.bx,v=b.dataset.v,d=BX.d;
   if(a==='book')return bxBook();
   if(a==='fold'){BXFOLD[v]=!bxF(v);try{localStorage.setItem('izakaya-bxfold',JSON.stringify(BXFOLD))}catch(x){}bxRender();return}
@@ -4011,9 +4018,9 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bxc-btn{min-height:106px;padding:0 14px;border-radius:14px;border:3px solid #5a3420;background:#f3dfb4;color:#3a1a08;font-weight:900;font-size:26px;line-height:1.1;font-family:inherit;box-shadow:0 4px 0 #0008;cursor:pointer}
 #barx .bxc-turn{min-height:106px;min-width:166px;padding:0 12px;border-radius:14px;border:3px solid #3a1a5a;background:linear-gradient(#9a6ae0,#6a3ac0);color:#fff;font-weight:900;font-size:29px;line-height:1.15;font-family:inherit;box-shadow:0 4px 0 #0008;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center}
 #barx .bxc-turn small{font-size:18px;font-weight:700;opacity:.9}
-#barx .bxc-under{border-color:#1f4a28;background:linear-gradient(#5fbf72,#2f8a44)}#barx .bxc-under.on{outline:4px solid #ffd23a}
+#barx .bxc-under{min-height:84px;min-width:124px;padding:0 10px;font-size:27px;border-radius:12px;border-color:#1f4a28;background:linear-gradient(#5fbf72,#2f8a44)}#barx .bxc-under.on{outline:4px solid #ffd23a}
 #barx .bxc-n{display:block;font-size:18px;font-weight:700;color:#7a5032;line-height:1.2}
-#barx .bxs-hand[data-bx]{border:0;padding:0;background:none;font:inherit;cursor:pointer}#barx .bxs-hand.use{filter:drop-shadow(0 0 6px #ffd23a)}
+#barx .bxs-hand[data-bx]{border:0;padding:0;background:none;font:inherit;cursor:pointer;pointer-events:auto}#barx .bxs-hand.use{filter:drop-shadow(0 0 6px #ffd23a)}
 #barx .bxs-src.none{display:flex;align-items:center;justify-content:center;color:#ffe9c0;font-size:24px;border:3px dashed #c9a24a88;border-radius:14px}
 #barx .bxz-pour{display:flex;flex-wrap:wrap;gap:4px;max-width:330px;justify-content:center}#barx .bxz-pour span{font-size:18px;background:#1a0e08c0;color:#ffe9c0;border-radius:8px;padding:2px 8px}
 #barx .bxz-btns{display:flex;gap:10px}
