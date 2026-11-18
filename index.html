@@ -3352,7 +3352,7 @@ const BXSTORY={reiko:['年輕的時候，我在銀座的一間酒吧唱歌。那
 const BXNOIMG=['hot','matcha']; /* 沒有圖的材料：不放進加料面板，用到它們的酒譜暫不出給客人 */
 function bxUnderNeed(s){return !!(s&&s[0]==='mix'&&s[1].some(x=>!BXCABS.includes(x[1])))}
 /* 「加料」鈕只在輪到加吧台下材料時出現：這步背後酒櫃的酒（量酒、抖苦精）都倒過了才顯示，選酒、倒酒時不顯示 */
-function bxUnderTurn(s){return !!s&&s[0]==='top'||bxUnderNeed(s)&&s[1].filter(x=>BXCABS.includes(x[1])).every(x=>(BX.d.ml[x[1]]||0)>0||(BX.d.dash[x[1]]||0)>0)} /* 這步要用吧台下的材料才顯示「加料」鈕 */
+function bxUnderTurn(s){return !!s&&(s[0]==='top'||s[0]==='pour')||!!s&&s[0]==='mix'&&s[1].filter(x=>BXCABS.includes(x[1])).every(x=>(BX.d.ml[x[1]]||0)>0||(BX.d.dash[x[1]]||0)>0)} /* 這步要用吧台下的材料才顯示「加料」鈕 */
 const BXSPOON=5,BXFREE_MAX=30,BXLUCK=[0,.1,.04];
 const BXSWAP={brgimlet:{gin:{rum:'蘭姆琴蕾（其實就是黛綺莉）',vodka:'伏特加琴蕾',shochu:'燒酎琴蕾'}},brdaiq:{rum:{gin:'琴酒黛綺莉（其實就是琴蕾）',darkrum:'黑蘭姆黛綺莉'}},brmoscow:{vodka:{gin:'琴酒騾子',whisky:'威士忌騾子',shochu:'燒酎騾子'}},
   brginton:{gin:{vodka:'伏特加通寧',shochu:'燒酎通寧'}},brhigh:{whisky:{smalt:'單一麥芽高球',brandy:'白蘭地高球'}},brside:{brandy:{whisky:'威士忌側車',darkrum:'蘭姆側車'}},brmarg:{tequila:{rum:'蘭姆瑪格麗特'}},
@@ -3785,7 +3785,7 @@ function bxClick(e){if(BX&&BX.free&&!e.target.closest('.bxc-free,[data-bx=under]
   if(a==='dash'){if(!BX.src)return;d.dash[BX.src]=(d.dash[BX.src]||0)+1;sfx('pour');bxRender();return}
   if(a==='garpg'){d.garPg=+v;sfx('pick');bxRender();return}
   if(a==='under'){if(BX.stage!=='make')return;BX.free=!BX.free;sfx('pick');bxRender();return}
-  if(a==='pick'){if(BX.stage!=='make')return;const cs0=bxCur();if(cs0[0]==='top'){if(v===cs0[1]){bxMsg(T('這步本來就要倒這個，按住長條倒就好'));return}const dd=BX.d;dd.ml[v]=(dd.ml[v]||0)+(bxTool(v)==='spoon'?BXSPOON:10);sfx('pick');bxRender();bxMsg(T('加了{0}',bxLN(v))+' '+bxAmt(v,dd.ml[v]));return}BX.src=v;BX.free=false;sfx('pick');bxRender();bxMsg(T('拿了{0}',bxLN(v)));return}
+  if(a==='pick'){if(BX.stage!=='make')return;const cs0=bxCur();if(cs0[0]==='top'||cs0[0]==='pour'){if(cs0[0]==='top'&&v===cs0[1]){bxMsg(T('這步本來就要倒這個，按住長條倒就好'));return}const dd=BX.d;dd.ml[v]=(dd.ml[v]||0)+(bxTool(v)==='spoon'?BXSPOON:10);sfx('pick');bxRender();bxMsg(T('加了{0}',bxLN(v))+' '+bxAmt(v,dd.ml[v]));return}BX.src=v;BX.free=false;sfx('pick');bxRender();bxMsg(T('拿了{0}',bxLN(v)));return}
   if(a==='src'){if(BX.stage!=='make'||bxCur()[0]!=='mix')return;BX.src=v;sfx('pick');bxRender();return}
   if(a==='scoop'){if(!BX.src)return;d.ml[BX.src]=(d.ml[BX.src]||0)+BXSPOON;sfx('pour');bxRender();return}
   if(a==='start')return bxStart();
