@@ -11,7 +11,7 @@
   shops     每家店的商店：每個分頁、每個買／升級按鈕都真的點過，買到全部擁有後再逐頁重開
   layout    橫向手機、iOS 縮放（layout viewport 約螢幕 2 倍）、Android、平板、桌機：舞台不能縮成一小塊、不能被切掉
   pick      選店橫向卡片、說明預設收合、設定「進遊戲後先到哪」（店家選單／暖簾街）
-  bar       月影酒吧（作者限定）：右邊卡片的步驟清單（不蓋到手邊酒瓶、做酒時標出目前這步）、教學三杯用真實按住／畫圈／來回滑做完（含轉身到酒櫃拿酒）、打烊結算；第二天在商店買酒和配料、
+  bar       月影酒吧：右邊卡片的步驟清單（不蓋到手邊酒瓶、做酒時標出目前這步）、教學三杯用真實按住／畫圈／來回滑做完（含轉身到酒櫃拿酒）、打烊結算；第二天在商店買酒和配料、
             故意做錯 → 重做、再做曼哈頓（抖苦精、馬丁尼杯、手邊滿三瓶要換）和瑪格麗特（配料 B 頁的鹽口）；第三天暫停回主頁
   tut       新手教學（小夜對話框）：居酒屋真實點擊進入並點完、上一步、海風壽司教學點完、製作教學跳過；立繪載入、對話框不超出、按鈕 44px
   oko       御好燒店（作者限定）：從麵糊開始真實點擊加料做完四道菜、順序錯加不進去、空手連點倒掉、放太久會焦、做好放保溫台、📖 做法暫停
@@ -893,6 +893,10 @@ def bx_pick_src(c, l):
         c.click('#barx .bxc-free [data-bx=pick][data-v=%s]' % l, wait=300)
         if c.has('#barx .bxc-free'):
             raise AssertionError('月影酒吧：從吧台下拿了材料，面板沒有收起來')
+    if c.page.evaluate("bxCur()[0]") in ('top', 'pour'):  # 加汽水這類步驟拿的料記在 BX.tsrc（bxPourSrc），不是 BX.src
+        if c.page.evaluate("bxPourSrc()") != l:
+            raise AssertionError('月影酒吧：加料拿 %s 失敗（現在是 %s）' % (l, c.page.evaluate("bxPourSrc()")))
+        return
     if c.page.evaluate("BX.src") != l:
         raise AssertionError('月影酒吧：換成 %s 失敗（現在是 %s）' % (l, c.page.evaluate("BX.src")))
 
@@ -984,7 +988,7 @@ def bx_make(c, wrong=False, started=False, adds=None, swap=None):
             adds = None
             bx_shot(c, 'mixed-%s' % o['k'])
             ut = c.page.evaluate("(document.querySelector('#barx [data-lyk=under]')||{innerText:''}).innerText.trim()")
-            if ut != '加料':
+            if ut and ut != '加料':  # 加料鈕只在要加吧台下配料的步驟才出現（v847/v850），沒出現不算錯
                 raise AssertionError('月影酒吧：加料按鈕上只能寫「加料」（現在是 %r）' % ut)
             # 「下一步」按鈕、加料按鈕不能蓋到吧台上的東西
             ov = c.page.evaluate("""(()=>{const out=[];['[data-lyk=under]','[data-lyk=turn]','.bxc-btn'].forEach(q=>{const f=document.querySelector('#barx '+q);if(!f)return;const r=f.getBoundingClientRect();
@@ -1032,6 +1036,9 @@ def bx_make(c, wrong=False, started=False, adds=None, swap=None):
             gv = c.page.evaluate("(()=>{const g=document.querySelector('#bxv[data-lyk=pourgauge]');if(!g)return null;const r=g.getBoundingClientRect(),p=document.querySelector('#bxpad').getBoundingClientRect();return {h:r.height,w:r.width,line:!!g.querySelector('path[stroke=\"#ffd23a\"]'),side:r.left>=p.right-2}})()")
             if not gv or not gv['line'] or gv['h'] < 80 or not gv['side']:
                 raise AssertionError('月影酒吧：倒酒時長條旁邊沒有看得到的刻度管和黃線（%s）\n%s' % (gv, c.diag()))
+            if st == 'top' and not c.page.evaluate("!!bxPourSrc()"):
+                # v851：吧台下的料（汽水、果汁等）要玩家自己按「加料」拿，沒拿就按住倒是不會倒的
+                bx_pick_src(c, c.page.evaluate("bxCur()[1]"))
             bx_hold_until(c, '#bxpad', "BX.d.lv>=%f" % (tg - 0.012), at=(0.5, 0.78))
             # 杯子裡的酒要照「選的杯子」畫（選錯杯時曾照酒譜的杯型畫，看起來像杯子後面還有另一個杯子、酒沒倒進去）
             if not c.page.evaluate("(()=>{const p=document.querySelector('#bxmatl clipPath path'),r=document.querySelector('#bxmatl rect[fill-opacity=\".9\"]');return !!p&&!!r&&p.getAttribute('d')===BXG2[BX.d.g].p})()"):
@@ -1513,26 +1520,29 @@ def sc_tut(b, base):
 
 
 def sc_barbuy(b, base):
-    """月影酒吧解鎖（管理員帳號＝admins/ 名單，不是作者信箱）：選店對話框真實點擊 → 買下 ¥5,000,000；一般玩家看不到酒吧。"""
+    """月影酒吧解鎖（2026-11-18 開放給所有玩家）：一般玩家的選店對話框真實點擊 → 看得到酒吧 → 買下 ¥5,000,000 → 商店有「去月影酒吧營業」；公告也要在。"""
     c = Ctx(b, base)
     c.open()
     try:
         c.dismiss_modals()
-        c.page.evaluate("CL.user={email:'staff@example.com',uid:'check-staff',name:'Staff',photo:''};CL.isStaff=false;showHome()")
+        c.page.evaluate("CL.user={email:'player@example.com',uid:'check-player',name:'Player',photo:''};CL.isStaff=false;showHome()")
         c.page.wait_for_timeout(300)
         c.click('[data-act=cont]', wait=900)
-        if c.has('.modal [data-act=barhome]'):
-            raise AssertionError('月影酒吧：一般玩家的選店畫面看得到月影酒吧')
-        c.page.evaluate("closeModal();CL.isStaff=true;showHome()")
-        c.page.wait_for_timeout(300)
-        c.click('[data-act=cont]', wait=900)
+        if not c.has('.modal [data-act=barhome]'):
+            raise AssertionError('月影酒吧：一般玩家的選店畫面看不到月影酒吧')
         c.click('.modal [data-act=barhome]', wait=600)
+        if '測試中' in c.page.evaluate("document.querySelector('.modal').innerText"):
+            raise AssertionError('月影酒吧：還顯示「測試中」鎖頭提示')
         coins = c.page.evaluate("load().coins")
         c.click('.modal [data-act=buybar]', wait=600)
         r = c.page.evaluate("(()=>{const o=load();return {bar:!!o.bar,spent:%d-o.coins}})()" % coins)
         if not r['bar'] or r['spent'] != 5000000:
-            raise AssertionError('月影酒吧：管理員買酒吧後狀態不對 %s（應該花 ¥5,000,000）' % r)
-        c.expect_clean('管理員買月影酒吧')
+            raise AssertionError('月影酒吧：一般玩家買酒吧後狀態不對 %s（應該花 ¥5,000,000）' % r)
+        if not c.has('.modal [data-act=baropen]'):
+            raise AssertionError('月影酒吧：買完後商店沒有「去月影酒吧營業」')
+        if not c.page.evaluate("NOTICES[0].id==='2026-11-18-bar'&&!/。/.test(NOTICES[0].text)&&/不要緊張/.test(NOTICES[0].text)&&/考試/.test(NOTICES[0].text)"):
+            raise AssertionError('月影酒吧：公告不在最前面或內容不對')
+        c.expect_clean('一般玩家買月影酒吧')
     finally:
         c.close()
 

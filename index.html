@@ -3256,7 +3256,7 @@ Object.assign(HOW,Object.fromEntries(OKKEYS.map(k=>[k,okHowText(k)])));
    營業畫面是蓋在舞台上的 #barx 圖層，這家店不跑原本的即時營業迴圈（step 一開頭就 return），最後一位客人送走後直接打烊結算。
    存檔：ST.bar = {up, tut:看過教學, xp:{酒:做過幾杯}, aff:{常客:好感}, story:{常客:看到第幾段}, disc:{'酒:材料':1 自由加料發現的隱藏配方}}，只新增欄位；舊版的 ST.menu 酒款鍵原封不動留著。 */
 const BAR_PRICE=5000000,BARSEATS=1,BARN=4;
-function barDev(){try{return !pview()&&canView()}catch(e){return false}}
+function barDev(){return true} /* 月影酒吧：2026-11-18 開放給所有玩家 */
 const BRKEYS=['brhigh','brume','brcha','brmizu','bryuzu','bratsu','brgimlet','brmatcha','brsudachi','brlemon','brginton','brnigori','bryuzushu','brimo','bryuzuhot','brawamori','brdaiginjo','brsmalt','brpeach','brlychee','brsakura','brshiso','brmoscow','brdark','brblackr','brbloody','brmojito','brdaiq','brmarg','brside','brsunrise','brmartini','brmanhattan','brnegroni','brold','bramericano','bruji'];
 COOK.brwip=1e9;BRKEYS.forEach(k=>{COOK[k]=1;STN[k]='tpn'});
 const BXG={high:'高球杯',rock:'古典杯',coupe:'雞尾酒杯',martini:'馬丁尼杯',choko:'德利＋豬口',masu:'枡酒杯'};
@@ -3464,7 +3464,9 @@ function bxMEval(s,vv){const o=bxOrder(),d=BX.d,sp=bxMSpec(o,s[1],s[2]),v=vv!=nu
   return {q,sp,v}}
 function bxMRelease(){const l=BX.src,a=$('bxafter'),d=BX.d,sp=bxSrcSpec();if(!a||!l)return;const v=d.ml[l]||0;const rb=document.querySelector('#barx [data-bx="redo"]');if(rb)rb.disabled=!v;
   if(v>(sp?sp.cap:60)){d.ml[l]=0;bxMsg(T('滿出來了！倒掉重量'));bxRender();return}
-  a.innerHTML=sp&&!sp.cond&&v>0?(v>=sp.plo&&v<=sp.phi?`<b class="bx-ok">${T('完美！')}</b>`:v>=sp.lo&&v<=sp.hi?`<b class="bx-ok">${T('不錯')}</b>`:`<b class="bx-bad">${v<sp.lo?T('太少了'):T('太多了')}</b>`):'';bxMixList()}
+  const h=sp&&!sp.cond&&v>0?(v>=sp.plo&&v<=sp.phi?`<b class="bx-ok">${T('完美！')}</b>`:v>=sp.lo&&v<=sp.hi?`<b class="bx-ok">${T('不錯')}</b>`:`<b class="bx-bad">${v<sp.lo?T('太少了'):T('太多了')}</b>`):'';a.innerHTML=h;bxMixList();
+  /* 酒櫃的酒倒完之後才輪到吧台下的料（萊姆汁、糖漿…）：「加料」鈕要在這時候冒出來，不能等下一次重畫（2026/11/18 檢查抓到：倒完琴酒沒有加料鈕，玩家會卡住） */
+  if(bxUnderTurn(bxCur())&&!document.querySelector('#barx [data-bx="under"]')){bxRender();const a2=$('bxafter');if(a2)a2.innerHTML=h;bxMixList();const rb2=document.querySelector('#barx [data-bx="redo"]');if(rb2)rb2.disabled=!v}}
 /* 現在這瓶在這一步的酒譜份量（沒有＝酒譜外的） */
 function bxSrcSpec(){const s=bxCur(),l=BX.src;if(!s||s[0]!=='mix'||!l)return null;const x=s[1].find(y=>y[0]==='m'&&y[1]===l);return x?bxMSpec(bxOrder(),l,x[2]):null}
 function bxMixList(){const e=$('bxpour');if(!e)return;const d=BX.d,ks=Object.keys(d.ml).filter(l=>d.ml[l]>0).concat(Object.keys(d.dash).filter(l=>d.dash[l]>0&&!(d.ml[l]>0)));
@@ -4073,7 +4075,7 @@ const BR_PORT={warmT:{x:8,y:340,w:360,h:54,k:1.12},pgbtn:{x:482,y:350,w:174,h:46
 let BRTAB='rec';
 function shopBar(){
   const SV=ST||load()||{coins:0};
-  const lock=`<p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`;
+  const lock='';
   if(!SV.bar)return `<h3 class="sh">${T('月影酒吧・花錢解鎖')}</h3><div class="shop"><div class="up"><b>🍸 ${T('開一家月影酒吧')}</b><p>${T('安靜的日式 BAR：一次專心做一杯。客人用日式短句點酒，像「ハイボール、濃いめで」，你照流程選杯、轉身到酒櫃拿酒、量酒、攪拌或搖盪、加蘇打、放配料，喝完客人會說說心事。開店送日本威士忌、麥燒酎、清酒、日本琴酒四瓶酒和八種配料；酒櫃三層共 {0} 瓶酒、{1} 款酒譜、{2} 種配料，慢慢買齊。',BXCABS.length,BRKEYS.length,Object.keys(BXGAR).length)}</p>${lock}<button class="btn" data-act="buybar" ${SV.coins<BAR_PRICE?'disabled':''}>${T('花 {0} 解鎖',yen(BAR_PRICE))}</button></div></div>`;
   bxMig(SV);const B=SV.bar,nR=BRKEYS.filter(k=>bxReady(SV,k)).length,nB=BXCABS.filter(l=>B.bot[l]).length,nG=Object.keys(BXGAR).filter(g=>B.gar[g]).length;
   const tabs=`<div class="row brtabs" style="gap:6px;flex-wrap:wrap;margin:6px 0 10px">${[['rec','🍸 '+T('酒單')+` ${nR}/${BRKEYS.length}`],['bot','🍶 '+T('酒櫃')+` ${nB}/${BXCABS.length}`],['gar','🍋 '+T('配料')+` ${nG}/${Object.keys(BXGAR).length}`]].map(([k,n])=>`<button class="btn${BRTAB===k?'':' alt'}" data-act="brtab" data-id="${k}">${n}</button>`).join('')}</div>`;
@@ -6132,7 +6134,7 @@ function showDayIntro(arrive){
   ${DESC?`<details class="infowrap"${ST.day===1?' open':''}><summary>📖 ${T('這家店的營業說明')}</summary><div>`:''}
   ${DESC?`<p>${rentOf()?T('今天店租 {0}（每週調漲），打烊時會從淨利扣掉。',yen(rentOf()))+T('存到 {0} 後，到商店按「買下店面」就不用再付房租。',yen(GOAL)):''}${CUR==='bar'?T('營業時間 16:00 到 00:30，客人一位一位來、不限人數，也不用擔心客人等太久；00:20 最後點餐，送走當時那位就打烊。淨利（營收扣掉材料成本）越高星星越多，拿到一顆星就能進到下一天。'):T('營業時間 16:00 到凌晨 00:30，晚餐（18–20 點）和續攤（21–22 點）客人最多，00:20 最後點餐，之後不再接新客人。淨利（營收扣掉食材成本）越高星星越多，拿到一顆星就能進到下一天。')}</p>`:''}
   ${DESC&&CUR==='oko'?`<p style="font-size:14px;line-height:1.6">${T('御好燒店的菜從零開始做：右邊食材盤<b>點一下拿起來</b>（麵糊、高麗菜、豬五花、鏟子、醬汁刷…），再<b>點鐵板</b>加進去，一樣一樣照順序加。要煎的步驟等進度條跑完，<b>金色時馬上做</b>是完美，連續完美 6 次有鐵板職人秀；放太久會焦。刷醬要拿醬汁刷<b>刷三下</b>。每道菜的順序看食材盤最後一格的 📖 做法。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
-  ${DESC&&CUR==='bar'?`<p style="font-size:14px;line-height:1.6">${T('月影酒吧是安靜的日式 BAR，客人一位一位來，<b>一次專心做一杯</b>。客人會用日式短句點酒和要求（濃いめ＝基酒多一點、薄め＝少一點、ぬるめ＝溫溫的），照流程<b>選杯、備冰、按住量酒、畫圈攪拌或來回滑動搖盪、加蘇打</b>，最後出酒。技術＋偏好 54 分以上就過關；沒過客人會說哪裡不對，可以重做一次。喝完客人會說說話，回應得好有小費，熟客還會慢慢說出自己的故事。')}</p><p class="hint">🔒 ${T('測試中：目前只有作者和管理員看得到這家店。')}</p>`:''}
+  ${DESC&&CUR==='bar'?`<p style="font-size:14px;line-height:1.6">${T('月影酒吧是安靜的日式 BAR，客人一位一位來，<b>一次專心做一杯</b>。客人會用日式短句點酒和要求（濃いめ＝基酒多一點、薄め＝少一點、ぬるめ＝溫溫的），照流程<b>選杯、備冰、按住量酒、畫圈攪拌或來回滑動搖盪、加蘇打</b>，最後出酒。技術＋偏好 54 分以上就過關；沒過客人會說哪裡不對，可以重做一次。喝完客人會說說話，回應得好有小費，熟客還會慢慢說出自己的故事。')}</p>`:''}
   ${DESC&&CUR==='tep'?`<p style="font-size:14px;line-height:1.6">${T('炎舞鐵板燒的菜在<b>大鐵板</b>上煎。煎到一半會跳出<b>翻炒／翻面／刷醬／點火</b>，一定要點，等太久就失敗。提示剛跳出、標籤還是<b>金色</b>時點下去就是<b>完美</b>；連續完美 6 次會來一場<b>🔥 火焰秀</b>：全場等餐的客人耐心回滿，每位還多給一筆賞錢。每次點到完美，那一格鐵板還會噴火。失手或煎焦會讓連擊歸零（店員處理過的料煎焦不算）。')}</p>`:''}
   ${DESC&&CUR==='sushi'?`<p style="font-size:14px;line-height:1.6">${T('海風壽司的菜是在<b>壽司台</b>上一層一層疊出來的，<b>順序很重要</b>：先放的材料在下面，後放的在上面，每一種壽司的順序都不一樣，照下面的製作教學來。')}</p>`:''}
   ${DESC&&show.length?`<details class="howwrap"${howOpen()?' open':''} ontoggle="howSave(this.open)"><summary class="howsum">${T('📖 製作做法（點一下收起／展開）')}</summary><div class="how">${show.map(k=>`<div class="how-row">${icon(k==='chazuke'?'chazuke:salmon':k==='sashimi'?'sashimi:maguro+tai':k)}<div><b>${dishTitle(k)}</b>${ST.day>1?`<span class="new">${T('新菜')}</span>`:''}<br>${T(HOW[k])}</div></div>`).join('')}</div></details>`:''}
@@ -8330,7 +8332,8 @@ const NOTICE_TRACK={id:"2026-10-24-music",at:"2026-10-24T03:17:00+08:00",title:"
 const NOTICE_FR={id:"2026-10-24-friends",at:"2026-10-24T23:10:00+08:00",title:"好友系統上線！",text:"各位老闆與老闆娘們大家好！\n\n很多人說想跟朋友一起玩，所以先做了好友系統～\n\n首頁「繼續營業」左邊多了「好友」按鈕（排行榜裡也有好友分頁）：\n・好友碼：每個人有一組好友碼，按「分享」傳給朋友，對方輸入就能互加好友（最多 20 位）\n・好友排行榜：只跟朋友比單日淨利或累計營收\n・參觀：看朋友的營業天數、成績、有沒有屋台和二號廚房、裝飾有幾件\n・送禮物：每位好友每天可以送一次 ¥1,000，對方進好友分頁就能領\n\n要先登入 Google 並取好暱稱，朋友才看得到你。朋友的店面資訊要等他們更新到新版、同步雲端之後才會出現，剛開始可能顯示不完整，請大家多包涵。\n\n目前還不能同時在同一間店裡一起煮，這個比較難，之後再研究。有其他想法歡迎從意見反映告訴我！",sign:'作者敬上'};
 const NOTICE_DAYS={id:"2026-10-25-days",at:"2026-10-25T00:50:00+08:00",title:"排行榜新增「最長營業」！",text:"各位老闆與老闆娘們大家好！\n\n很多人想比誰撐得最久，所以排行榜多了一個新分頁「最長營業」，比的是你歷史上最遠撐到第幾天，破產重來也不會歸零。\n\n要上榜的話：\n・先登入 Google 並取好暱稱\n・重新整理頁面，或按更新提示更新到新版\n・你以前玩過的天數遊戲有記著，登入同步之後會自動補上，不用重玩\n\n剛更新完可能要等一下才會看到自己的名字，沒出現的話重新開一次遊戲就好。另外排行榜的分頁變多了，可以左右滑動。\n\n看看誰是最能撐的老闆吧😆 有其他想法歡迎從意見反映告訴我！",sign:'作者敬上'};
 const NOTICE_TEP={id:"2026-11-12-tep",at:"2026-11-12T02:25:00+08:00",title:"新店開張：炎舞鐵板燒！",text:"各位老闆與老闆娘們大家好！\n\n第四家店「🔥 炎舞鐵板燒」開張囉！可以在商店，或是今天畫面的分店按鈕解鎖（¥5,000,000，會送蒜香炒飯）～\n\n【怎麼玩】\n食材下到大鐵板上，煎到一半會跳出「翻炒、翻面、刷醬、點火」，跳出來就要點一下，等太久會失敗！提示剛跳出、標籤還是金色的時候點下去算「完美」，那一格鐵板還會噴火🔥 連續完美 6 次就會來一場火焰秀：全場客人耐心回滿，每位還會多給賞錢！失手或煎焦連擊就歸零\n\n【有什麼】\n・30 道菜：肉類、海鮮、鐵板青菜、蛋與豆腐，分成一、二、三號廚房，共用同一塊大鐵板\n・設備升級：座位最多 6 張、保溫台最多 12 格、大鐵板可以加長\n・鐵板師傅「阿炎」可以雇用，共三級：Lv.2 會幫你翻面刷醬，Lv.3 連點火都敢，還會幫忙上菜（他處理過的料就算煎焦了，也不會中斷連擊）\n\n【多人模式也能玩屋台了】\n很多人說多人模式只有居酒屋有點無聊，所以多了「🍜 拉麵屋台」場地！房主在大廳（或結算畫面）可以換場地，跟電腦店員配對時也能直接選屋台～屋台跟居酒屋一樣，要一起營業的天數夠了才會慢慢開放新菜：先從拉麵、煎餃開始，接著是串燒、唐揚，再來味噌拉麵、擔擔麵，最後是章魚燒和烤飯糰，居酒屋和屋台的天數是分開算的！\n\n【多人模式也能開海風壽司了】\n多人模式再多一個「🍣 海風壽司」場地！房主在大廳或結算畫面按場地鈕，會在居酒屋 → 拉麵屋台 → 海風壽司之間輪流切換，跟電腦店員配對時也能直接選壽司～\n壽司跟單人的店一樣不會焦！點材料放上台子開始捏，跳出「捏緊、捲緊、炙燒」時點一下會做得比較快，客人還會多給小費，做好點兩下就放進保溫台\n一樣要一起營業的天數夠了才會慢慢開放新菜：先從鮭魚、鮪魚、玉子握壽司開始，接著是鮭魚卵軍艦、小黃瓜卷、鮪魚卷，再來是鮭魚手卷、鮪魚手卷，最後是炙燒握壽司、蔥鮪泥軍艦和海膽軍艦，壽司場地的天數也是另外算的！\n\n【先跟大家說一聲】\n因為人力不足，加上想盡量滿足大家的期待，最近很多新東西其實都沒有經過完整的測試，就先直接上線了，想說邊做邊改～這也是為什麼大家常常會遇到各種 bug，真的很不好意思，請大家見諒🙏\n\n如果玩到哪裡怪怪的、卡住或是不合理，麻煩從「意見反映」告訴我，我會盡快修！記得先登入帳號再送出，我才回覆得到你喔～\n\n謝謝大家的支持與包容！",sign:'作者敬上'};
-const NOTICES=[NOTICE_TEP,NOTICE_DAYS,NOTICE_FR,NOTICE_ART,NOTICE_TRACK,NOTICE_K2,NOTICE_RMX,NOTICE_AOI,NOTICE_GUN,NOTICE_NEW,NOTICE_OLD],NOTICE_BUILTIN=NOTICES[0];
+const NOTICE_BAR={id:"2026-11-18-bar",at:"2026-11-18T19:50:00+08:00",title:"新店開張：月影酒吧！",text:"各位老闆與老闆娘們大家好！\n\n第五家店「🍸 月影酒吧」開張囉！可以在商店，或是今天畫面的分店按鈕解鎖（¥5,000,000，開店會送四瓶酒和八種配料）～\n\n【怎麼玩】\n這是一家安靜的日式 BAR，客人一位一位來，一次專心做一杯！照客人點的酒和要求，一步一步選杯子、轉身到背後的酒櫃拿酒、倒酒、量酒、攪拌或搖盪、加料，最後出酒給客人～\n・手邊最多放 3 瓶酒，蘇打、果汁、糖漿等放在吧台下面，要按「加料」自己拿\n・糖漿要用湯匙舀，不是用倒的\n・選錯杯子可以按「返回上一步」\n・酒譜裡沒有的東西也可以自己加，亂調多半會把客人氣走，但偶爾會調出意想不到的好味道！\n・喝完的客人會說說心事，回應得好還有小費\n・酒櫃有很多酒和很多配料，慢慢買齊吧\n\n【先跟大家說一聲】\n因為我快要考試了，這家店的測試真的不太足夠，可能會有 bug 或不順的地方，真的很不好意思，請大家見諒🙏\n\n如果玩到哪裡怪怪的、卡住或是不合理，或是有什麼新點子，麻煩從「意見反映」告訴我！記得先登入帳號再送出，我才回覆得到你喔～\n\n意見反映我都會看！如果我還沒有回覆，請大家不要緊張，我考試期間可能比較慢，但每一則都會看的～\n\n謝謝大家的支持與包容！",sign:'作者敬上'};
+const NOTICES=[NOTICE_BAR,NOTICE_TEP,NOTICE_DAYS,NOTICE_FR,NOTICE_ART,NOTICE_TRACK,NOTICE_K2,NOTICE_RMX,NOTICE_AOI,NOTICE_GUN,NOTICE_NEW,NOTICE_OLD],NOTICE_BUILTIN=NOTICES[0];
 let NOTICE_REMOTE=false,NOTICE_HIST={},NOTICE_DEL={},NOTICE_LOADED=false,NSHOW=null,NAUTO=false,NAUTOREQ=false;
 /* deleted announcements: a built-in one cannot be removed from the code, so deleting it leaves a marker in the database (notice/del/<key>);
    the markers are also kept on this device so a deleted built-in notice does not flash up before the database answers */
