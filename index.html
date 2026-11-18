@@ -3367,7 +3367,7 @@ function bxSpecs(k){return BXR[k].st.filter(x=>x[0]==='m'||x[0]==='dash')}
 function bxUnderHTML(){const s=bxCur(),here=s&&s[0]==='mix'?s[1].map(x=>x[1]):[],under=Object.keys(BXL).filter(l=>!BXCABS.includes(l));
   return `<div class="bxc-free" data-lyk="underp"><div class="bxf-hd"><div><h4>${T('加料')}</h4><p>${T('點一下拿上吧台。果汁、汽水按住倒；糖漿、蜂蜜用湯匙挖')}</p></div></div>
     <div class="bxf-g">${under.map(l=>`<button class="bxf-it${BX.src===l?' on':''}" data-bx="pick" data-v="${l}"><span class="bxf-im">${bxImg(l)}</span><b>${bxLN(l)}</b><small>${here.includes(l)?T('這步會用到'):''}</small></button>`).join('')}</div>
-    <div class="bxf-row"><button class="bxb" data-bx="under">${T('關閉')}</button></div></div>`}
+    <div class="bxf-row"><button class="bxb" data-bx="under">${T('關閉')}</button><small>${T('按空白鍵也可以關閉')}</small></div></div>`}
 function bxAllMl(d){return d.ml||{}}
 let BX=null,BXRAF=0,BXTM=0;
 function bxSt(){ST.bar=ST.bar||{up:{}};const b=ST.bar;b.xp=b.xp||{};b.disc=b.disc||{};b.aff=b.aff||{};b.story=b.story||{};bxMig(ST);return b}
@@ -3766,6 +3766,9 @@ function barFinish(){const b=bxSt();if(BX&&BX.tut)b.tut=1;save();bxClose();BX=nu
 function bxDiscName(x){const [k,c]=x.split(':');if(!c)return '';if(c.includes('>')){const [a,b]=c.split('>');const n=BXSWAP[k]&&BXSWAP[k][a]&&BXSWAP[k][a][b];return n?T(n)+'（'+T('{0}換成{1}',bxLN(a),bxLN(b))+'）':''}
   const n=BXSURP[k]&&BXSURP[k][c];return n?T(n)+'（+'+bxLN(c)+'）':''}
 function bxBook(){const ks=BRKEYS.filter(has).concat(BRKEYS.filter(k=>!has(k)));modal(`<h2>📖 ${T('酒譜')}</h2><p class="hint">${T('客人說「濃一點」就多倒一點基酒、「淡一點」就少一點；熱燗：溫燗 40°C、上燗 45°C、熱燗 50°C、特燙 55°C。酒櫃湊齊需要的酒，酒譜就會解鎖（{0}/{1}）。',BRKEYS.filter(has).length,BRKEYS.length)}</p><p class="hint">🧪 ${T('量酒時手邊的酒都能倒，「加料」可以拿吧台下的材料。換酒、亂加大部分客人會生氣走掉，但有些組合是隱藏配方（已發現 {0}/{1}）。',Object.keys(bxSt().disc).filter(x=>bxDiscName(x)).length,Object.values(BXSURP).reduce((a,h)=>a+Object.keys(h).length,0)+Object.values(BXSWAP).reduce((a,h)=>a+Object.values(h).reduce((b,t)=>b+Object.keys(t).length,0),0))}</p>${ks.map(k=>{const own=has(k),miss=bxNeedL(k).filter(l=>!bxBotOwn(l));return `<div style="display:flex;align-items:center;gap:10px;margin:8px 0;${own?'':'opacity:.55'}"><div style="width:52px;height:60px;flex:none">${sv(brIcon(k))}</div><div style="min-width:0"><b>${dishTitle(k)}</b>${own?'':' <small>🔒 '+T('還缺：{0}',miss.map(bxLN).join('、'))+'</small>'}<div style="font-size:13px;margin-top:2px">${bxStepsText(k)}</div>${bxSt().xp[k]?`<small>${T('做過 {0} 杯',bxSt().xp[k])}</small>`:''}${(()=>{const f=Object.keys(bxSt().disc).filter(x=>x.startsWith(k+':')&&bxDiscName(x));return f.length?`<div style="font-size:13px;color:#2f7a3a">🧪 ${T('隱藏配方')}：${f.map(bxDiscName).join('、')}</div>`:''})()}</div></div>`}).join('')}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
+/* 加料面板開著時，按空白鍵就關掉（不用往下滑找「關閉」） */
+document.addEventListener('keydown',e=>{if((e.code!=='Space'&&e.key!==' ')||!BX||!BX.free||!document.querySelector('#barx .bxc-free'))return;if(/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''))return;e.preventDefault();if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();if(!e.repeat){BX.free=false;sfx('pick');bxRender()}},true);
+document.addEventListener('keyup',e=>{if((e.code==='Space'||e.key===' ')&&BX&&document.querySelector('#barx'))e.preventDefault()},true);
 function bxClick(e){const b=e.target.closest('[data-bx]');if(!b||b.disabled||!BX)return;const a=b.dataset.bx,v=b.dataset.v,d=BX.d;
   if(a==='book')return bxBook();
   if(a==='back'){bxBack();return}

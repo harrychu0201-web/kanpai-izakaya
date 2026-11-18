@@ -753,6 +753,7 @@ def sc_homedog(b, base):
 # ------------------------------------------------------------------ 月影酒吧（作者／管理員限定，用作者身分真實點擊、真實手勢）
 HAND_CLICKED = []
 BACK_TESTED = []
+SPACE_TESTED = []
 BAR_KEYS = ['brhigh', 'brume', 'brcha', 'brmizu', 'bryuzu', 'bratsu', 'brgimlet', 'brmatcha']
 
 
@@ -876,6 +877,16 @@ def bx_pick_src(c, l):
         if not c.has('#barx .bxc-free [data-bx=pick][data-v=%s]' % l):
             raise AssertionError('月影酒吧：按「加料」沒有看到吧台下的 %s\n%s' % (l, c.diag()))
         bx_shot(c, 'under-panel')
+        if not SPACE_TESTED:
+            # 按空白鍵要能關掉加料面板（不用往下滑找「關閉」）
+            SPACE_TESTED.append(1)
+            c.page.keyboard.press('Space')
+            c.page.wait_for_timeout(300)
+            if c.has('#barx .bxc-free') or c.page.evaluate("BX.free"):
+                raise AssertionError('月影酒吧：加料面板開著時按空白鍵沒有關掉\n%s' % c.diag())
+            c.click('#barx [data-bx=under]', wait=300)
+            if not c.has('#barx .bxc-free [data-bx=pick][data-v=%s]' % l):
+                raise AssertionError('月影酒吧：空白鍵關掉後再按「加料」打不開')
         small = c.page.evaluate("[...document.querySelectorAll('#barx .bxc-free button')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&(r.height<43.5||r.width<43.5)).length")
         if small:
             raise AssertionError('月影酒吧：加料面板有 %d 顆按鈕小於 44px' % small)
