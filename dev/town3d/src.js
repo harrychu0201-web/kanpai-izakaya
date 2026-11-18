@@ -292,7 +292,9 @@ export function start(o) {
       if (kind === 'idea') { x.font = `900 44px ${FONT}`; x.fillText('!', 64, 42); } else { for (let i = 0; i < 3; i++) { x.beginPath(); x.arc(40 + i * 24, kind === 'mind' ? 42 : 42, 6, 0, 7); x.fill(); } }
     });
   }
+  const PS = 2; /* 街上所有人（玩家＋NPC）放大倍數：太小看得眼睛痛 */
   function mkPerson(src, h, isMe) {
+    h *= PS;
     const grp = new Group(); scene.add(grp);
     const geo = new PlaneGeometry(1, 1); geo.translate(0, .5, 0);
     const mat = new MeshBasicMaterial({ transparent: true, alphaTest: .04, color: 0xf2ebf2 });
@@ -311,10 +313,10 @@ export function start(o) {
     const src = o.walk[d.spr]; if (!src) return;
     const p = mkPerson(src, d.h, false); p.d = d; p.sp = d.sp; p.state = 'walk'; p.t = 0; p.tgt = null; p.hidden = false;
     p.deck = []; p.item = null;
-    const bs = new Sprite(new SpriteMaterial({ map: bubbleTex('chat'), transparent: true, depthWrite: false })); bs.scale.set(.95, .83, 1); scene.add(bs); p.bub = bs; p.kind = 'chat';
+    const bs = new Sprite(new SpriteMaterial({ map: bubbleTex('chat'), transparent: true, depthWrite: false })); bs.scale.set(.95 * PS, .83 * PS, 1); scene.add(bs); p.bub = bs; p.kind = 'chat';
     npcs.push(p); byId[d.id] = p;
   });
-  PAIRS.forEach(pr => { const a = byId[pr.a], b = byId[pr.b]; if (a && b) { b.leader = a; b.off = new Vector3(rnd(-.4, -.7), 0, rnd(.7, 1.0)); a.talks = pr.talks; b.talks = pr.talks; a.mate = b; b.mate = a; } });
+  PAIRS.forEach(pr => { const a = byId[pr.a], b = byId[pr.b]; if (a && b) { b.leader = a; b.off = new Vector3(rnd(-.4, -.7) * PS, 0, rnd(.7, 1.0) * PS); a.talks = pr.talks; b.talks = pr.talks; a.mate = b; b.mate = a; } });
   function refill(p) {
     const pool = p.d.lines.map(l => ({ kind: l[0], text: l[1] }));
     if (p.talks) p.talks.forEach(t => pool.push({ kind: 'chat', talk: t }));
@@ -356,7 +358,7 @@ export function start(o) {
     let best = null, bd = 1e9; const r = rect(), u = r.height / 600;
     for (const p of npcs) {
       if (p.hidden) continue;
-      const f = proj(new Vector3(p.x, 0, p.z)), t = proj(new Vector3(p.x, p.h + .75, p.z));
+      const f = proj(new Vector3(p.x, 0, p.z)), t = proj(new Vector3(p.x, p.h + .75 * PS, p.z));
       const hh = f.y - t.y; if (hh < 6) continue;
       const w = Math.max(hh * .38, 26 * u * 1.2), dxp = Math.abs(cx - f.x), inRect = dxp < w && cy > t.y - 10 && cy < f.y + 12;
       if (inRect) { const d = dxp + Math.abs(cy - (f.y + t.y) / 2) * .3; if (d < bd) { bd = d; best = p; } }
@@ -497,7 +499,7 @@ export function start(o) {
       }
       if (spd > 0) { p.x += vx * spd * dt; p.z += vz * spd * dt; const sd = vx * rgt.x + vz * rgt.z; if (Math.abs(sd) > .15) p.face = sd > 0 ? 1 : -1; p.moving = true; p.ph += dt * (4 + spd * 3.2); } else { p.moving = false; }
       /* 不要疊在一起 */
-      if (p.state !== 'enter' && p.state !== 'exit') { for (const q of people) { if (q === p || q.hidden === 'in' || (q.state === 'enter' || q.state === 'exit')) continue; const dx = p.x - q.x, dz = p.z - q.z, d = Math.hypot(dx, dz), mind = (q === me ? .75 : (p.leader === q || q.leader === p) ? .55 : .62); if (d < mind && d > .001) { const push = (mind - d) * (q === me ? 1 : .5); p.x += dx / d * push; p.z += dz / d * push; } } }
+      if (p.state !== 'enter' && p.state !== 'exit') { for (const q of people) { if (q === p || q.hidden === 'in' || (q.state === 'enter' || q.state === 'exit')) continue; const dx = p.x - q.x, dz = p.z - q.z, d = Math.hypot(dx, dz), mind = (q === me ? .75 : (p.leader === q || q.leader === p) ? .55 : .62) * PS; if (d < mind && d > .001) { const push = (mind - d) * (q === me ? 1 : .5); p.x += dx / d * push; p.z += dz / d * push; } } }
       p.x = clamp(p.x, BX0 - 3, BX1 + 3);
       p.alpha = p.state === 'enter' || p.state === 'exit' ? p.alpha : 1;
     }
@@ -527,10 +529,10 @@ export function start(o) {
     /* 畫面上的東西更新 */
     for (const p of people) {
       const vis = p.hidden !== 'in'; p.grp.visible = vis; p.sh.visible = vis; if (!vis) continue;
-      const w = p.w, h = p.h, walk = p.moving ? 1 : 0, s = Math.sin(p.ph), bob = walk ? Math.abs(s) * .07 : 0, tilt = walk ? s * .06 : Math.sin(t * 1.6 + p.ph) * .01, sq = walk ? 1 + Math.cos(p.ph * 2) * .025 : 1 + Math.sin(t * 1.6 + p.ph) * .008;
+      const w = p.w, h = p.h, walk = p.moving ? 1 : 0, s = Math.sin(p.ph), bob = walk ? Math.abs(s) * .07 * PS : 0, tilt = walk ? s * .06 : Math.sin(t * 1.6 + p.ph) * .01, sq = walk ? 1 + Math.cos(p.ph * 2) * .025 : 1 + Math.sin(t * 1.6 + p.ph) * .008;
       p.grp.position.set(p.x, bob + .18, p.z); p.m.rotation.set(0, S.yaw, tilt * p.face); p.m.scale.set(w * p.face * (2 - sq), h * sq, 1);
       p.mat.opacity = p.isMe ? me.alpha : p.alpha; p.sh.position.set(p.x, .2, p.z); p.sh.scale.set(w * .75, w * .42, 1); p.sh.material.opacity = .7 * (p.isMe ? me.alpha : p.alpha);
-      if (p.bub) { p.bub.position.set(p.x, h + .62 + Math.sin(t * 2.3 + p.ph) * .07, p.z); const bs = 1 + Math.sin(t * 3 + p.ph) * .04; p.bub.scale.set(.95 * bs, .83 * bs, 1); p.bub.visible = p.hidden === false && p.state !== 'talk' && p.state !== 'enter' && p.state !== 'exit' ? true : false; }
+      if (p.bub) { p.bub.position.set(p.x, h + .62 * PS + Math.sin(t * 2.3 + p.ph) * .07, p.z); const bs = 1 + Math.sin(t * 3 + p.ph) * .04; p.bub.scale.set(.95 * PS * bs, .83 * PS * bs, 1); p.bub.visible = p.hidden === false && p.state !== 'talk' && p.state !== 'enter' && p.state !== 'exit' ? true : false; }
     }
     for (const nr of norens) { nr.g.rotation.x = nr.flag ? 0 : Math.sin(t * 1.8 + nr.ph) * .05; if (nr.flag) nr.g.rotation.y = Math.sin(t * 2.2 + nr.ph) * .22; }
     for (const l of lanterns) l.gl.material.opacity = .45 + .15 * Math.sin(t * 7 + l.ph);

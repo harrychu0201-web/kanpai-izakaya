@@ -5638,11 +5638,11 @@ function townOpen(o,cur,row,back,rc,hud){
   const tw=document.querySelector('.modal .town');if(!tw)return;const card=tw.closest('.card'),md=tw.closest('.modal');card.classList.add('towncard');md.classList.add('townm');
   const sl=shops.map(([id,e,n,own])=>({id,e,n,own,cur:id===cur}));
   townStart(tw,sl)}
-/* 暖簾街：three.js 打包檔在打開暖簾街時才載入（img/town3d-d70e32e3.js，hash 在檔名裡，換版本檔名就變）。
+/* 暖簾街：three.js 打包檔在打開暖簾街時才載入（img/town3d-2fe9842c.js，hash 在檔名裡，換版本檔名就變）。
    載入失敗或裝置不支援 WebGL 時顯示提示，只剩返回主頁。 */
 let T3P=null;
 function loadTown3D(){if(window.Town3D)return Promise.resolve();if(T3P)return T3P;
-  T3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/town3d-d70e32e3.js';s.onload=()=>ok();s.onerror=()=>{T3P=null;no(new Error('town3d'))};document.head.appendChild(s)});return T3P}
+  T3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/town3d-2fe9842c.js';s.onload=()=>ok();s.onerror=()=>{T3P=null;no(new Error('town3d'))};document.head.appendChild(s)});return T3P}
 function townFresh(tw){const old=tw.querySelector('canvas'),c=document.createElement('canvas');c.className='twcv';old.replaceWith(c);return c}
 function townStart(tw,shops){if(TOWN)TOWN.dead=1;
   const cv=tw.querySelector('canvas'),ld=document.createElement('div');ld.className='tw3load';ld.textContent='🏮 …';tw.appendChild(ld);
@@ -7252,7 +7252,7 @@ let PTR=false,PENDFIT=false;document.addEventListener('pointerdown',()=>{PTR=tru
 /* 橫向手機底部的 Home 橫條區（safe-area-inset-bottom）：舞台若貼到螢幕最底，玩家點櫃台白線附近時會落在系統手勢區，長按會叫出 Siri。
    這裡量出這段高度，讓舞台底邊離開它。 */
 /* 底部保留區：iPhone 的 Home 橫條（長按會叫出 Siri）與 Android 手勢列。舞台底邊一律離開這段，點櫃台白線附近不會落進系統手勢區。 */
-function safeBottom(){const p=document.createElement('div');p.style.cssText='position:fixed;left:0;bottom:0;visibility:hidden;pointer-events:none;padding-bottom:env(safe-area-inset-bottom,0px)';document.body.appendChild(p);const v=p.offsetHeight;p.remove();const ios=/iP(hone|od|ad)/.test(navigator.userAgent);return ios?18:Math.max(v,TOUCH?12:0)} /* iPhone 底部保留 18px；Android 維持原本（系統安全區與 12px 取較大者） */
+function safeBottom(){const p=document.createElement('div');p.style.cssText='position:fixed;left:0;bottom:0;visibility:hidden;pointer-events:none;padding-bottom:env(safe-area-inset-bottom,0px)';document.body.appendChild(p);const v=p.offsetHeight;p.remove();const ios=/iP(hone|od|ad)/.test(navigator.userAgent);return ios?18:Math.max(v,TOUCH?4:0)} /* iPhone 底部保留 18px；Android 11/18 起縮成 4px（系統安全區與 4px 取較大者），舞台下方那條縫太明顯 */
 function fit(){
   if(PTR){PENDFIT=true;return}
   document.body.classList.toggle('ovl',TOUCH&&innerWidth>innerHeight&&Math.min(screen.width,screen.height)<560&&!HOME);
