@@ -10892,7 +10892,7 @@ const LY_CSS=`#lyBar{position:fixed;left:0;right:0;bottom:0;z-index:2147483600;d
 function lyMsg(t){let m=document.getElementById('lyMsg');if(!m){m=document.createElement('div');m.id='lyMsg';m.style.cssText='position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:2147483800;background:#1d2733;color:#fff;padding:8px 14px;border-radius:10px;font:14px system-ui;pointer-events:none';document.body.appendChild(m)}
   m.textContent=t;m.style.display='block';clearTimeout(m._t);m._t=setTimeout(()=>{m.style.display='none'},1800)}
 function lyBarHTML(){if(!LY.sel)return `<button data-ly="max" title="繼續排版">📐</button>`;
-  const r=LY.rule;return `<button data-ly="min" title="暫停排版，可以正常玩">⏸操作</button><button data-ly="go" class="on" title="真的按下選到的按鈕（進入成就、排行榜、商店…），排版工具不會關">👆進入</button><button data-ly="pos" title="工具列擋到東西時，換到畫面另一邊">⇅換邊</button><button data-ly="up" title="改選外面那一層">⬆外</button>`+
+  const r=LY.rule;return `<button data-ly="min" title="收起排版回去玩（要再調整從 ⚙️ 設定 → 📐 開啟排版）">⏸操作</button><button data-ly="go" class="on" title="真的按下選到的按鈕（進入成就、排行榜、商店…），排版工具不會關">👆進入</button><button data-ly="pos" title="工具列擋到東西時，換到畫面另一邊">⇅換邊</button><button data-ly="up" title="改選外面那一層">⬆外</button>`+
   `<button data-ly="mv" data-d="-1,0">◀</button><button data-ly="mv" data-d="0,-1">▲</button><button data-ly="mv" data-d="0,1">▼</button><button data-ly="mv" data-d="1,0">▶</button>`+
   `<button data-ly="sc" data-d="-1">－</button><button data-ly="sc" data-d="1">＋</button><button data-ly="step" title="每按一下移動幾格">${LY.step}格</button>`+
   `<button data-ly="reset" title="這一個回到原本的位置">↺</button><button data-ly="undo" title="復原上一步">↶</button>`+
@@ -10999,7 +10999,7 @@ document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.c
 document.addEventListener('click',e=>{const t=e.target;if(!t.closest)return;
   const o=t.closest('[data-lyed]');if(o){if(!lyCan())return;const inM=!!o.closest('#modalLayer .modal');if(inM){try{closeModal()}catch(x){}try{if(R&&!TUT&&R.paused){R.paused=false;last=performance.now()}}catch(x){}}lyOpen();return}
   const b=t.closest('#lyBar [data-ly]');if(b){const k=b.dataset.ly;
-    if(k==='go')lyGo();else if(k==='max')lyMode(true);else if(k==='min')lyAsk(()=>{lyMode(false);lyMsg('排版暫停中，可以正常玩；點上面的 📐 繼續')});
+    if(k==='go')lyGo();else if(k==='max')lyMode(true);else if(k==='min')lyAsk(()=>{lyClose();lyMsg('排版已收起，要再調整請到 ⚙️ 設定 → 📐 開啟排版')});
     else if(k==='up'){if(LY.el)lySelect(lyUp(LY.el));else lyMsg('先點一個東西')}
     else if(k==='step'){LY.step=LY.step===1?5:LY.step===5?20:1;lyBar()}
     else if(k==='scope'){if(LY.rule){lyScope();lyBar();lyMsg(LY.rule.sc?'這個調整只套用在這家店':'這個調整套用在全部畫面')}else lyMsg('先點一個東西')}
@@ -11022,13 +11022,13 @@ document.addEventListener('click',e=>{const t=e.target;if(!t.closest)return;
 window.addEventListener('keydown',e=>{if(!LY.on||!LY.sel)return;if(/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''))return;
   const m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];let hit=true;
   if(m){const s=LY.step;if(e.shiftKey)LY.step=s*10;lyMove(m[0],m[1]);LY.step=s}else if(e.key==='+'||e.key==='=')lyScale(1);else if(e.key==='-')lyScale(-1);
-  else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z')lyUndo();else if(e.key==='Escape')lyAsk(()=>lyMode(false));else hit=false;
+  else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z')lyUndo();else if(e.key==='Escape')lyAsk(lyClose);else hit=false;
   if(hit){e.preventDefault();e.stopImmediatePropagation()}},true);
 addEventListener('resize',()=>{if(LY.on&&LY.sel&&LY.el&&LY.rule)LY.k=lyRatio(LY.el)});
 /* 開遊戲：有排版就套上；上次排版沒關，登入後自動叫出小按鈕 */
 if(lyRules().length){lyObserve();lyApply()}
-(function lyBoot(n){let want=false;try{want=localStorage.getItem(LYONKEY)==='1'}catch(e){}if(!want)return;
-  if(lyCan()){if(!LY.on)lyOpen(true);return}if(n<60)setTimeout(()=>lyBoot(n+1),2000)})(0);
+/* 2026/11/18：不再留左上角浮動的 📐 鈕（設定裡已經有入口）；排版收起＝整個關掉，重開遊戲也不自動出現 */
+try{localStorage.removeItem(LYONKEY)}catch(e){}
 </script>
 </body>
 </html>

@@ -564,9 +564,14 @@ def sc_lyed(b, base):
                 pg.wait_for_timeout(300)
                 if not pg.evaluate("(()=>{const v=JSON.parse(localStorage.getItem(LYKEY)||'null');return !!v&&v.r.some(r=>(r.x||0)>0)})()") or pg.evaluate("LY.sel"):
                     raise AssertionError('選「儲存」後沒有存到，或沒有回到遊戲')
-                # 沒改東西時按 ⏸操作／✕ 不用問
-                pg.tap('#lyBar [data-ly="max"]')
-                pg.wait_for_timeout(200)
+                # 2026/11/18：⏸操作 收起後不能留左上角浮動的 📐 鈕（設定裡已有入口）
+                if pg.evaluate("LY.on||!!$('lyBar')||!!document.querySelector('[data-ly=\"max\"]')"):
+                    raise AssertionError('按 ⏸操作 後還留著浮動的 📐 排版鈕')
+                # 從暫停選單重新打開；沒改東西時按 ✕ 不用問
+                c.click('[data-act=pause]', wait=500)
+                c.click('.modal [data-lyed]', wait=700)
+                if not pg.evaluate("!!$('lyBar')&&LY.sel"):
+                    raise AssertionError('收起後從暫停選單重開排版失敗')
                 pg.tap('#lyBar [data-ly="close"]')
                 pg.wait_for_timeout(300)
                 if c.has('#lyOut.lyask') or pg.evaluate("LY.on"):
