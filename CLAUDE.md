@@ -30,6 +30,8 @@
 ```
 或一條龍：`tools/ship.sh "commit 說明"`（同步遠端 → bump → check → commit → push → 驗證線上）。
 
+**快速模式（使用者說「快一點」、或只是小調整時用）**：`tools/ship.sh --fast "commit 說明"`。只跑語法 + sw.js 版本號（約 1 秒），略過約 3 分鐘的 `check_game.py`；push 後驗線上最多等 3 分鐘，還沒部署好就以結束碼 2 離開並印「已 push、部署中」——此時回報「已 push、部署中」，不說已上線，稍後再跑 `tools/verify_live.sh`。只修使用者指定的地方，不順手改別處，目標 5～10 分鐘內完成。新功能、新畫面、整個版面重做仍走完整流程。
+
 - **沒跑 `tools/verify_live.sh` 並看到 ✅，不准說「完成／已上線」。** push 之後如果又 rebase 或另一個對話也 push 過，要再驗一次（並行 push 會蓋掉版本號）。
 - 只改文件或 `tools/`、`CLAUDE.md` 時不要 bump sw.js（bump 會讓所有玩家被動更新）。
 - `check.sh` 失敗：修好後**整套重跑**，不要只重跑失敗那項；失敗時會印出畫面狀態並存截圖到 `/tmp/check-fail.png`。

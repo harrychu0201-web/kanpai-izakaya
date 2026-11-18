@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # 上線前整套檢查。任何一步失敗就整個失敗（結束碼非 0）。改完遊戲、push 之前一定要跑，而且要整套跑完、全綠才能 push。
+# 用法：tools/check.sh          整套（含約 3 分鐘的 headless Chrome 真實點擊）
+#       tools/check.sh --fast   快速：只跑語法 + sw.js 版本號（幾秒）。使用者說「快一點」、只改局部時用。
 set -uo pipefail
 cd "$(dirname "$0")/.."
 fail=0
+FAST=0; [ "${1:-}" = "--fast" ] && FAST=1
 
 echo "▶ 1/3 語法"
 node tools/syntax_check.js || fail=1
@@ -23,8 +26,12 @@ else
   echo "  ✗ 抓不到遠端 main，無法確認版本號有沒有撞號"; fail=1
 fi
 
-echo "▶ 3/3 遊戲檢查（headless Chrome・真實點擊；約 3 分鐘）"
-python3 -I tools/check_game.py || fail=1
+if [ "$FAST" -eq 1 ]; then
+  echo "▶ 3/3 遊戲檢查：--fast 模式，略過（只驗了語法與版本號）"
+else
+  echo "▶ 3/3 遊戲檢查（headless Chrome・真實點擊；約 3 分鐘）"
+  python3 -I tools/check_game.py || fail=1
+fi
 
 if [ "$fail" -ne 0 ]; then echo; echo "❌ check.sh 失敗：修好後整套重跑，全綠才能 push。"; exit 1; fi
-echo; echo "✅ check.sh 全部通過"
+echo; if [ "$FAST" -eq 1 ]; then echo "✅ check.sh --fast 通過（未跑遊戲檢查）"; else echo "✅ check.sh 全部通過"; fi
