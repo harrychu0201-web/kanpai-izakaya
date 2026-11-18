@@ -3367,7 +3367,7 @@ function bxSpecs(k){return BXR[k].st.filter(x=>x[0]==='m'||x[0]==='dash')}
 function bxUnderHTML(){const s=bxCur(),here=s&&s[0]==='mix'?s[1].map(x=>x[1]):[],under=Object.keys(BXL).filter(l=>!BXCABS.includes(l));
   return `<div class="bxc-free" data-lyk="underp"><div class="bxf-hd"><div><h4>${T('加料')}</h4><p>${T('點一下拿上吧台。果汁、汽水按住倒；糖漿、蜂蜜用湯匙挖')}</p></div></div>
     <div class="bxf-g">${under.map(l=>`<button class="bxf-it${BX.src===l?' on':''}" data-bx="pick" data-v="${l}"><span class="bxf-im">${bxImg(l)}</span><b>${bxLN(l)}</b><small>${here.includes(l)?T('這步會用到'):''}</small></button>`).join('')}</div>
-    <div class="bxf-row"><button class="bxb" data-bx="under">${T('關閉')}</button><small>${T('按空白鍵也可以關閉')}</small></div></div>`}
+    <div class="bxf-row"><button class="bxb" data-bx="under">${T('關閉')}</button></div></div>`}
 function bxAllMl(d){return d.ml||{}}
 let BX=null,BXRAF=0,BXTM=0;
 function bxSt(){ST.bar=ST.bar||{up:{}};const b=ST.bar;b.xp=b.xp||{};b.disc=b.disc||{};b.aff=b.aff||{};b.story=b.story||{};bxMig(ST);return b}
