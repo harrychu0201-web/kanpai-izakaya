@@ -131,7 +131,7 @@ body.ovl .hud .icon-btn.bagbtn{width:auto;min-width:40px;height:36px;padding:0 9
 .oi>svg{display:block;margin:0 auto}
 .oi .vt{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);display:flex;gap:2px;z-index:1;white-space:nowrap;pointer-events:none}
 .oi .vt b{font-size:15px;font-weight:900;line-height:1.25;padding:0 5px;border-radius:7px;border:2px solid var(--soot);color:#fff;background:var(--lacquer);text-shadow:0 1px 0 #0005}
-.oi .vt b.maguro{background:#c8283a}.oi .vt b.salmon{background:#f07a36}.oi .vt b.tai{background:#ffe0e4;color:#3a2318;text-shadow:none}.oi .vt b.ume{background:#8e2a5a}.oi .vt b.egg{background:#f2c35a;color:#3a2318;text-shadow:none}.oi .vt b.chashu{background:#8a4a24}
+.oi .vt b.maguro{background:#c8283a}.oi .vt b.salmon{background:#f07a36}.oi .vt b.tai{background:#ffe0e4;color:#3a2318;text-shadow:none}.oi .vt b.ume{background:#8e2a5a}.oi .vt b.egg{background:#f2c35a;color:#3a2318;text-shadow:none}.oi .vt b.chashu{background:#8a4a24}.oi .vt b.okosaka{background:#d9822b}.oi .vt b.okhiro{background:#2f8f5b}.oi .vt b.okmoji{background:#3b7bbf}.oi .vt b.okmoder{background:#8e4fa8}
 .vt b.corn{background:#f7d33a;color:#3a2318;text-shadow:none}
 .oi.done .vt{opacity:.35}
 .bubble:has(.vt){padding-bottom:15px}
@@ -4681,7 +4681,8 @@ function step(dt){
 }
 function tagOf(k){if(k.startsWith('ramen:'))return T(TOPN[k.slice(6)]||'叉燒');if(k.startsWith('chazuke'))return T(k.endsWith('salmon')?'鮭魚':'梅子');if(k.startsWith('sashimi'))return k.split(':')[1].split('+').map(f=>T(FISH[f][0])).join('＋');return ''}
 /* big colour-coded chips under variant orders (colours match the ingredient buttons) */
-function chipsOf(k){let a=[];if(k.startsWith('ramen:')){const t=TOPN[k.slice(6)]?k.slice(6):'chashu';a=[[T(TOPN[t]),t]]}else if(k.startsWith('chazuke'))a=[[T(k.endsWith('salmon')?'鮭魚':'梅子'),k.endsWith('salmon')?'salmon':'ume']];else if(k.startsWith('sashimi'))a=k.split(':')[1].split('+').map(f=>[T(FISH[f][0]),f]);else if(k==='miso')a=[[T('味噌'),'miso']];else if(k==='dandan')a=[[T('擔擔'),'dandan']];return a.map(([t,c])=>[t&&t.charCodeAt(0)<0x2e80?t[0].toUpperCase():t,c])}
+const OKCHIP={okosaka:['大阪燒','okosaka'],okhiro:['廣島燒','okhiro'],okmoji:['文字燒','okmoji'],okmoder:['摩登燒','okmoder']};
+function chipsOf(k){let a=[];if(k.startsWith('ramen:')){const t=TOPN[k.slice(6)]?k.slice(6):'chashu';a=[[T(TOPN[t]),t]]}else if(k.startsWith('chazuke'))a=[[T(k.endsWith('salmon')?'鮭魚':'梅子'),k.endsWith('salmon')?'salmon':'ume']];else if(k.startsWith('sashimi'))a=k.split(':')[1].split('+').map(f=>[T(FISH[f][0]),f]);else if(k==='miso')a=[[T('味噌'),'miso']];else if(k==='dandan')a=[[T('擔擔'),'dandan']];else if(OKCHIP[k])a=[[T(OKCHIP[k][0]),OKCHIP[k][1]]];return a.map(([t,c])=>[t&&t.charCodeAt(0)<0x2e80?t[0].toUpperCase():t,c])}
 function chipW(a){return a.reduce((w,[t])=>w+[...t].reduce((x,ch)=>x+(ch.charCodeAt(0)>0x2e80?16:8.6),0)+16,0)+(a.length-1)*2}
 function oiHTML(k,done,cls){const a=chipsOf(k),w=a.length?Math.max(52,Math.ceil(chipW(a))):0;return `<div class="oi ${done?'done':''}${cls?' '+cls:''}"${cls?` data-t="${T('加碼')}"`:''}${w>52?` style="width:${w}px"`:''}>${icon(k)}${a.length?`<span class="vt">${a.map(([t,c])=>`<b class="${c}">${t}</b>`).join('')}</span>`:''}</div>`}
 function renderCust(){
