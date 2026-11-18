@@ -3765,10 +3765,13 @@ function bxReply(v){const o=bxOrder(),c=BXCH[o.who]||['quiet','','','（客人�
   let extra=0,story='';if(right){extra=Math.round(ITEMS[o.k].price*.15*(R.fxTip?2:1)/10)*10;R.earned+=extra;
     if(BXSTORY[o.who]){b.aff[o.who]=(b.aff[o.who]||0)+1;const n=b.story[o.who]||0;if(n<BXSTORY[o.who].length){story=BXSTORY[o.who][n];b.story[o.who]=n+1;if(n+1===BXSTORY[o.who].length){extra+=ITEMS[o.k].price;R.earned+=ITEMS[o.k].price}}}}
   R.served++;save();BX.mood=right?'happy':'ok';BX.sayJP='';BX.sayZH=T(right?c[3]:c[4]);sfx(right?'star':'pick');
-  const last=!!R&&hourNow()>=lastHr()&&!(BX.tut&&BX.q[BX.i+1]&&BX.q[BX.i+1].tut);
+  const last=BARDEMO?!(BX.q[BX.i+1]&&BX.q[BX.i+1].tut):!!R&&hourNow()>=lastHr()&&!(BX.tut&&BX.q[BX.i+1]&&BX.q[BX.i+1].tut);
   BX.talkHTML=`<div class="bx-area bx-col">${story?`<div class="bx-story"><b>📖 ${T('熟客故事')} ${b.story[o.who]}/${BXSTORY[o.who].length}</b><p>「${T(story)}」</p></div>`:''}<p class="bx-ins">${right?T('聊得來！共情 +10，多給小費 {0}',yen(extra)):T('客人比較想要{0}。共情只影響小費和熟客故事，不影響過關。',c[0]==='quiet'?T('安靜地喝'):T('有人陪他聊'))}</p><button class="bx-btn big" data-bx="nextc">${last?T('打烊'):T('下一位客人')}</button></div>`;bxRender()}
-function bxNextCust(){BX.i++;if(R&&hourNow()>=lastHr()&&!(BX.tut&&BX.q[BX.i]&&BX.q[BX.i].tut)){barFinish();return}if(!BX.q[BX.i])BX.q.push(bxGen(BX.q));bxArrive()}
-function barFinish(){const b=bxSt();if(BX&&BX.tut)b.tut=1;save();bxClose();BX=null;if(R&&!R.over){R.over=true;renderHUD();setTimeout(endDay,200)}}
+function bxNextCust(){BX.i++;if(BARDEMO&&!(BX.q[BX.i]&&BX.q[BX.i].tut)){barFinish();return}if(R&&hourNow()>=lastHr()&&!(BX.tut&&BX.q[BX.i]&&BX.q[BX.i].tut)){barFinish();return}if(!BX.q[BX.i])BX.q.push(bxGen(BX.q));bxArrive()}
+/* 重看月影酒吧教學：示範三杯，不存檔；做完（或中途離開）回到今天的開店畫面 */
+function startBarTut(){closeModal();closeHome();BARDEMO=true;DEMO=true;ST=fresh();ST.where='bar';ST.coins=30000;ST.bar={up:{}};bxMig(ST);startDay()}
+function endBarDemo(quiet){BARDEMO=false;DEMO=false;bxClose();BX=null;R=null;const s0=load();if(s0)ST=s0;if(!quiet){if(s0)showDayIntro();else showHome()}}
+function barFinish(){if(BARDEMO){endBarDemo();return}const b=bxSt();if(BX&&BX.tut)b.tut=1;save();bxClose();BX=null;if(R&&!R.over){R.over=true;renderHUD();setTimeout(endDay,200)}}
 function bxDiscName(x){const [k,c]=x.split(':');if(!c)return '';if(c.includes('>')){const [a,b]=c.split('>');const n=BXSWAP[k]&&BXSWAP[k][a]&&BXSWAP[k][a][b];return n?T(n)+'（'+T('{0}換成{1}',bxLN(a),bxLN(b))+'）':''}
   const n=BXSURP[k]&&BXSURP[k][c];return n?T(n)+'（+'+bxLN(c)+'）':''}
 function bxBook(){const ks=BRKEYS.filter(has).concat(BRKEYS.filter(k=>!has(k)));modal(`<h2>📖 ${T('酒譜')}</h2><p class="hint">${T('客人說「濃一點」就多倒一點基酒、「淡一點」就少一點；熱燗：溫燗 40°C、上燗 45°C、熱燗 50°C、特燙 55°C。酒櫃湊齊需要的酒，酒譜就會解鎖（{0}/{1}）。',BRKEYS.filter(has).length,BRKEYS.length)}</p><p class="hint">🧪 ${T('量酒時手邊的酒都能倒，「加料」可以拿吧台下的材料。換酒、亂加大部分客人會生氣走掉，但有些組合是隱藏配方（已發現 {0}/{1}）。',Object.keys(bxSt().disc).filter(x=>bxDiscName(x)).length,Object.values(BXSURP).reduce((a,h)=>a+Object.keys(h).length,0)+Object.values(BXSWAP).reduce((a,h)=>a+Object.values(h).reduce((b,t)=>b+Object.keys(t).length,0),0))}</p>${ks.map(k=>{const own=has(k),miss=bxNeedL(k).filter(l=>!bxBotOwn(l));return `<div style="display:flex;align-items:center;gap:10px;margin:8px 0;${own?'':'opacity:.55'}"><div style="width:52px;height:60px;flex:none">${sv(brIcon(k))}</div><div style="min-width:0"><b>${dishTitle(k)}</b>${own?'':' <small>🔒 '+T('還缺：{0}',miss.map(bxLN).join('、'))+'</small>'}<div style="font-size:13px;margin-top:2px">${bxStepsText(k)}</div>${bxSt().xp[k]?`<small>${T('做過 {0} 杯',bxSt().xp[k])}</small>`:''}${(()=>{const f=Object.keys(bxSt().disc).filter(x=>x.startsWith(k+':')&&bxDiscName(x));return f.length?`<div style="font-size:13px;color:#2f7a3a">🧪 ${T('隱藏配方')}：${f.map(bxDiscName).join('、')}</div>`:''})()}</div></div>`}).join('')}<div class="btns"><button class="btn" data-act="closem">${T('關閉')}</button></div>`)}
@@ -5688,7 +5691,7 @@ function townGo(S,sh){const tw=S.cv.closest('.town'),b=tw&&tw.querySelector(`[da
   /* 按鈕沒把畫面換掉（例如被擋下）就退回街上 */
   setTimeout(()=>{if(!S.dead&&document.contains(S.cv)&&S.resume)S.resume()},120)}
 function showHome(){ARCTOWN=null;if(CHG)chQuit();LB.ch=0;CHEND='';if(RP.on)abandonReplay();
-  if(CUR!=='iz'){CUR='iz';chooseLayout(true)}SHOPHOME=false;DEMO=false;if(TUT){TUT=null;tutLayer().innerHTML=''}const wasPlay=!HOME;HOME=true;R=null;ST=null;closeModal();if(wasPlay){PLAYT=0;STAB={o:'',h:0};STABW={o:'',w:0};LANDW={o:'',w:0};refitBurst()}setTimeout(fit,0);renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
+  if(CUR!=='iz'){CUR='iz';chooseLayout(true)}SHOPHOME=false;DEMO=false;if(BARDEMO){BARDEMO=false;bxClose();BX=null}TUT_BACK=false;if(TUT){TUT=null;tutLayer().innerHTML=''}const wasPlay=!HOME;HOME=true;R=null;ST=null;closeModal();if(wasPlay){PLAYT=0;STAB={o:'',h:0};STABW={o:'',w:0};LANDW={o:'',w:0};refitBurst()}setTimeout(fit,0);renderHUD();$('custLayer').innerHTML='';$('stations').innerHTML='';drawBg();
   const saved=load();
   const nbtn=NOTICE?`<button class="langbtn noticefab" data-act="notice" aria-label="${T('公告')}">📢 ${T('公告')}${noticeDue()?'<i class="rdot"></i>':''}</button>`:'';
   homeLayer().innerHTML=`<div class="home ${LAY==='port'?'port':''}"><img class="homeimg" src="${HOME_IMG}" alt="" draggable="false"><i class="hvig"></i>
@@ -6118,6 +6121,7 @@ function showTitle(){
 }
 var SHOPSET=0; /* 最近一次在選店時選的店是哪一天（選店後才顯示下方說明） */
 function showDayIntro(arrive){
+  if(BARDEMO)endBarDemo(true);
   SHOPHOME=false;R=null;setCur(ST.where);renderHUD();pickToday();drawBg();$('custLayer').innerHTML='';$('stations').innerHTML='';
   /* 設定裡選了「暖簾街」：按繼續／下一天直接進街。第 1 天、重玩、教學示範、從主頁直接開某家店（沒帶 arrive）都不走這條 */
   if(arrive&&entryTown()&&!RP.on&&!DEMO&&ST.day>1&&townDev()){townWhere();if(document.querySelector('.modal .town'))return}
@@ -6144,7 +6148,7 @@ function showDayIntro(arrive){
   ${DESC&&ST.day===1?`<p style="font-size:14px">${T('忙不過來的時候，<b>快速點兩下</b>烤好的串燒、炸物或做好的砧板，就會自動放進吧台上的<b>保溫台</b>，不會焦，之後再從保溫台拿去送。每用一份食材都會扣成本，烤焦丟掉的就白花了。')}</p>`:''}
   ${DESC?'</div></details>':''}
   ${ST.pre&&ST.pre.day===ST.day&&(ST.pre.ext||ST.pre.nb||ST.pre.pt||ST.pre.fast||ST.pre.tip)?`<p class="hint">${T('今天已備妥道具：{0}',[ST.pre.ext?T('延長營業 ×{0}',ST.pre.ext):'',ST.pre.nb?T('不焦符'):'',ST.pre.pt?T('耐心回復 ×{0}',ST.pre.pt):'',ST.pre.fast?T('速熟符'):'',ST.pre.tip?T('加倍小費'):''].filter(Boolean).join('、'))}</p>`:''}
-  <div class="btns"><button class="btn" data-act="start">${T('開店營業')}</button>${CUR==='bar'?`<button class="btn alt" data-act="barhome">${T('商店')}</button>`:CUR==='oko'?`<button class="btn alt" data-act="okohome">${T('商店')}</button>`:CUR==='tep'?`<button class="btn alt" data-act="tephome">${T('商店')}</button>`:CUR==='sushi'?`<button class="btn alt" data-act="sushishop">${T('商店')}</button>`:`<button class="btn alt" data-act="dayshop">${T('商店')}</button>`}<button class="btn alt" data-act="preprops">🎒 ${T('道具')}</button><button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
+  <div class="btns"><button class="btn" data-act="start">${T('開店營業')}</button>${CUR==='bar'?`<button class="btn alt" data-act="barhome">${T('商店')}</button>`:CUR==='oko'?`<button class="btn alt" data-act="okohome">${T('商店')}</button>`:CUR==='tep'?`<button class="btn alt" data-act="tephome">${T('商店')}</button>`:CUR==='sushi'?`<button class="btn alt" data-act="sushishop">${T('商店')}</button>`:`<button class="btn alt" data-act="dayshop">${T('商店')}</button>`}<button class="btn alt" data-act="preprops">🎒 ${T('道具')}</button>${CUR==='iz'||CUR==='sushi'||CUR==='bar'?`<button class="btn alt" data-act="retut">🎓 ${T('新手教學')}</button>`:''}<button class="btn alt" data-act="home">${T('主頁')}</button></div>`);
   centerShopCar();
   if(CUR==='sushi'&&ST&&ST.sushi&&!ST.sushi.tut&&!ST.sushi.tutAsk&&!DEMO){ST.sushi.tutAsk=true;save();setTimeout(()=>{if(!TUT)startSushiTut(true)},150)}
 }
@@ -6503,7 +6507,8 @@ document.addEventListener('click',e=>{
   else if(act==='setlang')setLang(a.dataset.id);
   else if(act==='howto')showHowto(a.dataset.id);
   else if(act==='share')shareGame();
-  else if(act==='tut'){closeHome();DEMO=true;ST=fresh();startDay();startTut(true)}
+  else if(act==='tut'){TUT_BACK=false;closeHome();DEMO=true;ST=fresh();startDay();startTut(true)}
+  else if(act==='retut'){if(!ST)return;if(CUR==='sushi')startSushiTut(true);else if(CUR==='bar')startBarTut();else{TUT_BACK=true;closeModal();DEMO=true;ST=fresh();startDay();startTut(true)}}
   else if(act==='records')showProfile();
   else if(act==='pfnick'){PF.back=true;showNick()}
   else if(act==='nickcancel'){if(PF.back){PF.back=false;showProfile()}else showLB()}
@@ -6611,7 +6616,7 @@ document.addEventListener('click',e=>{
   else if(act==='quit'){showDayIntro()}
 });
 
-let DEMO=false,TUT=null;
+let DEMO=false,TUT=null,TUT_BACK=false,BARDEMO=false;
 const TUTS=[
  {t:null,h:'歡迎來到居酒屋！',p:'我帶你走一遍開店的流程，大概一分鐘。之後也可以從主頁的「設定」→「說明」→「新手教學」再看一次。'},
  {t:'.cust .bubble',h:'客人的點單',p:'客人坐下後，頭上會出現他點的菜。左邊的直條是耐心，從綠變黃再變紅，紅了就快生氣走掉了。'},
@@ -6663,7 +6668,7 @@ function tutEnd(){
   const demo=TUT&&TUT.demo;const sushiT=TUT&&TUT.steps;TUT=null;tutLayer().innerHTML='';document.body.classList.remove('tutmode');{const hh=$('hud');if(hh){hh.style.zIndex='';hh.style.position=''}}
   if(!sushiT){const rec=loadRec();rec.tut=true;saveRec(rec)}
   if(demo&&sushiT){DEMO=false;const demoST=ST;ST=load();if(ST&&ST.sushi){ST.sushi.tut=true;save()}if(SU_BACK==='day'&&ST&&ST.sushi){showDayIntro();return}ST=demoST;showHome();return}
-  if(demo){DEMO=false;showHome();return}
+  if(demo){DEMO=false;if(TUT_BACK){TUT_BACK=false;const s0=load();if(s0){ST=s0;showDayIntro();return}}showHome();return}
   if(sushiT&&CUR==='sushi'&&KP!==1&&pages().includes(1))setPage(1);
   R.seats.forEach(c=>{if(c)c.pat=c.max});R.paused=false;
 }

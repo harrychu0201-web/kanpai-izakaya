@@ -205,7 +205,7 @@ def sc_replay(b, base):
 
 # 商店頁面中「不能亂點」的按鈕（會離開商店、重開存檔或需要外部登入）
 SHOP_SKIP = {'back', 'shopback', 'closem', 'home', 'quit', 'asknew', 'newgame', 'restart', 'login', 'logout',
-             'start', 'chat', 'fb', 'social', 'share', 'mp', 'town', 'branch', 'where', 'dayshop', 'preprops',
+             'start', 'retut', 'chat', 'fb', 'social', 'share', 'mp', 'town', 'branch', 'where', 'dayshop', 'preprops',
              # 各分店的「開店／教學」按鈕：點了會直接開始營業或進教學，不是商店本身
              'susopen', 'sugopen', 'baropen', 'okoopen', 'tpopen', 'chopen', 'gomatog', 'tstgrantgo', 'tstlookgo'}
 
@@ -1523,6 +1523,71 @@ def sc_tut(b, base):
             c.close()
 
 
+def sc_retut(b, base):
+    """開店前畫面「🎓 新手教學」重看按鈕（居酒屋／海風壽司／月影酒吧）：真實點擊進去、做完／點完回到開店畫面、存檔一個字都不能變；
+    拉麵、鐵板、御好燒沒有這顆按鈕。"""
+    def mk(extra):
+        seed = dict(SEED_SAVE)
+        seed.update(extra)
+        c = Ctx(b, base, seed=False)
+        c.ctx.add_init_script("if(!localStorage.getItem('__rtseed')){localStorage.setItem('%s',%s);localStorage.setItem('%s',%s);localStorage.setItem('__rtseed','1')}"
+                              % (SAVE_KEY, json.dumps(json.dumps(seed)), REC_KEY, json.dumps(json.dumps(dict(SEED_REC, tut=True)))))
+        c.open()
+        c.dismiss_modals()
+        c.click('[data-act=cont]', wait=900)
+        return c
+    cases = [('居酒屋', {}), ('海風壽司', {'where': 'sushi', 'sushi': {'up': {}, 'seen': True, 'nv': 1, 'tut': True, 'tutAsk': True},
+                                           'menu': {'tamagonigiri': 1, 'salmonnigiri': 1, 'tunanigiri': 1}}),
+             ('月影酒吧', {'where': 'bar', 'bar': {'up': {}, 'tut': 1}, 'menu': {k: 1 for k in BAR_KEYS}})]
+    for name, extra in cases:
+        c = mk(extra)
+        try:
+            if not c.has('.modal [data-act=retut]'):
+                raise AssertionError('%s：開店前畫面沒有「新手教學」按鈕\n%s' % (name, c.diag()))
+            r = c.page.evaluate("document.querySelector('.modal [data-act=retut]').getBoundingClientRect().height")
+            before = c.page.evaluate("localStorage.getItem('%s')" % SAVE_KEY)
+            c.click('.modal [data-act=retut]', wait=1000)
+            if not c.page.evaluate("!!DEMO"):
+                raise AssertionError('%s：按了新手教學沒有進到示範\n%s' % (name, c.diag()))
+            if name == '月影酒吧':
+                if c.page.evaluate("BX.q.map(o=>o.k)") != ['brhigh', 'bratsu', 'brgimlet']:
+                    raise AssertionError('月影酒吧：重看教學的客人不對')
+                bx_vn(c)
+                c.click('[data-bx=start]', wait=400)
+                bx_vn(c)
+                for i in range(3):
+                    if not bx_make(c, started=(i == 0)):
+                        raise AssertionError('月影酒吧：重看教學第 %d 杯沒過關\n%s' % (i + 1, c.diag()))
+                    bx_finish_cust(c)
+            else:
+                for i in range(40):
+                    if not c.page.evaluate("!!TUT"):
+                        break
+                    vn_click_text(c)
+            c.page.wait_for_timeout(800)
+            if c.page.evaluate("!!DEMO||!!TUT||BARDEMO") or not c.has('.modal [data-act=start]') or c.has('#barx'):
+                raise AssertionError('%s：教學結束後沒有回到開店前畫面\n%s' % (name, c.diag()))
+            after = c.page.evaluate("localStorage.getItem('%s')" % SAVE_KEY)
+            if before != after:
+                raise AssertionError('%s：重看教學動到了存檔' % name)
+            c.expect_clean(name + '重看教學')
+        finally:
+            c.close()
+    # 拉麵、鐵板、御好燒沒有教學，不能出現按鈕
+    for where in ('rm', 'tep', 'oko'):
+        c = Ctx(b, base)
+        c.open()
+        try:
+            c.dismiss_modals()
+            got = c.page.evaluate("(()=>{CL.user={email:ADMIN_EMAIL,uid:'check-admin',name:'Author Check',photo:''};ST=load();ST.%s=ST.%s||{up:{}};ST.where='%s';HOME=false;showDayIntro();return [CUR,!!document.querySelector('.modal [data-act=retut]')]})()" % (where, where, where))
+            if got[0] != where:
+                raise AssertionError('測試沒切到 %s 店（CUR=%s）' % (where, got[0]))
+            if got[1]:
+                raise AssertionError('%s 不該有新手教學按鈕' % where)
+        finally:
+            c.close()
+
+
 def sc_barbuy(b, base):
     """月影酒吧解鎖（2026-11-18 開放給所有玩家）：一般玩家的選店對話框真實點擊 → 看得到酒吧 → 買下 ¥5,000,000 → 商店有「去月影酒吧營業」；公告也要在。"""
     c = Ctx(b, base)
@@ -1694,7 +1759,7 @@ def sc_oko(b, base):
 SCENARIOS = [('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barbuy', sc_barbuy), ('oko', sc_oko),
-             ('tut', sc_tut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun)]
+             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun)]
 
 
 def main():
