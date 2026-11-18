@@ -911,6 +911,10 @@ def bx_pour(c, l, goal):
     else:
         bx_hold_until(c, '#bxhold', "(BX.d.ml['%s']||0)>=%f" % (l, goal - 0.6))
         c.page.wait_for_timeout(300)
+        # 倒了酒以後「倒掉」不能是灰的（2026/11/18 使用者說按不了：進這一步時是灰的、按住倒酒不會重畫，就一直灰）
+        rb = c.page.evaluate("(()=>{const b=document.querySelector('#barx [data-bx=redo]');return b?{dis:b.disabled,t:b.innerText.trim()}:null})()")
+        if not rb or rb['dis'] or rb['t'] != '倒掉':
+            raise AssertionError('月影酒吧：倒完 %s 後「倒掉」鈕不能按或字不對（%s）' % (l, rb))
 
 
 def bx_make(c, wrong=False, started=False, adds=None, swap=None):

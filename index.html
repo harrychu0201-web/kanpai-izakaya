@@ -3458,7 +3458,7 @@ function bxMEval(s,vv){const o=bxOrder(),d=BX.d,sp=bxMSpec(o,s[1],s[2]),v=vv!=nu
   if(sp.cond){const c=o.c.find(x=>['strong','light','sour','sweet'].includes(x)),ok=v>=sp.lo&&v<=sp.hi,near=v>=sp.lo-s[2]*.1&&v<=sp.hi+s[2]*.1;
     bxPref('c'+c,ok?1:near?.5:0,c==='strong'?T('我說要濃一點，{0}還不夠',n):c==='light'?(o.k==='brume'?T('還是太甜了，梅酒再少一點'):T('太濃了，我想要淡一點的')):c==='sour'?T('再酸一點會更好'):T('再甜一點會更好'))}
   return {q,sp,v}}
-function bxMRelease(){const l=BX.src,a=$('bxafter'),d=BX.d,sp=bxSrcSpec();if(!a||!l)return;const v=d.ml[l]||0;
+function bxMRelease(){const l=BX.src,a=$('bxafter'),d=BX.d,sp=bxSrcSpec();if(!a||!l)return;const v=d.ml[l]||0;const rb=document.querySelector('#barx [data-bx="redo"]');if(rb)rb.disabled=!v;
   if(v>(sp?sp.cap:60)){d.ml[l]=0;bxMsg(T('滿出來了！倒掉重量'));bxRender();return}
   a.innerHTML=sp&&!sp.cond&&v>0?(v>=sp.plo&&v<=sp.phi?`<b class="bx-ok">${T('完美！')}</b>`:v>=sp.lo&&v<=sp.hi?`<b class="bx-ok">${T('不錯')}</b>`:`<b class="bx-bad">${v<sp.lo?T('太少了'):T('太多了')}</b>`):'';bxMixList()}
 /* 現在這瓶在這一步的酒譜份量（沒有＝酒譜外的） */
@@ -3642,7 +3642,7 @@ function bxStageHTML(){const s=bxCur(),o=bxOrder(),d=BX.d,r=BXR[o.k];let ins='',
     const src=!l?`<div class="bxs-src none">${T('選一瓶')}</div>`:tool==='spoon'?`<button class="bxs-src tap" data-bx="scoop">${bxImg(l,'','height:70%')}<b>${T('挖一匙')}</b></button>`:tool==='dash'?`<button class="bxs-src tap" data-bx="dash">${bxImg(l,'','height:70%')}<b>${T('抖一下')}</b></button>`:`<button class="bxs-src" id="bxhold">${bxImg(l,'',`height:${(100*(BXBH[l]||1)).toFixed(0)}%`)}<b>${T('按住倒')}</b></button>`;
     const mid=tool==='spoon'?`<div class="bxz-jig">${bxImg('t_spoon')}</div>`:tool==='dash'?`<div class="bxz-mg2">${bxImg('t_mixglass')}</div>`:`<div class="bxz-jig">${bxImg('t_jigger')}${l?`<i class="bxs-mstream" style="background:${BXL[l][1]}"></i>`:''}</div>`;
     const v=l?(tool==='dash'?d.dash[l]||0:d.ml[l]||0):0;
-    z=src+mid+(tool==='pour'?`<div class="bxz-gauge" id="bxv">${bxJigger(['m',l,sp?sp.t:30],sp||{t:0,lo:-99,hi:-99,plo:-99,phi:-99,cap:60,cond:true,free:true},v)}</div>`:'')+`<div class="bxz-colc"><div class="bxr" id="bxread">${l?bxAmt(l,v):'—'}</div><div class="bxz-after" id="bxafter"></div><div class="bxz-pour" id="bxpour"></div><div class="bxz-btns"><button class="bxb alt" data-bx="redo" ${v?'':'disabled'}>${T('倒掉這個')}</button><button class="bxb" data-bx="next">${T('下一步')}</button></div></div>`}
+    z=src+mid+(tool==='pour'?`<div class="bxz-gauge" id="bxv">${bxJigger(['m',l,sp?sp.t:30],sp||{t:0,lo:-99,hi:-99,plo:-99,phi:-99,cap:60,cond:true,free:true},v)}</div>`:'')+`<div class="bxz-colc"><div class="bxr" id="bxread">${l?bxAmt(l,v):'—'}</div><div class="bxz-after" id="bxafter"></div><div class="bxz-pour" id="bxpour"></div><div class="bxz-btns"><button class="bxb alt" data-bx="redo" ${v?'':'disabled'}>${T('倒掉')}</button><button class="bxb" data-bx="next">${T('下一步')}</button></div></div>`}
   else if(s[0]==='stir'){ins=T('在攪拌杯上畫圈，冰度到綠色按「好了」');
     z=`<div class="bxz-stir" id="bxpad">${bxImg('t_mixglass','bxz-mg')}<div class="bxz-spn" id="bxspn">${bxImg('t_spoon')}</div><div class="bxz-ov" id="bxv">${bxStirArt(0,null)}</div></div><div class="bxz-colc"><div id="bxmet">${bxMeter(d.dil,s[1],T('冰度'))}</div><div class="bxr" id="bxread">${T('{0} 圈',0)}</div><button class="bxb" data-bx="done" disabled id="bxdone">${T('好了')}</button></div>`}
   else if(s[0]==='lift'){ins=T('在杯子裡輕輕畫一圈');
@@ -3663,7 +3663,7 @@ function bxStageHTML(){const s=bxCur(),o=bxOrder(),d=BX.d,r=BXR[o.k];let ins='',
 function bxBind(){const s=bxCur(),d=BX.d,o=bxOrder(),r=BXR[o.k];
   if(s[0]==='mix'){bxMixList();const l=BX.src,h=$('bxhold');if(!l||!h)return;const sp0=bxSrcSpec(),sp=sp0||{t:0,lo:-99,hi:-99,plo:-99,phi:-99,cap:60,cond:true,free:true},js=['m',l,sp0?sp0.t:30],rate=Math.max(7,Math.min(28,js[2]/2.2));
     const down=e=>{e.preventDefault();clearTimeout(BXTM);try{h.setPointerCapture(e.pointerId)}catch(x){}(h.classList.add('on'),bxPouring(1));$('bxafter').innerHTML='';sfx('pour');
-      bxLoop(dt=>{d.ml[l]=(d.ml[l]||0)+rate*dt;const v=d.ml[l];$('bxv').innerHTML=bxJigger(js,sp,v);$('bxread').textContent=Math.round(v)+' ml';if(v>sp.cap*1.08){(h.classList.remove('on'),bxPouring(0));bxMRelease();return false}})};
+      bxLoop(dt=>{d.ml[l]=(d.ml[l]||0)+rate*dt;const v=d.ml[l];$('bxv').innerHTML=bxJigger(js,sp,v);$('bxread').textContent=Math.round(v)+' ml';{const rb=document.querySelector('#barx [data-bx="redo"]');if(rb&&rb.disabled)rb.disabled=false}if(v>sp.cap*1.08){(h.classList.remove('on'),bxPouring(0));bxMRelease();return false}})};
     const up=()=>{if(!h.classList.contains('on'))return;(h.classList.remove('on'),bxPouring(0));cancelAnimationFrame(BXRAF);BXRAF=0;bxMRelease()};
     h.addEventListener('pointerdown',down);['pointerup','pointercancel','lostpointercapture'].forEach(ev=>h.addEventListener(ev,up))}
   if(s[0]==='stir'||s[0]==='lift'){const pad=$('bxpad'),lift=s[0]==='lift';let ang=0,prev=null,acc=lift?(d.lift||0)*2*Math.PI:(d.dil||0)/3.6*2*Math.PI,dir=0,rev=0,samp=[],lt=0,lastA=0;
