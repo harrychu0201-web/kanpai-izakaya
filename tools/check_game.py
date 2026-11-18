@@ -752,6 +752,7 @@ def sc_homedog(b, base):
 
 # ------------------------------------------------------------------ 月影酒吧（作者／管理員限定，用作者身分真實點擊、真實手勢）
 HAND_CLICKED = []
+BACK_TESTED = []
 BAR_KEYS = ['brhigh', 'brume', 'brcha', 'brmizu', 'bryuzu', 'bratsu', 'brgimlet', 'brmatcha']
 
 
@@ -912,9 +913,33 @@ def bx_make(c, wrong=False, started=False, adds=None, swap=None):
         bx_shot(c, 'st-%s-%s' % (o['k'], st))
         if not c.page.evaluate("BX.stage!=='make'||document.querySelectorAll('#barx .bxc-st li.on').length===1"):
             raise AssertionError('月影酒吧：做酒時右邊步驟清單沒有標出目前這一步（%s）' % st)
+        say = c.page.evaluate("(()=>{const e=document.querySelector('#barx .bxc-say');return e?{t:e.innerText,small:!!e.querySelector('small')}:{t:'',small:false}})()")
+        if any('\u3040' <= ch <= '\u30ff' for ch in say['t']):
+            raise AssertionError('月影酒吧：客人說的話還有日文：%r' % say['t'])
+        if say['small']:
+            raise AssertionError('月影酒吧：客人說的框裡不該再顯示客人名字（佔空間）')
         if st == 'glass':
-            c.click('[data-bx=g][data-v=%s]' % ('coupe' if wrong and o['g'] != 'coupe' else 'high' if wrong else o['g']), wait=150)
+            if c.has('[data-bx=back]'):
+                raise AssertionError('月影酒吧：第一步（選杯）不該有「返回上一步」')
+            wg = 'coupe' if wrong and o['g'] != 'coupe' else 'high' if wrong else o['g']
+            c.click('[data-bx=g][data-v=%s]' % wg, wait=150)
             c.click('[data-bx=t][data-v=%s]' % o['t'], wait=650)
+            if wrong and not BACK_TESTED:
+                # 測試員選錯杯：下一步一定要有「返回上一步」，按了回到選杯、杯子和溫度都清掉，可以重選
+                BACK_TESTED.append(1)
+                if bx_stage(c) == 'glass':
+                    raise AssertionError('月影酒吧：選完杯子和溫度沒有進到下一步')
+                bx_vn(c)
+                if not c.has('#barx [data-bx=back]'):
+                    raise AssertionError('月影酒吧：選錯杯後下一步沒有「返回上一步」按鈕\n%s' % c.diag())
+                bx_shot(c, 'back-btn')
+                c.click('#barx [data-bx=back]', wait=300)
+                if bx_stage(c) != 'glass' or c.page.evaluate("BX.d.g") is not None or c.page.evaluate("BX.d.tp") is not None:
+                    raise AssertionError('月影酒吧：按「返回上一步」沒有回到選杯（%s）\n%s' % (bx_stage(c), c.diag()))
+                if c.has('#barx [data-bx=back]'):
+                    raise AssertionError('月影酒吧：回到第一步後還有「返回上一步」')
+                c.click('[data-bx=g][data-v=%s]' % wg, wait=150)
+                c.click('[data-bx=t][data-v=%s]' % o['t'], wait=650)
         elif st == 'ice':
             c.click('[data-bx=i][data-v=%s]' % o['ice'], wait=350)
         elif st == 'mix':
@@ -993,6 +1018,9 @@ def bx_make(c, wrong=False, started=False, adds=None, swap=None):
             if not gv or not gv['line'] or gv['h'] < 80 or not gv['side']:
                 raise AssertionError('月影酒吧：倒酒時長條旁邊沒有看得到的刻度管和黃線（%s）\n%s' % (gv, c.diag()))
             bx_hold_until(c, '#bxpad', "BX.d.lv>=%f" % (tg - 0.012), at=(0.5, 0.78))
+            # 杯子裡的酒要照「選的杯子」畫（選錯杯時曾照酒譜的杯型畫，看起來像杯子後面還有另一個杯子、酒沒倒進去）
+            if not c.page.evaluate("(()=>{const p=document.querySelector('#bxmatl clipPath path'),r=document.querySelector('#bxmatl rect[fill-opacity=\".9\"]');return !!p&&!!r&&p.getAttribute('d')===BXG2[BX.d.g].p})()"):
+                raise AssertionError('月影酒吧：倒酒時杯子裡的酒不是畫在選的杯子裡（杯型不對或沒有酒）\n%s' % c.diag())
             fy = c.page.evaluate("(()=>{const r=document.querySelector('#bxv rect[fill-opacity=\".9\"]');return r?+r.getAttribute('y'):-1})()")
             want = 262 - tg * 236
             if abs(fy - want) > 12:
