@@ -710,6 +710,27 @@ def sc_coopcpu(b, base):
         ok = c.page.evaluate("!!(typeof CO!=='undefined'&&CO.bot)")
         if not ok:
             raise AssertionError('壽司店・我當外場 沒有開出電腦搭檔的房間\n' + c.diag())
+        # 2026-11-19 玩家回報：跟電腦店員玩到一半被踢回主頁。原因：遊戲中偵測到新版本時 autoUpd 整頁 reload。
+        # 模擬「玩到一半作者推了新版」，遊戲畫面不能被 reload 掉；離開電腦店員回主頁後才套用更新。
+        c.page.evaluate("window.__alive=1;closeModal();VER0='old-version-for-check';verCheck()")
+        c.page.wait_for_timeout(7000)
+        try:
+            alive = c.page.evaluate("window.__alive===1&&!!document.getElementById('cogame')&&CO.open")
+        except Exception:
+            alive = False
+        if not alive:
+            raise AssertionError('跟電腦店員玩到一半偵測到新版本，整個畫面被 reload 踢回主頁了（autoUpd 不能在 co-op 遊戲中觸發）')
+        c.page.evaluate("coClose(false)")
+        c.page.wait_for_timeout(700)   # coClose 150ms 後會自己開出配對面板（modal），玩家關掉它之後才會套用更新
+        c.page.evaluate("closeModal()")
+        c.page.wait_for_timeout(7000)
+        try:
+            still = c.page.evaluate("window.__alive===1")
+        except Exception:
+            still = False
+        if still:
+            raise AssertionError('離開電腦店員回到主頁後，新版本沒有自動套用')
+        c.errors.clear()
         c.expect_clean('與電腦配對')
     finally:
         c.close()

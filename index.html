@@ -8889,7 +8889,10 @@ async function doUpdate(){if(UPDATING)return;UPDATING=true;const b=$('updbar');i
   location.reload()}
 /* players who never tapped the banner stayed on an old build for weeks (its bugs came back as "new" reports). An update found while
    the player is on the home screen (no day running, no dialog open, not typing) now applies itself; during a day it waits for home */
-function autoUpd(){if(UPDATING||!HOME||R||document.querySelector('.modal')||/INPUT|TEXTAREA/.test(document.activeElement&&document.activeElement.tagName||''))return false;doUpdate();return true}
+function autoUpd(){if(UPDATING||!HOME||R||document.querySelector('.modal')||/INPUT|TEXTAREA/.test(document.activeElement&&document.activeElement.tagName||''))return false;
+  /* 2026-11-19 玩家回報跟電腦店員玩到一半被踢回主頁：多人／電腦店員的遊戲畫面是疊在主頁上的（HOME 仍為 true、沒有 modal），偵測到新版就整頁 reload 把整局吃掉。遊戲中不自動更新，離開後才套用 */
+  if((typeof CO!=='undefined'&&CO&&(CO.open||CO.bot))||document.getElementById('cogame'))return false;
+  doUpdate();return true}
 function showUpd(){NEWVER=true;if(autoUpd())return;const h=document.querySelector('.home');if(HOME&&h&&!$('updbar'))h.insertAdjacentHTML('beforeend',updBar())}
 setInterval(()=>{if(NEWVER)autoUpd()},4000);
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='newver')showUpd()});
