@@ -3638,7 +3638,7 @@ function bxCabScene(){const o=bxOrder(),need=o?bxNeedL(o.k):[],Y=[44.6,63.2,82.2
     return `<button class="bxs-bot${own?'':' lock'}${BX.hand.includes(l)?' inh':''}${need.includes(l)?' need':''}" data-bx="take" data-v="${l}" style="left:${x.toFixed(2)}%;top:${(Y[ri]-15).toFixed(1)}%">${bxImg(l,'',`height:${(100*(BXBH[l]||1)*.88).toFixed(0)}%`)}<span>${own?'':'🔒'}${bxLN(l)}</span></button>`}).join('')).join('')}
 /* 每一步：左邊說明文字＋吧台中間要操作的東西 */
 function bxStageHTML(){const s=bxCur(),o=bxOrder(),d=BX.d,r=BXR[o.k];let ins='',z='',zc='bxz',pre='';
-  if(s[0]==='glass'){ins=T('選杯子，再選冰杯／常溫／溫杯');zc+=' bxz-w';
+  if(s[0]==='glass'){ins=T('選杯子，再選冰杯／常溫／溫杯（冰杯只是把杯子冰過，要不要放冰塊看酒譜）');zc+=' bxz-w';
     z=`<div class="bxz-col">${Object.keys(BXTP).map(t=>`<button class="bxb tag${d.tp===t?' on':''}" data-bx="t" data-v="${t}">${t==='cold'?'❄️':t==='warm'?'♨️':'🫙'} ${T(BXTP[t])}</button>`).join('')}</div><div class="bxz-row">${Object.keys(BXG).map(g=>`<button class="bxo${d.g===g?' on':''}" data-bx="g" data-v="${g}"><div class="bxo-p">${bxGlassSV(g,{cold:d.g===g&&d.tp==='cold',warm:d.g===g&&d.tp==='warm'})}</div><span>${T(BXG[g])}</span></button>`).join('')}</div>`}
   else if(s[0]==='ice'){ins=T('選冰塊');
     z=`<div class="bxz-row">${Object.keys(BXI).map(i=>`<button class="bxo ice" data-bx="i" data-v="${i}"><div class="bxo-p">${i==='ball'?bxImg('t_iceball','','height:62%'):bxImg('t_bucket','',i==='crush'?'filter:saturate(.6) brightness(1.08)':'')}</div><span>${T(BXI[i])}</span></button>`).join('')}</div>`}
@@ -3794,7 +3794,7 @@ function bxClick(e){if(BX&&BX.free&&!e.target.closest('.bxc-free,[data-bx=under]
   if(a==='src'){if(BX.stage!=='make'||bxCur()[0]!=='mix')return;BX.src=v;sfx('pick');bxRender();return}
   if(a==='scoop'){if(!BX.src)return;d.ml[BX.src]=(d.ml[BX.src]||0)+BXSPOON;sfx('pour');bxRender();return}
   if(a==='start')return bxStart();
-  if(a==='g'||a==='t'){if(a==='g')d.g=v;else d.tp=v;sfx('pick');bxRender();if(d.g&&d.tp){const s=bxCur();BXTM=setTimeout(()=>{if(!BX||bxCur()!==s)return;const r=BXR[bxOrder().k];bxComp('glass',d.g===r.g?1:0,1,'',T('這杯要用{0}',T(BXG[r.g])));bxComp('temp',d.tp===r.t?1:.3,1,r.t==='cold'?T('杯子冰得剛好'):r.t==='warm'?T('杯子溫過了，很貼心'):'',r.t==='cold'?T('杯子要先冰過'):r.t==='warm'?T('杯子要先溫過'):T('杯子不用特別冰'));bxNext()},380)}return}
+  if(a==='g'||a==='t'){if(a==='g')d.g=v;else d.tp=v;sfx('pick');bxRender();if(a==='t'&&v==='cold'&&!BXR[bxOrder().k].ice)bxMsg(T('冰杯只是把杯子冰過，這杯不用放冰塊'));if(d.g&&d.tp){const s=bxCur();BXTM=setTimeout(()=>{if(!BX||bxCur()!==s)return;const r=BXR[bxOrder().k];bxComp('glass',d.g===r.g?1:0,1,'',T('這杯要用{0}',T(BXG[r.g])));bxComp('temp',d.tp===r.t?1:.3,1,r.t==='cold'?T('杯子冰得剛好'):r.t==='warm'?T('杯子溫過了，很貼心'):'',r.t==='cold'?T('杯子要先冰過'):r.t==='warm'?T('杯子要先溫過'):T('杯子不用特別冰'));bxNext()},380)}return}
   if(a==='i'){d.ice=v;sfx('pick');const r=BXR[bxOrder().k];bxComp('ice',v===r.ice?1:.3,1,T('冰塊很漂亮'),T('這杯的冰要用{0}',T(BXI[r.ice])));bxNext();return}
   if(a==='redo'){clearTimeout(BXTM);if(BX.src){d.ml[BX.src]=0;d.dash[BX.src]=0}bxRender();return}
   if(a==='next'){clearTimeout(BXTM);if(bxCur()[0]==='mix')return bxDone();bxNext();return}
