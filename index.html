@@ -5550,7 +5550,7 @@ function renderHUD(){document.body.classList.toggle('playing',!!R);
 /* ---- modals ---- */
 function modal(html){const h=HOME&&$('homeModal');(h||$('modalLayer')).innerHTML=`<div class="modal" data-close="${T('點空白處關閉')}"><div class="card">${html}</div></div>`}
 function closeModal(){SETBACK=false;$('modalLayer').innerHTML='';const h=$('homeModal');if(h)h.innerHTML='';try{homeDots()}catch(e){}}
-const HOME_IMG='img/home-ffe867f5.webp';
+const HOME_IMG='img/home-d5c6eadf.webp';
 let HOME=false;
 function homeArt(w,h,port){
   const cx=port?w/2:w*.7,gy=h-34,sc=port?1:1.15;
@@ -5632,7 +5632,7 @@ document.addEventListener('click',e=>{if(!HOME)return;const m=e.target.closest('
 let TOWN=null,TOWNBACK='',ARCTOWN=null;
 if(typeof CanvasRenderingContext2D!=='undefined'&&!CanvasRenderingContext2D.prototype.roundRect)CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r||0,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath()};
 
-const TOWN_WIN={iz:'img/home-ffe867f5.webp',sushi:'img/bg-sushi-b2a51cbc.webp',tep:'img/bg-tep-a4f780a7.webp'};
+const TOWN_WIN={iz:'img/home-d5c6eadf.webp',sushi:'img/bg-sushi-b2a51cbc.webp',tep:'img/bg-tep-a4f780a7.webp'};
 const TOWN_ME='img/staff-girl-1.webp';
 const TOWN_LOOK={iz:{wall:'#7a3f24',wall2:'#5c2c18',noren:'#23315c',ink:'#f3e6c8',kan:'居酒屋',lan:'#d8452f'},
   rm:{wall:'#3b2a22',wall2:'#2a1d17',noren:'#b8261c',ink:'#fff3d6',kan:'らーめん',lan:'#e2553a',yatai:1},
