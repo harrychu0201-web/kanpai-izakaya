@@ -292,15 +292,18 @@ export function start(o) {
       if (kind === 'idea') { x.font = `900 44px ${FONT}`; x.fillText('!', 64, 42); } else { for (let i = 0; i < 3; i++) { x.beginPath(); x.arc(40 + i * 24, kind === 'mind' ? 42 : 42, 6, 0, 7); x.fill(); } }
     });
   }
-  const PS = 2; /* 街上所有人（玩家＋NPC）放大倍數：太小看得眼睛痛 */
+  /* 街上所有人（玩家＋NPC）放大倍數：依畫面「實際」高度自動算（getBoundingClientRect 已含舞台縮放）。
+     手機（約 380px 高以下）2 倍，電腦（約 820px 以上）1 倍，中間（平板、小視窗）線性過渡；每 0.05 一格避免抖動 */
+  let PS = 2;
+  function calcPS(H) { return Math.round(clamp(2 - (H - 380) / (820 - 380), 1, 2) * 20) / 20; }
   function mkPerson(src, h, isMe) {
-    h *= PS;
+    const h0 = h; h *= PS;
     const grp = new Group(); scene.add(grp);
     const geo = new PlaneGeometry(1, 1); geo.translate(0, .5, 0);
     const mat = new MeshBasicMaterial({ transparent: true, alphaTest: .04, color: 0xf2ebf2 });
     const m = new Mesh(geo, mat); grp.add(m);
-    const p = { grp, m, mat, h, w: h * .8, x: 0, z: 0, face: 1, ph: Math.random() * 7, alpha: 1, isMe, moving: false };
-    loadTex(src, t => { mat.map = t; mat.needsUpdate = true; p.w = h * t.image.width / t.image.height; });
+    const p = { grp, m, mat, h, h0, ar: .8, w: h * .8, x: 0, z: 0, face: 1, ph: Math.random() * 7, alpha: 1, isMe, moving: false };
+    loadTex(src, t => { mat.map = t; mat.needsUpdate = true; p.ar = t.image.width / t.image.height; p.w = p.h * p.ar; });
     const sh = new Mesh(new CircleGeometry(.5, 16), new MeshBasicMaterial({ map: shadowT, transparent: true, depthWrite: false, opacity: .8 })); sh.rotation.x = -Math.PI / 2; sh.position.y = .22; scene.add(sh); p.sh = sh;
     people.push(p); return p;
   }
@@ -316,7 +319,7 @@ export function start(o) {
     const bs = new Sprite(new SpriteMaterial({ map: bubbleTex('chat'), transparent: true, depthWrite: false })); bs.scale.set(.95 * PS, .83 * PS, 1); scene.add(bs); p.bub = bs; p.kind = 'chat';
     npcs.push(p); byId[d.id] = p;
   });
-  PAIRS.forEach(pr => { const a = byId[pr.a], b = byId[pr.b]; if (a && b) { b.leader = a; b.off = new Vector3(rnd(-.4, -.7) * PS, 0, rnd(.7, 1.0) * PS); a.talks = pr.talks; b.talks = pr.talks; a.mate = b; b.mate = a; } });
+  PAIRS.forEach(pr => { const a = byId[pr.a], b = byId[pr.b]; if (a && b) { b.leader = a; b.off0 = new Vector3(rnd(-.4, -.7), 0, rnd(.7, 1.0)); b.off = b.off0.clone().multiplyScalar(PS); a.talks = pr.talks; b.talks = pr.talks; a.mate = b; b.mate = a; } });
   function refill(p) {
     const pool = p.d.lines.map(l => ({ kind: l[0], text: l[1] }));
     if (p.talks) p.talks.forEach(t => pool.push({ kind: 'chat', talk: t }));
@@ -422,7 +425,7 @@ export function start(o) {
     get dead() { return S.dead; }, set dead(v) { if (v) dispose(); },
     cv, get ent() { return S.ent; },
     probe() { const P = v => { const f = proj(v); return { x: Math.round(f.x), y: Math.round(f.y) }; };
-      return { calls: renderer.info.render.calls, tris: renderer.info.render.triangles, tex: renderer.info.memory.textures, me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, yaw: +S.yaw.toFixed(2), talk: S.talk ? S.talk.d.id : null, ent: S.ent ? S.ent.sh.id : null, cardOn: card.classList.contains('on'), cardText: card.textContent,
+      return { ps: PS, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, tex: renderer.info.memory.textures, me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, yaw: +S.yaw.toFixed(2), talk: S.talk ? S.talk.d.id : null, ent: S.ent ? S.ent.sh.id : null, cardOn: card.classList.contains('on'), cardText: card.textContent,
         npcs: npcs.filter(p => !p.hidden).map(p => Object.assign({ id: p.d.id, state: p.state, kind: p.kind }, P(new Vector3(p.x, p.h * .5, p.z)))), shops: shops.map(s => Object.assign({ id: s.id }, P(new Vector3(s.dx, 1.5, .5)))) }; },
     resume() { S.ent = null; me.z = 3.2; me.alpha = 1; fade.style.opacity = 0; S.distT = 14; },
     dispose,
@@ -440,6 +443,8 @@ export function start(o) {
   const fwd = new Vector3(), rgt = new Vector3();
   function resize() {
     const r = cv.getBoundingClientRect(), W = Math.max(1, cv.clientWidth), Hh = Math.max(1, cv.clientHeight), dpr = Math.min(2, window.devicePixelRatio || 1);
+    const nps = calcPS(r.height || Hh);
+    if (nps !== PS) { PS = nps; people.forEach(q => { q.h = q.h0 * PS; q.w = q.h * q.ar; }); npcs.forEach(q => { if (q.off0) q.off = q.off0.clone().multiplyScalar(PS); }); }
     if (W === cw && Hh === ch && dpr === dprv) return;
     cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2.2); pr = Math.min(pr, prCap, Math.sqrt(1.3e6 / (W * Hh))); /* 手機上總像素上限約 130 萬，不然高 DPR 手機會卡到人物延遲 */
     renderer.setPixelRatio(pr); renderer.setSize(W, Hh, false); camera.aspect = W / Hh; camera.updateProjectionMatrix();
