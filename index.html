@@ -10505,7 +10505,9 @@ async function artSync(){const api=CL.api;if(!api||!api.rtx)return;
     TXOV=o;astJS('izakaya-txov',o)}
   if(!idx)return;
   const L=astJ(AST_LS),D=astJ(AST_DR);
-  for(const id in idx){if(D[id])continue;const m=idx[id];if(!m||!m.v)continue;if(L[id]&&L[id].v===m.v)continue;
+  for(const id in idx){const m=idx[id];if(!m||!m.v)continue;if(L[id]&&L[id].v===m.v)continue;
+    /* a newer published version replaces this device's own 試看 of the same slot (the old rule skipped it, so the author never saw the publish) */
+    if(D[id]){delete D[id];astJS(AST_DR,D)}
     try{const d=await api.rtx((rd,r)=>rd.get(rd.ref(r,'artov/d/'+id)).then(s=>s.val()));const b=d&&astDataBlob(d);if(!b)continue;
       const meta={id,k:m.k,p:m.p,key:m.key,v:m.v,n:m.n};if(await astStore(meta,b)){L[id]=meta;astJS(AST_LS,L)}}catch(e){console.warn('artov get',id,e)}}
   for(const id in L){if(idx[id]||D[id])continue;try{await astUnstore(L[id])}catch(e){}delete L[id];astJS(AST_LS,L)}}
