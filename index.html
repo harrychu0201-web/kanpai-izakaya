@@ -7776,7 +7776,8 @@ async function cloudInit1(){
         return all.slice().sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f])},
       /* 點食成金 on the board: putLb replaces the whole row, so a device without its own 點食成金 copy used to wipe fc; read what the server already has (lb row and cloud save, whichever is larger) */
       lbFcSrv:uid=>rt((rd,r)=>Promise.all([rd.get(rd.ref(r,'lb/'+uid+'/fc')).then(x=>+x.val()||0).catch(()=>null),rd.get(rd.ref(r,'saves/'+uid+'/fc')).then(x=>{try{return +JSON.parse(x.val()).e||0}catch(e){return 0}}).catch(()=>null)]).then(a=>{if(a[0]==null&&a[1]==null)throw new Error('lbfc');const m=Math.max(a[0]||0,a[1]||0);return isFinite(m)&&m>=1?Math.round(m):0})), /* the board row (lb/…/fc) is not readable by the published rules, so a denied read used to fail every upload for players with 點食成金 points; fall back to the player's own save copy */
-      putLb:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lb/'+uid),d)),
+      /* putLb replaces the whole row, so read what the server has first and keep the higher score for each board (lbMerge); if that read fails, do not write at all */
+      putLb:async(uid,d)=>{const cur=await CL.api.lbGetOne(uid);const m=lbMerge(cur,d);return rt((rd,r)=>rd.set(rd.ref(r,'lb/'+uid),m))},
       lbMan:()=>rt((rd,r)=>rd.get(rd.ref(r,'notice/lbman')).then(s=>s.val()||{})),
       setLbMan:(k,d)=>rt((rd,r)=>rd.set(rd.ref(r,'notice/lbman/'+k),d)),
       setUnflag:(k,d)=>rt((rd,r)=>rd.set(rd.ref(r,'notice/unflag/'+k),d)),
@@ -8155,6 +8156,9 @@ const nickBad=v=>!!v&&NICK_BAD.test(v)&&!(CL.user&&CL.user.email===ADMIN_EMAIL);
 'ko':['닉네임 "{0}"에 예약어(작가, 공식, admin 등)가 들어 있어 랭킹과 채팅을 이용할 수 없어요. 다른 이름으로 바꿔 주세요.','닉네임에 "작가", "공식", "admin" 같은 예약어는 쓸 수 없어요','랭킹 업로드 실패: {0}','이 저장 데이터는 테스트 패널 기능을 사용해서 랭킹에 오르지 않아요.','작가가 랭킹 참가 자격을 되돌려 줬어요!'],
 'id':['Nama panggilan "{0}" mengandung kata terlarang (admin, penulis, resmi, dll.), jadi tidak bisa masuk papan peringkat atau chat. Silakan ganti nama.','Nama panggilan tidak boleh mengandung kata terlarang seperti "admin", "penulis", atau "resmi".','Gagal mengunggah ke papan peringkat: {0}','Simpanan ini pernah memakai fitur panel tes, jadi tidak masuk papan peringkat.','Penulis sudah memulihkan hakmu masuk papan peringkat!']};
 for(const l in A){if(I18N[l])Object.assign(I18N[l],{'你的暱稱「{0}」含有保留字（作者、官方、admin 等），無法上榜或聊天，請改個名字。':A[l][0],'排行榜上傳失敗：{0}':A[l][2],'作者已幫你恢復上排行榜的資格！':A[l][4],'這個存檔用過測試面板的功能，不會上排行榜。':A[l][3],'暱稱不能包含「作者」「官方」「admin」等保留字':A[l][1]})}})();
+/* merge an upload into the row the server already has: score boards only ever go up, so a device with missing or older local data cannot erase or lower a score */
+const LB_KEEP=['chal','chalh','best','earned','days','fc'];
+function lbMerge(cur,d){const m=Object.assign({},cur&&typeof cur==='object'?cur:{},d);for(const k of LB_KEEP){const a=cur&&typeof cur[k]==='number'?cur[k]:null,b=typeof d[k]==='number'?d[k]:null;if(a!=null&&(b==null||a>b))m[k]=a}return m}
 function lbEntry(){const r=loadRec();
   if(!r.nick||nickBad(r.nick))return null;const d={name:r.nick,best:Math.max(0,Math.round(r.bestDay||0)),earned:Math.max(0,Math.round(r.earned||0))};if(r.maxDay>0&&!isAdmin())d.days=Math.round(r.maxDay); /* the author's test runs (1000+ days) stay off the 最長營業 board */if(r.chal>0)d.chal=Math.round(r.chal);if(r.chalh>0)d.chalh=Math.round(r.chalh);const dx=gachaDex(r.gacha);if(dx>0)d.dex=dx;{let fe=0;try{fe=+JSON.parse(localStorage.getItem('izakaya-fc-v1')||'null').e||0}catch(e){}if(fe>=1&&isFinite(fe))d.fc=Math.round(fe)}return d} /* 點食成金累計賺取（只讀、不改它的存檔）*/
 async function lbPush(u){const d=lbEntry();if(!d||!CL.api.putLb)return;{let g=null;try{g=JSON.parse(lsGet(KEY)||'null')}catch(e){}if(g&&g.cheat)return} /* a save touched by the author test tools never goes on the leaderboard */
