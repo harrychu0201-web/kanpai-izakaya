@@ -145,7 +145,7 @@
         ".read": "auth != null && auth.uid === $uid",
         "$id": {
           ".write": "auth != null && ((auth.uid === $uid && !newData.exists()) || (auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true))",
-          ".validate": "newData.hasChild('t') && (newData.hasChild('items') || newData.hasChild('ach'))",
+          ".validate": "newData.hasChild('t') && (newData.hasChild('items') || newData.hasChild('ach') || newData.hasChild('coins'))",
           "t": {
             ".validate": "newData.isNumber()"
           },
@@ -177,6 +177,9 @@
           },
           "ach": {
             ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "coins": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 50000000"
           },
           "$other": {
             ".validate": false
@@ -214,7 +217,7 @@
           ".validate": "newData.val() === true"
         },
         "pin": {
-         ".validate": "newData.val() === true"
+          ".validate": "newData.val() === true"
         },
         "day": {
           ".validate": "newData.isNumber()"

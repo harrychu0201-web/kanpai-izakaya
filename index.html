@@ -7789,7 +7789,7 @@ async function cloudInit1(){
       lbxMany:ids=>rt((rd,r)=>Promise.all(ids.map(k=>rd.get(rd.ref(r,'lbx/'+k)).then(s=>[k,s.val()]))).then(a=>{const o={};a.forEach(([k,v])=>{o[k]=v});return o})),
       lbFindName:nick=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'lb'),rd.orderByChild('name'),rd.equalTo(nick),rd.limitToFirst(5))).then(s=>{const a=[];s.forEach(c=>{a.push({uid:c.key,name:(c.val()||{}).name})});return a})),
       lbGetOne:uid=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'lb'),rd.orderByKey(),rd.equalTo(uid),rd.limitToFirst(1))).then(s=>{let v=null;s.forEach(c=>{v=c.val()});return v})),
-      grantAdd:(uid,items,why,ach)=>rt((rd,r)=>{const o={t:rd.serverTimestamp(),by:'author',why:why||''};if(items&&Object.keys(items).length)o.items=items;if(ach)o.ach=ach;return rd.push(rd.ref(r,'grants/'+uid),o)}),
+      grantAdd:(uid,items,why,ach,coins)=>rt((rd,r)=>{const o={t:rd.serverTimestamp(),by:'author',why:why||''};if(items&&Object.keys(items).length)o.items=items;if(ach)o.ach=ach;if(coins>0)o.coins=coins;return rd.push(rd.ref(r,'grants/'+uid),o)}),
       grantsGet:uid=>rt((rd,r)=>rd.get(rd.ref(r,'grants/'+uid)).then(s=>s.val()||{})),
       grantDel:(uid,id)=>rt((rd,r)=>rd.remove(rd.ref(r,'grants/'+uid+'/'+id))),
       regCode:(uid,code)=>rt((rd,r)=>rd.set(rd.ref(r,'fcode/'+code),uid)),
@@ -7933,9 +7933,14 @@ function loginHelp(){if(!HOME)return;modal(`<h2>${T('登入視窗關掉了')}</h
 function cloudUser(u){CL.user=u;CL.synced=false;CL.ready=true;CL.status=u?'sync':'';clearTimeout(CL.timer);if(!u)CL.pick=null;acctRefresh();if(NV.id&&$('nvbox')){const n=noticeAll().find(x=>x.id===NV.id);if(n)noticeVoteInit(n)}if(u){CL.isPoster=false;if(CL.api)CL.api.isPoster(u.uid).then(v=>{CL.isPoster=v===true}).catch(()=>{});CL.isStaff=false;if(CL.api)CL.api.isStaff(u.uid).then(v=>{CL.isStaff=v===true;if(CL.isStaff&&typeof coopInvStart==='function')coopInvStart();if(HOME&&typeof AST!=='undefined'&&!AST.on)try{showHome()}catch(e){}}).catch(()=>{});cloudSync();setTimeout(()=>replyCheck(0),2500);setTimeout(coopInvStart,3000);setTimeout(()=>{if(typeof coopResume==='function')coopResume().catch(e=>console.warn('coop resume',e))},3200)}else coopInvStop();if(HOME&&document.querySelector('.lbtabs'))showLB();if(HOME&&$('chatlist'))showChat()}
 /* 找出一個成就讀的是哪個計數器（例如 fa5 讀 ax.fa），補發成就時直接把那個計數補到門檻 */
 function achKeyOf(a){let key=null;try{a.cur({ax:new Proxy({},{get:(t,k)=>{if(key===null&&typeof k==='string')key=k;return 0}})})}catch(e){}return key}
-async function claimGrants(){const u=CL.user;if(!u||TEST||RP.on||!CL.api||!CL.api.grantsGet)return;
+/* 2026-11-20 補錢：錢加進遊戲存檔（不是 rec）。這台裝置要有存檔、而且天數不落後雲端才領（否則接下來的雲端同步可能整份換成雲端那份，錢就不見了），領不了就留著下次再領 */
+function grantCoins(n,c){if(!(n>0))return true;const lg=lsGet(KEY);if(!lg)return false;if(c&&c.game&&gDay(lg)<gDay(c.game))return false;
+  if(ST&&!DEMO&&!chOn()&&!RP.on&&!TEST){ST.coins=(ST.coins||0)+n;save();try{if(!HOME)renderHUD()}catch(e){}return true}
+  try{const o=JSON.parse(lg);if(!o||typeof o.day!=='number')return false;o.coins=(o.coins||0)+n;lsSet(KEY,JSON.stringify(o));touchLocal();return true}catch(e){return false}}
+async function claimGrants(c){const u=CL.user;if(!u||TEST||RP.on||!CL.api||!CL.api.grantsGet)return;
   let g={};try{g=await CL.api.grantsGet(u.uid)||{}}catch(e){console.warn('grants',e);return}
-  for(const id of Object.keys(g)){const x=g[id]||{},items={};Object.keys(x.items||{}).forEach(k=>{const n=Math.floor(+x.items[k]);if(PROPS[k]&&n>0)items[k]=Math.min(20,n)});
+  for(const id of Object.keys(g)){const x=g[id]||{},items={};const gc=Math.max(0,Math.min(50000000,Math.floor(+x.coins||0)));
+    if(gc){if(!grantCoins(gc,c))continue;toast(T('收到補發：{0}',yen(gc)))}Object.keys(x.items||{}).forEach(k=>{const n=Math.floor(+x.items[k]);if(PROPS[k]&&n>0)items[k]=Math.min(20,n)});
     const achA=x.ach?ACHS.find(a=>a.id===x.ach):null;
     if(Object.keys(items).length||achA){const r=loadRec();r.inv=r.inv||{};for(const k in items)r.inv[k]=(r.inv[k]||0)+items[k];
       if(achA){const key=achKeyOf(achA);if(key){const a=r.ax=r.ax||{};a[key]=Math.max(a[key]||0,AM(achA.max))}}
@@ -7944,7 +7949,7 @@ async function claimGrants(){const u=CL.user;if(!u||TEST||RP.on||!CL.api||!CL.ap
 const gDay=g=>{try{const o=JSON.parse(g);return (o.day||0)+(o.pendingNext?1:0)}catch(e){return 0}};
 async function cloudSync(){
   const u=CL.user;if(!u||TEST)return;
-  try{const c=await CL.api.get(u.uid);if(CL.user!==u)return;await claimGrants();if(CL.user!==u)return;
+  try{const c=await CL.api.get(u.uid);if(CL.user!==u)return;await claimGrants(c);if(CL.user!==u)return;
     try{if(window.fcCloud)window.fcCloud.sync(c&&c.fc||null,u.uid)}catch(e){console.warn('fc sync',e)}
     const lg=lsGet(KEY),lr=lsGet(RKEY),cg=c?c.game||null:null,cr=c?c.rec||null:null;
     const rec=(lr||cr)?mergeRec(cr,lr):null;if(rec!==lr)lsSet(RKEY,rec);
@@ -8846,9 +8851,10 @@ async function lookSend(){if(!isAdmin())return;
     rows.push(`<div style="border-top:1px dashed #c9a77a;padding:6px 0;font-size:14px;word-break:break-all"><b>${esc(String(d.name||h.name))}</b><br>uid：${esc(h.uid)}<br>累計營收 earned：${f(d.earned)}<br>單日淨利 best：${f(d.best)}<br>最長營業 days：${f(d.days)}<br>點食成金 fc：${f(d.fc)}<br>最後上傳 at：${t(d.at)}${err?`<br><span style="color:#e0412c">讀取失敗：${esc(String(err))}</span>`:''}</div>`)}
   out.innerHTML=rows.join('')}
 function grantPanel(){if(!isAdmin())return;
-  modal(`<h2>補發道具</h2><p>用玩家的暱稱找人（對方要至少開過一次排行榜才有暱稱）。補發會在對方下次登入時自動入帳。</p>
+  modal(`<h2>補發道具／補錢</h2><p>用玩家的暱稱找人（對方要至少開過一次排行榜才有暱稱）。補發會在對方下次登入時自動入帳。</p>
   <div class="tstr"><b>暱稱</b><input id="gnick" placeholder="玩家暱稱" maxlength="24"></div>
   <div class="tstr"><b>道具</b><select id="gitem">${Object.keys(PROPS).map(k=>`<option value="${k}">${PROPS[k].ic}${PROPS[k].n}</option>`).join('')}</select><input id="gnum" type="number" min="1" max="20" value="1" style="width:70px"></div>
+  <div class="tstr"><b>補錢 ¥</b><input id="gcoin" type="number" min="0" max="50000000" step="10000" value="0" style="width:140px"><small>（0＝不補錢；最多 5,000 萬，可和道具一起送）</small></div>
   <div class="tstr"><b>或直接達成</b><select id="gach"><option value="">（不補成就）</option>${ACHS.filter(a=>achKeyOf(a)).map(a=>`<option value="${a.id}">${a.n}</option>`).join('')}</select></div>
   <div class="tstr"><b>原因</b><input id="gwhy" placeholder="例：屋台 bug 補償" maxlength="60"></div>
   <p id="gmsg" style="min-height:1.6em;font-weight:700;color:#7a2b1b;margin:8px 0"></p><div class="btns"><button class="btn" data-act="tstgrantgo">送出補發</button><button class="btn alt" data-act="closem">關閉</button></div>`)}
@@ -8864,9 +8870,11 @@ async function grantSend(){if(!isAdmin())return;
   if(hits.length>1){gmsg('同名的玩家有 '+hits.length+' 位，無法確定是哪一位');return}
   const h=hits[0];
   const ach=($('gach')&&$('gach').value)||'';const A=ach?ACHS.find(a=>a.id===ach):null;
-  if(!confirm(A?'直接達成成就「'+A.n+'」給「'+h.name+'」？':'補發 '+PROPS[k].n+' ×'+n+' 給「'+h.name+'」？')){gmsg('已取消');return}
+  const coins=Math.max(0,Math.min(50000000,Math.floor(+($('gcoin')&&$('gcoin').value)||0)));
+  const what=(A?'成就「'+A.n+'」':PROPS[k].n+' ×'+n)+(coins?'＋'+yen(coins):'');
+  if(!confirm('補發 '+what+' 給「'+h.name+'」？')){gmsg('已取消');return}
   gmsg('送出中…');
-  try{await CL.api.grantAdd(h.uid,A?null:{[k]:n},why,A?A.id:null);gmsg(A?'已送出成就：'+h.name+'「'+A.n+'」（玩家下次登入時達成）':'已送出補發：'+h.name+' '+PROPS[k].n+' ×'+n+'（玩家下次登入時領取）')}
+  try{await CL.api.grantAdd(h.uid,A?null:{[k]:n},why,A?A.id:null,coins);gmsg('已送出補發：'+h.name+' '+what+'（玩家下次登入時領取）')}
   catch(e){gmsg('送出失敗：'+(e&&e.message||e))}}
 function showAcct(){const u=CL.user;if(!u)return;
   const st=CL.status==='err'?T('同步失敗，稍後會再試')+(CL.err?` (${esc(CL.err)})`:''):CL.status==='sync'?T('同步中…'):T('已同步');
