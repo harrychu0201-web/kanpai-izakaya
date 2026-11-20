@@ -7,7 +7,7 @@
 涵蓋（對應 CLAUDE.md 的「踩過的坑」）：
   boot      全新玩家開頁面不能有任何 JS 錯誤
   styles    三種畫風（舊畫風 / 新背景舊食物 / 全新畫風）各跑一次：繼續 → 開店 → 營業 → 暫停 → 回主頁
-  replay    選日期重玩：選一天 → 開始重玩 → 營業 → 回主頁（放棄重玩）
+  replay    選日期重玩：選一天 → 開始重玩 → 營業 → 回主頁（放棄重玩）；重玩中買月影酒吧 → 放棄／重新整理後真正存檔要保留
   shops     每家店的商店：每個分頁、每個買／升級按鈕都真的點過，買到全部擁有後再逐頁重開
   layout    橫向手機、iOS 縮放（layout viewport 約螢幕 2 倍）、Android、平板、桌機：舞台不能縮成一小塊、不能被切掉
   pick      選店橫向卡片、說明預設收合、設定「進遊戲後先到哪」（店家選單／暖簾街）
@@ -197,6 +197,27 @@ def sc_replay(b, base):
                 day_to_home(c)
                 c.dismiss_modals()
                 c.click('[data-act=replay]', wait=800)
+            if style == 'new':
+                # 2026-11-20 玩家回報：重玩時開的月影酒吧，放棄重玩（或重新整理）後整個不見，要再買一次
+                c.page.select_option('#rpday', opts[-1])
+                c.click('[data-act=replayok]', wait=900)
+                before = c.page.evaluate("JSON.parse(localStorage.getItem('izakaya-cook-v1')).coins")
+                c.page.locator('[data-act=barhome]:visible').first.click()
+                c.page.wait_for_timeout(600)
+                c.click('[data-act=buybar]', wait=600)
+                c.expect_clean('重玩中買月影酒吧')
+                real = c.page.evaluate("JSON.parse(localStorage.getItem('izakaya-cook-v1'))")
+                if not real.get('bar'):
+                    raise AssertionError('重玩中買的月影酒吧沒有寫回真正的存檔')
+                if real.get('coins') != before - c.page.evaluate('BAR_PRICE'):
+                    raise AssertionError('重玩中買月影酒吧，真正存檔的錢沒有正確扣掉')
+                if real.get('day') != SEED_SAVE['day']:
+                    raise AssertionError('重玩中買東西把真正存檔的天數改掉了（%s）' % real.get('day'))
+                c.dismiss_modals()
+                c.page.reload(); c.page.wait_for_timeout(2500); c.dismiss_modals()
+                real = c.page.evaluate("JSON.parse(localStorage.getItem('izakaya-cook-v1'))")
+                if not real.get('bar') or real.get('day') != SEED_SAVE['day']:
+                    raise AssertionError('重玩中途重新整理後，月影酒吧或天數不對')
         except AssertionError as e:
             raise AssertionError('[畫風 %s] %s' % (style, e))
         finally:

@@ -1076,7 +1076,9 @@ const RPKEY='izakaya-replay-v1';
 const RP={on:false,k:0,mainDay:0};
 try{localStorage.removeItem(RPKEY)}catch(e){} /* an unfinished replay after a reload is dropped; the real save is untouched */
 function pastSave(){if(RP.on||TEST||DEMO||!ST||!ST.today||ST.today.day!==ST.day)return;const t=Object.assign({},ST.today);delete t.day;ST.past=ST.past||{};ST.past[ST.day]=t;save()}
-function abandonReplay(){RP.on=false;RP.k=0;KEY=REAL_KEY;try{localStorage.removeItem(RPKEY)}catch(e){}}
+/* 2026-11-20：重玩時在商店買的東西（開新店、買菜單、升級）以前只存在重玩副本，放棄重玩或重新整理就整個不見（玩家回報月影酒吧要再買一次）。現在只要不在營業中（開店前、商店），每次存檔都同步寫回真正的存檔；天數、今天的條件、歷史紀錄、星星照真正存檔，營業到一半的錢不寫回 */
+function rpCommit(){if(!RP.on||TEST||DEMO||!ST||(R&&!R.settled))return;try{const base=JSON.parse(lsGet(REAL_KEY)||'null');if(!base)return;const o=JSON.parse(JSON.stringify(ST));o.day=base.day;o.pendingNext=!!base.pendingNext;if(base.today)o.today=base.today;else delete o.today;if(base.past)o.past=base.past;else delete o.past;o.stars=base.stars||{};localStorage.setItem(REAL_KEY,JSON.stringify(o));RP.dirty=true}catch(e){}}
+function abandonReplay(){rpCommit();const d=RP.dirty;RP.on=false;RP.k=0;RP.dirty=false;KEY=REAL_KEY;try{localStorage.removeItem(RPKEY)}catch(e){}if(d)touchLocal()}
 /* ---- 無限挑戰 (endless challenge): the shop never closes; three mistakes end the run; the timer counts open time only (pauses don't count). It runs on a copy of your upgrades and never writes to your real save ---- */
 let CHG=null;
 const chOn=()=>!!(CHG&&CHG.on),noStaff=()=>!!(CHG&&CHG.on&&CHG.hard),noItems=noStaff;
@@ -1102,7 +1104,7 @@ function showChallenge(){const r=loadRec();
   <div class="how"><div class="how-row"><div><b>${T('失誤')}</b><br>${T('上錯客人（客人會氣走）、食物燒焦、客人等太久生氣走了。上錯客人只算一次失誤。')}</div></div><div class="how-row"><div><b>${T('天數')}</b><br>${T('一天結束自動進下一天，沒有打烊、結算和房租，但難度會一天一天往上加。')}</div></div><div class="how-row"><div><b>${T('起始')}</b><br>${T('沿用你目前店裡的設備、店員和菜單，錢包從 ¥3,000 重新開始，不會動到你的存檔。')}</div></div></div>
   <p class="hint">${T('標準挑戰最佳：{0}',chTime(r.chal||0))}<br>${T('極限挑戰最佳：{0}',chTime(r.chalh||0))}</p>
   <div class="btns"><button class="btn" data-act="chstart">${T('標準挑戰')}</button><button class="btn" data-act="chstarth">${T('極限挑戰（禁用店員和道具）')}</button><button class="btn alt" data-act="closem">${T('返回')}</button></div>`)}
-function save(){if(DEMO||chOn())return;try{localStorage.setItem(KEY,JSON.stringify(ST))}catch(e){}touchLocal()}
+function save(){if(DEMO||chOn())return;try{localStorage.setItem(KEY,JSON.stringify(ST))}catch(e){}if(RP.on)rpCommit();touchLocal()}
 let RKEY='izakaya-rec-v1';
 function loadRec(){try{return JSON.parse(localStorage.getItem(RKEY))||{}}catch(e){return {}}}
 function saveRec(r){try{const old=localStorage.getItem(RKEY);if(old){try{JSON.parse(old)}catch(e){localStorage.setItem(RKEY+'-bad',old)}}localStorage.setItem(RKEY,JSON.stringify(r))}catch(e){}touchLocal()}
