@@ -3767,6 +3767,8 @@ function bxReply(v){const o=bxOrder(),c=BXCH[o.who]||['quiet','','','（客人�
   R.served++;save();BX.mood=right?'happy':'ok';BX.sayJP='';BX.sayZH=T(right?c[3]:c[4]);sfx(right?'star':'pick');
   const last=BARDEMO?!(BX.q[BX.i+1]&&BX.q[BX.i+1].tut):!!R&&hourNow()>=lastHr()&&!(BX.tut&&BX.q[BX.i+1]&&BX.q[BX.i+1].tut);
   BX.talkHTML=`<div class="bx-area bx-col">${story?`<div class="bx-story"><b>📖 ${T('熟客故事')} ${b.story[o.who]}/${BXSTORY[o.who].length}</b><p>「${T(story)}」</p></div>`:''}<p class="bx-ins">${right?T('聊得來！共情 +10，多給小費 {0}',yen(extra)):T('客人比較想要{0}。共情只影響小費和熟客故事，不影響過關。',c[0]==='quiet'?T('安靜地喝'):T('有人陪他聊'))}</p><button class="bx-btn big" data-bx="nextc">${last?T('打烊'):T('下一位客人')}</button></div>`;bxRender()}
+/* 打烊後用延長營業券：barFinish 已把 #barx 和 BX 拆掉，要重新蓋回來接著做下一位客人（不重算目標、不動 R 的數字） */
+function barResume(){bxClose();const b=bxSt();BX={q:[bxGen([])],i:0,tut:false,res:[],hand:[],view:'bar'};const el=document.createElement('div');el.id='barx';el.addEventListener('pointerdown',e=>e.stopPropagation());el.addEventListener('click',bxClick);$('game').insertBefore(el,$('modalLayer'));$('game').classList.add('barmode');['custLayer','counter','stations'].forEach(id=>{const x=$(id);if(x)x.innerHTML=''});bxArrive()}
 function bxNextCust(){BX.i++;if(BARDEMO&&!(BX.q[BX.i]&&BX.q[BX.i].tut)){barFinish();return}if(R&&hourNow()>=lastHr()&&!(BX.tut&&BX.q[BX.i]&&BX.q[BX.i].tut)){barFinish();return}if(!BX.q[BX.i])BX.q.push(bxGen(BX.q));bxArrive()}
 /* 重看月影酒吧教學：示範三杯，不存檔；做完（或中途離開）回到今天的開店畫面 */
 function startBarTut(){closeModal();closeHome();BARDEMO=true;DEMO=true;ST=fresh();ST.where='bar';ST.coins=30000;ST.bar={up:{}};bxMig(ST);startDay()}
@@ -6194,6 +6196,7 @@ function extendDay(){
   R.extH=(R.extH||0)+1;DAYLEN=u.dayLen+159/8.5;
   R.settled=false;R.over=false;R.lastCall=false;R.undo=null;R.paused=false;
   save();cloudUpload(true);renderHUD();closeModal();last=performance.now();
+  if(CUR==='bar')barResume();
   toast(T('延長營業！今天再撐 1 小時'));
 }
 function preOf(){return ST.pre&&ST.pre.day===ST.day?ST.pre:{day:ST.day,ext:0,nb:0,pt:0,fast:0,tip:0}}

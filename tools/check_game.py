@@ -1777,9 +1777,47 @@ def sc_oko(b, base):
         c.close()
 
 
+def sc_barext(b, base):
+    """月影酒吧打烊後用延長營業券（2026/11/20 玩家回報：打烊時延長營業會卡住、沒有畫面）：要重新蓋回調酒畫面、有下一位客人，能再打烊再延長。"""
+    seed = dict(SEED_SAVE)
+    seed.update({'bar': {'up': {}, 'tut': 1}, 'where': 'bar', 'menu': {k: 1 for k in BAR_KEYS}})
+    rec = dict(SEED_REC)
+    rec['inv'] = {'ext': 3}
+    c = Ctx(b, base, seed=False)
+    c.ctx.add_init_script("if(!localStorage.getItem('__barseed')){localStorage.setItem('%s',%s);localStorage.setItem('%s',%s);localStorage.setItem('__barseed','1')}"
+                          % (SAVE_KEY, json.dumps(json.dumps(seed)), REC_KEY, json.dumps(json.dumps(rec))))
+    c.open()
+    try:
+        c.dismiss_modals()
+        c.page.evaluate("CL.user={email:ADMIN_EMAIL,uid:'check-admin',name:'Author Check',photo:''};showHome()")
+        c.page.wait_for_timeout(500)
+        c.dismiss_modals()
+        c.click('[data-act=cont]', wait=900)
+        c.click('[data-act=start]', wait=900)
+        if not c.has('#barx'):
+            raise AssertionError('月影酒吧延長：開店後沒有調酒畫面')
+        for rnd in (1, 2):
+            c.page.evaluate("(()=>{R.t=DAYLEN;R.lastCall=true;barFinish()})()")
+            c.page.wait_for_timeout(1200)
+            if not c.has('[data-act=extend]'):
+                raise AssertionError('月影酒吧延長：第 %d 次打烊後沒有「延長營業券」按鈕\n%s' % (rnd, c.diag()))
+            c.click('[data-act=extend]', wait=900)
+            if not c.has('#barx') or not c.has('#barx [data-bx=start]'):
+                raise AssertionError('月影酒吧延長：第 %d 次延長營業後沒有調酒畫面／客人（卡住）\n%s' % (rnd, c.diag()))
+            if not c.page.evaluate("!!BX&&!!BX.q[BX.i]&&!R.over&&!R.settled&&$('game').classList.contains('barmode')"):
+                raise AssertionError('月影酒吧延長：第 %d 次延長營業後狀態不對' % rnd)
+            if not c.page.evaluate("document.querySelector('#barx').innerText.trim().length>0&&document.querySelector('#barx').getBoundingClientRect().height>100"):
+                raise AssertionError('月影酒吧延長：延長營業後調酒畫面是空的')
+            bx_shot(c, 'barext-%d' % rnd)
+            c.page.wait_for_timeout(600)
+        c.expect_clean('月影酒吧延長營業')
+    finally:
+        c.close()
+
+
 SCENARIOS = [('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
-             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barbuy', sc_barbuy), ('oko', sc_oko),
+             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
              ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun)]
 
 
