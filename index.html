@@ -6527,7 +6527,7 @@ document.addEventListener('click',e=>{
   else if(act==='slotload'){const i=+a.dataset.i,x=slLoad().s[i];if(!x)return;
     if(!a.dataset.ok){slAsk('slotload',i,T('讀取存檔 {0}？',i+1),T('目前的進度會被取代，不過會先自動備份一份。'));return}
     slLoadGame(x.game)}
-  else if(act==='bakload'){const i=+a.dataset.i,x=slLoad().b[i];if(!x)return;
+  else if(act==='bakload'){const i=a.dataset.i==='k'?'k':+a.dataset.i,o=slLoad(),x=i==='k'?o.k:o.b[i];if(!x)return;
     if(!a.dataset.ok){slAsk('bakload',i,T('還原這份備份？'),T('目前的進度會被取代，不過會先自動備份一份。'));return}
     slLoadGame(x.game,x.rec)}
   else if(act==='snd'){sndWake();showSndModal(false)}
@@ -8071,10 +8071,16 @@ const K=["找回存檔","正在尋找所有找得到的存檔…","下面是這�
 for(const L in A){const t=I18N[L]=I18N[L]||{};K.forEach((k,i)=>{if(!(k in t))t[k]=A[L][i]})}}catch(e){}
 /* ===== extra save slots (stored on this device only): 3 manual slots + automatic backups of any save that is about to be overwritten ===== */
 const SLKEY='izakaya-slots-v1';
-function slLoad(){try{const o=JSON.parse(localStorage.getItem(SLKEY));return {s:Array.isArray(o&&o.s)?o.s.slice(0,3):[],b:Array.isArray(o&&o.b)?o.b.slice(0,3):[]}}catch(e){return {s:[],b:[]}}}
+function slLoad(){try{const o=JSON.parse(localStorage.getItem(SLKEY));return {s:Array.isArray(o&&o.s)?o.s.slice(0,3):[],b:Array.isArray(o&&o.b)?o.b.slice(0,3):[],k:(o&&o.k&&typeof o.k.game==='string')?o.k:null}}catch(e){return {s:[],b:[],k:null}}}
 function slSave(o){try{localStorage.setItem(SLKEY,JSON.stringify(o));return true}catch(e){return false}}
 function slOK(g){try{const o=JSON.parse(g);return !!o&&typeof o.day==='number'}catch(e){return false}}
-function slBackup(g,why){if(TEST||!g||!slOK(g)||g===JSON.stringify(fresh()))return;const o=slLoad();if(o.b.some(x=>x&&x.game===g))return;o.b.unshift({at:Date.now(),game:g,rec:lsGet(RKEY),why});o.b=o.b.slice(0,3);slSave(o)}
+/* 2026-11-21 玩家開新局蓋掉 200 多天的存檔：「開新的一局前」的備份只是最近 3 份之一，後來重玩、同步各備份一次就被擠掉了。
+   現在另外永久保留「天數最多」的那一份備份（o.k），只會被天數一樣或更多的備份取代 */
+function slDay(g){try{const o=JSON.parse(g);return (o.day||0)+(o.pendingNext?1:0)}catch(e){return 0}}
+function slBackup(g,why){if(TEST||!g||!slOK(g)||g===JSON.stringify(fresh()))return;const o=slLoad();
+  if(!o.b.some(x=>x&&x.game===g)){o.b.unshift({at:Date.now(),game:g,rec:lsGet(RKEY),why});o.b=o.b.slice(0,3)}
+  if(!o.k||slDay(g)>=slDay(o.k.game))o.k={at:Date.now(),game:g,rec:lsGet(RKEY),why};
+  if(!slSave(o)){o.b=o.b.slice(0,1);slSave(o)}}
 function slTime(at){try{return new Date(at).toLocaleString(LANG,{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}}
 const SLWHY={new:'開新的一局前',bankrupt:'破產前',cloud:'雲端同步前',load:'讀取存檔前',cheat:'開啟測試功能前',replay:'選日期重玩前'};
 function showReplay(){
@@ -8114,7 +8120,7 @@ function showSlots(){
   const o=slLoad(),cur=lsGet(KEY);
   const rows=[0,1,2].map(i=>{const x=o.s[i];
     return `<div class="slrow"><div class="si">${T('存檔 {0}',i+1)}${x?`<small>${saveSummary(x.game)}・${slTime(x.at)}</small>`:`<small>${T('空的')}</small>`}</div><button class="btn alt" data-act="slotput" data-i="${i}" ${cur?'':'disabled'}>${T('存入')}</button>${x?`<button class="btn" data-act="slotload" data-i="${i}">${T('讀取')}</button>`:''}</div>`}).join('');
-  const bk=o.b.map((x,i)=>`<div class="slrow"><div class="si">${T(SLWHY[x.why]||'自動備份')}<small>${saveSummary(x.game)}・${slTime(x.at)}</small></div><button class="btn" data-act="bakload" data-i="${i}">${T('還原')}</button></div>`).join('');
+  const bk=o.b.map((x,i)=>`<div class="slrow"><div class="si">${T(SLWHY[x.why]||'自動備份')}<small>${saveSummary(x.game)}・${slTime(x.at)}</small></div><button class="btn" data-act="bakload" data-i="${i}">${T('還原')}</button></div>`).join('')+(o.k&&!o.b.some(x=>x&&x.game===o.k.game)?`<div class="slrow"><div class="si">${T('天數最多的備份（永久保留）')}<small>${saveSummary(o.k.game)}・${slTime(o.k.at)}</small></div><button class="btn" data-act="bakload" data-i="k">${T('還原')}</button></div>`:'');
   modal(`<h2>${T('存檔欄位')}</h2><p>${T('目前的進度可以存進下面三個欄位，之後隨時讀回來。欄位只存在這台裝置上，不會同步到雲端。')}</p>${CL.user?'':`<p class="hint">${T('還沒登入，存檔只在這台裝置上～ 登入 Google 就能備份到雲端！')}</p>`}${rows}
   <div class="slh">${T('自動備份')}</div><p style="font-size:13.5px;opacity:.8">${T('開新的一局、破產、雲端存檔覆蓋之前，遊戲會自動備份舊存檔（最多 3 份）。')}</p>${bk||`<p>${T('目前沒有備份。')}</p>`}
   <div class="btns"><button class="btn" data-act="rescue">🛟 ${T('找回存檔')}</button><button class="btn alt" data-act="closem">${T('關閉')}</button></div>`)}
@@ -8124,6 +8130,7 @@ function applyCloud(c){if(lsGet(KEY)!==c.game)slBackup(lsGet(KEY),'cloud');lsSet
 (function(){const A={'zh-Hans':'还没登录，存档只在这台装置上～ 登录 Google 就能备份到云端！','en':'Not signed in yet, so your save stays on this device～ Sign in with Google to back it up to the cloud!','ja':'まだログインしていないので、セーブはこの端末だけに残ります～ Googleでログインするとクラウドにバックアップされます！','ko':'아직 로그인하지 않아서 저장 데이터는 이 기기에만 있어요～ Google로 로그인하면 클라우드에 백업돼요!','id':'Belum masuk, jadi simpanan hanya ada di perangkat ini～ Masuk dengan Google untuk cadangan ke cloud!'};
 for(const l in A){if(I18N[l])I18N[l]['還沒登入，存檔只在這台裝置上～ 登入 Google 就能備份到雲端！']=A[l]}})();
 /* 🛟 save rescue: every copy this player can reach (cloud now, the old Firestore copy, this device's slots and backups), furthest day first */
+(function(){const A={'zh-Hans':'天数最多的备份（永久保留）',en:'Furthest-day backup (kept permanently)',ja:'いちばん日数が進んだバックアップ（ずっと保存）',ko:'가장 많이 진행한 백업 (영구 보관)',id:'Cadangan hari terjauh (disimpan permanen)'};for(const l in A){if(I18N[l])I18N[l]['天數最多的備份（永久保留）']=A[l]}})();
 let RESC=[];
 async function showRescue(){
   if(TEST){modal(`<h2>🛟 ${T('找回存檔')}</h2><p>${T('測試模式下無法使用。')}</p><div class="btns"><button class="btn" data-act="closem">${T('知道了')}</button></div>`);return}
@@ -8135,7 +8142,7 @@ async function showRescue(){
     if(c.err&&!c.rt)note=T('讀取雲端存檔失敗，請確認網路後再試一次。')}
   else note=T('登入 Google 帳號後，還能找雲端上的存檔。');
   add(T('這台裝置（目前）'),cur,lsGet(REAL_RKEY),localStamp());
-  const o=slLoad();o.s.forEach((x,i)=>{if(x)add(T('存檔 {0}',i+1),x.game,x.rec,x.at)});o.b.forEach(x=>{if(x)add(T(SLWHY[x.why]||'自動備份'),x.game,x.rec,x.at)});
+  const o=slLoad();o.s.forEach((x,i)=>{if(x)add(T('存檔 {0}',i+1),x.game,x.rec,x.at)});o.b.forEach(x=>{if(x)add(T(SLWHY[x.why]||'自動備份'),x.game,x.rec,x.at)});if(o.k)add(T('天數最多的備份（永久保留）'),o.k.game,o.k.rec,o.k.at);
   L.sort((a,b)=>gDay(b.g)-gDay(a.g)||b.at-a.at);RESC=L;
   if(!document.querySelector('#homeModal .modal,#modalLayer .modal'))return; /* closed while loading */
   const rows=L.map((x,i)=>`<div class="slrow"><div class="si">${esc(x.src)}<small>${saveSummary(x.g)}${x.at?'・'+slTime(x.at):''}</small></div>${x.g===cur?`<b style="white-space:nowrap">${T('使用中')}</b>`:`<button class="btn" data-act="rescload" data-i="${i}">${T('還原')}</button>`}</div>`).join('');

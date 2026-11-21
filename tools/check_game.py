@@ -473,6 +473,36 @@ def sc_saves(b, base):
         c.close()
 
 
+def sc_keepbak(b, base):
+    """2026-11-21 玩家開新局蓋掉 200 多天的存檔，之後備份被擠掉找不回來：真實點擊「新的一局」→ 再發生 4 次備份 → 存檔欄位裡要還有「天數最多的備份」→ 真實點擊還原，天數要回來"""
+    c = Ctx(b, base, style='old').open()
+    try:
+        c.dismiss_modals()
+        day0 = SEED_SAVE['day']
+        c.click('[data-act=asknew]', wait=700)
+        c.click('[data-act=newgame]', wait=1200)
+        if c.page.evaluate("JSON.parse(localStorage.getItem(%r)).day" % SAVE_KEY) != 1:
+            raise AssertionError('按新的一局後天數不是 1')
+        # 新的一局玩了一陣子，期間又發生 4 次會備份的事（重玩、同步…）
+        c.page.evaluate("""()=>{for(let i=1;i<5;i++){const o=JSON.parse(localStorage.getItem(%r));o.day=i;o.coins=i*111;slBackup(JSON.stringify(o),'replay')}}""" % SAVE_KEY)
+        o = c.page.evaluate("slLoad()")
+        if any(x and json.loads(x['game']).get('day') == day0 for x in o['b']):
+            raise AssertionError("測試前提不對：最近 3 份備份裡還有舊存檔 %s" % [json.loads(x["game"]).get("day") for x in o["b"] if x])
+        if not o.get('k') or json.loads(o['k']['game']).get('day') != day0:
+            raise AssertionError('天數最多的備份沒有被永久保留（第 %s 天那份不見了）' % day0)
+        c.page.evaluate("showSlots()")
+        c.page.wait_for_timeout(500)
+        c.click('[data-act=bakload][data-i=k]', wait=500)
+        c.click('[data-act=bakload][data-ok]', wait=1200)
+        c.dismiss_modals()
+        d = c.page.evaluate("JSON.parse(localStorage.getItem(%r)).day" % SAVE_KEY)
+        if d != day0:
+            raise AssertionError('還原「天數最多的備份」後天數是 %s，不是 %s' % (d, day0))
+        c.expect_clean('永久保留備份')
+    finally:
+        c.close()
+
+
 def sc_lyed(b, base):
     """📐 排版編輯（作者工具）：真實觸控點擊。選取不會觸發遊戲；👆進入才會真的按下去；進到成就／排行榜／設定等每個畫面都要能選、能移動；玩家端沒有按鈕。"""
     prof = dict(viewport={'width': 844, 'height': 390}, has_touch=True, is_mobile=True, device_scale_factor=2)
@@ -1837,7 +1867,7 @@ def sc_barext(b, base):
 
 
 SCENARIOS = [('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
-             ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves),
+             ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves), ('keepbak', sc_keepbak),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
              ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun)]
 
