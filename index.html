@@ -6455,6 +6455,7 @@ document.addEventListener('click',e=>{
   else if(act==='inbpinview'){INB.onlyPin=!INB.onlyPin;INB.open=null;inboxDraw()}
   else if(act==='inbdone'){INB.showDone=!INB.showDone;inboxDraw()}
   else if(act==='inbre'){INB.open=a.dataset.id||null;inboxDraw()}
+  else if(act==='inbthr'){inboxThr(a.dataset.id)}
   else if(act==='inbwho'){INB.who=a.dataset.id||null;INB.open=null;inboxDraw()}
   else if(act==='inbread'){fbReadToggle(a.dataset.id)}
   else if(act==='inbpin'){fbPinToggle(a.dataset.id)}
@@ -7868,6 +7869,7 @@ async function cloudInit1(){
       // the player answers back: goes into their own thread and into the author's inbox as a 're' item
       replyBack:(uid,thr,text,d)=>rt((rd,r)=>{const ts=rd.serverTimestamp(),mid=rd.push(rd.ref(r,'fbreply/'+uid+'/'+thr+'/msgs')).key,fid=rd.push(rd.ref(r,'fb')).key;
         return rd.update(rd.ref(r),{['fbreply/'+uid+'/'+thr+'/msgs/'+mid]:{text,t:ts},['fb/'+fid]:Object.assign({cat:'re',text,uid,thr,t:ts},d)})}),
+      fbThread:(uid,thr)=>rt((rd,r)=>rd.get(rd.ref(r,'fbreply/'+uid+'/'+thr)).then(sn=>sn.val()||null)),
       myReplies:uid=>rt((rd,r)=>rd.get(rd.ref(r,'fbreply/'+uid)).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.sort((x,y)=>(y.t||0)-(x.t||0))})),
       replySeen:(uid,id)=>rt((rd,r)=>rd.set(rd.ref(r,'fbreply/'+uid+'/'+id+'/seen'),true)),
       notice:()=>{/* download saver: whole notice node (all posts, 手動榜, del/unflag) is big. Local copy: <30 min reuse; 30 min-6 h only read the tiny notice/id and reuse the copy if it is unchanged; full re-read after 6 h or when the id changed. Author/admin always fresh */let adm=false;try{adm=typeof isAdmin==='function'&&!!isAdmin()}catch(e){}const full=()=>rt((rd,r)=>rd.get(rd.ref(r,'notice')).then(s=>s.val())).then(v=>{if(!adm)try{localStorage.setItem('izakaya-nrc',JSON.stringify({t:Date.now(),ct:Date.now(),d:v}))}catch(e){}return v});if(adm)return full();let c=null;try{c=JSON.parse(localStorage.getItem('izakaya-nrc')||'null')}catch(e){}const n=Date.now();if(!c||typeof c.t!=='number'||!('d' in c)||c.t>n+60000||n-c.t>21600000)return full();const ct=typeof c.ct==='number'?c.ct:c.t;if(n-ct<1800000&&ct<=n+60000)return Promise.resolve(c.d);return rt((rd,r)=>rd.get(rd.ref(r,'notice/id')).then(s=>s.val())).then(id=>{const cur=c.d&&c.d.id!=null?c.d.id:null;if(String(id)===String(cur)&&(id==null)===(cur==null)){try{c.ct=Date.now();localStorage.setItem('izakaya-nrc',JSON.stringify(c))}catch(e){}return c.d}return full()}).catch(()=>c.d)},
@@ -8543,9 +8545,21 @@ function fbReadToggle(id){const f=INB.rows.concat(INB.old).find(x=>x.id===id);if
 function fbPinToggle(id){const f=INB.rows.find(x=>x.id===id);if(!f||f.old)return;
   const next=!f.pin;f.pin=next;inboxDraw();
   CL.api.fbPinSet(id,next).catch(e=>{f.pin=!next;toast('收藏失敗：'+String(e&&e.code||e));inboxDraw()})}
-const INB={rows:[],old:[],open:null,busy:false,err:'',claims:{},drafts:fbDraftLoad(),imgs:{}};
+const INB={rows:[],old:[],open:null,busy:false,err:'',claims:{},drafts:fbDraftLoad(),imgs:{},thr:{}};
 const isDone=f=>!!(f.re||f.rd);
 const FBCATN=Object.fromEntries(FBCATS);FBCATN.re='↩️ 玩家回你';
+/* 💬 full conversation of a player's follow-up: the original opinion (q) + every message, read from fbreply/uid/thr, so it still shows even when the original is outside the 150 loaded rows or was deleted */
+function inbThrHtml(f){const t=INB.thr[f.id];if(!f.thr||!f.uid||!t)return '';
+  if(t==='load')return '<p class="inbh">對話載入中…</p>';
+  if(t==='err')return '<p class="inbh">對話讀取失敗</p>';
+  if(t==='none')return '<p class="inbh">找不到這串對話（可能已被清除）</p>';
+  const ms=Object.values(t.msgs||{}).sort((a,b)=>(a.t||0)-(b.t||0));
+  const row=(who,txt,tm)=>`<p class="inbh" style="margin:6px 0 0">${who}${tm?' · '+chatTime(tm):''}</p><p class="inbtx" style="margin:0">${esc(txt||'')}</p>`;
+  return `<div class="inbit" style="margin:6px 0">${t.q?row('🙋 玩家最初的意見',t.q,0):'<p class="inbh">（最初的意見沒有留存在對話裡）</p>'}${t.text?row('✅ 你的第一次回覆',t.text,t.t):''}${ms.map(m=>row(m.a?'✅ 你':'↩️ 玩家',m.text,m.t)).join('')}</div>`}
+async function inboxThr(id){const f=INB.rows.concat(INB.old).find(x=>x.id===id);if(!f||!f.thr||!f.uid)return;
+  if(INB.thr[id]&&INB.thr[id]!=='err'){delete INB.thr[id];inboxDraw();return}
+  INB.thr[id]='load';inboxDraw();
+  try{INB.thr[id]=(await CL.api.fbThread(f.uid,f.thr))||'none'}catch(e){INB.thr[id]='err'}inboxDraw()}
 async function showInbox(reload){if(!canInbox())return;
   {INB.err='';modal(`<h2>📬 收件匣</h2><p style="font-size:14px">載入中…</p>`);
     try{INB.rows=await CL.api.fbList(150);INB.claims=await CL.api.claimGet()}catch(e){INB.err=String(e&&e.code||e)}}
@@ -8560,10 +8574,10 @@ function inboxDraw(){
   const item=f=>{const op=INB.open===f.id;
     return `<div class="inbit${f.re?' done':''}"><p class="inbh">${esc(FBCATN[f.cat]||f.cat||'')} · ${chatTime(f.t||f.at||0)} ${f.lang?' · '+esc(f.lang):''} · 第 ${+f.day||0} 天${f.old?' · 舊資料':''}</p>
     ${f.ctx?`<p class="inbh">回你說的：${esc(f.ctx)}</p>`:''}<p class="inbtx">${esc(f.text||'')}</p>${f.ni?(INB.imgs[f.id]?(INB.imgs[f.id]==='load'?'<p class="inbh">圖片載入中…</p>':INB.imgs[f.id]==='err'?'<p class="inbh">圖片讀取失敗</p>':`<div class="fbimgs">${INB.imgs[f.id].map(u=>`<img class="fbbig" src="${u}" alt="">`).join('')}</div>`):`<div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbimg" data-id="${esc(f.id)}">🖼 看附圖（${+f.ni}）</button></div>`):''}${f.contact?`<p class="inbh">聯絡：${esc(f.contact)}</p>`:''}
-    ${f.re?`<p class="inbre">✅ 已回覆：${esc(f.re)}</p>`:(f.rd?'<p class="inbh">👁 已讀</p>':'')}
+    ${inbThrHtml(f)}${f.re?`<p class="inbre">✅ 已回覆：${esc(f.re)}</p>`:(f.rd?'<p class="inbh">👁 已讀</p>':'')}
     ${!op&&INB.drafts[f.id]?'<p class="inbh">📝 有未送出的草稿</p>':''}${op?`<textarea class="fbtext" id="inbtext" data-id="${esc(f.id)}" maxlength="1000" oninput="fbDraftSet(this.dataset.id,this.value)" placeholder="回覆給這位玩家…">${esc(INB.drafts[f.id]||'')}</textarea>
       <div class="btns" style="justify-content:flex-start"><button class="btn" data-act="inbsend">${INB.busy?'送出中…':'送出回覆'}</button><button class="btn alt" data-act="inbre" data-id="">取消</button></div>`
-    :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbread" data-id="${esc(f.id)}">${f.rd?'↩ 取消已讀':'✔ 已讀'}</button>`}${f.old?'':`<button class="btn alt" data-act="inbpin" data-id="${esc(f.id)}">${f.pin?'📌 取消待做':'📌 收進待做'}</button>`}${f.uid&&!INB.who?`<button class="btn alt" data-act="inbwho" data-id="${esc(f.uid)}">👤 看這位玩家全部</button>`:''}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
+    :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbread" data-id="${esc(f.id)}">${f.rd?'↩ 取消已讀':'✔ 已讀'}</button>`}${f.old?'':`<button class="btn alt" data-act="inbpin" data-id="${esc(f.id)}">${f.pin?'📌 取消待做':'📌 收進待做'}</button>`}${f.thr&&f.uid?`<button class="btn alt" data-act="inbthr" data-id="${esc(f.id)}">${INB.thr[f.id]&&INB.thr[f.id]!=='err'?'🙈 收起對話':'💬 看完整對話'}</button>`:''}${f.uid&&!INB.who?`<button class="btn alt" data-act="inbwho" data-id="${esc(f.uid)}">👤 看這位玩家全部</button>`:''}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
   modal(`<h2>${INB.onlyPin?'📌 待做・蒐藏（'+pins.length+'）':'📬 收件匣（'+INB.rows.filter(f=>!isDone(f)&&!f.pin).length+'）'}</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
   <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button>${nDone?`<button class="btn alt" data-act="inbdone">${INB.showDone?'🙈 隱藏已回覆・已讀':'👁 顯示已回覆・已讀（'+nDone+'）'}</button>`:''}<button class="btn alt" data-act="inbpinview">${INB.onlyPin?'← 返回收件匣':'📌 待做（'+INB.rows.filter(f=>f.pin).length+'）'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
   ${INB.who?`<div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbwho" data-id="">← 返回全部意見</button><span class="inbh">這位玩家的全部意見，由舊到新</span></div>`:''}
