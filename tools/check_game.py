@@ -726,6 +726,72 @@ def sc_sponsor(b, base):
         c.close()
 
 
+def sc_fblogin(b, base):
+    """登入方式：沒開 Facebook 時只有 Google（直接走 Google）；開了（?fb=1）按登入先出選單，選 Google／Facebook 各自傳對的 provider；
+    同 Email 已用 Google 註冊時的錯誤要指回 Google；真實點擊。"""
+    # 1) 沒開旗標：不出現 Facebook
+    c = Ctx(b, base).open(3000)
+    try:
+        c.dismiss_modals()
+        c.page.evaluate("localStorage.removeItem('izakaya-fb')")
+        c.page.evaluate("showHome()")
+        c.page.wait_for_timeout(500)
+        if 'Facebook' in (c.page.evaluate("document.body.innerText") or ''):
+            raise AssertionError('沒開 Facebook 登入，畫面上卻出現 Facebook 字樣')
+        c.page.evaluate("CL.api={signIn:async k=>{window.__k=k}};CL.ready=true;acctRefresh()")
+        c.dismiss_modals()
+        c.click('#acct')
+        if c.page.evaluate("window.__k") != 'g' or c.has('[data-act=loginfb]'):
+            raise AssertionError('沒開 Facebook 登入時，按登入應該直接走 Google（實際 provider=%s）' % c.page.evaluate("window.__k"))
+        c.expect_clean('沒開 Facebook 時的登入')
+    finally:
+        c.close()
+    # 2) 開旗標
+    c = Ctx(b, base)
+    try:
+        c.page.goto(base + '/index.html?fb=1', wait_until='domcontentloaded', timeout=60000)
+        c.page.wait_for_timeout(3000)
+        c.dismiss_modals()
+        c.page.evaluate("CL.api={signIn:async k=>{window.__k=k}};CL.ready=true;acctRefresh()")
+        c.page.wait_for_timeout(300)
+        c.dismiss_modals()
+        lab = c.page.evaluate("document.getElementById('acct').innerText.trim()")
+        if lab != '登入':
+            raise AssertionError('開了 Facebook 登入，帳號鈕文字應是「登入」，實際是「%s」' % lab)
+        c.click('#acct')
+        if not (c.has('.modal [data-act=loging]') and c.has('.modal [data-act=loginfb]')):
+            raise AssertionError('按登入沒有出現 Google／Facebook 選單')
+        c.click('.modal [data-act=loginfb]')
+        if c.page.evaluate("window.__k") != 'fb':
+            raise AssertionError('按「用 Facebook 登入」，傳給登入的 provider 不是 fb（%s）' % c.page.evaluate("window.__k"))
+        c.page.evaluate("window.__k=null")
+        c.click('#acct')
+        c.click('.modal [data-act=loging]')
+        if c.page.evaluate("window.__k") != 'g':
+            raise AssertionError('按「用 Google 登入」，傳給登入的 provider 不是 g（%s）' % c.page.evaluate("window.__k"))
+        # 同 Email 已用 Google 註冊：錯誤訊息要指回 Google，「再試一次」沿用上次的方式
+        c.page.evaluate("window.__k=null;CL.api={signIn:async k=>{window.__k=k;const e=new Error('x');e.code='auth/account-exists-with-different-credential';throw e}}")
+        c.click('#acct')
+        c.click('.modal [data-act=loginfb]')
+        txt = c.page.evaluate("(document.querySelector('.modal')||{innerText:''}).innerText")
+        if '用 Google 登入' not in txt:
+            raise AssertionError('Facebook 登入遇到「同 Email 已用 Google」，沒有指回 Google：%s' % txt[:80])
+        c.page.evaluate("window.__k=null")
+        c.click('.modal [data-act=loginretry]')
+        if c.page.evaluate("window.__k") != 'fb':
+            raise AssertionError('「再試一次」沒有沿用上次選的 Facebook（%s）' % c.page.evaluate("window.__k"))
+        # 手機寬度：選單按鈕觸控目標至少 44px
+        c.page.evaluate("CL.api={signIn:async k=>{}}")
+        c.dismiss_modals()
+        c.click('#acct')
+        hs = c.page.evaluate("[...document.querySelectorAll('.modal [data-act=loging],.modal [data-act=loginfb]')].map(e=>e.getBoundingClientRect().height)")
+        if not hs or min(hs) < 44 * 0.9:
+            raise AssertionError('登入選單按鈕太小：%s' % hs)
+        c.expect_clean('Facebook 登入選單')
+    finally:
+        c.close()
+
+
 def sc_coopcpu(b, base):
     """多人模式「與電腦配對」：先選店家（居酒屋／屋台／壽司店）三顆按鈕，點進去才選廚房／外場；真實點擊。"""
     c = Ctx(b, base).open()
@@ -1894,7 +1960,7 @@ def sc_coicons(b, base):
         c.close()
 
 
-SCENARIOS = [('coicons', sc_coicons), ('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
+SCENARIOS = [('fblogin', sc_fblogin), ('coicons', sc_coicons), ('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves), ('keepbak', sc_keepbak),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
              ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun)]
