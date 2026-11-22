@@ -1207,8 +1207,8 @@ def bx_finish_cust(c):
     bx_vn(c)
     c.click('[data-bx=totalk]', wait=300)
     bx_vn(c)
-    v = c.page.evaluate("BXCH[bxOrder().who][0]")
-    c.click('[data-bx=say][data-v=%s]' % v, wait=300)
+    v = c.page.evaluate("BX.sc.o.findIndex(x=>x[1]===2)")
+    c.click('[data-bx=say][data-v="%s"]' % v, wait=300)
     bx_vn(c)
     c.click('[data-bx=nextc]', wait=700)
 
@@ -1236,6 +1236,20 @@ def sc_bar(b, base):
         bad = c.page.evaluate("Object.entries(BXSURP).flatMap(([k,h])=>Object.keys(h).filter(l=>!BXR[k]||bxInRec(k,l)||!BXL[l]).map(l=>k+':'+l))")
         if bad:
             raise AssertionError('月影酒吧：隱藏配方的材料已經在酒譜裡或不存在：%s' % bad)
+        # 2026/11/23 玩家回報：酒吧單價太低賺不到錢 → 每款酒售價至少 1 萬，而且比材料費高很多
+        low = c.page.evaluate("BRKEYS.filter(k=>ITEMS[k].price<10000||ITEMS[k].price<ITEMS[k].cost*15).map(k=>k+':'+ITEMS[k].price)")
+        if low:
+            raise AssertionError('月影酒吧：這些酒的售價太低（要 >=10000 且 >=材料費 15 倍）：%s' % low)
+        # 2026/11/23 玩家回報：客人聊的內容重複、答案猜得到 → 每位客人至少 4 段話題，每段 2~3 個回應、剛好有一個最佳回應，
+        # 而且「安靜地喝」不能在所有話題都是最佳／最差（不然又猜得到）
+        sc = c.page.evaluate("""()=>{const o=[];for(const w of Object.keys(BXCH)){const L=bxScenes(w);if(L.length<3)o.push(w+':話題只有'+L.length+'段');
+          let q2=0,q0=0;for(const s of L){const b=s.o.filter(x=>x[1]===2).length;if(b!==1)o.push(w+':「'+s.l.slice(0,10)+'」最佳回應有'+b+'個');if(s.o.length<2||s.o.length>3)o.push(w+':選項數'+s.o.length);
+            const q=s.o.find(x=>x[0]===BXQ);if(q){if(q[1]===2)q2++;if(q[1]===0)q0++}}
+          if(L.length>=4&&(q2===L.length||q0===L.length))o.push(w+':安靜的分數每段都一樣，還是猜得到')}
+          const seen=new Set(),w='misaki';for(let i=0;i<bxScenes(w).length;i++)seen.add(bxPickScene(w,false).hid);if(seen.size!==bxScenes(w).length)o.push('同一輪話題有重複');
+          if(bxPickScene('ren',true).hid!=='0')o.push('教學的聊天要固定第一段');return o}""")
+        if sc:
+            raise AssertionError('月影酒吧：客人聊天資料有問題：%s' % sc)
         c.page.evaluate("CL.user={email:ADMIN_EMAIL,uid:'check-admin',name:'Author Check',photo:''};showHome()")
         c.page.wait_for_timeout(500)
         c.dismiss_modals()
@@ -1249,6 +1263,10 @@ def sc_bar(b, base):
         q = c.page.evaluate("BX.q.map(o=>o.k)")
         if q != ['brhigh', 'bratsu', 'brgimlet']:
             raise AssertionError('月影酒吧：第一天教學的客人不對：%s' % q)
+        # 酒譜要有搭配提示（還沒發現的隱藏配方往哪一類材料試）
+        hint = c.page.evaluate("bxHints('brhigh')")
+        if '隱藏配方' not in hint or '甜味' not in hint:
+            raise AssertionError('月影酒吧：酒譜沒有搭配提示（%s）' % hint)
         c.page.wait_for_timeout(300)
         if not c.has('#tut .vn img.vn-por') or '月影酒吧' not in c.page.evaluate("document.querySelector('#tut .vn').innerText"):
             raise AssertionError('月影酒吧：第一天教學一開始沒有出現小夜的對話框\n%s' % c.diag())
@@ -1354,7 +1372,16 @@ def sc_bar(b, base):
         bx_vn(c)
         c.click('[data-bx=totalk]', wait=300)
         bx_vn(c)
-        c.click('[data-bx=say][data-v=%s]' % c.page.evaluate("BXCH[bxOrder().who][0]"), wait=300)
+        # 2026/11/23：第 4 位（非教學）的聊天是隨機話題；故意選一個「不是最好」的回應，確認畫面照樣走得下去、小費規則對
+        wr = c.page.evaluate("(()=>{const o=BX.sc.o;let i=o.findIndex(x=>x[1]===0);if(i<0)i=o.findIndex(x=>x[1]===1);return i})()")
+        if wr < 0 or not c.has('[data-bx=say][data-v="%s"]' % wr):
+            raise AssertionError('月影酒吧：聊天選項畫面缺少非最佳回應的按鈕\n%s' % c.diag())
+        n_opt = c.page.evaluate("document.querySelectorAll('#barx [data-bx=say]').length")
+        if n_opt != c.page.evaluate("BX.sc.o.length") or n_opt < 2:
+            raise AssertionError('月影酒吧：聊天選項按鈕數量不對（%s）' % n_opt)
+        c.click('[data-bx=say][data-v="%s"]' % wr, wait=300)
+        if not c.has('[data-bx=nextc]'):
+            raise AssertionError('月影酒吧：選了非最佳回應後沒有「下一位／打烊」按鈕\n%s' % c.diag())
         if '打烊' not in c.page.evaluate("(document.querySelector('[data-bx=nextc]')||{innerText:''}).innerText"):
             raise AssertionError('月影酒吧：最後點餐後的最後一位，按鈕應該是「打烊」')
         bx_vn(c)
