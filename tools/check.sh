@@ -9,6 +9,7 @@ FAST=0; [ "${1:-}" = "--fast" ] && FAST=1
 
 echo "▶ 1/3 語法"
 node tools/syntax_check.js || fail=1
+node tools/lbmerge_test.js || fail=1   # 排行榜上傳合併規則（防止成績被蓋掉）
 
 echo "▶ 2/3 sw.js 版本號"
 cur=$(sed -n "s/^const CACHE='izakaya-v\([0-9]*\)'.*/\1/p" sw.js | head -1)

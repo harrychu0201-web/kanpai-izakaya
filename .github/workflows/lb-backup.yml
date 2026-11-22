@@ -1,0 +1,67 @@
+name: Leaderboard backup
+
+# 每天備份一次排行榜（lb 節點）成 artifact，出事時可以回溯。
+# 備份檔只放在 Actions artifact（只有 repo 寫入者看得到，保存 60 天），不會 commit 進公開 repo。
+# 日誌只印總筆數，不印 uid 或成績明細。
+on:
+  schedule:
+    - cron: '37 19 * * *'   # 每天 UTC 19:37（台北 03:37）
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lb-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Dump lb node
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_SA" ]; then
+            echo "FIREBASE_SA secret is missing" >&2
+            exit 1
+          fi
+          WORK="$RUNNER_TEMP/lbbak"
+          mkdir -p "$WORK" && cd "$WORK"
+          npm init -y >/dev/null
+          npm install --silent firebase-admin@12
+          printf '%s' "$FIREBASE_SA" > sa.json
+          cat > dump.mjs <<'JS'
+          import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+          import { initializeApp, cert } from 'firebase-admin/app';
+          import { getDatabase } from 'firebase-admin/database';
+          const sa = JSON.parse(readFileSync('sa.json', 'utf8'));
+          initializeApp({ credential: cert(sa), databaseURL: 'https://kanpai-izakaya-default-rtdb.firebaseio.com' });
+          const snap = await getDatabase().ref('lb').once('value');
+          const lb = snap.val() || {};
+          const rows = Object.keys(lb);
+          const boards = ['best', 'earned', 'days', 'chal', 'chalh', 'fc'];
+          const counts = Object.fromEntries(boards.map(b => [b, rows.filter(k => typeof lb[k]?.[b] === 'number').length]));
+          console.log('lb 總筆數：' + rows.length);
+          console.log('各榜有成績的筆數：' + JSON.stringify(counts));
+          mkdirSync('out', { recursive: true });
+          const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+          writeFileSync('out/lb-' + stamp + '.json', JSON.stringify({ at: Date.now(), lb }));
+          JS
+          node dump.mjs
+          mkdir -p "$RUNNER_TEMP/lbout" && cp out/*.json "$RUNNER_TEMP/lbout/"
+          ls -la "$RUNNER_TEMP/lbout"
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lb-backup-${{ github.run_number }}
+          path: ${{ runner.temp }}/lbout/*.json
+          retention-days: 60

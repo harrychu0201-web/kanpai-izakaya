@@ -8186,7 +8186,8 @@ const lbHead=tb=>`<h2>${T('排行榜')}</h2><div class="lbtabs">${LBT.filter(x=>
 const lmNm=x=>String(x||'').replace(/管理[員员]/g,'').trim();
 async function lbWithMan(f,dir){const asc=dir==='asc';let rows=await CL.api.all(f,dir);let man={};try{if(CL.api.lbMan)man=await CL.api.lbMan()}catch(e){}
   Object.keys(man||{}).forEach(k=>{const m=man[k];if(!m||!m.name||typeof m[f]!=='number'||!(m[f]>0))return;
-    const real=rows.find(r=>lmNm(r.name)===lmNm(m.name));if(real&&(asc?real[f]<=m[f]:real[f]>=m[f]))return;
+    /* only match a real row when the name is unique: two players with the same nickname must never lose their score to a manual entry */
+    const hits=rows.filter(r=>lmNm(r.name)===lmNm(m.name));const real=hits.length===1?hits[0]:null;if(real&&(asc?real[f]<=m[f]:real[f]>=m[f]))return;
     if(real)rows=rows.filter(r=>r!==real);
     rows.push({uid:'man:'+k,name:m.name,[f]:m[f]})});
   return rows.sort((a,b)=>asc?a[f]-b[f]:b[f]-a[f])}
