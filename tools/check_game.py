@@ -1236,6 +1236,26 @@ def sc_bar(b, base):
         bad = c.page.evaluate("Object.entries(BXSURP).flatMap(([k,h])=>Object.keys(h).filter(l=>!BXR[k]||bxInRec(k,l)||!BXL[l]).map(l=>k+':'+l))")
         if bad:
             raise AssertionError('月影酒吧：隱藏配方的材料已經在酒譜裡或不存在：%s' % bad)
+        # 2026/11/23 玩家回報：做一做都只有那幾樣 → 酒譜至少 60 款；每一款的資料都要完整、畫得出圖、客人條件要做得到
+        rc = c.page.evaluate("""()=>{const o=[];if(BRKEYS.length<60)o.push('酒譜只有'+BRKEYS.length+'款');
+          for(const k of BRKEYS){const r=BXR[k],it=ITEMS[k];if(!r||!it){o.push(k+':缺 BXR/ITEMS');continue}
+            if(!BXJP[k])o.push(k+':缺日文點酒短句');if(!BXG[r.g]||!BXTP[r.t]||(r.ice&&!BXI[r.ice]))o.push(k+':杯子／冰／溫度不存在');
+            const ml=r.st.filter(x=>x[0]==='m'||x[0]==='top'||x[0]==='dash');if(!ml.length)o.push(k+':沒有任何材料');
+            for(const x of ml){if(!BXL[x[1]])o.push(k+':材料不存在 '+x[1]);else if(BXNOIMG.includes(x[1])&&!['brimo','bryuzuhot','brmatcha','bruji'].includes(k)&&0)o.push(k)}
+            for(const g of r.opt)if(!BXGAR[g])o.push(k+':配料不存在 '+g);
+            for(const cd of r.cond){if(cd.startsWith('g:')){if(!BXGAR[cd.slice(2)]||!BXCZ[cd]||!BXC[cd])o.push(k+':客人條件沒有對應 '+cd)}
+              else if(!BXC[cd])o.push(k+':未知客人條件 '+cd);
+              if(cd==='sour'&&!bxAcid(k))o.push(k+':條件「酸一點」但酒譜沒有酸味材料');if(cd==='sweet'&&!bxSweet(k))o.push(k+':條件「甜一點」但酒譜沒有甜味材料');
+              if(cd==='fizz'&&!r.st.some(x=>x[0]==='top'&&BXFIZZ.includes(x[1])))o.push(k+':條件「氣泡」但酒譜沒有氣泡飲');
+              if((cd==='strong'||cd==='light')&&!bxFirst(k))o.push(k+':條件濃淡但沒有基酒')}
+            if(!BXL[bxFirst(k)||'x'])o.push(k+':第一個量酒材料不存在');
+            let h='';try{h=brIcon(k)||''}catch(e){h=''}if(h.length<200)o.push(k+':畫不出圖示');
+            if(!bxStepsText(k).trim())o.push(k+':步驟文字是空的');
+            if(it.shop!=='bar'||!it.buy)o.push(k+':ITEMS 欄位不對')}
+          const dup=BRKEYS.filter((k,i)=>BRKEYS.indexOf(k)!==i);if(dup.length)o.push('酒款重複 '+dup);
+          return o}""")
+        if rc:
+            raise AssertionError('月影酒吧：酒譜資料有問題：%s' % rc)
         # 2026/11/23 玩家回報：酒吧單價太低賺不到錢 → 每款酒售價至少 1 萬，而且比材料費高很多
         low = c.page.evaluate("BRKEYS.filter(k=>ITEMS[k].price<10000||ITEMS[k].price<ITEMS[k].cost*15).map(k=>k+':'+ITEMS[k].price)")
         if low:
@@ -1959,6 +1979,50 @@ def sc_barext(b, base):
         c.close()
 
 
+def sc_barnew(b, base):
+    """2026/11/23 新增的酒譜（玩家回報做一做只有那幾樣）：每一種做法（搖盪雞尾酒杯、高球加蘇打、威士忌杯大冰球、枡酒、加熱外的各步驟）
+    各挑新酒真實點擊做一杯，要過關；酒櫃全買後酒單頁每一頁要打得開。"""
+    seed = dict(SEED_SAVE)
+    allb = ['whisky','smalt','ume','yuzushu','shochu','imo','awamori','sake','daiginjo','gin','vodka','rum','darkrum','tequila','brandy','vermr','vermd','nigori','triple','bitter','coffee','bitters','peach','lychee','matchal','sakural','shisol']
+    seed.update({'bar': {'up': {}, 'tut': 1, 'bot': {l: 1 for l in allb}, 'gar': {g: 1 for g in ['yuzupeel','lime','lemon','orangepeel','sudachi','ume','shiso','mint','ginger','sakura','sansho','matsu','kuro','cherry','olive','cucumber','salt','gold']}},
+                 'where': 'bar', 'menu': {k: 1 for k in BAR_KEYS}})
+    c = Ctx(b, base, seed=False)
+    c.ctx.add_init_script("if(!localStorage.getItem('__barseed')){localStorage.setItem('%s',%s);localStorage.setItem('%s',%s);localStorage.setItem('__barseed','1')}"
+                          % (SAVE_KEY, json.dumps(json.dumps(seed)), REC_KEY, json.dumps(json.dumps(SEED_REC))))
+    c.open()
+    try:
+        c.dismiss_modals()
+        c.page.evaluate("CL.user={email:ADMIN_EMAIL,uid:'check-admin',name:'Author Check',photo:''};showHome()")
+        c.page.wait_for_timeout(500)
+        c.dismiss_modals()
+        c.click('[data-act=cont]', wait=900)
+        # 舊存檔（只有開店送的酒）升級後，新酒譜裡用得到的要自動解鎖
+        starter = c.page.evaluate("(()=>{const SV={bar:{up:{},bot:{whisky:1,shochu:1,sake:1,gin:1},gar:{}},menu:{}};return BRKEYS.filter(k=>bxReady(SV,k)).length})()")
+        if starter < 18:
+            raise AssertionError('月影酒吧：只有開店送的四瓶酒時，能做的酒只有 %s 款（要至少 18 款，才不會「玩一玩只有那幾樣」）' % starter)
+        c.click('[data-act=start]', wait=900)
+        if not c.has('#barx'):
+            raise AssertionError('月影酒吧（新酒譜）：開店後沒有調酒畫面\n%s' % c.diag())
+        n = c.page.evaluate("BRKEYS.filter(k=>ST.menu[k]).length")
+        if n < 60:
+            raise AssertionError('月影酒吧：酒全買了，開店後酒單只解鎖 %s 款（應該全部解鎖）' % n)
+        c.page.evaluate("BX.vnOff=true;BX.tut=false;BX.q=[{k:'brhigh',c:['none'],who:'ren'}];BX.i=0;bxArrive()")
+        c.page.wait_for_timeout(300)
+        picks = [('brwsour', ['sour']), ('brtomcol', ['fizz']), ('brkuro', ['sweet']), ('brhiya', ['none']),
+                 ('brpaloma', ['g:salt']), ('brgari', ['light']), ('brwlady', ['none']), ('brrickey', ['g:lime'])]
+        for k, cd in picks:
+            c.page.evaluate("R.t=DAYLEN*.3;R.lastCall=false")
+            c.page.evaluate("(a)=>{BX.vnOff=true;BX.q.splice(BX.i,BX.q.length,{k:a[0],c:a[1],who:'misaki'});bxArrive()}", [k, cd])
+            c.page.wait_for_timeout(300)
+            if not bx_make(c):
+                raise AssertionError('月影酒吧（新酒譜）：%s（客人要求 %s）照做沒過關\n%s' % (k, cd, c.diag()))
+            c.page.evaluate("R.t=DAYLEN*.3;R.lastCall=false")
+            bx_finish_cust(c)
+        c.expect_clean('月影酒吧新酒譜')
+    finally:
+        c.close()
+
+
 def sc_coicons(b, base):
     """多人模式：每道菜（生／熟／焦）都要畫得出圖。2026-11-22 熟的味噌拉麵、擔擔麵在保溫台是空白（走到 newIcon 沒有對應）。"""
     c = Ctx(b, base, seed=False).open(3000)
@@ -1989,7 +2053,7 @@ def sc_coicons(b, base):
 
 SCENARIOS = [('fblogin', sc_fblogin), ('coicons', sc_coicons), ('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves), ('keepbak', sc_keepbak),
-             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
+             ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barnew', sc_barnew), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
              ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun)]
 
 
