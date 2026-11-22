@@ -44,7 +44,7 @@ body{font-family:var(--f-ui);font-weight:700;
   background:radial-gradient(900px 500px at 50% 0,#4a2a17,transparent 70%),repeating-linear-gradient(90deg,#2a170d 0 46px,#24140c 46px 48px);}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
-#wrap{max-width:none;margin:0 auto;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));padding-block:10px 24px;display:flex;flex-direction:column;gap:10px}
+#wrap{max-width:none;margin:0 auto;padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(6px,env(safe-area-inset-right,0px));padding-block:4px 8px;display:flex;flex-direction:column;gap:4px}
 
 /* HUD */
 .hud{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:40px}
@@ -4258,7 +4258,7 @@ function setCur(w){w=w==='bar'&&ST&&ST.bar&&barDev()?'bar':w==='oko'&&ST&&ST.oko
 /* 舞台高度 = 可用高度 × 舞台寬 / 螢幕寬（縮放後寬高同時填滿，不留黑邊），不低於設計高度 minH。 */
 function availH(){
   const ovl=document.body.classList.contains('ovl');
-  return (TOUCH?stableVisH():visH())-(ovl?safeBottom():($('hud').offsetHeight+(window.innerHeight<560?18:34)+(TOUCH?safeBottom():0)));
+  return (TOUCH?stableVisH():visH())-(ovl?safeBottom():($('hud').offsetHeight+(window.innerHeight<560?18:16)+(TOUCH?safeBottom():0)));
 }
 function fillH(ww,stageW,minH){
   const avail=availH();
@@ -4266,7 +4266,7 @@ function fillH(ww,stageW,minH){
 }
 function chooseLayout(force){
   const AE=document.activeElement;if(!force&&AE&&/^(INPUT|TEXTAREA)$/.test(AE.tagName))return; // soft keyboard resizes the viewport; re-laying out here would rebuild the home screen and close the open modal (chat / nickname)
-  const OV=document.body.classList.contains('ovl'),ww=(OV?landW():(TOUCH?(landT()?landW():stableWrapW()):$('wrap').clientWidth))-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):24),ah=OV?Math.max(200,stableVisH()-safeBottom()):TOUCH?stableVisH():Math.max(300,window.innerHeight-60),want=(!landT()&&ww<760&&ww/ah<1.05)?'port':'land';
+  const OV=document.body.classList.contains('ovl'),ww=(OV?landW():(TOUCH?(landT()?landW():stableWrapW()):$('wrap').clientWidth))-(OV?(parseFloat(getComputedStyle($('wrap')).paddingLeft)||0)+(parseFloat(getComputedStyle($('wrap')).paddingRight)||0):12),ah=OV?Math.max(200,stableVisH()-safeBottom()):TOUCH?stableVisH():Math.max(300,window.innerHeight-60),want=(!landT()&&ww<760&&ww/ah<1.05)?'port':'land';
   const lockW=!!R&&LAY==='land'&&want==='land'&&W&&!OV;const nw=want==='port'?600:lockW?W:OV?Math.round(Math.max(960,Math.min(1800,600*ww/ah))):Math.round(Math.max(960,Math.min(1500,600*ww/Math.max(200,Math.min(ah,availH()))))/10)*10; /* 寬度用「扣掉上方狀態列後真正能用的高度」算：以前用整個螢幕高度，平板會算成最小的 960，左右多出黑邊 */
   /* 舞台寬度由 nw 決定，高度依照螢幕可用高度拉高，讓畫面上下填滿（平板橫向、手機直向原本底下會留一大塊空白；地板會跟著延伸）。 */
   /* 遊戲中（已開店）且橫向、寬度沒變時，高度只在變動很大時才重算：HUD 的內容（淨利列換行、借款/銀行按鈕出現等）會讓可用高度小幅跳動，
@@ -7301,9 +7301,9 @@ let PTR=false,PENDFIT=false;document.addEventListener('pointerdown',()=>{PTR=tru
 function safeBottom(){const p=document.createElement('div');p.style.cssText='position:fixed;left:0;bottom:0;visibility:hidden;pointer-events:none;padding-bottom:env(safe-area-inset-bottom,0px)';document.body.appendChild(p);const v=p.offsetHeight;p.remove();const ios=/iP(hone|od|ad)/.test(navigator.userAgent);return ios?18:Math.max(v,TOUCH?4:0)} /* iPhone 底部保留 18px；Android 11/18 起縮成 4px（系統安全區與 4px 取較大者），舞台下方那條縫太明顯 */
 function fit(){
   if(PTR){PENDFIT=true;return}
-  document.body.classList.toggle('ovl',TOUCH&&innerWidth>innerHeight&&Math.min(screen.width,screen.height)<560&&!HOME);
+  document.body.classList.toggle('ovl',TOUCH&&innerWidth>innerHeight&&Math.min(screen.width,screen.height)<900&&!HOME);
   chooseLayout();
-  const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?landW():(TOUCH?(landT()?landW():stableWrapW()):$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):24),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:34)+(TOUCH?safeBottom():0)));
+  const box=$('box'),wcs=getComputedStyle($('wrap')),ovl=document.body.classList.contains('ovl'),wr=ovl?landW():(TOUCH?(landT()?landW():stableWrapW()):$('wrap').clientWidth),w=wr-(ovl?(parseFloat(wcs.paddingLeft)||0)+(parseFloat(wcs.paddingRight)||0):12),maxH=Math.max(200,((ovl||TOUCH)?stableVisH():visH())-(ovl?safeBottom():$('hud').offsetHeight+(window.innerHeight<560?18:16)+(TOUCH?safeBottom():0)));
   /* 保險上限：iOS 更新後偶爾量到過大的寬高（例如讀到還沒排好的版面），遊戲會被放大到超出螢幕，只剩左上角看得到。
      不管量到什麼，遊戲的可用寬高都不會超過實際視窗的寬高。 */
   /* screen.width/height 是「裝置」的 CSS 尺寸，不會跟著頁面縮放走。iPhone Safari 的頁面縮放（aA 選單）或「要求桌面版網站」會讓版面視窗變成螢幕的兩倍大，
