@@ -8997,6 +8997,7 @@ const coPgOK=(S,n)=>{const p=coVen(S).ps[n];return p!=null&&((S&&S.stg)||0)>=p};
 const coPgPick=S=>{const ps=coVen(S).pgs;let p=CO.kp;if(!(ps.indexOf(p)>=0&&coPgOK(S,p)))p=ps[0];return p};
 const coDaysOf=(uid,v)=>{const r=loadRec(),m=r[CO_VEN[coVN(v)].rk];return (m&&uid&&m[uid])||0};
 const coDr=()=>CO_DRINK.sake.n;
+const coDrE=()=>coYa()?'🍋':'🍶';
 const coFullDays=S=>Math.max(0,Math.floor(((S.over&&S.endAt?S.endAt:coNow())-S.t0)/CO_DAY));
 /* 把這局撐過的完整天數記到搭檔名下：每局每一天只記一次（以房間開局時間為鍵），中途斷線或重新整理都不會少記或重複記 */
 function coCredit(S){const pu=CO.pu;if(!S||CO.bot||!pu||!S.t0)return;const r=loadRec(),cr=r.cpr||(r.cpr={}),fd=coFullDays(S),done=cr[S.rid]||0;if(fd<=done)return;
@@ -9013,7 +9014,7 @@ Object.assign(CO_FLIPW,{s:'捏緊',w:'包好',n:'捲緊',h:'捲好',a:'炙燒',u
 const CO_SH={k:Object.values(CO_FOOD).filter(f=>!f.fz&&!f.su).map(f=>f.n+'好了').concat(['融合拉麵好了']).concat(['酒送到了','🔥焦了…','😵來不及了','⏳等我一下','👍沒問題']),f:['🍶清酒沒了！','😡客人要生氣了','⚡加快！','📦保溫台滿了','👍收到']};
 /* 喊話按鈕：屋台只列屋台有的菜、改叫檸檬沙瓦（居酒屋維持原樣） */
 function coSHs(role,S){const V=coV(S);if(V==='iz')return CO_SH[role];const dr=V==='ya'?'檸檬沙瓦':'清酒';
-  if(role==='f')return CO_SH.f.map(t=>t.replace('清酒',dr));
+  if(role==='f')return CO_SH.f.map(t=>t.replace('清酒',dr).replace('🍶',V==='ya'?'🍋':'🍶'));
   const ks=coKeys(S);return ks.filter(k=>!CO_FOOD[k].fz).map(k=>CO_FOOD[k].n+'好了').concat(ks.some(k=>CO_FOOD[k].fz)?['融合拉麵好了']:[]).concat([dr+'送到了'].concat(V==='su'?[]:['🔥焦了…'])).concat(['😵來不及了','⏳等我一下','👍沒問題'])}
 const coNow=()=>Date.now()+(CO.off||0);
 const coHost=()=>COOP.role==='host'||!!CO.bot;
@@ -9058,7 +9059,7 @@ function coApply(role,cmd){const S=CO.S;if(!S||S.over)return;const now=Date.now(
         if(fj>=0){const F=coFuse(h.k,S.wm[fj].k),ff=!!(h.f||S.wm[fj].f);S.wm[fj]={k:F,t:now};if(ff)S.wm[fj].f=1;coFx('k','🍜 保溫台自動合成：'+CO_FOOD[F].n+'！')}
         else{const j=S.wm.findIndex(v=>!v);if(j<0){coFx('k','保溫台滿了');return}S.wm[j]={k:h.k,t:now};if(h.f)S.wm[j].f=1}}
       H.k=null}
-    else if(a==='sk'){if(now-S.skc<CO_SAKE_CD){coFx('k','酒還在準備');return}if(S.sk>=CO_SAKE_MAX){coFx('k','外場的酒還是滿的');return}S.skc=now;S.sk=CO_SAKE_MAX;coFx('f','🍶 '+coDr()+'補滿了')}
+    else if(a==='sk'){if(now-S.skc<CO_SAKE_CD){coFx('k','酒還在準備');return}if(S.sk>=CO_SAKE_MAX){coFx('k','外場的酒還是滿的');return}S.skc=now;S.sk=CO_SAKE_MAX;coFx('f',coDrE()+' '+coDr()+'補滿了')}
   }else{
     if(a==='o+'||a==='o-'){if(!CO_FOOD[x]||(a==='o+'&&!coOK(S,x)))return;const o=S.ol||(S.ol={}),n=Math.max(0,Math.min(20,(o[x]||0)+(a==='o+'?1:-1)));if(n)o[x]=n;else delete o[x];return}
     /* 手上有東西也能直接換拿：飲料自動放回，餐點跟這格交換或放回空位 */
@@ -9194,7 +9195,7 @@ function coBotF(S,now){const H=S.hd.f,wait=S.cu.map((c,i)=>({c,i})).filter(x=>x.
   const wants=(c,k)=>c.o.some((q,n)=>q===k&&!c.s[n]);
   if(H){const t=wait.find(x=>wants(x.c,H.k));if(t)return 'sv:'+t.i;return 'bk'}
   for(const x of wait){const c=x.c;for(let n=0;n<c.o.length;n++){if(c.s[n])continue;const k=c.o[n];
-    if(CO_DRINK[k]){if(k==='sake'&&S.sk<=0){coBotSay('sake','🍶'+coDr()+'沒了！幫我補貨');continue}return 'pr:'+k}
+    if(CO_DRINK[k]){if(k==='sake'&&S.sk<=0){coBotSay('sake',coDrE()+coDr()+'沒了！幫我補貨');continue}return 'pr:'+k}
     const j=S.wm.findIndex(v=>v&&v.k===k);if(j>=0)return 'tw:'+j}}
   const d=S.cu.findIndex(c=>c&&c.dirty);if(d>=0)return 'cl:'+d;
   if(wait.some(x=>x.c.d-now<15000))coBotSay('hurry','😡客人要生氣了，加快！',15000);
@@ -9439,6 +9440,7 @@ const CF_MENU=['啤酒','清酒'].concat(Object.values(CO_FOOD).filter(f=>!f.su)
 const CF_MENU_YA=['啤酒','檸檬沙瓦'].concat(CO_UNLOCK_YA.reduce((a,u)=>a.concat(u.k),[]).map(k=>CO_FOOD[k].n));
 const CF_MENU_SU=['啤酒','清酒'].concat(CO_UNLOCK_SU.reduce((a,u)=>a.concat(u.k),[]).map(k=>CO_FOOD[k].n));
 const CF_IK=Object.assign({beer:'beer',sake:'sake'},...Object.entries(CO_FOOD).map(([k,f])=>({[k]:f.ik})));
+Object.defineProperty(CF_IK,'sake',{get(){return coYa()?'lsour':'sake'},enumerable:true}); /* 拉麵屋台的第二種飲料是檸檬沙瓦：客人點餐泡泡、菜色圖示都要跟著換，不能畫清酒 */
 function cfTag(x,y,w,t){const ch=[...t],fs=Math.min(20,Math.floor(52/Math.max(2,ch.length)));
   return `<rect x="${x}" y="${y}" width="${w}" height="66" rx="2" fill="#fbf3e0" stroke="#3a2318" stroke-width="2"/><rect x="${x}" y="${y}" width="${w}" height="5" fill="#b8372a"/>`+ch.map((c,i)=>`<text x="${x+w/2}" y="${y+8+fs+i*(fs+1)}" font-size="${fs}" font-weight="900" text-anchor="middle" fill="#3a2318">${c}</text>`).join('')}
 function cfLant(x,y,t){return `<path d="M${x} ${y-14}v10" stroke="#3a2318" stroke-width="3"/><rect x="${x-14}" y="${y-6}" width="28" height="8" rx="2" fill="#2a1a10"/><ellipse cx="${x}" cy="${y+34}" rx="26" ry="36" fill="#d6402c" stroke="#3a2318" stroke-width="3"/><path d="M${x-24} ${y+20}h48M${x-26} ${y+34}h52M${x-24} ${y+48}h48" stroke="#9a2a1c" stroke-width="2" opacity=".6"/><rect x="${x-14}" y="${y+66}" width="28" height="8" rx="2" fill="#2a1a10"/>${[...t].map((c,i)=>`<text x="${x}" y="${y+30+i*22}" font-size="20" font-weight="900" text-anchor="middle" fill="#fff">${c}</text>`).join('')}`}

@@ -1874,6 +1874,22 @@ def sc_coicons(b, base):
           if(h.length<200)o.push(k+':'+st+'='+h.length)}return o}""")
         if bad:
             raise AssertionError('多人模式有菜色畫不出圖：%s' % ', '.join(bad))
+        # 2026-11-22 玩家回報：多人模式拉麵屋台，客人點的是檸檬沙瓦，點餐泡泡卻畫清酒。
+        # 第二種飲料內部代號都叫 sake，屋台版要畫檸檬沙瓦（泡泡、菜色圖示、下方按鈕都一樣）。真的把泡泡畫出來比對。
+        r = c.page.evaluate("""()=>{const o={},sk=icon('sake'),ls=icon('lsour');if(sk===ls)return {err:'sake 與 lsour 圖示相同，無法比對'};
+          const S0=CO.S;try{
+          for(const v of ['iz','ya','su']){CO.S={v};
+            const cu={o:['sake','beer'],s:[0,0],c:0,f:1,d:Date.now()+30000,p:40000,e:0,dirty:0};
+            const L={W:600,sw:90,st:20,sh:200,cy:150,bt:[0,0,0],bs:1,oi:46};
+            let h='';try{h=cfSeat(cu,0,L,Date.now())}catch(e){h='ERR '+e}
+            o[v]={bub:h.includes(v==='ya'?ls:sk)&&(v==='ya'?!h.includes(sk):true),dish:cfDish('sake').includes(v==='ya'?ls:sk),ico:coIco('sake')===(v==='ya'?ls:sk),btn:cxAny('sake').length>100}}}
+          finally{CO.S=S0}return o}""")
+        if 'err' in r:
+            raise AssertionError(r['err'])
+        for v, want in (('iz', '清酒'), ('ya', '檸檬沙瓦'), ('su', '清酒')):
+            for k, ok in r[v].items():
+                if not ok:
+                    raise AssertionError('多人模式 %s 店的第二種飲料（%s）圖示不對：%s 檢查沒過（客人點餐泡泡／菜色圖示／按鈕）' % (v, want, k))
     finally:
         c.close()
 
