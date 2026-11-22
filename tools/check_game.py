@@ -1866,7 +1866,19 @@ def sc_barext(b, base):
         c.close()
 
 
-SCENARIOS = [('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
+def sc_coicons(b, base):
+    """多人模式：每道菜（生／熟／焦）都要畫得出圖。2026-11-22 熟的味噌拉麵、擔擔麵在保溫台是空白（走到 newIcon 沒有對應）。"""
+    c = Ctx(b, base, seed=False).open(3000)
+    try:
+        bad = c.page.evaluate("""()=>{const o=[];for(const k of Object.keys(CO_FOOD))for(const st of ['raw','done','burnt']){let h='';try{h=cxIcon(k,st)||''}catch(e){}
+          if(h.length<200)o.push(k+':'+st+'='+h.length)}return o}""")
+        if bad:
+            raise AssertionError('多人模式有菜色畫不出圖：%s' % ', '.join(bad))
+    finally:
+        c.close()
+
+
+SCENARIOS = [('coicons', sc_coicons), ('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves), ('keepbak', sc_keepbak),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
              ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun)]
