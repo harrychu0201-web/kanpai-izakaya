@@ -295,7 +295,8 @@ export function start(o) {
   /* 街上所有人（玩家＋NPC）放大倍數：依畫面「實際」高度自動算（getBoundingClientRect 已含舞台縮放）。
      手機（約 380px 高以下）2 倍，電腦（約 820px 以上）1 倍，中間（平板、小視窗）線性過渡；每 0.05 一格避免抖動 */
   let PS = 2;
-  function calcPS(H) { return Math.round(clamp(2 - (H - 380) / (820 - 380), 1, 2) * 20) / 20; }
+  /* 2026-11-22 手機主角太大：手機高度（430px 以下）上限縮到 1.5 倍，之後線性放開到原本的 2 倍（560px 以上不影響） */
+  function calcPS(H) { const base = clamp(2 - (H - 380) / (820 - 380), 1, 2), cap = clamp(1.5 + (H - 430) / 130 * .5, 1.5, 2); return Math.round(Math.min(base, cap) * 20) / 20; }
   function mkPerson(src, h, isMe) {
     const h0 = h; h *= PS;
     const grp = new Group(); scene.add(grp);
@@ -307,7 +308,8 @@ export function start(o) {
     const sh = new Mesh(new CircleGeometry(.5, 16), new MeshBasicMaterial({ map: shadowT, transparent: true, depthWrite: false, opacity: .8 })); sh.rotation.x = -Math.PI / 2; sh.position.y = .22; scene.add(sh); p.sh = sh;
     people.push(p); return p;
   }
-  const me = mkPerson(o.me, 1.9, true);
+  /* 2026-11-22 主角圖裁得很緊（身高占滿整張圖），路人圖上下有留白（身高只占 91%）：主角 h 取路人平均「畫出來的身高」(約 1.64×0.913≈1.5)，兩邊看起來一樣高 */
+  const me = mkPerson(o.me, 1.5, true);
   me.x = shops.find(s => s.cur) ? shops.find(s => s.cur).dx : shops[0].dx; me.z = 4.6;
 
   const npcs = [];
