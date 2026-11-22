@@ -54,6 +54,8 @@ jobs:
           mkdirSync('out', { recursive: true });
           const stamp = new Date().toISOString().replace(/[:.]/g, '-');
           writeFileSync('out/lb-' + stamp + '.json', JSON.stringify({ at: Date.now(), lb }));
+          // firebase-admin 會保持連線，不結束程序會一直卡到 timeout，所以寫完就明確退出
+          process.exit(0);
           JS
           node dump.mjs
           mkdir -p "$RUNNER_TEMP/lbout" && cp out/*.json "$RUNNER_TEMP/lbout/"
