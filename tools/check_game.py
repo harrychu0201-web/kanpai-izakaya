@@ -11,7 +11,7 @@
   shops     每家店的商店：每個分頁、每個買／升級按鈕都真的點過，買到全部擁有後再逐頁重開
   layout    橫向手機、iOS 縮放（layout viewport 約螢幕 2 倍）、Android、平板、桌機：舞台不能縮成一小塊、不能被切掉
   pick      選店橫向卡片、說明預設收合、設定「進遊戲後先到哪」（店家選單／暖簾街）
-  bar       月影酒吧：右邊卡片的步驟清單（不蓋到手邊酒瓶、做酒時標出目前這步）、教學三杯用真實按住／畫圈／來回滑做完（含轉身到酒櫃拿酒）、打烊結算；第二天在商店買酒和配料、
+  bar       月影酒吧（含倒酒的 3D 水柱：出現、蓋掉 CSS 直線、不支援 WebGL 時退回）：右邊卡片的步驟清單（不蓋到手邊酒瓶、做酒時標出目前這步）、教學三杯用真實按住／畫圈／來回滑做完（含轉身到酒櫃拿酒）、打烊結算；第二天在商店買酒和配料、
             故意做錯 → 重做、再做曼哈頓（抖苦精、馬丁尼杯、手邊滿三瓶要換）和瑪格麗特（配料 B 頁的鹽口）；第三天暫停回主頁
   tut       新手教學（小夜對話框）：居酒屋真實點擊進入並點完、上一步、海風壽司教學點完、製作教學跳過；立繪載入、對話框不超出、按鈕 44px
   oko       御好燒店（作者限定）：從麵糊開始真實點擊加料做完四道菜、順序錯加不進去、空手連點倒掉、放太久會焦、做好放保溫台、📖 做法暫停
@@ -902,19 +902,44 @@ def bx_box(c, sel):
     return b
 
 
-def bx_hold_until(c, sel, js_done, at=(0.5, 0.5), limit=20000):
-    """在元素上按住，邊看畫面數值邊等，到了就放開（跟真人看刻度一樣）。"""
+def bx_hold_until(c, sel, js_done, at=(0.5, 0.5), limit=20000, during=None):
+    """在元素上按住，邊看畫面數值邊等，到了就放開（跟真人看刻度一樣）。during：按住約 0.35 秒時（放開前一定會）檢查一次。"""
     b = bx_box(c, sel)
     c.page.mouse.move(b['x'] + b['width'] * at[0], b['y'] + b['height'] * at[1])
     c.page.mouse.down()
     t0 = time.time()
     while not c.page.evaluate(js_done):
+        if during and time.time() - t0 > 0.35:
+            during(); during = None
         if (time.time() - t0) * 1000 > limit:
             c.page.mouse.up()
             raise AssertionError('月影酒吧：按住 %s 超過 %d 秒還沒到 (%s)' % (sel, limit // 1000, js_done))
         c.page.wait_for_timeout(16)
+    if during:
+        during()
     c.page.mouse.up()
     c.page.wait_for_timeout(250)
+
+
+def bx_l3d_check(c):
+    """2026/11/23 倒酒的水柱改成 three.js 3D（img/liquid3d-*.js）：按住倒的時候 3D 水柱要真的出現、蓋掉原本的 CSS 直線；
+    不支援 WebGL 的裝置要退回原本的 CSS 水柱（不能兩個都不見）。"""
+    r = c.page.evaluate("""(()=>{const e=document.querySelector('#barx .bxs-stream')||document.querySelector('#barx .bxs-mstream'),css=e?+getComputedStyle(e).opacity:null;
+      if(!e)return {nostream:true,src:bxPourSrc(),step:bxCur()[0]};if(!window.Liquid3D)return {loaded:false,css};const s=Liquid3D.state(),cv=document.querySelector('#barx canvas.l3dcv');
+      return {loaded:true,gl:Liquid3D.supported(),s,css,cv:cv?{w:cv.width,h:cv.height,vis:getComputedStyle(cv).visibility,inHost:!!e&&cv.parentElement===e.parentElement}:null}})()""")
+    if r.get('nostream'):
+        return
+    if not r['loaded']:
+        raise AssertionError('月影酒吧：倒酒時 3D 水柱（img/liquid3d-*.js）沒有載入：%s\n%s' % (r, c.diag()))
+    if r['gl']:
+        s, cv = r['s'] or {}, r['cv']
+        if not (s.get('on') and s.get('active') and cv and cv['vis'] == 'visible' and cv['inHost'] and cv['w'] > 10 and cv['h'] > 10):
+            raise AssertionError('月影酒吧：按住倒酒時 3D 水柱沒有出現：%s\n%s' % (r, c.diag()))
+        if r['css'] is not None and r['css'] > 0.05:
+            raise AssertionError('月影酒吧：3D 水柱出現了，原本的 CSS 直線卻沒有藏起來（opacity %s）' % r['css'])
+    elif not r['css'] or r['css'] < 0.5:
+        raise AssertionError('月影酒吧：不支援 WebGL 時，原本的 CSS 水柱也不見了：%s' % r)
+    bx_shot(c, 'l3d-pour-%d' % int(time.time() * 1000))
 
 
 def bx_circles(c, n, release=True, ccw=False):
@@ -1177,7 +1202,7 @@ def bx_make(c, wrong=False, started=False, adds=None, swap=None):
             if st == 'top' and not c.page.evaluate("!!bxPourSrc()"):
                 # v851：吧台下的料（汽水、果汁等）要玩家自己按「加料」拿，沒拿就按住倒是不會倒的
                 bx_pick_src(c, c.page.evaluate("bxCur()[1]"))
-            bx_hold_until(c, '#bxpad', "BX.d.lv>=%f" % (tg - 0.012), at=(0.5, 0.78))
+            bx_hold_until(c, '#bxpad', "BX.d.lv>=%f" % (tg - 0.012), at=(0.5, 0.78), during=lambda: bx_l3d_check(c))
             # 杯子裡的酒要照「選的杯子」畫（選錯杯時曾照酒譜的杯型畫，看起來像杯子後面還有另一個杯子、酒沒倒進去）
             if not c.page.evaluate("(()=>{const p=document.querySelector('#bxmatl clipPath path'),r=document.querySelector('#bxmatl rect[fill-opacity=\".9\"]');return !!p&&!!r&&p.getAttribute('d')===BXG2[BX.d.g].p})()"):
                 raise AssertionError('月影酒吧：倒酒時杯子裡的酒不是畫在選的杯子裡（杯型不對或沒有酒）\n%s' % c.diag())
@@ -2066,7 +2091,8 @@ def main():
     fails = []
     with sync_playwright() as p:
         exe = find_chrome()
-        kw = dict(args=['--no-sandbox', '--autoplay-policy=no-user-gesture-required'])
+        # swiftshader：讓 headless 也有 WebGL，3D 水柱、暖簾街才測得到（跟玩家手機一樣真的畫出來）
+        kw = dict(args=['--no-sandbox', '--autoplay-policy=no-user-gesture-required', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'])
         b = p.chromium.launch(executable_path=exe, **kw) if exe else p.chromium.launch(**kw)
         for name, fn in SCENARIOS:
             if only and name not in only:
