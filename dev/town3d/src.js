@@ -341,7 +341,7 @@ export function start(o) {
   npcs.forEach(p => { if (p.leader) { p.x = p.leader.x + p.off.x; p.z = p.leader.z + p.off.z; } });
 
   /* ───────── 鏡頭、輸入 ───────── */
-  const S = { dead: false, cv, ent: null, yaw: 0, yawT: 0, dist: 14, distT: 14, camV: 0, tgt: null, joy: null, keys: {}, t: 0, talk: null, nearDoor: null, last: performance.now() };
+  const S = { dead: false, cv, ent: null, yaw: 0, yawT: 0, ph: .5, phT: .5, dist: 14, distT: 14, camV: 0, tgt: null, joy: null, keys: {}, t: 0, talk: null, nearDoor: null, last: performance.now() };
   const camPos = new Vector3(), look = new Vector3(), meHead = new Vector3();
   let camT = new Vector3(me.x, 1.3, me.z);
 
@@ -350,6 +350,7 @@ export function start(o) {
   const camEl = document.createElement('div'); camEl.className = 'tw3cam'; camEl.innerHTML = '<button type="button" aria-label="L">⟲</button><button type="button" aria-label="R">⟳</button>'; tw.appendChild(camEl);
   const fade = document.createElement('div'); fade.className = 'tw3fade'; tw.appendChild(fade);
   const card = document.createElement('div'); card.className = 'tw3card'; tw.appendChild(card);
+  camEl.style.display = 'none';   /* 改成直接拖曳畫面轉鏡頭，不用轉向按鈕 */
   const camBtns = camEl.querySelectorAll('button');
   camBtns.forEach((b, i) => { const dir = i ? -1 : 1; b.addEventListener('pointerdown', e => { e.preventDefault(); S.camV = dir; S.yawT = clamp(S.yawT + dir * .35, -1.3, 1.3); try { b.setPointerCapture(e.pointerId); } catch (_) { } }); const u = () => { S.camV = 0; }; b.addEventListener('pointerup', u); b.addEventListener('pointercancel', u); });
 
@@ -370,14 +371,20 @@ export function start(o) {
     }
     return best;
   }
-  let pd = null;
-  cv.addEventListener('pointerdown', e => { if (S.ent) return; e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) { } const l = local(e.clientX, e.clientY); pd = { id: e.pointerId, sx: l.x, sy: l.y, moved: 0 }; });
+  /* 拖曳＝轉鏡頭（左右轉、上下調俯角），兩指捏合＝縮放，點一下＝走過去／互動 */
+  let pd = null, pinch = null; const ptrs = new Map();
+  cv.addEventListener('pointerdown', e => { if (S.ent) return; e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) { } ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), dist: S.distT }; pd = null; return; }
+    const l = local(e.clientX, e.clientY); pd = { id: e.pointerId, sx: l.x, sy: l.y, moved: 0, yaw0: S.yawT, ph0: S.phT }; });
   cv.addEventListener('pointermove', e => {
-    if (!pd || pd.id !== e.pointerId || S.ent) return; const l = local(e.clientX, e.clientY), dx = l.x - pd.sx, dy = l.y - pd.sy, d = Math.hypot(dx, dy), R = 55;
-    if (!pd.moved && d > 12) pd.moved = 1;
-    if (pd.moved) { const m = Math.min(1, d / R) / Math.max(d, 1e-6); S.joy = { x: dx * m, y: dy * m }; S.tgt = null; joyEl.style.display = 'block'; joyEl.style.left = pd.sx + 'px'; joyEl.style.top = pd.sy + 'px'; joyEl.firstChild.style.transform = `translate(${S.joy.x * 55}px,${S.joy.y * 55}px)`; }
+    if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && ptrs.size >= 2) { const [a, b] = [...ptrs.values()]; S.distT = clamp(pinch.dist * pinch.d / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)), 8, 20); return; }
+    if (!pd || pd.id !== e.pointerId || S.ent) return; const l = local(e.clientX, e.clientY), dx = l.x - pd.sx, dy = l.y - pd.sy, d = Math.hypot(dx, dy);
+    if (!pd.moved && d > 10) pd.moved = 1;
+    if (pd.moved) { S.yawT = clamp(pd.yaw0 - dx * .006, -1.4, 1.4); S.phT = clamp(pd.ph0 + dy * .004, .22, 1.05); }
   });
   const up = e => {
+    ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null;
     if (!pd || pd.id !== e.pointerId) return;
     if (!pd.moved && !S.ent) tap(e.clientX, e.clientY);
     pd = null; S.joy = null; joyEl.style.display = 'none';
@@ -461,7 +468,7 @@ export function start(o) {
     fpsT += dt; fpsN++; if (fpsT > 1) { const avg = fpsT / fpsN; if (avg > .026 && pr > .5) { pr = Math.max(.5, pr * .82); prCap = pr; renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } fpsT = 0; fpsN = 0; }
     /* 鏡頭轉向 */
     const K = S.keys; if (K.q) S.yawT = clamp(S.yawT + dt * 1.6, -1.3, 1.3); if (K.e) S.yawT = clamp(S.yawT - dt * 1.6, -1.3, 1.3); if (S.camV) S.yawT = clamp(S.yawT + S.camV * dt * 1.6, -1.3, 1.3);
-    S.yaw += (S.yawT - S.yaw) * Math.min(1, dt * 7); S.dist += (S.distT - S.dist) * Math.min(1, dt * 5);
+    S.yaw += (S.yawT - S.yaw) * Math.min(1, dt * 7); S.ph += (S.phT - S.ph) * Math.min(1, dt * 7); S.dist += (S.distT - S.dist) * Math.min(1, dt * 5);
     const sy = Math.sin(S.yaw), cy = Math.cos(S.yaw);
     fwd.set(-sy, 0, -cy); rgt.set(cy, 0, -sy);
     /* 玩家 */
@@ -528,7 +535,7 @@ export function start(o) {
     const aspect = cw / ch, extra = aspect < 1.45 ? 1.45 / aspect : 1;
     const tgtY = lerp(1.3, 1.6, enterP);
     camT.x += (me.x - camT.x) * Math.min(1, dt * 20); camT.z += (me.z - camT.z) * Math.min(1, dt * 20); /* 鏡頭幾乎即時跟上，人物才不會在畫面上飄 */ camT.y = tgtY;
-    const dd = S.dist * extra, ph = .5;
+    const dd = S.dist * extra, ph = S.ph;
     camPos.set(camT.x + sy * Math.cos(ph) * dd, camT.y + Math.sin(ph) * dd, camT.z + cy * Math.cos(ph) * dd);
     camPos.z = Math.min(camPos.z, 24); camPos.x = clamp(camPos.x, XMIN + 2, XMAX - 2);
     camera.position.copy(camPos); camera.lookAt(camT.x - sy * 2.4, camT.y + 1.5, camT.z - cy * 2.4);

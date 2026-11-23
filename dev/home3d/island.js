@@ -200,7 +200,7 @@ export function island(o) {
   function randEx(r) { const pick = a => a[Math.floor(r() * a.length)][0]; return { wall: pick(EXO.wall), roof: pick(EXO.roof), roofC: pick(EXO.roofC), door: pick(EXO.door), doorC: pick(EXO.doorC), win: pick(EXO.win), porch: r() < .75 ? 1 : 0, fence: pick(EXO.fence), garden: pick(EXO.garden) }; }
   function placeHouse(h) {
     if (h.g) { scene.remove(h.g); h.g.traverse(m => { if (m.geometry) m.geometry.dispose(); }); }
-    const ex = h.own ? D.ex : h.ex, name = h.own ? (D.name || '我的家') : h.label;
+    const ex = h.own ? D.ex : h.ex, name = h.own ? (o.houseName || '我的家') : h.label;
     h.g = buildHouse(ex, name); h.g.position.set(h.x, 0, h.z); h.g.rotation.y = h.f === 2 ? Math.PI : 0; scene.add(h.g);
     h.g.traverse(m => { if (m.isMesh) m.userData.house = h; });
     const d = h.g.userData.door.clone(); if (h.f === 2) { d.x = -d.x; d.z = -d.z; } h.door = { x: h.x + d.x, z: h.z + d.z };
@@ -213,7 +213,7 @@ export function island(o) {
     box(7, .3, 5.6, '#e8e2d4', 0, .15, 0, g);
     box(6.6, 3.4, 5, pal[0], 0, 2, -.2, g);
     box(7.4, .4, 6, pal[1], 0, 3.9, -.2, g); box(7.6, .3, 1.6, pal[1], 0, 3.1, 2.6, g).rotation.x = .35;
-    const sg = new Mesh(new PlaneGeometry(4.2, .9), new MeshBasicMaterial({ map: signTex(pal[3]) })); sg.position.set(0, 4.55, 2.85); g.add(sg); box(4.4, 1.0, .1, '#3a2a1a', 0, 4.55, 2.78, g);
+    const sg = new Mesh(new PlaneGeometry(4.2, .9), new MeshBasicMaterial({ map: signTex(s.k === 'izakaya' && D.name ? D.name : pal[3]) })); sg.position.set(0, 4.55, 2.85); g.add(sg); box(4.4, 1.0, .1, '#3a2a1a', 0, 4.55, 2.78, g);
     const win = new Mesh(new PlaneGeometry(2.2, 1.4), winMat('#cfe8f4')); win.position.set(-1.9, 1.7, 2.31); g.add(win); const win2 = win.clone(); win2.position.x = 1.9; g.add(win2);
     box(1.4, 2.3, .1, '#3a2a1a', 0, 1.45, 2.31, g); const nt = ctex(256, 100, (x, w, h) => { for (let i = 0; i < 3; i++) { x.fillStyle = pal[2]; x.fillRect(4 + i * 84, 0, 80, h - 4); } x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = `900 40px ${FONT}`; [...(s.k === 'bar' ? '月影' : s.n.slice(0, 3))].slice(0, 3).forEach((c, i) => x.fillText(c, 44 + i * 84, 44)); });
     const nm = new Mesh(new PlaneGeometry(1.5, .65), new MeshBasicMaterial({ map: nt, transparent: true, side: DoubleSide })); nm.position.set(0, 2.25, 2.42); g.add(nm);
@@ -271,7 +271,7 @@ export function island(o) {
     people.push(p); return p;
   }
   const me = mkPerson(o.me.src, 1.5, { name: o.me.name || '我', nk: 'me' });
-  if (o.spawn === 'door' && myHouse) { me.x = myHouse.door.x; me.z = myHouse.door.z + .4; } else { me.x = 0; me.z = 11.5; }
+  if (o.spawn === 'door' && myHouse) { me.x = myHouse.door.x; me.z = myHouse.door.z + .4; } else if (o.spawn === 'shop') { me.x = SHOPS[0].x; me.z = SHOPS[0].z + 4.4; } else { me.x = 0; me.z = 11.5; }
 
   /* ───────── 碰撞、找路 ───────── */
   function inIsland(x, z) { const ax = Math.abs(x), az = Math.abs(z), W = IX + SAND - 1, Hh = IZ + SAND - 1, r = 14; if (x >= PIER[0] && x <= PIER[2] && z >= PIER[1] && z <= PIER[3]) return true; if (ax > W || az > Hh) return false; if (ax > W - r && az > Hh - r) return Math.hypot(ax - (W - r), az - (Hh - r)) < r; return true; }
@@ -321,7 +321,7 @@ export function island(o) {
   function hourNow() { if (PHASES[phaseI][0] !== null) return PHASES[phaseI][0]; const d = new Date(); return d.getHours() + d.getMinutes() / 60; }
   function hudBtns() {
     if (S.mode === 'edit') { hud.innerHTML = `<button class="h3b hot" type="button" data-i3="done"><i>✓</i>完成</button>`; return; }
-    hud.innerHTML = (own ? `<button class="h3b hot" type="button" data-i3="edit"><i>🎨</i>外觀</button>` : '') + `<button class="h3b" type="button" data-i3="home"><i>🏠</i>${own ? '回家' : '他家'}</button><button class="h3b" type="button" data-i3="time"><i>🕐</i>${PHASES[phaseI][1]}</button>`;
+    hud.innerHTML = (own ? `<button class="h3b hot" type="button" data-i3="edit"><i>🎨</i>外觀</button>` : '') + `<button class="h3b" type="button" data-i3="home"><i>🏠</i>${own ? '回家' : '他家'}</button><button class="h3b" type="button" data-i3="shopin"><i>🏮</i>${own ? '我的店' : '他的店'}</button><button class="h3b" type="button" data-i3="time"><i>🕐</i>${PHASES[phaseI][1]}</button>`;
   }
   function updInfo() { const h = hourNow(), hh = Math.floor(h), mm = Math.floor((h - hh) * 60); info.innerHTML = `<b>🏝️ ${esc(own ? (D.name ? D.name.replace(/的(小店|家)$/, '') + '的島' : '我的島') : ((o.owner && o.owner.name) || '好友') + '的島')}</b>${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}・${h < 5 || h >= 19.5 ? '夜晚 🌙' : h < 7 ? '清晨 🌅' : h < 16.5 ? '白天 ☀️' : '傍晚 🌇'}`; }
   hudBtns(); updInfo();
@@ -355,12 +355,13 @@ export function island(o) {
     else if (a === 'done') setMode('walk');
     else if (a === 'tab') { edTab = b.dataset.k; drawPan(); }
     else if (a === 'opt') { const v = b.dataset.v; D.ex[edTab] = /^\d$/.test(v) ? +v : v; placeHouse(myHouse); drawPan(); save(); }
-    else if (a === 'home') { const h = myHouse; closeCard(); goTo(h.door.x, h.door.z, () => enterHouse()); }
-    else if (a === 'enter') { closeCard(); enterHouse(); }
+    else if (a === 'home') { const h = myHouse; closeCard(); goTo(h.door.x, h.door.z, () => enterHouse('home')); }
+    else if (a === 'enter') { closeCard(); enterHouse('home'); }
+    else if (a === 'shopin') { closeCard(); const s0 = SHOPS[0]; goTo(s0.door.x, s0.door.z, () => enterHouse('shop')); }
     else if (a === 'time') { phaseI = (phaseI + 1) % PHASES.length; hudBtns(); updInfo(); toast(phaseI ? `預覽：${PHASES[phaseI][1]}（再按回到現在時間）` : '回到現在時間'); }
   };
   root.addEventListener('click', onClick);
-  function enterHouse() { if (S.entering) return; S.entering = true; try { cb.enter && cb.enter(); } catch (_) { S.entering = false; } }
+  function enterHouse(kind) { if (S.entering) return; S.entering = true; try { cb.enter && cb.enter(kind || 'home'); } catch (_) { S.entering = false; } }
   function goTo(x, z, fn) { const pth = findPath(me.x, me.z, x, z); if (!pth) { toast('走不過去'); return; } S.tgt = { path: pth, fn }; }
 
   /* 輸入：拖曳轉鏡頭、點擊走路／互動 */
@@ -390,7 +391,7 @@ export function island(o) {
     ray.setFromCamera(toNdc(cx, cy), camera); const hs = ray.intersectObjects(scene.children, true).filter(h => h.object.isMesh && (h.object.userData.house || h.object.userData.shop));
     if (hs.length) { const u = hs[0].object.userData;
       if (u.house) { const h = u.house; if (h.own) { infoCard(own ? '我的家' : `${(o.owner && o.owner.name) || '好友'}的家`, D.name || '', own ? '要進屋嗎？裡面可以布置家具、收收銀台的錢。' : '店長在家裡打盹，進去逛逛吧！', `<button class="h3n" type="button" data-i3="enter">🚪 進屋</button>`); goTo(h.door.x, h.door.z); } else { infoCard(h.label, '島上的居民', '門關著，主人好像出去散步了～'); goTo(h.door.x, h.door.z); } return; }
-      if (u.shop) { const s = u.shop; infoCard(s.n, '店鋪（造景）', '現在是造景，之後可以從這裡直接開店營業。'); goTo(s.door.x, s.door.z); return; } }
+      if (u.shop) { const s = u.shop; if (s.k === 'izakaya') { infoCard(D.name || '居酒屋', own ? '你的店' : `${(o.owner && o.owner.name) || '好友'}的店`, own ? '你的居酒屋：進去可以布置、收收銀台的錢、看客人。' : '進去逛逛吧！', `<button class="h3n" type="button" data-i3="shopin">🏮 進店</button>`); goTo(s.door.x, s.door.z); return; } infoCard(s.n, '店鋪（造景）', '現在是造景，之後可以從這裡直接開店營業。'); goTo(s.door.x, s.door.z); return; } }
     closeCard(); if (ray.ray.intersectPlane(gplane, hit)) { const pth = findPath(me.x, me.z, hit.x, hit.z); if (pth) S.tgt = { path: pth }; }
   }
 

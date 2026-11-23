@@ -2102,9 +2102,9 @@ def i3_wait(c, why, limit=20000):
     raise AssertionError('%s：3D 島沒有開起來\n%s' % (why, c.diag()))
 
 
-def i3_enter(c, why):
-    """在島上按「回家／他家」→ 自己走到門口進屋 → 等室內開起來"""
-    c.click('.home3 [data-i3=home]', wait=300)
+def i3_enter(c, why, where='shopin'):
+    """在島上按「🏮 我的店／他的店」（where='home' 是「🏠 回家」）→ 自己走到門口進去 → 等室內開起來"""
+    c.click('.home3 [data-i3=%s]' % where, wait=300)
     return h3_wait(c, why, limit=40000)
 
 
@@ -2149,7 +2149,26 @@ def sc_home3d(b, base):
         ex = c.page.evaluate("(JSON.parse(localStorage.getItem('izakaya-home-v1')||'{}').ex)||null")
         if not ex or ex.get('roof') != 'round' or ex.get('wall') != '#6fb6ea':
             raise AssertionError('房子外觀改了之後沒有存到：%s' % ex)
-        p = i3_enter(c, '從島上走回家進屋')
+        # 自己的家：家具目錄是住家用的（客廳分頁），買一盞立燈、放好，存在 data.home
+        p = i3_enter(c, '從島上走回家進屋', 'home')
+        if not any(i['k'] == 'sofa' for i in p['items']) or any(i['k'] == 'register' for i in p['items']):
+            raise AssertionError('家裡的預設家具不對（應該有沙發、沒有收銀台）：%s' % [i['k'] for i in p['items']])
+        c.click('.home3 [data-h3=build]', wait=1200)
+        if not c.has('.home3 [data-h3=cat][data-k=liv]') or c.has('.home3 [data-h3=cat][data-k=tbl]'):
+            raise AssertionError('家裡的布置分頁應該是住家家具（客廳、臥室…），不是店裡的')
+        c.click('.home3 [data-h3=cat][data-k=liv]', wait=500)
+        c.click('.home3 [data-h3=item][data-k=flamp]', wait=300)
+        c.click('.home3 [data-h3=buyok]', wait=600)
+        if c.has('.home3 [data-h3=ok]:disabled'):
+            c.click('.home3 [data-h3=rot]', wait=200)
+        c.click('.home3 [data-h3=ok]', wait=300)
+        c.click('.home3 [data-h3=done]', wait=1500)
+        hs = c.page.evaluate("(JSON.parse(localStorage.getItem('izakaya-home-v1')||'{}').home)||null")
+        if not hs or sum(1 for e in hs['it'] if e[0] == 'flamp') < 2:
+            raise AssertionError('家裡買的立燈沒有存到 data.home：%s' % (hs and [e[0] for e in hs['it']]))
+        c.click('.home3 [data-h3=exit]', wait=300)
+        i3_wait(c, '從家裡出門')
+        p = i3_enter(c, '走進島上的居酒屋（我的店）')
         if not p['items'] or not any(i['k'] == 'register' for i in p['items']):
             raise AssertionError('新開的店沒有預設家具／收銀台：%s' % p['items'])
         for bt in c.page.locator('.home3 .h3hud button').all():
@@ -2211,7 +2230,7 @@ def sc_home3d(b, base):
         ip = i3_wait(c, '再打開我的島')
         if ip['ex'].get('roof') != 'round':
             raise AssertionError('重開之後房子外觀沒有保留：%s' % ip['ex'])
-        p = i3_enter(c, '再進屋')
+        p = i3_enter(c, '再進店')
         if not any(i['k'] == 'andon' for i in p['items']):
             raise AssertionError('關掉再打開，剛剛擺的行燈不見了')
         c.page.screenshot(path='/tmp/check-home3d.png')

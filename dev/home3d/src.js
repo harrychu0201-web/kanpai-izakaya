@@ -10,7 +10,7 @@ import {
   Vector3, Raycaster, Plane, Vector2, WebGLRenderTarget, Box3,
 } from 'three';
 import { NPCS, KIND } from '../town3d/npcs.js';
-import { ITEMS, IT, CATS, FLOORS, WALLS, build, lam, bas, ctex, rrect, GLOW, FONT } from './models.js';
+import { ITEMS, IT, CATS, HCATS, FLOORS, WALLS, build, lam, bas, ctex, rrect, GLOW, FONT } from './models.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -43,6 +43,13 @@ export function freshHome(name) {
   return { v: 1, name: name || '我的小店', fl: 'wood', wa: 'tsuchi', fo: { wood: 1 }, wo: { tsuchi: 1 }, cl: 0, gc: {},
     it: [['register', 7, 1, 0], ['counter', 4, 1, 0], ['stool', 4, 2, 0], ['stool', 5, 2, 0], ['table', 1, 4, 0], ['chair', 1, 3, 0], ['chair', 2, 5, 2], ['lantern', 8, 5, 0], ['menu', 3, 0, 0], ['beer', 1, 4, 0], ['edamame', 2, 4, 0], ['pine', 7, 1, 0]],
     inv: { chair: 2, maneki: 1, ajisai: 1, zabu: 2 } };
+}
+/* 島上自己房子的室內（家）預設布置 */
+export function freshHomeInterior() {
+  return { v: 1, fl: 'light', wa: 'cream', fo: { wood: 1, light: 1 }, wo: { tsuchi: 1, cream: 1 }, gc: {},
+    it: [['tv', 1, 0, 0], ['carpet', 1, 1, 0], ['ctable', 1, 1, 0], ['sofa', 1, 3, 2], ['flamp', 0, 3, 0], ['mug', 1, 1, 0], ['kcounter', 4, 0, 0], ['fridge', 6, 0, 0], ['bed', 7, 0, 0], ['nstand', 9, 0, 0], ['dlamp', 9, 0, 0],
+      ['table', 4, 3, 0], ['chair', 4, 2, 0], ['chair', 5, 4, 2], ['cake', 4, 3, 0], ['monstera', 0, 7, 0], ['wwin', 4, 0, 0], ['photos', 0, 2, 1], ['clock', 9, 3, 3], ['catbed', 9, 6, 0]],
+    inv: { armchair: 1, books: 1, cactus: 1, teddy: 1 } };
 }
 /* 示範店（千代奶奶的店）：還沒有好友可以拜訪時，先看看別人的店長什麼樣子 */
 export function demoHome() {
@@ -143,7 +150,7 @@ export const H3CSS = CSS;
 export { island, EXO, defaultEx } from './island.js';
 export function start(o) {
   const cv = o.cv, root = o.root, cb = o.cb || {};
-  const own = !!o.own;
+  const own = !!o.own, HOME = o.kind === 'home', ISL = !!o.island;
   const D = o.data || freshHome();
   D.it = (D.it || []).filter(e => IT[e[0]]); D.inv = D.inv || {}; D.fo = D.fo || { wood: 1 }; D.wo = D.wo || { tsuchi: 1 }; D.gc = D.gc || {};
   if (!document.getElementById('h3css')) { const s = document.createElement('style'); s.id = 'h3css'; s.textContent = CSS; document.head.appendChild(s); }
@@ -167,7 +174,9 @@ export function start(o) {
     sky.add(new Points(g, new PointsMaterial({ color: 0xfff3d0, size: 2.2, sizeAttenuation: false, fog: false, transparent: true, opacity: .85, depthWrite: false }))); }
   { const mt = ctex(128, 128, x => { const g = x.createRadialGradient(64, 64, 20, 64, 64, 64); g.addColorStop(0, 'rgba(255,246,214,1)'); g.addColorStop(.5, 'rgba(255,240,200,1)'); g.addColorStop(.52, 'rgba(255,230,180,.25)'); g.addColorStop(1, 'rgba(255,230,180,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); });
     const moon = new Sprite(new SpriteMaterial({ map: mt, fog: false, depthWrite: false })); moon.scale.set(40, 40, 1); moon.position.set(-90, 120, -170); sky.add(moon); }
-  scene.add(new HemisphereLight(0xb8aef0, 0x5a4048, 1.15));
+  const hemiL = new HemisphereLight(0xb8aef0, 0x5a4048, 1.15); scene.add(hemiL);
+  const HR = (() => { const d = new Date(); return o.hour != null ? o.hour : d.getHours() + d.getMinutes() / 60; })();
+  const NIGHT = HR < 5 || HR >= 19.5 ? 1 : HR < 6.5 ? (6.5 - HR) / 1.5 : HR > 17.5 ? (HR - 17.5) / 2 : 0;
   const dl = new DirectionalLight(0xffe0b8, .7); dl.position.set(-6, 12, 10); scene.add(dl);
   const warm1 = new PointLight(0xffb060, 14, 13, 1.3); warm1.position.set(RW * .3, 2.7, RD * .45); scene.add(warm1);
   const warm2 = new PointLight(0xffb060, 14, 13, 1.3); warm2.position.set(RW * .72, 2.7, RD * .55); scene.add(warm2);
@@ -185,6 +194,8 @@ export function start(o) {
     dark: () => ctex(256, 256, (x, w, h) => { const r = mulberry(8); for (let j = 0; j < 8; j++) { const v = r(); x.fillStyle = `hsl(20,${30 + v * 10}%,${22 + v * 7}%)`; x.fillRect(0, j * 32, w, 32); x.fillStyle = 'rgba(0,0,0,.4)'; x.fillRect(0, j * 32, w, 2); x.fillRect((r() * 256) | 0, j * 32, 2, 32); for (let k = 0; k < 5; k++) { x.fillStyle = 'rgba(255,220,180,.05)'; x.fillRect(r() * w, j * 32 + 6 + r() * 20, 40 + r() * 60, 2); } } }),
     tatami: () => ctex(256, 256, (x, w, h) => { for (let q = 0; q < 2; q++) { const ox = q * 128; x.fillStyle = '#c4c078'; x.fillRect(ox, 0, 128, h); for (let i = 0; i < h; i += 3) { x.fillStyle = i % 6 ? '#b8b46c' : '#cfcb84'; x.fillRect(ox, i, 128, 1); } x.fillStyle = '#2a3a2a'; x.fillRect(ox, 0, 6, h); x.fillRect(ox + 122, 0, 6, h); } }),
     stone: () => ctex(256, 256, (x, w, h) => { x.fillStyle = '#5a5250'; x.fillRect(0, 0, w, h); const r = mulberry(6); for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) { const v = (r() * 18) | 0; x.fillStyle = `rgb(${120 + v},${112 + v},${104 + v})`; x.fillRect(i * 64 + 3 + (j % 2) * 8, j * 64 + 3, 58, 58); } }),
+    light: () => ctex(256, 256, (x, w, h) => { const r = mulberry(12); for (let j = 0; j < 8; j++) { const v = r(); x.fillStyle = `hsl(34,${48 + v * 10}%,${70 + v * 6}%)`; x.fillRect(0, j * 32, w, 32); x.fillStyle = 'rgba(120,80,40,.25)'; x.fillRect(0, j * 32, w, 2); x.fillRect((r() * 256) | 0, j * 32, 2, 32); for (let k = 0; k < 6; k++) { x.fillStyle = 'rgba(160,110,60,.1)'; x.fillRect(r() * w, j * 32 + 6 + r() * 20, 40 + r() * 60, 2); } } }),
+    carpetf: () => ctex(256, 256, (x, w, h) => { x.fillStyle = '#e8dcc4'; x.fillRect(0, 0, w, h); const r = mulberry(14); for (let i = 0; i < 3000; i++) { x.fillStyle = r() < .5 ? 'rgba(200,180,150,.35)' : 'rgba(255,250,240,.4)'; x.fillRect(r() * w, r() * h, 2, 2); } }),
     check: () => ctex(256, 256, (x, w, h) => { for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) { x.fillStyle = (i + j) % 2 ? '#2a3a36' : '#d8c8a0'; x.fillRect(i * 64, j * 64, 64, 64); } x.strokeStyle = 'rgba(0,0,0,.2)'; x.lineWidth = 2; for (let i = 0; i <= 4; i++) { x.beginPath(); x.moveTo(i * 64, 0); x.lineTo(i * 64, h); x.moveTo(0, i * 64); x.lineTo(w, i * 64); x.stroke(); } }),
   };
   function wallTex(type, L) {
@@ -195,12 +206,17 @@ export function start(o) {
       else if (type === 'red') { x.fillStyle = '#b8402e'; x.fillRect(0, 0, w, h); for (let i = 0; i < 300; i++) { x.fillStyle = r() < .5 ? 'rgba(255,200,160,.05)' : 'rgba(60,10,0,.06)'; x.fillRect(r() * w, r() * h, 8, 8); } x.fillStyle = '#5a2a14'; for (let i = 0; i < w; i += PX * 2) x.fillRect(i, 0, 8, h); }
       else if (type === 'ai') { x.fillStyle = '#26365e'; x.fillRect(0, 0, w, h); x.strokeStyle = 'rgba(230,224,208,.5)'; x.lineWidth = 2; for (let j = 0; j < h; j += 24) for (let i = (j / 24 % 2) * 12; i < w; i += 24) { x.beginPath(); x.arc(i, j, 9, Math.PI, 0); x.stroke(); } }
       else if (type === 'sakura') { x.fillStyle = '#f6e6e4'; x.fillRect(0, 0, w, h); for (let i = 0; i < w * h / 900; i++) { const px = r() * w, py = r() * h; x.fillStyle = ['#f0b8c8', '#e898b0', '#f8d0dc'][i % 3]; for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2; x.beginPath(); x.ellipse(px + Math.cos(a) * 4, py + Math.sin(a) * 4, 3.5, 2, a, 0, 7); x.fill(); } } }
+      else if (type === 'cream') { x.fillStyle = '#fbf3e2'; x.fillRect(0, 0, w, h); for (let i = 0; i < w * h / 80; i++) { x.fillStyle = 'rgba(230,210,180,.18)'; x.fillRect(r() * w, r() * h, 2, 2); } }
+      else if (type === 'stripe') { for (let i = 0; i < w; i += 24) { x.fillStyle = (i / 24) % 2 ? '#f6ecd8' : '#cfe6e0'; x.fillRect(i, 0, 24, h); } }
+      else if (type === 'flower') { x.fillStyle = '#fff6ea'; x.fillRect(0, 0, w, h); for (let j = 12; j < h; j += 30) for (let i = (j / 30 % 2) * 16; i < w; i += 32) { x.fillStyle = ['#f29ab8', '#f6cf4a', '#8ac8e8'][(i + j) % 3]; for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2; x.beginPath(); x.arc(i + Math.cos(a) * 4, j + Math.sin(a) * 4, 3, 0, 7); x.fill(); } x.fillStyle = '#fff'; x.beginPath(); x.arc(i, j, 2, 0, 7); x.fill(); } }
+      else if (type === 'mint') { x.fillStyle = '#bfe6d8'; x.fillRect(0, 0, w, h); for (let i = 0; i < w * h / 70; i++) { x.fillStyle = r() < .5 ? 'rgba(255,255,255,.12)' : 'rgba(60,120,100,.06)'; x.fillRect(r() * w, r() * h, 3, 3); } }
       else { x.fillStyle = '#e8d4ae'; x.fillRect(0, 0, w, h); for (let i = 0; i < w * h / 60; i++) { x.fillStyle = r() < .5 ? 'rgba(160,120,70,.08)' : 'rgba(255,255,240,.1)'; x.fillRect(r() * w, r() * h, 3, 3); } x.fillStyle = '#6b3f1f'; for (let i = 0; i < w; i += PX * 2.5) x.fillRect(i, 0, 10, h); }
       /* 腰板 + 橫樑 */
-      const wy = h - .9 * PX; x.fillStyle = '#5a3218'; x.fillRect(0, wy, w, .9 * PX); x.fillStyle = 'rgba(0,0,0,.25)'; for (let i = 0; i < w; i += 28) x.fillRect(i, wy, 2, .9 * PX); x.fillStyle = '#3a1e0c'; x.fillRect(0, wy - 6, w, 8); x.fillRect(0, 0, w, 10);
+      const wy = h - .9 * PX; x.fillStyle = HOME ? '#f4efe2' : '#5a3218'; x.fillRect(0, wy, w, .9 * PX); x.fillStyle = HOME ? 'rgba(0,0,0,.08)' : 'rgba(0,0,0,.25)'; for (let i = 0; i < w; i += 28) x.fillRect(i, wy, 2, .9 * PX); x.fillStyle = HOME ? '#d8c8a8' : '#3a1e0c'; x.fillRect(0, wy - 6, w, 8); x.fillRect(0, 0, w, 10);
     });
   }
 
+  const envA0 = scene.children.length;
   /* ───────── 地面與街道 ───────── */
   const stoneT = ctex(256, 256, (x, w, h) => { x.fillStyle = '#4a4246'; x.fillRect(0, 0, w, h); const r = mulberry(3); for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) { const sh = (r() * 16 | 0) - 8; x.fillStyle = `rgb(${96 + sh},${86 + sh},${84 + sh})`; x.fillRect(i * 64 + 2, j * 64 + 2, 60, 60); } });
   const roadT = ctex(256, 256, (x, w, h) => { x.fillStyle = '#2c2830'; x.fillRect(0, 0, w, h); const r = mulberry(5); for (let i = 0; i < 700; i++) { const v = 34 + (r() * 22 | 0); x.fillStyle = `rgb(${v},${v - 3},${v + 4})`; x.fillRect(r() * w, r() * h, 2, 2); } });
@@ -211,6 +227,7 @@ export function start(o) {
     for (let x = EX0 - 14; x < EX1 + 14; x += 3.4) box(1.7, .02, .14, bas('#cfc8b4'), x, .02, RD + 9.2);
     box(L, .16, .2, lam('#7a6e66'), cx, .08, RD + 6.15);
     const far = new Mesh(new PlaneGeometry(L, 5), lam('#ffffff', { map: rep(stoneT, L / 3, 5 / 3) })); far.rotation.x = -Math.PI / 2; far.position.set(cx, .005, RD + 14.7); scene.add(far); }
+  const envA1 = scene.children.length;
   /* 店內地板 */
   const floorM = new MeshLambertMaterial({ color: '#ffffff' });
   const floor = new Mesh(new PlaneGeometry(RW, RD), floorM); floor.rotation.x = -Math.PI / 2; floor.position.set(RW / 2, .02, RD / 2); scene.add(floor);
@@ -267,6 +284,7 @@ export function start(o) {
     const fe = new Mesh(new BoxGeometry(RW + 1.4, .18, 1.3), lam('#2c3044')); fe.position.set(RW / 2, WH + .72, RD + .75); fe.rotation.x = .25; roof.add(fe); }
   /* 屋簷下的布棚（店外看的時候） */
 
+  const envB0 = scene.children.length;
   /* ───────── 隔壁的房子、對街、遠景 ───────── */
   const winT = [21, 33].map(sd => ctex(128, 256, (x, w, h) => { const r = mulberry(sd); x.fillStyle = '#1b1636'; x.fillRect(0, 0, w, h); for (let j = 0; j < 16; j++) for (let i = 0; i < 8; i++) { x.fillStyle = r() < .33 ? (r() < .5 ? '#ffd98a' : '#ffbe68') : '#272043'; x.fillRect(i * 16 + 3, j * 16 + 3, 10, 10); } }));
   const nbs = [];
@@ -301,20 +319,34 @@ export function start(o) {
     const bm = new Mesh(new BoxGeometry(1.3, .85, .08), [wood, wood, wood, wood, new MeshBasicMaterial({ map: bt }), wood]); bm.position.y = 1.15; board.add(bm); const rf = new Mesh(new BoxGeometry(1.5, .08, .35), lam('#2c3044')); rf.position.y = 1.62; rf.rotation.x = .2; board.add(rf);
     board.traverse(m => { if (m.isMesh) m.userData.board = 1; }); }
   const boardPick = []; board.traverse(m => { if (m.isMesh) boardPick.push(m); });
+  /* 島上模式：拿掉暖簾街風格的夜街，換成島上的草地、天空（跟著現實時間） */
+  if (ISL) {
+    const envB1 = scene.children.length;
+    scene.children.slice(envB0, envB1).concat(scene.children.slice(envA0, envA1)).forEach(c => scene.remove(c));
+    boardPick.length = 0; petalSrc.length = 0;
+    const day = new Color('#8fd3f6'), nite = new Color('#16204a'), dusk = new Color('#f0a890');
+    const skyC = day.clone().lerp(HR > 15 && HR < 20 ? dusk : nite, HR > 15 && HR < 20 && NIGHT < .5 ? Math.min(1, NIGHT * 2) : NIGHT).lerp(nite, NIGHT > .5 ? (NIGHT - .5) * 2 : 0);
+    scene.fog.color.copy(skyC); scene.fog.near = 30; scene.fog.far = 90; renderer.setClearColor(skyC, 1); sky.visible = false;
+    hemiL.color.set(NIGHT > .5 ? '#9aa8ff' : '#e8f4ff'); hemiL.groundColor.set('#6a8a4a'); hemiL.intensity = 1.25 + (1 - NIGHT) * .6; dl.intensity = .4 + (1 - NIGHT) * 1.0; dl.color.set(NIGHT > .5 ? '#a0b0ff' : '#fff2dc');
+    const gr = new Mesh(new PlaneGeometry(220, 220), lam(NIGHT > .5 ? '#3a5a3a' : '#7ccb5a')); gr.rotation.x = -Math.PI / 2; gr.position.y = -.03; scene.add(gr);
+    const path = new Mesh(new PlaneGeometry(2.2, 6), lam('#d9d4cc')); path.rotation.x = -Math.PI / 2; path.position.set(DX, -.01, RD + 3.2); scene.add(path);
+    const tc = NIGHT > .5 ? '#2f5a3a' : '#58b84a';
+    [[-4, 2], [-5, 7], [RW + 4, 1], [RW + 5, 6], [-3, RD + 5], [RW + 3, RD + 6], [2, -4], [8, -5]].forEach(([x, z], i) => { const t = new Group(); t.position.set(x, 0, z); scene.add(t); const tr = new Mesh(new CylinderGeometry(.2, .28, 1.8, 7), lam('#8a5a3a')); tr.position.y = .9; t.add(tr); const c = new Mesh(new IcosahedronGeometry(1.4, 1), new MeshLambertMaterial({ color: i % 3 ? tc : (NIGHT > .5 ? '#6a4a6a' : '#f4a8c0'), flatShading: true })); c.position.y = 2.6; t.add(c); });
+  }
 
   /* ───────── 花瓣 ───────── */
   const NP = 140, pPos = new Float32Array(NP * 3), pVel = [];
   const petalT = ctex(32, 32, x => { x.fillStyle = '#f8c8d8'; x.beginPath(); x.ellipse(16, 16, 12, 7, .5, 0, 7); x.fill(); });
   const petals = new Points(new BufferGeometry(), new PointsMaterial({ map: petalT, size: .16, transparent: true, depthWrite: false, alphaTest: .1 }));
   petals.geometry.setAttribute('position', new Float32BufferAttribute(pPos, 3)); scene.add(petals);
-  function petalReset(i, any) { const s = petalSrc.concat(potSakura)[Math.floor(Math.random() * (petalSrc.length + potSakura.length))] || petalSrc[0]; pPos[i * 3] = s.x + rnd(-s.r, s.r); pPos[i * 3 + 1] = any ? rnd(0, s.y) : s.y + rnd(-.3, .3); pPos[i * 3 + 2] = s.z + rnd(-s.r, s.r); pVel[i] = { vx: rnd(-.2, .4), vy: rnd(-.5, -.25), ph: Math.random() * 7, fl: s.y }; }
+  function petalReset(i, any) { const s = petalSrc.concat(potSakura)[Math.floor(Math.random() * (petalSrc.length + potSakura.length))] || petalSrc[0] || { x: -999, z: -999, y: 0, r: .1 }; pPos[i * 3] = s.x + rnd(-s.r, s.r); pPos[i * 3 + 1] = any ? rnd(0, s.y) : s.y + rnd(-.3, .3); pPos[i * 3 + 2] = s.z + rnd(-s.r, s.r); pVel[i] = { vx: rnd(-.2, .4), vy: rnd(-.5, -.25), ph: Math.random() * 7, fl: s.y }; }
   let potSakura = [];
 
   /* ───────── 擺設 ───────── */
   const placed = [];           // {k, x, z, r, g, I}
   const pick = [];
   const zoneIn = (x, z) => x >= 0 && x < RW && z >= 0 && z < RD;
-  const zoneYard = (x, z) => x >= YX0 && x < YX1 && z >= YZ0 && z < YZ1;
+  const zoneYard = (x, z) => !ISL && x >= YX0 && x < YX1 && z >= YZ0 && z < YZ1;
   const fp = (I, r) => r % 2 ? [I.d, I.w] : [I.w, I.d];
   function cellsOf(e) { const I = IT[e.k]; if (I.L === 'wall') return wallCells(e); const [w, d] = fp(I, e.r), a = []; for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) a.push([e.x + i, e.z + j]); return a; }
   /* 牆面物件：r=0 後牆（往 +z）、1 左牆（往 +x）、3 右牆（往 -x）、2 前牆內側（往 -z）；x,z 是貼牆那一排的格子 */
@@ -350,7 +382,7 @@ export function start(o) {
   const footM = new MeshBasicMaterial({ map: shadowT, transparent: true, depthWrite: false, opacity: .55 });
   function place(e, noSave) {
     const I = IT[e.k]; e.I = I; e.g = build(e.k); scene.add(e.g); e.g.userData.e = e;
-    if (I.L !== 'wall' && I.L !== 'rug') { const [w, d] = fp(I, 0); const sh = new Mesh(new PlaneGeometry(w * .95, d * .95), footM); sh.rotation.x = -Math.PI / 2; sh.position.y = .012; e.g.add(sh); sh.raycast = () => { }; }
+    if (I.L !== 'wall' && I.L !== 'rug' && I.L !== 'top') { const [w, d] = fp(I, 0); const sh = new Mesh(new PlaneGeometry(w * .95, d * .95), footM); sh.rotation.x = -Math.PI / 2; sh.position.y = .012; e.g.add(sh); sh.raycast = () => { }; }
     e.g.traverse(m => { if (m.isMesh) { m.userData.e = e; pick.push(m); } });
     placed.push(e); syncItem(e); if (!noSave) changed();
     return e;
@@ -361,6 +393,15 @@ export function start(o) {
   D.it.forEach(([k, x, z, r]) => { const e = { k, x, z, r: r || 0 }; if (valid(e)) place(e, true); else if (own) D.inv[k] = (D.inv[k] || 0) + 1; });
   placed.filter(e => IT[e.k].L === 'top').forEach(syncItem);
   setFloor(D.fl); setWall(D.wa);
+  if (HOME) {
+    const ex = o.ex || {}; const wc = ex.wall || '#f29ab8';
+    const hf = ctex(640, 200, (x, w, h) => { x.fillStyle = wc; x.fillRect(0, 0, w, h); for (let j = 0; j < h; j += 14) { x.fillStyle = 'rgba(0,0,0,.08)'; x.fillRect(0, j, w, 2); } const win = wx => { x.fillStyle = NIGHT > .5 ? '#ffd98a' : '#bfe6ff'; x.fillRect(wx, 60, 110, 70); x.strokeStyle = '#f4efe2'; x.lineWidth = 8; x.strokeRect(wx, 60, 110, 70); x.beginPath(); x.moveTo(wx + 55, 60); x.lineTo(wx + 55, 130); x.stroke(); }; win(70); win(460); x.fillStyle = '#e8e2d4'; x.fillRect(0, h - 26, w, 26); });
+    walls.front.forEach(g => g.traverse(m => { if (m.isMesh && Array.isArray(m.material) && m.material[4] && m.material[4].map) { const u0 = m.material[4].map.offset.x, rp = m.material[4].map.repeat.x; const t = hf.clone(); t.needsUpdate = true; t.offset.set(u0, 0); t.repeat.set(rp, 1); m.material[4] = new MeshBasicMaterial({ map: t }); } }));
+    extM.map = null; extM.color.set(wc); extM.needsUpdate = true;
+    facade.children.slice().forEach(c => { if (c !== facade.children[0] && c !== facade.children[1] && c !== facade.children[2]) c.visible = false; });
+    doorLan.forEach(l => { l.visible = false; });
+    roof.traverse(m => { if (m.isMesh && m.material && m.material.map) { m.material.map = null; m.material.color.set(ex.roofC || '#d8452f'); m.material.needsUpdate = true; } });
+  }
   function refreshPots() { potSakura = placed.filter(e => e.k === 'sakura').map(e => ({ x: e.g.position.x, z: e.g.position.z, y: 2, r: .5 })); }
   refreshPots(); for (let i = 0; i < NP; i++) petalReset(i, 1);
 
@@ -448,10 +489,23 @@ export function start(o) {
   const stars = () => starsOf(cozyOf(serialize()));
   const pool = shuffle(NPCS.filter(d => o.walk && o.walk[d.spr] && d.spr !== 'robot'));
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
-  const NG = clamp(2 + stars(), 2, 7);
+  const NG = HOME ? 0 : clamp(2 + stars(), 2, 7);
   pool.slice(0, NG).forEach((d, i) => { const p = mkPerson(o.walk[d.spr], d.h, { bubble: 'chat' }); p.d = d; p.sp = d.sp * .8; p.kind2 = 'npc'; p.state = 'out'; p.t = i * 2.2 + rnd(0, 1.5); p.x = EX0 + 1; p.z = RD + 4; p.hidden = true; npcs.push(p); });
   function addVisitor(v) { const p = mkPerson(o.me.src, 1.5, { name: v.name, nk: 'vis', bubble: 'msg', tint: 0xffe8f0 }); p.d = { id: 'v' + v.id, name: v.name, role: '來過的客人' }; p.v = v; p.sp = 1.3; p.kind2 = 'vis'; p.state = 'out'; p.t = rnd(1, 6); p.x = EX1 - 1; p.z = RD + 4; p.hidden = true; npcs.push(p); }
   let owner = null;
+  /* 家裡的貓：在屋裡晃來晃去，點牠會喵 */
+  let pet = null;
+  if (HOME) {
+    const g = new Group(); scene.add(g); const c = '#e8a050', wl = '#fff3e0';
+    const body = new Mesh(new SphereGeometry(.2, 14, 10), lam(c)); body.scale.set(1.5, .8, .9); body.position.y = .2; g.add(body);
+    const head = new Mesh(new SphereGeometry(.14, 14, 10), lam(c)); head.position.set(.3, .34, 0); g.add(head);
+    const muz = new Mesh(new SphereGeometry(.07, 10, 8), lam(wl)); muz.position.set(.41, .3, 0); muz.scale.set(.7, .7, 1); g.add(muz);
+    for (const z of [-.07, .07]) { const e = new Mesh(new ConeGeometry(.05, .1, 4), lam(c)); e.position.set(.3, .5, z); g.add(e); const ey = new Mesh(new SphereGeometry(.018, 6, 6), lam('#1a1a1a')); ey.position.set(.43, .38, z * .7); g.add(ey); }
+    const legs = []; for (const [x, z] of [[.18, .1], [.18, -.1], [-.18, .1], [-.18, -.1]]) { const l = new Mesh(new CylinderGeometry(.04, .04, .16, 6), lam(c)); l.position.set(x, .08, z); g.add(l); legs.push(l); }
+    const tail = new Mesh(new CylinderGeometry(.03, .025, .4, 6), lam(c)); tail.position.set(-.38, .36, 0); tail.rotation.z = .8; g.add(tail);
+    g.traverse(m => { if (m.isMesh) m.userData.pet = 1; });
+    const cb2 = placed.find(e => e.k === 'catbed'); pet = { g, legs, tail, x: cb2 ? cb2.g.position.x : 2.5, z: cb2 ? cb2.g.position.z : 5.5, path: null, t: 2, ph: 0, sleep: !!cb2 };
+  }
   if (!own) {
     const rg = placed.find(e => e.k === 'register'); let ox = DX, oz = 2;
     if (rg) { const c = [[rg.x, rg.z - 1], [rg.x + 1, rg.z], [rg.x - 1, rg.z], [rg.x, rg.z + 1]].find(([x, z]) => zoneIn(x, z) && !blockedCell(x, z)); if (c) { ox = c[0] + .5; oz = c[1] + .5; } }
@@ -489,12 +543,14 @@ export function start(o) {
   function toast(s) { toastEl.textContent = s; toastEl.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove('on'), 2200); }
   function hudBtns() {
     if (S.mode === 'build') { hud.innerHTML = `<button class="h3b hot" type="button" data-h3="done"><i>✓</i>完成</button>`; return; }
-    hud.innerHTML = own
+    hud.innerHTML = own && HOME ? `<button class="h3b" type="button" data-h3="exit"><i>🚪</i>出門</button><button class="h3b hot" type="button" data-h3="build"><i>🔨</i>布置</button><button class="h3b" type="button" data-h3="board"><i>📜</i>留言板</button>`
+      : own
       ? (o.island ? `<button class="h3b" type="button" data-h3="exit"><i>🚪</i>出門</button>` : '') + `<button class="h3b hot" type="button" data-h3="build"><i>🔨</i>布置</button><button class="h3b" type="button" data-h3="rename"><i>🪧</i>店名</button><button class="h3b" type="button" data-h3="board"><i>📜</i>留言板</button>`
       : (o.island ? `<button class="h3b" type="button" data-h3="exit"><i>🚪</i>出門</button>` : '') + `<button class="h3b hot" type="button" data-h3="board"><i>✉️</i>留言</button>`;
   }
   function updInfo() {
     const c = cozyOf(serialize()), s = starsOf(c);
+    if (HOME) { info.innerHTML = `<b>🏠 ${esc(o.title || '我的家')}</b><span class="h3st">${'★'.repeat(s)}${'☆'.repeat(5 - s)}</span> 溫馨度 ${c}<br><small>${own ? '按「🔨 布置」擺家具、換地板牆壁' : `${esc((o.owner && o.owner.name) || '')} 的家`}</small>`; return; }
     info.innerHTML = `<b>🏮 ${esc(D.name)}</b><span class="h3st">${'★'.repeat(s)}${'☆'.repeat(5 - s)}</span> ${esc(STARS[s][1])}<br><small>溫馨度 ${c}${own ? `・每天收入 ${yen(dailyIncome(c))}` : `・店長 ${esc((o.owner && o.owner.name) || '')}`}</small>`;
   }
   hudBtns(); updInfo(); camEl.style.display = 'none';
@@ -554,6 +610,7 @@ export function start(o) {
     if (pan.classList.contains('on')) return;
     if (S.mode === 'build') { const it = itemHit(cx, cy); if (it) select(it); else select(null); return; }
     const p = personAt(cx, cy); if (p) { openCard(p); return; }
+    if (pet) { ray.setFromCamera(toNdc(cx, cy), camera); const ph2 = []; pet.g.traverse(m => { if (m.isMesh) ph2.push(m); }); if (ray.intersectObjects(ph2, false).length) { toast(['喵～', '喵嗚？', '呼嚕呼嚕……', '（伸懶腰）'][Math.floor(Math.random() * 4)]); pet.t = 2; pet.path = null; return; } }
     if (giftPick.length && giftHit(cx, cy)) { walkThen(BOARD.x - 1, BOARD.z + .9, claimGifts); return; }
     if (boardHit(cx, cy)) { walkThen(BOARD.x, BOARD.z + 1, openBoard); return; }
     let it = itemHit(cx, cy);
@@ -570,7 +627,7 @@ export function start(o) {
   function openCard(p) {
     closeCard(true); S.talk = p; if (p.kind2 === 'npc') { p.state = 'talk'; p.t = 0; }
     let head = esc(p.d.name), role = esc(p.d.role || ''), body = '', K = KIND.chat, btns = '';
-    if (p.kind2 === 'owner') { K = { tag: '💤 打盹中', c: '#c8d8ff' }; body = `<p class="h3t mind">（店長 ${esc((o.owner && o.owner.name) || '')} 趴在收銀台旁邊睡著了……）</p><p class="h3t">要不要在門口的留言板留言給他？</p>`; btns = `<button class="h3n" type="button" data-h3="board">✉️ 去留言</button>`; }
+    if (p.kind2 === 'owner') { K = { tag: '💤 打盹中', c: '#c8d8ff' }; body = HOME ? `<p class="h3t mind">（${esc((o.owner && o.owner.name) || '')} 窩在家裡打盹……）</p>` : `<p class="h3t mind">（店長 ${esc((o.owner && o.owner.name) || '')} 趴在收銀台旁邊睡著了……）</p>`; body +=  `<p class="h3t">要不要在門口的留言板留言給他？</p>`; btns = `<button class="h3n" type="button" data-h3="board">✉️ 去留言</button>`; }
     else if (p.kind2 === 'vis') { K = { tag: '✉️ 留言', c: '#ffc8d8' }; body = `<p class="h3t">「${esc(p.v.msg || '……')}」</p>${p.v.gift && IT[p.v.gift] ? `<p class="h3t" style="font-size:14px">🎁 還帶了一份「${esc(IT[p.v.gift].n)}」</p>` : ''}`; }
     else {
       const it = nextLine(p); K = KIND[it.kind] || KIND.chat; body = `<p class="h3t${it.kind === 'mind' ? ' mind' : ''}">${it.kind === 'mind' ? '（' + esc(it.text) + '）' : '「' + esc(it.text) + '」'}</p>`;
@@ -595,7 +652,7 @@ export function start(o) {
   function closeCard(keep) { card.classList.remove('on'); const p = S.talk; S.talk = null; if (p && p.kind2 === 'npc' && p.state === 'talk') { p.state = 'idle'; p.t = rnd(1, 2.5); } }
 
   /* 收銀台：收今天的收入 */
-  function pendingIncome() { if (!own) return 0; const day = cb.today ? cb.today() : Math.floor(Date.now() / 864e5); const n = D.cl ? clamp(day - D.cl, 0, 3) : 1; return n * dailyIncome(cozyOf(serialize())); }
+  function pendingIncome() { if (!own || HOME) return 0; const day = cb.today ? cb.today() : Math.floor(Date.now() / 864e5); const n = D.cl ? clamp(day - D.cl, 0, 3) : 1; return n * dailyIncome(cozyOf(serialize())); }
   function regTap(e) {
     if (!own) { toast('收銀台鎖著，店長在打盹～'); return; }
     const a = pendingIncome();
@@ -616,7 +673,7 @@ export function start(o) {
     if (m === 'build') { topBar.textContent = '🔨 拖曳家具移動・拖空白處轉鏡頭'; drawPanel(); S.distT = 13.5; }
     else { S.distT = S.inside ? 10.5 : 13; if (!okAt(me.x, me.z, me.z)) { const c = walkableCells(me.z < RD).sort((a, b) => Math.hypot(a[0] + .5 - me.x, a[1] + .5 - me.z) - Math.hypot(b[0] + .5 - me.x, b[1] + .5 - me.z)).find(c => okAt(c[0] + .5, c[1] + .5, c[1])); if (c) { me.x = c[0] + .5; me.z = c[1] + .5; } } changed(); }
   }
-  let curCat = 'tbl';
+  let curCat = HOME ? 'liv' : 'tbl';
   const thumbs = {};
   let thumbR = null, thumbScene = null, thumbCam = null;
   function thumbOf(k) {
@@ -638,13 +695,13 @@ export function start(o) {
   }
   function drawPanel() {
     const coins = cb.coins ? cb.coins() : 0;
-    const tabs = CATS.map(([k, n]) => `<button class="h3tab ${curCat === k ? 'on' : ''}" type="button" data-h3="cat" data-k="${k}">${n}</button>`).join('') + `<button class="h3tab ${curCat === 'reno' ? 'on' : ''}" type="button" data-h3="cat" data-k="reno">🏠 改裝</button><span style="margin-left:auto;align-self:center;color:#ffd27a;font-weight:800;white-space:nowrap;padding:0 6px">💰 ${yen(coins)}</span>`;
+    const tabs = (HOME ? HCATS : CATS).map(([k, n]) => `<button class="h3tab ${curCat === k ? 'on' : ''}" type="button" data-h3="cat" data-k="${k}">${n}</button>`).join('') + `<button class="h3tab ${curCat === 'reno' ? 'on' : ''}" type="button" data-h3="cat" data-k="reno">🏠 改裝</button><span style="margin-left:auto;align-self:center;color:#ffd27a;font-weight:800;white-space:nowrap;padding:0 6px">💰 ${yen(coins)}</span>`;
     let row = '';
     if (curCat === 'reno') {
       row = FLOORS.map(([k, n, p]) => { const ow = D.fo[k], cur = D.fl === k; return `<button class="h3it ${cur ? 'cur' : ''}" type="button" data-h3="floor" data-k="${k}"><span class="ph" style="background:url(${swatch('f', k)}) center/cover"></span>${esc(n)}${cur ? '<span class="pr">使用中</span>' : ow ? '<span class="pr">已擁有</span>' : `<span class="pr">${yen(p)}</span>`}</button>`; }).join('')
         + WALLS.map(([k, n, p]) => { const ow = D.wo[k], cur = D.wa === k; return `<button class="h3it ${cur ? 'cur' : ''}" type="button" data-h3="wall" data-k="${k}"><span class="ph" style="background:url(${swatch('w', k)}) center/cover"></span>${esc(n)}${cur ? '<span class="pr">使用中</span>' : ow ? '<span class="pr">已擁有</span>' : `<span class="pr">${yen(p)}</span>`}</button>`; }).join('');
     } else {
-      row = ITEMS.filter(I => I.cat === curCat && !I.fixed).map(I => { const n = D.inv[I.k] || 0, src = thumbOf(I.k); return `<button class="h3it ${!n && coins < I.p ? 'no' : ''}" type="button" data-h3="item" data-k="${I.k}">${n ? `<span class="ow">×${n}</span>` : ''}${src ? `<img src="${src}" alt="">` : '<span class="ph"></span>'}${esc(I.n)}<span class="pr">${n ? '拿出來擺' : yen(I.p)}</span></button>`; }).join('');
+      row = ITEMS.filter(I => (HOME ? I.hc === curCat : I.cat === curCat) && !I.fixed).map(I => { const n = D.inv[I.k] || 0, src = thumbOf(I.k); return `<button class="h3it ${!n && coins < I.p ? 'no' : ''}" type="button" data-h3="item" data-k="${I.k}">${n ? `<span class="ow">×${n}</span>` : ''}${src ? `<img src="${src}" alt="">` : '<span class="ph"></span>'}${esc(I.n)}<span class="pr">${n ? '拿出來擺' : yen(I.p)}</span></button>`; }).join('');
     }
     const sc = bp.querySelector('.h3row'), sl = sc ? sc.scrollLeft : 0, same = bp.dataset.cat === curCat;
     bp.innerHTML = `<div class="h3tabs">${tabs}</div><div class="h3row">${row}</div>`; bp.dataset.cat = curCat;
@@ -712,7 +769,7 @@ export function start(o) {
         form = `<hr style="border:0;border-top:2px solid #c8a878;margin:10px 0"><p style="margin:4px 0"><b>留言給店長</b>（最多 60 字）</p>${o.demo ? '<p style="margin:2px 0;color:#8a3a14;font-size:14px">（示範店：留言不會真的送出）</p>' : ''}<textarea id="h3msg" maxlength="60" rows="2" placeholder="例如：你的店好溫馨！下次再來～"></textarea>
           <p style="margin:8px 0 0">附上一份小禮物（每天一份，免費）：</p><div class="gifts">${sent ? '<span style="opacity:.7">今天已經送過禮物了</span>' : ['', ...GIFTS].map(k => `<button type="button" data-h3="gpick" data-k="${k}" class="${giftPickK === k ? 'on' : ''}">${k ? esc(IT[k].n) : '不附禮物'}</button>`).join('')}</div>
           <div class="h3bt"><button class="h3n alt" type="button" data-h3="pclose">關閉</button><button class="h3n" type="button" data-h3="post">送出留言</button></div>`;
-      } else { const un = list.filter(m => m.gift && IT[m.gift] && !D.gc[m.id]).length; form = `<div class="h3bt">${un ? `<button class="h3n" type="button" data-h3="claim">🎁 領取 ${un} 份禮物</button>` : ''}<button class="h3n alt" type="button" data-h3="pclose">關閉</button></div>`; }
+      } else { const un = HOME ? 0 : list.filter(m => m.gift && IT[m.gift] && !D.gc[m.id]).length; form = `<div class="h3bt">${un ? `<button class="h3n" type="button" data-h3="claim">🎁 領取 ${un} 份禮物</button>` : ''}<button class="h3n alt" type="button" data-h3="pclose">關閉</button></div>`; }
       pan.innerHTML = `<h3>📜 ${esc(D.name)} 的留言板</h3>${rows}${form}`;
     });
   }
@@ -737,7 +794,7 @@ export function start(o) {
     changed(); refreshGifts(); pan.innerHTML = `<h3>🎁 收到禮物了！</h3>${un.map(m => `<div class="msg"><b>${esc(m.name || '玩家')}</b> 送你「${esc(IT[m.gift].n)}」<br>${esc(m.msg || '')}</div>`).join('')}<p>都放進背包了，按「🔨 布置」就能擺出來。</p><div class="h3bt"><button class="h3n" type="button" data-h3="pclose">好</button></div>`; pan.classList.add('on');
   }
   /* 改店名 */
-  function openRename() { closeCard(); pan.innerHTML = `<h3>🪧 幫店取名字</h3><p>會寫在門口的招牌上，好友來玩的時候也看得到（最多 12 個字）。</p><input id="h3name" maxlength="12" value="${esc(D.name)}" autocomplete="off"><div class="h3bt"><button class="h3n alt" type="button" data-h3="pclose">取消</button><button class="h3n" type="button" data-h3="nameok">決定</button></div>`; pan.classList.add('on'); }
+  function openRename() { closeCard(); pan.innerHTML = `<h3>🪧 幫店取名字</h3><p>會寫在島上居酒屋的招牌上，好友來玩的時候也看得到（最多 12 個字）。</p><input id="h3name" maxlength="12" value="${esc(D.name)}" autocomplete="off"><div class="h3bt"><button class="h3n alt" type="button" data-h3="pclose">取消</button><button class="h3n" type="button" data-h3="nameok">決定</button></div>`; pan.classList.add('on'); }
 
   /* 介面按鈕（全部用 data-h3） */
   const onClick = e => {
@@ -766,7 +823,7 @@ export function start(o) {
   root.addEventListener('click', onClick);
 
   /* 載入留言（自己的店：禮物盒＋留過言的人來逛；別人的店：只讀） */
-  loadMsgs().then(list => { if (S.dead) return; if (own) { refreshGifts(); const seen = {}; list.filter(m => m.name && !seen[m.from || m.name] && (seen[m.from || m.name] = 1)).slice(0, 3).forEach(addVisitor); } });
+  loadMsgs().then(list => { if (S.dead) return; if (own && !HOME) { refreshGifts(); const seen = {}; list.filter(m => m.name && !seen[m.from || m.name] && (seen[m.from || m.name] = 1)).slice(0, 3).forEach(addVisitor); } });
 
   /* ───────── 控制介面（給 index.html 和自動測試用） ───────── */
   const ctl = {
@@ -864,6 +921,12 @@ export function start(o) {
       /* 不要跟玩家疊在一起 */
       const dx = p.x - me.x, dz = p.z - me.z, d = Math.hypot(dx, dz), mind = .55; if (d < mind && d > .001 && p.state !== 'walk' && p.state !== 'leave') { const nx = p.x + dx / d * (mind - d), nz = p.z + dz / d * (mind - d); if (okAt(nx, nz, p.z)) { p.x = nx; p.z = nz; } }
     }
+    if (pet) { const P = pet; P.t -= dt; let mv = false;
+      if (P.path && P.path.length) { const [px, pz] = P.path[0], dx = px - P.x, dz = pz - P.z, d = Math.hypot(dx, dz); if (d < .05) P.path.shift(); else { const st = Math.min(d, 1.1 * dt); P.x += dx / d * st; P.z += dz / d * st; P.g.rotation.y = Math.atan2(-dz, dx); mv = true; } if (!P.path.length) P.t = rnd(3, 8); }
+      else if (P.t <= 0) { const cs = walkableCells(true); const c2 = cs[Math.floor(Math.random() * cs.length)]; const cbd = placed.find(e => e.k === 'catbed'); const tgt = cbd && Math.random() < .35 ? [cbd.x, cbd.z] : c2; const pth = tgt && findPath(P.x, P.z, tgt[0], tgt[1]); if (pth && pth.length) { P.path = pth; P.sleep = false; } else P.t = 3; if (cbd && tgt && tgt[0] === cbd.x && tgt[1] === cbd.z) P.sleep = true; }
+      P.ph += dt * (mv ? 12 : 0); P.legs.forEach((l, i) => { l.rotation.z = mv ? Math.sin(P.ph + i * Math.PI) * .5 : 0; }); P.tail.rotation.z = .8 + Math.sin(t * 2) * .25;
+      const onBed = !mv && P.sleep && placed.some(e => e.k === 'catbed' && Math.hypot(e.g.position.x - P.x, e.g.position.z - P.z) < .4);
+      P.g.position.set(P.x, onBed ? .1 : 0, P.z); P.g.scale.y = onBed ? .75 + Math.sin(t * 1.5) * .03 : 1; }
     /* 鏡頭 */
     let tx = me.x, tz = me.z, ty = 1.1;
     if (S.mode === 'build') { if (S.inside) { tx = RW / 2 + sy * 2.2; tz = RD / 2 + cy * 2.2; } else { tx = DX + sy * 2; tz = RD + 2.5 + cy * 2; } ty = .4; }

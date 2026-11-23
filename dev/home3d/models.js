@@ -75,9 +75,43 @@ export const ITEMS = [
   { k: 'rug', n: '藍染地毯', cat: 'rug', p: 6000, w: 2, d: 2, L: 'rug', c: 3 },
   { k: 'step', n: '踏石', cat: 'rug', p: 1500, w: 1, d: 1, L: 'rug', c: 1 },
 ];
+/* 家（島上自己房子的室內）用的家具：hc＝家裡的分類 */
+export const HCATS = [['liv', '🛋 客廳'], ['bed', '🛏 臥室'], ['kit', '🍳 廚房'], ['dec', '🎎 擺飾'], ['pla', '🌿 植物'], ['wal', '🖼 牆面'], ['sml', '☕ 小物'], ['rug', '🟫 地墊']];
+ITEMS.push(
+  { k: 'sofa', n: '布沙發', cat: 'x', hc: 'liv', p: 12000, w: 2, d: 1, seat: 1, c: 5 },
+  { k: 'armchair', n: '單人沙發', cat: 'x', hc: 'liv', p: 7000, w: 1, d: 1, seat: 1, c: 3 },
+  { k: 'ctable', n: '茶几', cat: 'x', hc: 'liv', p: 5000, w: 2, d: 1, sf: .42, c: 3 },
+  { k: 'tv', n: '電視櫃', cat: 'x', hc: 'liv', p: 18000, w: 2, d: 1, c: 5 },
+  { k: 'books', n: '書櫃', cat: 'x', hc: 'liv', p: 14000, w: 2, d: 1, c: 5 },
+  { k: 'flamp', n: '立燈', cat: 'x', hc: 'liv', p: 6000, w: 1, d: 1, c: 4, lit: 1 },
+  { k: 'piano', n: '直立鋼琴', cat: 'x', hc: 'liv', p: 40000, w: 2, d: 1, c: 8 },
+  { k: 'bed', n: '雙人床', cat: 'x', hc: 'bed', p: 20000, w: 2, d: 2, c: 6 },
+  { k: 'wardrobe', n: '衣櫃', cat: 'x', hc: 'bed', p: 15000, w: 2, d: 1, c: 4 },
+  { k: 'nstand', n: '床頭櫃', cat: 'x', hc: 'bed', p: 3000, w: 1, d: 1, sf: .55, c: 2 },
+  { k: 'desk', n: '書桌', cat: 'x', hc: 'bed', p: 8000, w: 2, d: 1, sf: .76, c: 3 },
+  { k: 'kcounter', n: '流理台', cat: 'x', hc: 'kit', p: 16000, w: 2, d: 1, sf: .92, c: 4 },
+  { k: 'stove', n: '瓦斯爐', cat: 'x', hc: 'kit', p: 9000, w: 1, d: 1, sf: .92, c: 3 },
+  { k: 'fridge', n: '冰箱', cat: 'x', hc: 'kit', p: 14000, w: 1, d: 1, c: 3 },
+  { k: 'catbed', n: '貓窩', cat: 'x', hc: 'dec', p: 4000, w: 1, d: 1, c: 4, solid: 0 },
+  { k: 'monstera', n: '龜背芋', cat: 'x', hc: 'pla', p: 6000, w: 1, d: 1, c: 4 },
+  { k: 'cactus', n: '仙人掌', cat: 'x', hc: 'pla', p: 1500, w: 1, d: 1, L: 'top', c: 2 },
+  { k: 'wwin', n: '窗簾窗戶', cat: 'x', hc: 'wal', p: 8000, w: 2, d: 1, L: 'wall', c: 5 },
+  { k: 'photos', n: '相框牆', cat: 'x', hc: 'wal', p: 5000, w: 2, d: 1, L: 'wall', c: 4 },
+  { k: 'shelfw', n: '牆上層架', cat: 'x', hc: 'wal', p: 4000, w: 2, d: 1, L: 'wall', c: 3 },
+  { k: 'book', n: '一疊書', cat: 'x', hc: 'sml', p: 800, w: 1, d: 1, L: 'top', c: 1 },
+  { k: 'mug', n: '馬克杯', cat: 'x', hc: 'sml', p: 500, w: 1, d: 1, L: 'top', c: 1 },
+  { k: 'cake', n: '草莓蛋糕', cat: 'x', hc: 'sml', p: 1800, w: 1, d: 1, L: 'top', c: 2 },
+  { k: 'laptop', n: '筆電', cat: 'x', hc: 'sml', p: 9000, w: 1, d: 1, L: 'top', c: 2 },
+  { k: 'dlamp', n: '桌燈', cat: 'x', hc: 'sml', p: 2500, w: 1, d: 1, L: 'top', c: 2, lit: 1 },
+  { k: 'teddy', n: '小熊玩偶', cat: 'x', hc: 'sml', p: 3000, w: 1, d: 1, L: 'top', c: 3 },
+  { k: 'carpet', n: '毛毛地毯', cat: 'x', hc: 'rug', p: 6000, w: 2, d: 2, L: 'rug', c: 3 },
+);
+/* 店裡的東西也可以搬回家擺 */
+export const HOMECAT = { chair: 'kit', table: 'kit', chabu: 'liv', zabu: 'liv', andon: 'liv', jukebox: 'liv', tank: 'dec', tanuki: 'dec', byobu: 'bed', hibachi: 'dec', pine: 'pla', bamboo: 'pla', sakura: 'pla', ajisai: 'pla', scroll: 'wal', clock: 'wal', mado: 'wal', fuji: 'wal', maneki: 'sml', daruma: 'sml', vase: 'sml', beer: 'sml', ramen: 'sml', sushi: 'sml', edamame: 'sml', tatami: 'rug', rug: 'rug' };
+ITEMS.forEach(i => { if (!i.hc && HOMECAT[i.k]) i.hc = HOMECAT[i.k]; });
 export const IT = {}; ITEMS.forEach(i => { i.L = i.L || 'main'; if (i.solid === undefined) i.solid = i.L === 'main' ? 1 : 0; IT[i.k] = i; });
-export const FLOORS = [['wood', '原木地板', 0], ['dark', '深色木地板', 12000], ['tatami', '榻榻米地', 20000], ['stone', '石板地', 16000], ['check', '市松格紋', 24000]];
-export const WALLS = [['tsuchi', '米色土牆', 0], ['plank', '木板牆', 10000], ['red', '朱紅漆牆', 18000], ['ai', '藍染布牆', 18000], ['sakura', '櫻花紙牆', 24000]];
+export const FLOORS = [['wood', '原木地板', 0], ['light', '淺色木地板', 8000], ['carpetf', '米色地毯', 10000], ['dark', '深色木地板', 12000], ['tatami', '榻榻米地', 20000], ['stone', '石板地', 16000], ['check', '市松格紋', 24000]];
+export const WALLS = [['tsuchi', '米色土牆', 0], ['cream', '奶油壁紙', 6000], ['stripe', '條紋壁紙', 9000], ['flower', '碎花壁紙', 12000], ['mint', '薄荷漆牆', 9000], ['plank', '木板牆', 10000], ['red', '朱紅漆牆', 18000], ['ai', '藍染布牆', 18000], ['sakura', '櫻花紙牆', 24000]];
 
 /* ───────── 模型 ───────── */
 const F = {};
@@ -147,6 +181,37 @@ function compact(g) {
     } catch (_) { }
   }
 }
+/* ───── 家具（家） ───── */
+const FAB = '#6fa8d6', FAB2 = '#4f86b8', WHITE = '#f6f2ea', OAK = '#d9b07a';
+F.sofa = g => { B(g, 1.9, .42, .82, FAB2, 0, .21, 0); for (const x of [-.46, .46]) B(g, .9, .16, .7, FAB, x, .5, .06); B(g, 1.9, .55, .2, FAB2, 0, .72, -.32); for (const x of [-.88, .88]) B(g, .18, .58, .82, FAB2, x, .45, 0); S(g, .16, '#f2c94c', -.6, .7, -.12, 1, 1, .5); S(g, .16, '#f29ab8', .6, .7, -.12, 1, 1, .5); };
+F.armchair = g => { B(g, .8, .4, .78, '#e07a5f', 0, .2, 0); B(g, .62, .14, .64, '#ee9a7a', 0, .48, .05); B(g, .8, .55, .18, '#e07a5f', 0, .7, -.3); for (const x of [-.36, .36]) B(g, .14, .52, .78, '#e07a5f', x, .45, 0); };
+F.ctable = g => { B(g, 1.6, .06, .7, OAK, 0, .4, 0); for (const sx of [-.7, .7]) for (const sz of [-.28, .28]) C(g, .03, .03, .38, '#8a6a4a', sx, .19, sz, 8); B(g, 1.5, .03, .6, '#c89a62', 0, .15, 0); };
+F.tv = g => { B(g, 1.8, .5, .48, WHITE, 0, .25, -.1); for (const x of [-.45, .45]) B(g, .8, .38, .02, '#e8e0d0', x, .25, .15); B(g, 1.3, .78, .06, '#1a1a1e', 0, .98, -.12); const sc = B(g, 1.2, .68, .02, bas('#4a8ad8'), 0, .98, -.085); sc.userData.lit = 1; g.userData.tvs = sc; B(g, .3, .08, .2, '#2a2a2e', 0, .54, -.12); };
+F.books = g => { B(g, 1.9, 1.9, .4, OAK, 0, .95, -.1); B(g, 1.8, 1.8, .02, '#a07850', 0, .95, .09); for (const y of [.05, .5, .95, 1.4]) B(g, 1.8, .04, .38, '#c8a070', 0, y + .02, -.08); const cs = ['#d8452f', '#2f6bb8', '#3f8f4f', '#f2b630', '#9a6ad6', '#e8e0d0', '#5a3a2a']; let k = 0; for (const y of [.07, .52, .97]) { let x = -.84; while (x < .8) { const w = .06 + (k % 3) * .02, h = .3 + (k * 7 % 5) * .025; B(g, w, h, .26, cs[k % 7], x + w / 2, y + h / 2, -.06); x += w + .01; k++; } } S(g, .12, '#3f8f4f', .6, 1.6, -.05); };
+F.flamp = g => { C(g, .2, .22, .04, '#3a3a3e', 0, .02, 0, 18); C(g, .02, .02, 1.5, '#3a3a3e', 0, .77, 0, 6); const sh = C(g, .16, .26, .32, bas('#fff0c8'), 0, 1.6, 0, 18); sh.userData.lit = 1; glow(g, 0, 1.55, 0, 2.4, .55); };
+F.piano = g => { B(g, 1.6, 1.25, .55, '#1e1a1a', 0, .63, -.15); B(g, 1.6, .06, .7, '#1e1a1a', 0, .72, .05); B(g, 1.45, .04, .2, '#f6f2ea', 0, .76, .2); for (let i = 0; i < 10; i++) B(g, .05, .03, .12, '#111', -.63 + i * .14, .785, .17); for (const x of [-.7, .7]) B(g, .1, .7, .1, '#1e1a1a', x, .35, .3); B(g, .5, .05, .3, '#1e1a1a', 0, .45, .6); B(g, .5, .04, .3, '#8a3a2a', 0, .48, .6); };
+F.bed = g => { B(g, 1.9, .3, 1.95, OAK, 0, .25, 0); B(g, 1.9, .9, .1, OAK, 0, .55, -.95); B(g, 1.8, .2, 1.85, WHITE, 0, .5, .02); B(g, 1.82, .14, 1.2, '#f29ab8', 0, .62, .33); for (const x of [-.45, .45]) S(g, .3, '#ffffff', x, .66, -.62, 1.2, .4, .7); for (const sx of [-.9, .9]) for (const sz of [-.9, .9]) B(g, .08, .12, .08, '#8a6a4a', sx, .06, sz); };
+F.wardrobe = g => { B(g, 1.8, 2.0, .6, WHITE, 0, 1.0, -.15); B(g, .02, 1.9, .02, '#c8c0b0', 0, 1.0, .16); for (const x of [-.08, .08]) C(g, .02, .02, .3, '#c8a040', x, 1.05, .18, 6); B(g, 1.84, .06, .64, '#e0d8c8', 0, 2.02, -.15); };
+F.nstand = g => { B(g, .5, .5, .45, OAK, 0, .27, 0); B(g, .46, .02, .02, '#8a6a4a', 0, .35, .23); S(g, .025, '#c8a040', 0, .25, .24); };
+F.desk = g => { B(g, 1.6, .05, .65, OAK, 0, .74, 0); for (const sx of [-.74, .74]) B(g, .06, .72, .6, '#e8e0d0', sx, .36, 0); B(g, .45, .3, .55, '#e8e0d0', .45, .55, 0); };
+F.kcounter = g => { B(g, 1.9, .86, .62, WHITE, 0, .43, -.1); B(g, 1.96, .06, .7, '#9aa0a8', 0, .89, -.08); B(g, .6, .04, .4, '#6a7078', -.4, .91, -.08); C(g, .02, .02, .3, '#c0c4cc', -.4, 1.05, -.3, 6); for (const x of [-.5, .1, .6]) B(g, .5, .6, .02, '#ece6da', x, .43, .22); const p = C(g, .12, .1, .14, '#d8452f', .55, .99, -.1, 12); };
+F.stove = g => { B(g, .8, .86, .62, '#e8e4dc', 0, .43, -.1); B(g, .84, .06, .66, '#2a2a2e', 0, .89, -.08); for (const x of [-.2, .2]) { const r = new Mesh(new TorusGeometry(.1, .02, 6, 16), lam('#555')); r.rotation.x = Math.PI / 2; r.position.set(x, .93, -.08); g.add(r); } B(g, .7, .4, .02, '#2a2a2e', 0, .45, .22); C(g, .14, .14, .14, '#3a6ab8', .2, 1.0, -.08, 14); };
+F.fridge = g => { B(g, .78, 1.85, .7, '#eaf2f8', 0, .93, -.08); B(g, .78, .02, .02, '#c8d0d8', 0, 1.2, .28); for (const y of [.8, 1.55]) B(g, .03, .25, .04, '#a8b0b8', .3, y, .3); B(g, .18, .14, .01, '#f29ab8', -.15, 1.5, .28); };
+F.catbed = g => { const r = new Mesh(new TorusGeometry(.32, .12, 8, 20), lam('#c8935a')); r.rotation.x = Math.PI / 2; r.position.y = .12; g.add(r); C(g, .3, .3, .08, '#f2d8b0', 0, .05, 0, 18); S(g, .18, '#e8a050', .02, .2, 0, 1.4, .7, 1); S(g, .11, '#e8a050', .2, .25, .04); for (const z of [-.04, .07]) { const e = new Mesh(new ConeGeometry(.04, .07, 4), lam('#e8a050')); e.position.set(.22, .36, z); g.add(e); } };
+F.monstera = g => { C(g, .24, .18, .4, '#f2efe6', 0, .2, 0, 14); C(g, .22, .22, .02, '#5a3a2a', 0, .4, 0, 14); for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2; const l = new Mesh(new CircleGeometry(.28, 10), new MeshLambertMaterial({ color: i % 2 ? '#2f7a3a' : '#3f8f4a', side: DoubleSide })); l.position.set(Math.cos(a) * .25, .9 + (i % 3) * .18, Math.sin(a) * .25); l.rotation.set(-1 + Math.random() * .4, a, 0); g.add(l); C(g, .012, .012, .6, '#3f6a2a', Math.cos(a) * .12, .65, Math.sin(a) * .12, 4); } };
+F.cactus = g => { C(g, .09, .07, .12, '#c8704a', 0, .06, 0, 12); C(g, .06, .06, .22, '#4a9a4a', 0, .22, 0, 10); S(g, .06, '#4a9a4a', 0, .33, 0); const a = C(g, .03, .03, .1, '#4a9a4a', .07, .24, 0, 8); a.rotation.z = -1; S(g, .025, '#f29ab8', 0, .39, 0); };
+F.wwin = g => { const pane = B(g, 1.5, 1.1, .03, bas('#bfe6ff'), 0, 1.65, .02); g.userData.pane = pane; B(g, 1.62, .08, .08, WHITE, 0, 2.24, .04); B(g, 1.62, .08, .08, WHITE, 0, 1.06, .04); B(g, .06, 1.15, .06, WHITE, 0, 1.65, .05); B(g, 1.62, .1, .2, WHITE, 0, 1.03, .1); B(g, 1.9, .04, .04, '#8a6a4a', 0, 2.38, .1); for (const s of [-1, 1]) { const c = B(g, .38, 1.4, .05, '#f29ab8', s * .82, 1.68, .12); c.geometry = new BoxGeometry(.38, 1.4, .05, 4, 1, 1); } };
+F.photos = g => { const cs = ['#e8d4ae', '#bfe6ff', '#f8d0dc', '#d8f0e0']; [[-.6, 1.8, .45, .55], [0, 1.95, .5, .4], [.55, 1.75, .4, .5], [-.05, 1.5, .35, .3]].forEach(([x, y, w, h], i) => { B(g, w + .08, h + .08, .03, i % 2 ? '#3a2a1a' : WHITE, x, y, .015); B(g, w, h, .01, bas(cs[i]), x, y, .035); S(g, .06, ['#f2b630', '#3f8f4f', '#d8452f', '#6a8ae8'][i], x - w * .15, y - h * .1, .04, 1, 1, .2); }); };
+F.shelfw = g => { B(g, 1.7, .05, .25, OAK, 0, 1.6, .12); for (const x of [-.7, .7]) B(g, .04, .15, .2, '#8a6a4a', x, 1.52, .1); C(g, .06, .06, .16, '#f2efe6', -.5, 1.71, .12, 10); S(g, .09, '#4a9a4a', -.5, 1.82, .12); B(g, .3, .22, .16, '#2f6bb8', 0, 1.74, .12); S(g, .08, '#f2b630', .45, 1.7, .12); };
+F.book = g => { const cs = ['#d8452f', '#2f6bb8', '#f2b630']; for (let i = 0; i < 3; i++) { const b = B(g, .22, .045, .16, cs[i], 0, .025 + i * .047, 0); b.rotation.y = i * .25; } };
+F.mug = g => { C(g, .05, .045, .1, '#f6f2ea', 0, .05, 0, 14); C(g, .045, .045, .01, '#6a4020', 0, .095, 0, 14); const h = new Mesh(new TorusGeometry(.03, .01, 6, 10), lam('#f6f2ea')); h.position.set(.06, .05, 0); g.add(h); };
+F.cake = g => { C(g, .14, .14, .02, '#f6f2ea', 0, .01, 0, 20); C(g, .1, .1, .1, '#fff8f0', 0, .07, 0, 20); C(g, .1, .1, .015, '#f29ab8', 0, .12, 0, 20); for (let i = 0; i < 5; i++) S(g, .022, '#d8302a', Math.cos(i * 1.26) * .065, .14, Math.sin(i * 1.26) * .065); };
+F.laptop = g => { B(g, .32, .015, .22, '#c0c4cc', 0, .01, 0); const s = new Group(); s.position.set(0, .015, -.11); s.rotation.x = -.35; g.add(s); B(s, .32, .2, .012, '#c0c4cc', 0, .1, 0); const sc = B(s, .29, .17, .002, bas('#8ac0f0'), 0, .1, .007); sc.userData.lit = 1; };
+F.dlamp = g => { C(g, .07, .08, .02, '#2f6bb8', 0, .01, 0, 12); const a = C(g, .01, .01, .3, '#2f6bb8', 0, .16, 0, 6); const sh = C(g, .04, .09, .1, bas('#fff0c8'), 0, .33, 0, 12); sh.userData.lit = 1; glow(g, 0, .3, 0, 1.2, .5); };
+F.teddy = g => { const c = '#b8814a'; S(g, .1, c, 0, .1, 0, 1, 1.1, .9); S(g, .08, c, 0, .24, 0); for (const x of [-.06, .06]) { S(g, .03, c, x, .31, 0); S(g, .012, '#1a1a1a', x * .5, .26, .07); S(g, .035, c, x * 1.3, .1, .06); } S(g, .03, '#e8d0b0', 0, .225, .07); };
+F.carpet = g => { const t = ctex(256, 256, (x, w, h) => { x.fillStyle = '#f2e6d0'; x.fillRect(0, 0, w, h); const r = mulberry2(3); for (let i = 0; i < 1600; i++) { x.fillStyle = r() < .5 ? 'rgba(220,200,170,.5)' : 'rgba(255,250,240,.6)'; x.fillRect(r() * w, r() * h, 3, 3); } x.strokeStyle = '#e8a0b0'; x.lineWidth = 10; x.strokeRect(14, 14, w - 28, h - 28); }); const m = new Mesh(new BoxGeometry(1.9, .04, 1.9), [lam('#e8d8c0'), lam('#e8d8c0'), new MeshLambertMaterial({ map: t }), lam('#e8d8c0'), lam('#e8d8c0'), lam('#e8d8c0')]); m.position.y = .02; g.add(m); };
+const mulberry2 = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
 export function build(k) {
   const g = new Group(); const f = F[k]; if (f) f(g); else B(g, .8, .8, .8, '#f0f', 0, .4, 0);
   compact(g);
