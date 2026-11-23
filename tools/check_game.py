@@ -2168,7 +2168,16 @@ def sc_home3d(b, base):
         if c.has('.home3 [data-h3=ok]:disabled'):
             c.click('.home3 [data-h3=rot]', wait=200)
         c.click('.home3 [data-h3=ok]', wait=300)
-        c.click('.home3 [data-h3=done]', wait=1500)
+        # 擴建：改裝分頁 → 📐 擴建到 12×9 → 買下 → 室內重開、變大、扣錢
+        c.page.evaluate("(()=>{const g=load();if((g.coins||0)<80000){g.coins=200000;lsSet(KEY,JSON.stringify(g))}})()")
+        c0 = c.page.evaluate("load().coins")
+        c.click('.home3 [data-h3=cat][data-k=reno]', wait=500)
+        c.click('.home3 [data-h3=expand]', wait=300)
+        c.click('.home3 [data-h3=buyok]', wait=2500)
+        h3_wait(c, '擴建後重開')
+        hz = c.page.evaluate("(JSON.parse(localStorage.getItem('izakaya-home-v1')||'{}').home||{}).sz")
+        if hz != 1 or c.page.evaluate("load().coins") != c0 - 50000:
+            raise AssertionError('擴建沒有存到或沒扣 ¥50,000：sz=%s coins %s→%s' % (hz, c0, c.page.evaluate("load().coins")))
         hs = c.page.evaluate("(JSON.parse(localStorage.getItem('izakaya-home-v1')||'{}').home)||null")
         if not hs or sum(1 for e in hs['it'] if e[0] == 'flamp') < 2:
             raise AssertionError('家裡買的立燈沒有存到 data.home：%s' % (hs and [e[0] for e in hs['it']]))

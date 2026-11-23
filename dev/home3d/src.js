@@ -21,13 +21,18 @@ const LUT = new Uint8Array(256).map((_, i) => { const c = i / 255; return Math.r
 const yen = n => '¥' + Math.round(n).toLocaleString('en-US');
 
 /* ───────── 尺寸 ───────── */
-export const RW = 10, RD = 8, WH = 3.1, D0 = 4, D1 = 6, DX = (D0 + D1) / 2;   // 店內 10×8 格，門在前牆 x 4～6
-const EX0 = -10, EX1 = RW + 10, EZ1 = RD + 9;                                  // 店外可以走的範圍
-const YX0 = -4, YX1 = RW + 4, YZ0 = RD + 1, YZ1 = RD + 4;                       // 門前庭院（可以擺東西）
-const BOARD = { x: 7.3, z: RD + 1.4 };                                          // 門口留言板
-const RESERVED = new Set();                                                     // 固定佔用的格子（門口走道、留言板）
-for (let z = RD; z < YZ1 + 1; z++) for (let x = D0; x < D1; x++) RESERVED.add(x + ',' + z);
-RESERVED.add('7,' + (RD + 1));
+/* 室內大小可以花錢擴建（只有室內變大，島上的外觀不變）：[寬, 深, 價錢] */
+export const SIZES = [[10, 8, 0], [12, 9, 50000], [14, 10, 150000], [16, 12, 400000]];
+export const WH = 3.1;
+export let RW = 10, RD = 8, D0 = 4, D1 = 6, DX = 5;                              // 店內 RW×RD 格，門在前牆正中間（寬 2 格）
+let EX0, EX1, EZ1, YX0, YX1, YZ0, YZ1, BOARD, BCX, RESERVED;
+function setDims(lv) {
+  const z = SIZES[clamp(lv | 0, 0, SIZES.length - 1)]; RW = z[0]; RD = z[1]; D0 = RW / 2 - 1; D1 = RW / 2 + 1; DX = RW / 2;
+  EX0 = -10; EX1 = RW + 10; EZ1 = RD + 9; YX0 = -4; YX1 = RW + 4; YZ0 = RD + 1; YZ1 = RD + 4;   // 店外可以走的範圍、門前庭院
+  BOARD = { x: DX + 2.3, z: RD + 1.4 }; BCX = Math.floor(BOARD.x);              // 門口留言板
+  RESERVED = new Set(); for (let zz = RD; zz < YZ1 + 1; zz++) for (let x = D0; x < D1; x++) RESERVED.add(x + ',' + zz); RESERVED.add(BCX + ',' + (RD + 1));
+}
+setDims(0);
 
 export const STARS = [[0, '冷清小店'], [15, '溫暖小館'], [35, '熟客愛店'], [65, '街坊名店'], [100, '人氣名店'], [150, '傳說名店']];
 export function cozyOf(d) {
@@ -152,6 +157,7 @@ const CSS = `
 export const H3CSS = CSS;
 export { island, EXO, defaultEx } from './island.js';
 export function start(o) {
+  setDims(o.data && o.data.sz);
   const cv = o.cv, root = o.root, cb = o.cb || {};
   const own = !!o.own, HOME = o.kind === 'home', ISL = !!o.island;
   const D = o.data || freshHome();
@@ -463,7 +469,7 @@ export function start(o) {
   function blockedCell(x, z) {
     if (x < GX0 || x >= GX1 || z < 0 || z >= GZ1) return true;
     if (z < RD && (x < 0 || x >= RW)) return true;
-    if (z >= RD && RESERVED.has(x + ',' + z) && x === 7 && z === RD + 1) return true;
+    if (z >= RD && RESERVED.has(x + ',' + z) && x === BCX && z === RD + 1) return true;
     const q = itemAt(x, z, 'main'); if (q && IT[q.k].solid) return true;
     return false;
   }
@@ -482,7 +488,7 @@ export function start(o) {
     else { if (z < RD + RAD && !inDoor) return false; if (z < RD && !inDoor) return false; }
     if (x < EX0 + .4 || x > EX1 - .4 || z > EZ1 - .4) return false;
     if (z < RD && (x < 0 || x > RW)) return false;
-    for (const [ox, oz] of [[-RAD, -RAD], [RAD, -RAD], [-RAD, RAD], [RAD, RAD], [0, 0]]) { const cx = Math.floor(x + ox * .8), cz = Math.floor(z + oz * .8); const q = itemAt(cx, cz, 'main'); if (q && IT[q.k].solid) return false; if (cx === 7 && cz === RD + 1 && Math.hypot(x - BOARD.x, z - BOARD.z) < .7) return false; }
+    for (const [ox, oz] of [[-RAD, -RAD], [RAD, -RAD], [-RAD, RAD], [RAD, RAD], [0, 0]]) { const cx = Math.floor(x + ox * .8), cz = Math.floor(z + oz * .8); const q = itemAt(cx, cz, 'main'); if (q && IT[q.k].solid) return false; if (cx === BCX && cz === RD + 1 && Math.hypot(x - BOARD.x, z - BOARD.z) < .7) return false; }
     return true;
   }
   function walkableCells(inside) { const a = []; if (inside) { for (let z = 0; z < RD; z++) for (let x = 0; x < RW; x++) if (!blockedCell(x, z)) a.push([x, z]); } else { for (let z = RD + 1; z < RD + 6; z++) for (let x = -6; x < RW + 6; x++) if (!blockedCell(x, z)) a.push([x, z]); } return a; }
@@ -702,7 +708,9 @@ export function start(o) {
     const tabs = (HOME ? HCATS : CATS).map(([k, n]) => `<button class="h3tab ${curCat === k ? 'on' : ''}" type="button" data-h3="cat" data-k="${k}">${n}</button>`).join('') + `<button class="h3tab ${curCat === 'reno' ? 'on' : ''}" type="button" data-h3="cat" data-k="reno">🏠 改裝</button><span style="margin-left:auto;align-self:center;color:#ffd27a;font-weight:800;white-space:nowrap;padding:0 6px">💰 ${yen(coins)}</span>`;
     let row = '';
     if (curCat === 'reno') {
-      row = FLOORS.map(([k, n, p]) => { const ow = D.fo[k], cur = D.fl === k; return `<button class="h3it ${cur ? 'cur' : ''}" type="button" data-h3="floor" data-k="${k}"><span class="ph" style="background:url(${swatch('f', k)}) center/cover"></span>${esc(n)}${cur ? '<span class="pr">使用中</span>' : ow ? '<span class="pr">已擁有</span>' : `<span class="pr">${yen(p)}</span>`}</button>`; }).join('')
+      const lv = D.sz | 0, nx = SIZES[lv + 1];
+      row = (own ? `<button class="h3it ${nx && coins < nx[2] ? 'no' : ''}" type="button" data-h3="expand" ${nx ? '' : 'disabled'}><span class="ph" style="display:flex;align-items:center;justify-content:center;font-size:34px">📐</span>${nx ? `擴建到 ${nx[0]}×${nx[1]}<span class="pr">${yen(nx[2])}</span>` : `已經最大<span class="pr">${RW}×${RD}</span>`}</button>` : '')
+        + FLOORS.map(([k, n, p]) => { const ow = D.fo[k], cur = D.fl === k; return `<button class="h3it ${cur ? 'cur' : ''}" type="button" data-h3="floor" data-k="${k}"><span class="ph" style="background:url(${swatch('f', k)}) center/cover"></span>${esc(n)}${cur ? '<span class="pr">使用中</span>' : ow ? '<span class="pr">已擁有</span>' : `<span class="pr">${yen(p)}</span>`}</button>`; }).join('')
         + WALLS.map(([k, n, p]) => { const ow = D.wo[k], cur = D.wa === k; return `<button class="h3it ${cur ? 'cur' : ''}" type="button" data-h3="wall" data-k="${k}"><span class="ph" style="background:url(${swatch('w', k)}) center/cover"></span>${esc(n)}${cur ? '<span class="pr">使用中</span>' : ow ? '<span class="pr">已擁有</span>' : `<span class="pr">${yen(p)}</span>`}</button>`; }).join('');
     } else {
       row = ITEMS.filter(I => (HOME ? I.hc === curCat : I.cat === curCat) && !I.fixed).map(I => { const n = D.inv[I.k] || 0, src = thumbOf(I.k); return `<button class="h3it ${!n && coins < I.p ? 'no' : ''}" type="button" data-h3="item" data-k="${I.k}">${n ? `<span class="ow">×${n}</span>` : ''}${src ? `<img src="${src}" alt="">` : '<span class="ph"></span>'}${esc(I.n)}<span class="pr">${n ? '拿出來擺' : yen(I.p)}</span></button>`; }).join('');
@@ -820,6 +828,7 @@ export function start(o) {
     else if (a === 'item') { const I = IT[k]; if (S.sel && !S.sel.ok) revert(S.sel); select(null); if (D.inv[k]) spawnItem(k); else confirmBuy('item', k, I.n, I.p, () => { D.inv[k] = (D.inv[k] || 0) + 1; spawnItem(k); }); }
     else if (a === 'floor') { const F = FLOORS.find(x => x[0] === k); const go = () => { D.fo[k] = 1; D.fl = k; setFloor(k); changed(); drawPanel(); }; if (D.fo[k]) go(); else confirmBuy('floor', k, F[1], F[2], go); }
     else if (a === 'wall') { const W = WALLS.find(x => x[0] === k); const go = () => { D.wo[k] = 1; D.wa = k; setWall(k); changed(); drawPanel(); }; if (D.wo[k]) go(); else confirmBuy('wall', k, W[1], W[2], go); }
+    else if (a === 'expand') { const lv = D.sz | 0, nx = SIZES[lv + 1]; if (!nx) return; confirmBuy('expand', 'x', `擴建到 ${nx[0]}×${nx[1]} 格（現在 ${RW}×${RD}）`, nx[2], () => { D.sz = lv + 1; serialize(); try { cb.save && cb.save(D, true); } catch (_) { } toast('擴建完成！'); if (cb.reload) setTimeout(() => cb.reload(), 400); }); }
     else if (a === 'rot') rotateSel();
     else if (a === 'store') storeSel();
     else if (a === 'ok') okSel();
@@ -936,7 +945,7 @@ export function start(o) {
     let tx = me.x, tz = me.z, ty = 1.1;
     if (S.mode === 'build') { if (S.inside) { tx = RW / 2 + sy * 2.2; tz = RD / 2 + cy * 2.2; } else { tx = DX + sy * 2; tz = RD + 2.5 + cy * 2; } ty = .4; }
     S.cam.x += (tx - S.cam.x) * Math.min(1, dt * (S.mode === 'build' ? 4 : 12)); S.cam.z += (tz - S.cam.z) * Math.min(1, dt * (S.mode === 'build' ? 4 : 12)); S.cam.y += (ty - S.cam.y) * Math.min(1, dt * 4);
-    const aspect = cw / ch, extra = aspect < 1.45 ? 1.45 / aspect : 1, dd = S.dist * extra, pitch = S.mode === 'build' ? Math.max(.75, S.pitch) : S.pitch;
+    const aspect = cw / ch, extra = aspect < 1.45 ? 1.45 / aspect : 1, dd = S.dist * extra * Math.max(RW / 10, RD / 8), pitch = S.mode === 'build' ? Math.max(.75, S.pitch) : S.pitch;
     camPos.set(S.cam.x + sy * Math.cos(pitch) * dd, S.cam.y + Math.sin(pitch) * dd, S.cam.z + cy * Math.cos(pitch) * dd);
     camera.position.copy(camPos); camera.lookAt(S.cam.x, S.cam.y + .5, S.cam.z); sky.position.copy(camPos);
     /* 牆：人在店裡時擋到鏡頭的牆降下來、屋頂拿掉；在店外就是完整的房子 */

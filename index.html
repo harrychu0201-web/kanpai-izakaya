@@ -8492,7 +8492,7 @@ function showVisit(uid){const D=FR.data;if(!D)return;FR.view=uid;const x=D.lbs[u
    ${row(T('拉麵屋台'),x.ya?T('已開張'):T('還沒開張'))}${row(T('二號廚房'),x.k2?T('已擴建'):T('還沒擴建'))}${row(T('裝飾'),T('{0} 件',x.dc||0))}${row(T('店評價'),rtFull(x.rt))}</div>
    <div class="btns">${homeDev()?`<button class="btn" data-act="h3visit" data-id="${esc(uid)}">🏝️ 去他的島</button>`:''}<button class="btn" data-act="frgift" data-id="${esc(uid)}" ${sent?'disabled':''}>🎁 ${T('送禮物')}</button><button class="btn alt" data-act="frdel" data-id="${esc(uid)}">${T('移除好友')}</button><button class="btn alt" data-act="frback">${T('返回')}</button></div>`)}
 /* ===== 我的店（3D、可以逛、可以布置；測試中，只有作者和管理員看得到）=====
-   three.js 打包檔在打開時才載入（img/home3d-8ea646a7.js）。原始碼 dev/home3d/（models.js 家具、src.js 場景）。
+   three.js 打包檔在打開時才載入（img/home3d-e1a140b0.js）。原始碼 dev/home3d/（models.js 家具、src.js 場景）。
    存檔：本機 izakaya-home-v1（不放進遊戲存檔，所以不動 mergeRec），登入後同步到 home/<uid>（公開讓好友逛）。
    買家具、收收銀台的錢都用遊戲錢包（跟好友禮物領取一樣直接改 KEY 存檔的 coins）。 */
 const HOME_KEY='izakaya-home-v1',HOME_GIFT='izakaya-home-gift';
@@ -8500,14 +8500,14 @@ let HOME3=null,HOMEBACK=null,H3P=null,HOME_CLOUD_WARN=false;
 function homeDev(){try{return !pview()&&canView()}catch(e){return false}}
 function homeRow(){if(!homeDev())return '';return `<div class="lbme" style="flex-wrap:wrap;gap:8px"><span style="flex:1 1 100%">🏝️ <b>我的島</b>（3D・測試中，只有作者和管理員看得到）<br><small>在島上散步、設計自己房子的外觀、進屋布置；走進好友的島逛逛、留言送小禮物</small></span><button class="btn" data-act="h3open">去我的島</button><button class="btn alt" data-act="h3demo">逛示範島</button></div>`}
 function loadHome3D(){if(window.Home3D)return Promise.resolve();if(H3P)return H3P;
-  H3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/home3d-8ea646a7.js';s.onload=()=>ok();s.onerror=()=>{H3P=null;no(new Error('home3d'))};document.head.appendChild(s)});return H3P}
+  H3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/home3d-e1a140b0.js';s.onload=()=>ok();s.onerror=()=>{H3P=null;no(new Error('home3d'))};document.head.appendChild(s)});return H3P}
 function homeLocal(){try{return JSON.parse(localStorage.getItem(HOME_KEY)||'null')}catch(e){return null}}
 function homeNick(){const e=lbEntry();return (e&&e.name)||(loadRec().nick)||'我'}
 async function homeCloudGet(uid){if(!CL.api||!CL.api.homeGet)return null;try{const v=await Promise.race([CL.api.homeGet(uid),new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),5000))]);if(!v||!v.v)return null;const d=JSON.parse(v.v);d.at=v.at||0;return d}catch(e){console.warn('home get',e);return null}}
 let homePutT=0;
 function homeSave(d,now){const o=Object.assign({},d,{at:Date.now()});lsSet(HOME_KEY,JSON.stringify(o));
   if(!CL.user||!CL.api||!CL.api.homePut)return;clearTimeout(homePutT);
-  const go=()=>{const pub={v:d.v,name:d.name,fl:d.fl,wa:d.wa,fo:d.fo,wo:d.wo,it:d.it,inv:d.inv,cl:d.cl,gc:d.gc,ex:d.ex,home:d.home};CL.api.homePut(CL.user.uid,{name:String(d.name||'').slice(0,24),v:JSON.stringify(pub)}).catch(e=>{console.warn('home put',e);if(!HOME_CLOUD_WARN&&e&&/PERMISSION/i.test(String(e.code||e))){HOME_CLOUD_WARN=true;toast('我的店：雲端還沒開通（Firebase 規則要先貼上），目前只存在這台裝置')}})};
+  const go=()=>{const pub={v:d.v,name:d.name,fl:d.fl,wa:d.wa,fo:d.fo,wo:d.wo,it:d.it,inv:d.inv,cl:d.cl,gc:d.gc,ex:d.ex,home:d.home,sz:d.sz};CL.api.homePut(CL.user.uid,{name:String(d.name||'').slice(0,24),v:JSON.stringify(pub)}).catch(e=>{console.warn('home put',e);if(!HOME_CLOUD_WARN&&e&&/PERMISSION/i.test(String(e.code||e))){HOME_CLOUD_WARN=true;toast('我的店：雲端還沒開通（Firebase 規則要先貼上），目前只存在這台裝置')}})};
   if(now)go();else homePutT=setTimeout(go,2500)}
 function homeCoins(){const g=load();return g?(g.coins||0):0}
 function homeSpend(a){const g=load();if(!g||(g.coins||0)<a)return false;g.coins-=a;lsSet(KEY,JSON.stringify(g));touchLocal();return true}
@@ -8546,7 +8546,7 @@ async function homeOpen(who){if(!homeDev()||!HOME)return;
   /* 進屋：kind='home' 自己的家（家具目錄、存在 data.home）；'shop' 島上的居酒屋（原本的店） */
   const goIn=kind=>{if(HOME3)HOME3.dead=1;HOME3=null;let c=null;const isHome=kind!=='shop';
     try{c=Home3D.start({cv:mk(),root:tw,own,demo,data:isHome?data.home:data,kind:isHome?'home':'shop',ex:data.ex,title:hn,island:true,me:me3,owner,walk:town3dWalk(),
-      cb:Object.assign({},cbs,{save:own?(d,now)=>homeSave(data,now):null,exit:()=>setTimeout(()=>goIsland(isHome?'door':'shop'),0)})})}catch(e){console.warn('home3d',e)}
+      cb:Object.assign({},cbs,{save:own?(d,now)=>homeSave(data,now):null,reload:()=>setTimeout(()=>goIn(kind),0),exit:()=>setTimeout(()=>goIsland(isHome?'door':'shop'),0)})})}catch(e){console.warn('home3d',e)}
     if(!c){fail('這台裝置無法顯示 3D 室內（需要支援 WebGL 的瀏覽器）');return}
     if(title)title.textContent=isHome?'🏠 '+hn:'🏮 '+(data.name||'居酒屋');HOME3=c};
   goIsland(own?'':'front')}
