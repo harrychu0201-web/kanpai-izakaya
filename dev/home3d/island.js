@@ -277,8 +277,8 @@ export function island(o) {
     if (opt.bubble) { const bs = new Sprite(new SpriteMaterial({ map: bubT, transparent: true, depthWrite: false })); bs.scale.set(.85, .74, 1); scene.add(bs); p.bub = bs; }
     people.push(p); return p;
   }
-  const me = mkPerson(o.me.src, 1.5, { name: o.me.name || '我', nk: 'me' });
-  if (o.spawn === 'door' && myHouse) { me.x = myHouse.face.x; me.z = myHouse.face.z - myHouse.inw * .9; } else if (o.spawn === 'shop') { me.x = SHOPS[0].face.x; me.z = SHOPS[0].face.z + .9; } else { me.x = 0; me.z = 11.5; }
+  const me = mkPerson(o.me.src, 1.5, { name: o.me.name || '我', nk: 'me' }); let S0yaw = .35;
+  if (o.spawn === 'door' && myHouse) { me.x = myHouse.face.x; me.z = myHouse.face.z - myHouse.inw * .9; } else if (o.spawn === 'front' && myHouse) { me.x = myHouse.face.x + .8; me.z = myHouse.face.z - myHouse.inw * 1.9; S0yaw = myHouse.f === 2 ? Math.PI : 0; } else if (o.spawn === 'shop') { me.x = SHOPS[0].face.x; me.z = SHOPS[0].face.z + .9; } else { me.x = 0; me.z = 11.5; }
 
   /* ───────── 碰撞、找路 ───────── */
   function inIsland(x, z) { const ax = Math.abs(x), az = Math.abs(z), W = IX + SAND - 1, Hh = IZ + SAND - 1, r = 14; if (x >= PIER[0] && x <= PIER[2] && z >= PIER[1] && z <= PIER[3]) return true; if (ax > W || az > Hh) return false; if (ax > W - r && az > Hh - r) return Math.hypot(ax - (W - r), az - (Hh - r)) < r; return true; }
@@ -323,13 +323,13 @@ export function island(o) {
   const pan = U(el('div', 'i3pan'));
   const doorBtn = U(el('button', 'i3door')); doorBtn.type = 'button'; doorBtn.dataset.i3 = 'door';
   function toast(s) { toastEl.textContent = s; toastEl.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove('on'), 2400); }
-  const S = { dead: false, mode: 'walk', yaw: .35, yawT: .35, pitch: .72, pitchT: .72, dist: 17, distT: 17, tgt: null, keys: {}, t: 0, talk: null, last: performance.now(), hourOff: 0, cam: new Vector3(me.x, 1, me.z) };
+  const S = { dead: false, mode: 'walk', yaw: S0yaw, yawT: S0yaw, pitch: .72, pitchT: .72, dist: 17, distT: 17, tgt: null, keys: {}, t: 0, talk: null, last: performance.now(), hourOff: 0, cam: new Vector3(me.x, 1, me.z) };
   const PHASES = [[null, '現在'], [8, '早上'], [13, '中午'], [17.6, '傍晚'], [21, '夜晚']];
   let phaseI = 0;
   function hourNow() { if (PHASES[phaseI][0] !== null) return PHASES[phaseI][0]; const d = new Date(); return d.getHours() + d.getMinutes() / 60; }
   function hudBtns() {
     if (S.mode === 'edit') { hud.innerHTML = `<button class="h3b hot" type="button" data-i3="done"><i>✓</i>完成</button>`; return; }
-    hud.innerHTML = (own ? `<button class="h3b hot" type="button" data-i3="edit"><i>🎨</i>外觀</button>` : '') + `<button class="h3b" type="button" data-i3="home"><i>🏠</i>${own ? '回家' : '他家'}</button><button class="h3b" type="button" data-i3="shopin"><i>🏮</i>${own ? '我的店' : '他的店'}</button><button class="h3b" type="button" data-i3="time"><i>🕐</i>${PHASES[phaseI][1]}</button>`;
+    hud.innerHTML = (own ? `<button class="h3b hot" type="button" data-i3="edit"><i>🎨</i>外觀</button>` : '') + `<button class="h3b" type="button" data-i3="home"><i>🏠</i>${own ? '回家' : '他家'}</button><button class="h3b" type="button" data-i3="shopin"><i>🏮</i>${own ? '我的店' : '他的店'}</button>${cb.stats ? `<button class="h3b" type="button" data-i3="stats"><i>📋</i>店況</button>` : ''}<button class="h3b" type="button" data-i3="time"><i>🕐</i>${PHASES[phaseI][1]}</button>`;
   }
   function updInfo() { const h = hourNow(), hh = Math.floor(h), mm = Math.floor((h - hh) * 60); info.innerHTML = `<b>🏝️ ${esc(own ? (D.name ? D.name.replace(/的(小店|家)$/, '') + '的島' : '我的島') : ((o.owner && o.owner.name) || '好友') + '的島')}</b>${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}・${h < 5 || h >= 19.5 ? '夜晚 🌙' : h < 7 ? '清晨 🌅' : h < 16.5 ? '白天 ☀️' : '傍晚 🌇'}`; }
   hudBtns(); updInfo();
@@ -367,6 +367,7 @@ export function island(o) {
     else if (a === 'enter') { closeCard(); doorAct(DOORS.find(d => d.kind === 'home')); }
     else if (a === 'shopin') { closeCard(); goDoor(DOORS.find(d => d.kind === 'shop')); }
     else if (a === 'door') { doorAct(nearDoor); }
+    else if (a === 'stats') { try { cb.stats && cb.stats(); } catch (_) { } }
     else if (a === 'time') { phaseI = (phaseI + 1) % PHASES.length; hudBtns(); updInfo(); toast(phaseI ? `預覽：${PHASES[phaseI][1]}（再按回到現在時間）` : '回到現在時間'); }
   };
   root.addEventListener('click', onClick);

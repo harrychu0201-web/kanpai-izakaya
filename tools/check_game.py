@@ -2264,12 +2264,17 @@ def sc_home3d(b, base):
             raise AssertionError('示範店的留言板沒有打開：%r\n%s' % (p['pan'][:80], c.diag()))
         c.click('.home3 [data-h3=pclose]', wait=300)
         c.click('.home3 [data-act=h3back]', wait=600)
-        # 好友的店（雲端用假的 CL.api）：好友頁「走進他的店」→ 店長名字 → 留言＋送禮
-        c.page.evaluate("closeModal();window.__post=null;CL.api=Object.assign({},CL.api||{},{homeGet:()=>Promise.resolve({at:1,name:'Nabi的店',v:JSON.stringify(Object.assign(Home3D.demoHome(),{name:'Nabi的店'}))}),homeMsgs:()=>Promise.resolve([]),homePost:(o,d)=>{window.__post=[o,d];return Promise.resolve()}});FR.data={fl:{u2:1},lbs:{u2:{name:'Nabi'}},gifts:{},pend:[],on:{}};FR.t=Date.now();showVisit('u2')")
-        c.page.wait_for_timeout(400)
-        c.click('.modal [data-act=h3visit][data-id=u2]', wait=300)
-        i3_wait(c, '去好友的島')
-        p = i3_enter(c, '走進好友的家')
+        # 好友（雲端用假的 CL.api）：排行榜「好友」分頁的「參觀」→ 直接到他的島、站在他家門前 → 開門進他家／進他的店留言送禮
+        c.page.evaluate("closeModal();window.__post=null;CL.api=Object.assign({},CL.api||{},{homeGet:()=>Promise.resolve({at:1,name:'Nabi的小店',v:JSON.stringify(Object.assign(Home3D.demoHome(),{name:'Nabi的小店'}))}),homeMsgs:()=>Promise.resolve([]),homePost:(o,d)=>{window.__post=[o,d];return Promise.resolve()}});FR.data={fl:{u2:1},lbs:{u2:{name:'Nabi'}},gifts:{},pend:[],on:{}};FR.t=Date.now()")
+        c.click('[data-act=lb]', wait=800)
+        c.click('.modal [data-act=lbtab][data-id=fr]', wait=800)
+        c.click('.modal [data-act=frvisit][data-id=u2]', wait=300)
+        ip = i3_wait(c, '參觀好友的島')
+        if '拜訪' not in ip.get('door', ''):
+            raise AssertionError('參觀好友應該直接站在他家門前（門上有「🚪 拜訪」）：%r me=%s' % (ip.get('door'), ip.get('me')))
+        if not c.has('.home3 [data-i3=stats]'):
+            raise AssertionError('好友的島上沒有「📋 店況」按鈕')
+        p = i3_enter(c, '走進好友的店')
         if 'Nabi' not in c.page.evaluate("document.querySelector('.home3 .h3info').textContent"):
             raise AssertionError('好友的店上方資訊沒有店長名字')
         c.click('.home3 [data-h3=board]', wait=300)
