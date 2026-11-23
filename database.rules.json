@@ -647,6 +647,55 @@
           ".validate": "$k.matches(/^i[0-2]$/) && newData.isString() && newData.val().matches(/^data:image\\/jpeg;base64,/) && newData.val().length <= 200000"
         }
       }
+    },
+    "home": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('admins').child(auth.uid).val() === true)",
+        ".validate": "newData.hasChildren(['at','v'])",
+        "at": {
+          ".validate": "newData.val() === now"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length <= 24"
+        },
+        "v": {
+          ".validate": "newData.isString() && newData.val().length <= 30000"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "homeg": {
+      "$owner": {
+        ".read": "auth != null",
+        ".indexOn": [
+          "t"
+        ],
+        "$mid": {
+          ".write": "auth != null && ((!data.exists() && newData.child('from').val() === auth.uid && auth.uid !== $owner && ((auth.token.email === 'harrychu0201@gmail.com' && auth.token.email_verified === true) || root.child('admins').child(auth.uid).val() === true)) || (!newData.exists() && auth.uid === $owner))",
+          ".validate": "newData.hasChildren(['from','name','msg','t'])",
+          "from": {
+            ".validate": "newData.isString()"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24"
+          },
+          "msg": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60"
+          },
+          "gift": {
+            ".validate": "newData.isString() && newData.val().length <= 12"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
     }
   }
 }

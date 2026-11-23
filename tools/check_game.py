@@ -14,6 +14,7 @@
   bar       月影酒吧（含倒酒的 3D 水柱：出現、蓋掉 CSS 直線、不支援 WebGL 時退回）：右邊卡片的步驟清單（不蓋到手邊酒瓶、做酒時標出目前這步）、教學三杯用真實按住／畫圈／來回滑做完（含轉身到酒櫃拿酒）、打烊結算；第二天在商店買酒和配料、
             故意做錯 → 重做、再做曼哈頓（抖苦精、馬丁尼杯、手邊滿三瓶要換）和瑪格麗特（配料 B 頁的鹽口）；第三天暫停回主頁
   tut       新手教學（小夜對話框）：居酒屋真實點擊進入並點完、上一步、海風壽司教學點完、製作教學跳過；立繪載入、對話框不超出、按鈕 44px
+  home3d    我的店（3D，作者限定）：一般玩家看不到入口；布置買家具扣錢、拖曳、存檔；收銀台收錢；重開還在；示範店點店長、留言板
   oko       御好燒店（作者限定）：從麵糊開始真實點擊加料做完四道菜、順序錯加不進去、空手連點倒掉、放太久會焦、做好放保溫台、📖 做法暫停
   saves     玩完整條路徑後，玩家原本的存檔欄位一個都不能少、不認得的欄位原封不動
 """
@@ -2076,10 +2077,151 @@ def sc_coicons(b, base):
         c.close()
 
 
+# ------------------------------------------------------------------ 我的店（3D，作者／管理員限定，真實點擊）
+def h3_probe(c):
+    return c.page.evaluate("(()=>{if(!HOME3)return null;const p=HOME3.probe();delete p.cellPx;return p})()")
+
+
+def h3_wait(c, why, limit=20000):
+    t0 = time.time()
+    while (time.time() - t0) * 1000 < limit:
+        if c.page.evaluate("!!(HOME3&&document.querySelector('.home3 .h3hud button'))"):
+            c.page.wait_for_timeout(1200)
+            return h3_probe(c)
+        c.page.wait_for_timeout(300)
+    raise AssertionError('%s：我的店 3D 沒有開起來\n%s' % (why, c.diag()))
+
+
+def h3_tap(c, x, y):
+    c.page.mouse.move(x, y); c.page.mouse.down(); c.page.mouse.up(); c.page.wait_for_timeout(400)
+
+
+def sc_home3d(b, base):
+    """我的店（3D）：一般玩家看不到入口；作者從多人模式真實點擊進去 → 布置（買行燈、拖曳、放好）→ 錢包扣錢、本機存檔有記到；
+    點收銀台收錢；關掉再打開布置還在；逛示範店：點店長、去留言板。按鈕實際大小至少 44px。"""
+    c = Ctx(b, base).open()
+    try:
+        c.dismiss_modals()
+        c.page.evaluate("CL.user={email:'player@example.com',uid:'h3-player',name:'p',photo:''};CL.isStaff=false;if(!FB_CONFIG)window.FB_CONFIG=true;const r=loadRec();r.nick='測試員';saveRec(r);FR.data={fl:{},on:{}};FR.t=Date.now();coopPanel()")
+        c.page.wait_for_timeout(400)
+        if c.has('.modal [data-act=h3open]'):
+            raise AssertionError('一般玩家在多人模式看到了「我的店」入口（應該只有作者和管理員）')
+        c.page.evaluate("closeModal();CL.user={email:ADMIN_EMAIL,uid:'h3-admin',name:'Author Check',photo:''};coopPanel()")
+        c.page.wait_for_timeout(400)
+        c.click('.modal [data-act=h3open]', wait=300)
+        p = h3_wait(c, '進去我的店')
+        if not p['items'] or not any(i['k'] == 'register' for i in p['items']):
+            raise AssertionError('新開的店沒有預設家具／收銀台：%s' % p['items'])
+        for bt in c.page.locator('.home3 .h3hud button, .home3 .h3cam button').all():
+            bb = bt.bounding_box()
+            if not bb or bb['height'] < 44 or bb['width'] < 44:
+                raise AssertionError('我的店的按鈕太小（實際 px）：%s' % bb)
+        coins0 = c.page.evaluate("load().coins")
+        # 布置：買一個行燈，拖到 (8,6)，放好
+        c.click('.home3 [data-h3=build]', wait=1200)
+        c.click('.home3 [data-h3=cat][data-k=lit]', wait=600)
+        c.click('.home3 [data-h3=item][data-k=andon]', wait=300)
+        c.click('.home3 [data-h3=buyok]', wait=600)
+        p = h3_probe(c)
+        if not p['sel'] or p['sel']['k'] != 'andon':
+            raise AssertionError('買了行燈之後沒有拿出來擺（沒有選取）：%s' % p['sel'])
+        if c.page.evaluate("load().coins") != coins0 - 6000:
+            raise AssertionError('買行燈沒有從遊戲錢包扣 ¥6,000（%s → %s）' % (coins0, c.page.evaluate("load().coins")))
+        it = [i for i in p['items'] if i['k'] == 'andon'][0]
+        tg = c.page.evaluate("HOME3.px(8.5,0,6.5)")
+        c.page.mouse.move(it['x'], it['y']); c.page.mouse.down()
+        for k in range(1, 13):
+            c.page.mouse.move(it['x'] + (tg['x'] - it['x']) * k / 12, it['y'] + (tg['y'] - it['y']) * k / 12); c.page.wait_for_timeout(30)
+        c.page.mouse.up(); c.page.wait_for_timeout(400)
+        p = h3_probe(c)
+        if not p['sel'] or (p['sel']['x'], p['sel']['z']) == (it.get('gx'), None):
+            raise AssertionError('拖曳家具後選取不見了：%s' % p['sel'])
+        moved = p['sel']
+        c.click('.home3 [data-h3=rot]', wait=200)
+        if c.page.locator('.home3 [data-h3=ok]').is_disabled():
+            c.click('.home3 [data-h3=rot]', wait=200)
+        c.click('.home3 [data-h3=ok]', wait=300)
+        c.click('.home3 [data-h3=done]', wait=1500)
+        saved = c.page.evaluate("JSON.parse(localStorage.getItem('izakaya-home-v1')||'null')")
+        if not saved or not any(e[0] == 'andon' for e in saved['it']):
+            raise AssertionError('布置完成後，本機存檔沒有記到行燈：%s' % (saved and saved.get('it')))
+        # 收銀台收錢
+        p = h3_probe(c)
+        rg = [i for i in p['items'] if i['k'] == 'register'][0]
+        c1 = c.page.evaluate("load().coins")
+        h3_tap(c, rg['x'], rg['y'])
+        if c.page.evaluate("document.querySelector('.home3 .h3card.on')!==null"):   # 剛好有客人走過擋住，關掉對話再點一次
+            c.click('.home3 .h3card [data-h3=close]', wait=300)
+            rg = [i for i in h3_probe(c)['items'] if i['k'] == 'register'][0]
+            h3_tap(c, rg['x'], rg['y'])
+        for _ in range(30):
+            if c.page.evaluate("load().coins") > c1:
+                break
+            c.page.wait_for_timeout(300)
+        if c.page.evaluate("load().coins") <= c1:
+            raise AssertionError('點收銀台沒有收到錢\n%s' % c.diag())
+        # 關掉再打開：布置還在
+        c.click('.home3 [data-act=h3back]', wait=600)
+        if not c.has('#coopmark'):
+            raise AssertionError('關掉我的店之後沒有回到多人模式面板')
+        c.click('.modal [data-act=h3open]', wait=300)
+        p = h3_wait(c, '再打開我的店')
+        if not any(i['k'] == 'andon' for i in p['items']):
+            raise AssertionError('關掉再打開，剛剛擺的行燈不見了')
+        c.page.screenshot(path='/tmp/check-home3d.png')
+        c.click('.home3 [data-act=h3back]', wait=600)
+        # 示範店：點店長 → 去留言
+        c.click('.modal [data-act=h3demo]', wait=300)
+        p = h3_wait(c, '逛示範店')
+        c.page.evaluate("HOME3.teleport(5,6);HOME3.setYaw(0)"); c.page.wait_for_timeout(1500)
+        p = h3_probe(c)
+        ow = [n for n in p['npcs'] if n['kind'] == 'owner']
+        if not ow:
+            raise AssertionError('示範店沒有店長')
+        h3_tap(c, ow[0]['x'], ow[0]['y'])
+        p = h3_probe(c)
+        if '店長' not in p['card']:
+            raise AssertionError('點店長沒有出現對話卡：%r' % p['card'][:60])
+        c.click('.home3 .h3card [data-h3=board]', wait=300)
+        for _ in range(40):
+            p = h3_probe(c)
+            if '留言板' in p['pan'] and '送出留言' in p['pan']:
+                break
+            c.page.wait_for_timeout(300)
+        else:
+            raise AssertionError('示範店的留言板沒有打開：%r\n%s' % (p['pan'][:80], c.diag()))
+        c.click('.home3 [data-h3=pclose]', wait=300)
+        c.click('.home3 [data-act=h3back]', wait=600)
+        # 好友的店（雲端用假的 CL.api）：好友頁「走進他的店」→ 店長名字 → 留言＋送禮
+        c.page.evaluate("closeModal();window.__post=null;CL.api=Object.assign({},CL.api||{},{homeGet:()=>Promise.resolve({at:1,name:'Nabi的店',v:JSON.stringify(Object.assign(Home3D.demoHome(),{name:'Nabi的店'}))}),homeMsgs:()=>Promise.resolve([]),homePost:(o,d)=>{window.__post=[o,d];return Promise.resolve()}});FR.data={fl:{u2:1},lbs:{u2:{name:'Nabi'}},gifts:{},pend:[],on:{}};FR.t=Date.now();showVisit('u2')")
+        c.page.wait_for_timeout(400)
+        c.click('.modal [data-act=h3visit][data-id=u2]', wait=300)
+        p = h3_wait(c, '走進好友的店')
+        if 'Nabi' not in c.page.evaluate("document.querySelector('.home3 .h3info').textContent"):
+            raise AssertionError('好友的店上方資訊沒有店長名字')
+        c.click('.home3 [data-h3=board]', wait=300)
+        for _ in range(40):
+            if c.has('.home3 #h3msg'):
+                break
+            c.page.wait_for_timeout(300)
+        c.page.fill('.home3 #h3msg', '好溫馨的店！')
+        c.click('.home3 [data-h3=gpick][data-k=maneki]', wait=100)
+        c.click('.home3 [data-h3=post]', wait=600)
+        post = c.page.evaluate("window.__post")
+        if not post or post[0] != 'u2' or post[1].get('msg') != '好溫馨的店！' or post[1].get('gift') != 'maneki' or post[1].get('from') != 'h3-admin':
+            raise AssertionError('留言送出的資料不對：%s' % post)
+        if not c.page.evaluate("homeGiftSent('u2')"):
+            raise AssertionError('送過禮物後沒有記住今天已送')
+        c.click('.home3 [data-act=h3back]', wait=600)
+        c.expect_clean('我的店')
+    finally:
+        c.close()
+
+
 SCENARIOS = [('fblogin', sc_fblogin), ('coicons', sc_coicons), ('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves), ('keepbak', sc_keepbak),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barnew', sc_barnew), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
-             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun)]
+             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d)]
 
 
 def main():

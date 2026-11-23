@@ -6616,6 +6616,7 @@ document.addEventListener('click',e=>{
   else if(act==='frclaim')frClaim();
   else if(act==='frsort'){FR.sort=a.dataset.id;frDraw()}
   else if(act==='frvisit')showVisit(a.dataset.id);
+  else if(act==='h3open')homeOpen(null);else if(act==='h3demo')homeOpen('demo');else if(act==='h3visit')homeOpen(a.dataset.id);else if(act==='h3back'){const f=HOMEBACK;HOMEBACK=null;if(HOME3)HOME3.dead=1;HOME3=null;if(f)f();else closeModal()}
   else if(act==='frgift')frGift(a.dataset.id);
   else if(act==='frgiftall')frGiftAll();
   else if(act==='frdel')frDelAsk(a.dataset.id);
@@ -7672,7 +7673,7 @@ function coopFriendsBlock(){const head=`<p class="lbdesc">${T('邀請在線上�
 function coopDyn(){const me=CL.user.uid,r=COOP.room;
   const inv=Object.keys(COOP.inv).map(c=>{const v=COOP.inv[c]||{};return `<div class="lbme"><span>📨 ${esc(v.name||T('玩家'))} ${T('邀請你一起開店')} <small>${esc(c)}</small></span><button class="btn" data-act="coopaccept" data-id="${esc(c)}">${T('接受')}</button><button class="btn alt" data-act="coopdecline" data-id="${esc(c)}">${T('拒絕')}</button></div>`}).join('');
   let body;
-  if(!COOP.code)body=hideOnRow()+(COOP.byeMsg?`<p style="color:#e0412c">${T(COOP.byeMsg)}</p>`:'')+coopFriendsBlock();
+  if(!COOP.code)body=homeRow()+hideOnRow()+(COOP.byeMsg?`<p style="color:#e0412c">${T(COOP.byeMsg)}</p>`:'')+coopFriendsBlock();
   else{const o=coopOther(),pr=u=>{const p=COOP.p[u];return p&&p.on?'🟢 '+T('在線'):'⚪ '+T('離線')};
     const left=COOP.graceWho?Math.max(0,Math.ceil((COOP.graceEnd-Date.now())/1000)):0;
     const st=r?r.state:T('已結束');
@@ -7913,6 +7914,11 @@ async function cloudInit1(){
       setUnflag:(k,d)=>rt((rd,r)=>rd.set(rd.ref(r,'notice/unflag/'+k),d)),
       // friends: a public shop snapshot (lbx), friend codes, friend lists, daily gifts
       putLbx:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'lbx/'+uid),d)),
+      /* 我的店（3D，測試中）：home/<uid>＝公開的店面布置，homeg/<owner>/<id>＝留言板（可附一份小禮物） */
+      homeGet:uid=>rt((rd,r)=>rd.get(rd.ref(r,'home/'+uid)).then(s=>s.val())),
+      homePut:(uid,d)=>rt((rd,r)=>rd.set(rd.ref(r,'home/'+uid),Object.assign({},d,{at:rd.serverTimestamp()}))),
+      homeMsgs:uid=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'homeg/'+uid),rd.orderByChild('t'),rd.limitToLast(50))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a})),
+      homePost:(owner,d)=>rt((rd,r)=>rd.push(rd.ref(r,'homeg/'+owner),Object.assign({},d,{t:rd.serverTimestamp()}))),
       onlineBeat:(uid,off)=>rt((rd,r)=>rd.set(rd.ref(r,'online/'+uid),off?{t:rd.serverTimestamp(),off:true}:{t:rd.serverTimestamp()})),
       onlineHide:uid=>rt((rd,r)=>rd.set(rd.ref(r,'online/'+uid),null)),
       onlineMany:ids=>rt((rd,r)=>Promise.all(ids.map(k=>rd.get(rd.ref(r,'online/'+k)).then(s=>[k,s.val()]).catch(()=>[k,null]))).then(a=>{const o={};a.forEach(([k,v])=>{if(v&&typeof v.t==='number')o[k]=v});return o})),
@@ -8483,7 +8489,54 @@ function showVisit(uid){const D=FR.data;if(!D)return;FR.view=uid;const x=D.lbs[u
   modal(`<h2>🏮 ${esc(T('{0} 的店',x.name||T('玩家')))}</h2><div class="lblist">
    ${row(T('營業天數'),T('第 {0} 天',x.day||'?'))}${row(T('單日淨利'),yen(x.best||0))}${row(T('累計營收'),yen(x.earned||0))}
    ${row(T('拉麵屋台'),x.ya?T('已開張'):T('還沒開張'))}${row(T('二號廚房'),x.k2?T('已擴建'):T('還沒擴建'))}${row(T('裝飾'),T('{0} 件',x.dc||0))}${row(T('店評價'),rtFull(x.rt))}</div>
-   <div class="btns"><button class="btn" data-act="frgift" data-id="${esc(uid)}" ${sent?'disabled':''}>🎁 ${T('送禮物')}</button><button class="btn alt" data-act="frdel" data-id="${esc(uid)}">${T('移除好友')}</button><button class="btn alt" data-act="frback">${T('返回')}</button></div>`)}
+   <div class="btns">${homeDev()?`<button class="btn" data-act="h3visit" data-id="${esc(uid)}">🏠 走進他的店</button>`:''}<button class="btn" data-act="frgift" data-id="${esc(uid)}" ${sent?'disabled':''}>🎁 ${T('送禮物')}</button><button class="btn alt" data-act="frdel" data-id="${esc(uid)}">${T('移除好友')}</button><button class="btn alt" data-act="frback">${T('返回')}</button></div>`)}
+/* ===== 我的店（3D、可以逛、可以布置；測試中，只有作者和管理員看得到）=====
+   three.js 打包檔在打開時才載入（img/home3d-fcc77a14.js）。原始碼 dev/home3d/（models.js 家具、src.js 場景）。
+   存檔：本機 izakaya-home-v1（不放進遊戲存檔，所以不動 mergeRec），登入後同步到 home/<uid>（公開讓好友逛）。
+   買家具、收收銀台的錢都用遊戲錢包（跟好友禮物領取一樣直接改 KEY 存檔的 coins）。 */
+const HOME_KEY='izakaya-home-v1',HOME_GIFT='izakaya-home-gift';
+let HOME3=null,HOMEBACK=null,H3P=null,HOME_CLOUD_WARN=false;
+function homeDev(){try{return !pview()&&canView()}catch(e){return false}}
+function homeRow(){if(!homeDev())return '';return `<div class="lbme" style="flex-wrap:wrap;gap:8px"><span style="flex:1 1 100%">🏠 <b>我的店</b>（3D・測試中，只有作者和管理員看得到）<br><small>布置自己的店、走進好友的店逛逛、在留言板留言送小禮物</small></span><button class="btn" data-act="h3open">進去我的店</button><button class="btn alt" data-act="h3demo">逛示範店</button></div>`}
+function loadHome3D(){if(window.Home3D)return Promise.resolve();if(H3P)return H3P;
+  H3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/home3d-fcc77a14.js';s.onload=()=>ok();s.onerror=()=>{H3P=null;no(new Error('home3d'))};document.head.appendChild(s)});return H3P}
+function homeLocal(){try{return JSON.parse(localStorage.getItem(HOME_KEY)||'null')}catch(e){return null}}
+function homeNick(){const e=lbEntry();return (e&&e.name)||(loadRec().nick)||'我'}
+async function homeCloudGet(uid){if(!CL.api||!CL.api.homeGet)return null;try{const v=await Promise.race([CL.api.homeGet(uid),new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),5000))]);if(!v||!v.v)return null;const d=JSON.parse(v.v);d.at=v.at||0;return d}catch(e){console.warn('home get',e);return null}}
+let homePutT=0;
+function homeSave(d,now){const o=Object.assign({},d,{at:Date.now()});lsSet(HOME_KEY,JSON.stringify(o));
+  if(!CL.user||!CL.api||!CL.api.homePut)return;clearTimeout(homePutT);
+  const go=()=>{const pub={v:d.v,name:d.name,fl:d.fl,wa:d.wa,fo:d.fo,wo:d.wo,it:d.it,inv:d.inv,cl:d.cl,gc:d.gc};CL.api.homePut(CL.user.uid,{name:String(d.name||'').slice(0,24),v:JSON.stringify(pub)}).catch(e=>{console.warn('home put',e);if(!HOME_CLOUD_WARN&&e&&/PERMISSION/i.test(String(e.code||e))){HOME_CLOUD_WARN=true;toast('我的店：雲端還沒開通（Firebase 規則要先貼上），目前只存在這台裝置')}})};
+  if(now)go();else homePutT=setTimeout(go,2500)}
+function homeCoins(){const g=load();return g?(g.coins||0):0}
+function homeSpend(a){const g=load();if(!g||(g.coins||0)<a)return false;g.coins-=a;lsSet(KEY,JSON.stringify(g));touchLocal();return true}
+function homeEarn(a){const g=load();if(!g)return false;g.coins=(g.coins||0)+a;lsSet(KEY,JSON.stringify(g));touchLocal();return true}
+function homeGiftSent(owner){try{return (JSON.parse(localStorage.getItem(HOME_GIFT)||'{}'))[owner]===frDay()}catch(e){return false}}
+function homeGiftMark(owner){try{const o=JSON.parse(localStorage.getItem(HOME_GIFT)||'{}');o[owner]=frDay();localStorage.setItem(HOME_GIFT,JSON.stringify(o))}catch(e){}}
+async function homeOpen(who){if(!homeDev()||!HOME)return;
+  const own=!who,demo=who==='demo',me=CL.user;
+  if(!own&&!demo&&!me){toast('登入後才能拜訪好友的店');return}
+  HOMEBACK=document.getElementById('coopmark')?()=>coopPanel():(who&&!demo&&FR.data)?()=>showVisit(who):null;
+  const back=`<button class="xbtn" data-act="h3back" aria-label="${T('關閉')}">×</button>`;
+  modal(`<div class="town home3"><canvas class="twcv"></canvas><div class="twtop"><b>🏠 ${own?'我的店':demo?'示範店':'好友的店'}</b><span class="twhint">拖曳走路・兩指或 ⟲⟳ 轉鏡頭・點人聊天</span>${back}</div></div>`);
+  const tw=document.querySelector('.modal .town');if(!tw)return;tw.closest('.card').classList.add('towncard');tw.closest('.modal').classList.add('townm','h3m');
+  const ld=document.createElement('div');ld.className='tw3load';ld.textContent='🏮 …';tw.appendChild(ld);
+  const fail=m=>{ld.remove();const x=document.createElement('div');x.className='tw3load';x.style.cssText='flex-direction:column;gap:14px;text-align:center;padding:20px';x.innerHTML=`<div>${m}</div><div><button class="btn" data-act="h3back">返回</button></div>`;tw.appendChild(x)};
+  try{await loadHome3D()}catch(e){fail('我的店載入失敗，請檢查網路後再試一次');return}
+  let data=null,owner=null,msgs=null,post=null;
+  if(own){const loc=homeLocal(),cl=me?await homeCloudGet(me.uid):null;data=(cl&&(!loc||(cl.at||0)>(loc.at||0)))?cl:loc;if(!data)data=Home3D.freshHome(homeNick()+'的小店');
+    if(me&&CL.api&&CL.api.homeMsgs)msgs=()=>CL.api.homeMsgs(me.uid)}
+  else if(demo){data=Home3D.demoHome();owner={name:'千代',src:(SPR.chiyo&&SPR.chiyo.walk)||TOWN_ME};msgs=()=>Promise.resolve([{id:'d1',from:'x',name:'日向',msg:'奶奶的店好香，糖果我收下了！',t:Date.now()-5400e3},{id:'d2',from:'y',name:'大造',msg:'這間的榻榻米鋪得不錯。',t:Date.now()-86400e3}]);post=()=>Promise.reject(new Error('demo'))}
+  else{const cl=await homeCloudGet(who);const x=(FR.data&&FR.data.lbs&&FR.data.lbs[who])||{};
+    if(!cl){fail(`${esc(x.name||'這位好友')} 還沒有布置自己的店（或雲端還沒開通）<br><small>可以先去示範店逛逛</small><br><button class="btn alt" data-act="h3demo" style="margin-top:10px">逛示範店</button>`);return}
+    data=cl;owner={name:x.name||cl.name||'好友',src:TOWN_ME};msgs=()=>CL.api.homeMsgs(who);
+    post=m=>CL.api.homePost(who,{from:me.uid,name:String(homeNick()).slice(0,24),msg:m.msg,gift:m.gift||''}).then(()=>{if(m.gift)homeGiftMark(who)})}
+  if(!document.contains(tw))return;ld.remove();if(HOME3)HOME3.dead=1;
+  const cv=tw.querySelector('canvas');let ctl=null;
+  try{ctl=Home3D.start({cv,root:tw,own,demo,data,me:{src:TOWN_ME,name:homeNick()},owner,walk:town3dWalk(),
+    cb:{save:own?(d,now)=>homeSave(d,now):null,coins:homeCoins,buy:homeSpend,collect:homeEarn,today:frDay,msgs,post,giftSent:()=>demo?true:homeGiftSent(who)}})}catch(e){console.warn('home3d',e);ctl=null}
+  if(!ctl){fail('這台裝置無法顯示我的店（需要支援 WebGL 的瀏覽器）');return}
+  HOME3=ctl}
 function frDelAsk(uid){const x=(FR.data&&FR.data.lbs[uid])||{};modal(`<h2>${T('移除好友')}</h2><p>${esc(T('要移除這位好友嗎？'))} ${esc(x.name||'')}</p><div class="btns"><button class="btn" data-act="frdelok" data-id="${esc(uid)}">${T('移除')}</button><button class="btn alt" data-act="frback">${T('取消')}</button></div>`)}
 async function frDel(uid){const me=CL.user;if(!me)return;try{await CL.api.frDel(me.uid,uid)}catch(e){console.warn('frdel',e);toast('好友功能暫時打不開，請稍後再試。');return}
   const r=loadRec();r.frRm=r.frRm||{};r.frRm[uid]=1;saveRec(r);FR.t=0;showFriends()}
