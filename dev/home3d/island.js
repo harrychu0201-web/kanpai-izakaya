@@ -56,7 +56,11 @@ const CSS = `
 .i3opt{flex:none;min-width:76px;min-height:64px;border:3px solid #3a2a1a;border-radius:14px;background:#fff;color:#3a2a1a;font-weight:800;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px 8px}
 .i3opt i{display:block;width:30px;height:22px;border-radius:7px;border:2px solid #0003}
 .i3opt.on{background:#ffd27a;outline:3px solid #ff9a2a}
-@media (max-height:520px){.i3hud{top:64px;gap:8px}.i3info{top:64px;font-size:12px;padding:4px 10px}.i3info b{font-size:15px}.i3opt{min-width:64px;min-height:50px;font-size:11.5px;border-width:2px}.i3opt i{width:24px;height:16px}}
+.i3door{position:absolute;transform:translate(-50%,-100%);z-index:4;border:3px solid #3a2a1a;border-radius:999px;background:#fff8ea;color:#3a2a1a;font-weight:900;font-size:17px;min-height:50px;padding:0 18px;box-shadow:0 4px 0 #0004;display:none;white-space:nowrap;animation:i3bob 1.2s ease-in-out infinite}
+.i3door.on{display:block}.i3door.off{background:#e8e2d4;color:#7a6a5a}
+.i3door:after{content:'';position:absolute;left:50%;bottom:-11px;margin-left:-8px;border:8px solid transparent;border-top-color:#3a2a1a}
+@keyframes i3bob{0%,100%{margin-top:0}50%{margin-top:-6px}}
+@media (max-height:520px){.i3door{font-size:15px;min-height:46px;padding:0 14px}.i3hud{top:64px;gap:8px}.i3info{top:64px;font-size:12px;padding:4px 10px}.i3info b{font-size:15px}.i3opt{min-width:64px;min-height:50px;font-size:11.5px;border-width:2px}.i3opt i{width:24px;height:16px}}
 `;
 
 export function island(o) {
@@ -158,11 +162,13 @@ export function island(o) {
     /* 門 */
     const dz = bz + HD / 2 + .02, dc = lam(ex.doorC);
     box(1.35, 2.25, .12, '#f4efe2', 0, .35 + 1.12, dz, g);
-    if (ex.door === 'arch') { box(1.1, 1.75, .14, dc, 0, .35 + .88, dz + .02, g); const aa = new Mesh(new CircleGeometry(.55, 20, 0, Math.PI), dc); aa.position.set(0, .35 + 1.75, dz + .1); g.add(aa); }
-    else box(1.1, 2.05, .14, dc, 0, .35 + 1.02, dz + .02, g);
-    if (ex.door === 'round') { const pw = new Mesh(new CircleGeometry(.26, 20), winMat('#bfe6ff')); pw.position.set(0, .35 + 1.5, dz + .1); g.add(pw); const rg = new Mesh(new TorusGeometry(.28, .05, 8, 20), lam('#c8c8d0')); rg.position.set(0, .35 + 1.5, dz + .1); g.add(rg); }
-    else if (ex.door === 'grid') { for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) { const q = new Mesh(new PlaneGeometry(.38, .4), winMat('#e8f4ff', '#ffe0a0')); q.position.set(-.21 + j * .42, .35 + 1.15 + i * .45, dz + .1); g.add(q); } }
-    sph(.06, '#e9c34a', .4, .35 + 1.0, dz + .12, g);
+    const dg = new Group(); { const dark = new Mesh(new PlaneGeometry(1.1, 2.3), new MeshBasicMaterial({ color: '#2a1a10' })); dark.position.set(0, .35 + 1.15, dz + .005); g.add(dark); const warm = new Mesh(new PlaneGeometry(1.0, 2.1), winMat('#5a3a24', '#ffcf7a')); warm.position.set(0, .35 + 1.07, dz + .007); g.add(warm); }
+    if (ex.door === 'arch') { box(1.1, 1.75, .14, dc, 0, .35 + .88, dz + .02, dg); const aa = new Mesh(new CircleGeometry(.55, 20, 0, Math.PI), dc); aa.position.set(0, .35 + 1.75, dz + .1); dg.add(aa); }
+    else box(1.1, 2.05, .14, dc, 0, .35 + 1.02, dz + .02, dg);
+    if (ex.door === 'round') { const pw = new Mesh(new CircleGeometry(.26, 20), winMat('#bfe6ff')); pw.position.set(0, .35 + 1.5, dz + .1); dg.add(pw); const rg = new Mesh(new TorusGeometry(.28, .05, 8, 20), lam('#c8c8d0')); rg.position.set(0, .35 + 1.5, dz + .1); dg.add(rg); }
+    else if (ex.door === 'grid') { for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) { const q = new Mesh(new PlaneGeometry(.38, .4), winMat('#e8f4ff', '#ffe0a0')); q.position.set(-.21 + j * .42, .35 + 1.15 + i * .45, dz + .1); dg.add(q); } }
+    sph(.06, '#e9c34a', .4, .35 + 1.0, dz + .12, dg);
+    { const dp = new Group(); dp.position.set(-.55, 0, dz + .02); g.add(dp); dg.position.set(.55, 0, -(dz + .02)); dp.add(dg); g.userData.doorPivot = dp; g.userData.doorZ = dz; }
     const doorLamp = sph(.16, bas('#fff4d0'), .95, .35 + 2.3, dz + .2, g); glowS(.95, .35 + 2.3, dz + .3, 2.2, g);
     /* 窗 */
     for (const sx of [-1.75, 1.75]) {
@@ -204,6 +210,7 @@ export function island(o) {
     h.g = buildHouse(ex, name); h.g.position.set(h.x, 0, h.z); h.g.rotation.y = h.f === 2 ? Math.PI : 0; scene.add(h.g);
     h.g.traverse(m => { if (m.isMesh) m.userData.house = h; });
     const d = h.g.userData.door.clone(); if (h.f === 2) { d.x = -d.x; d.z = -d.z; } h.door = { x: h.x + d.x, z: h.z + d.z };
+    const sg = h.f === 2 ? -1 : 1, fz = h.g.userData.doorZ + .6; h.face = { x: h.x, z: h.z + sg * fz }; h.inw = -sg; h.pivot = h.g.userData.doorPivot;
   }
   HOUSES.forEach(h => { const hh = Object.assign({}, h); if (!hh.own) { hh.ex = randEx(r0); const d = NPCS.find(n => n.spr === h.npc || n.id === h.npc); hh.label = (d ? d.name.split(' ').pop() : '鄰居') + '的家'; } houseObjs.push(hh); placeHouse(hh); });
   const myHouse = houseObjs.find(h => h.own);
@@ -221,7 +228,7 @@ export function island(o) {
     if (s.k === 'ramen') { for (let i = 0; i < 3; i++) cyl(.25, .25, .7, '#c8352a', -1.2 + i * 1.2, .35, 3.5, g, 12); }
     if (s.k === 'sushi') { const f = new Mesh(new ConeGeometry(.4, 1.2, 4), lam('#2f6bb8')); f.position.set(3.1, 3.2, 2.6); f.rotation.z = -1.3; g.add(f); }
     g.traverse(m => { if (m.isMesh) m.userData.shop = s; });
-    s.door = { x: s.x, z: s.z + 3.6 };
+    s.door = { x: s.x, z: s.z + 3.6 }; s.face = { x: s.x, z: s.z + 2.85 }; s.inw = -1;
     return g;
   }
   SHOPS.forEach(shopBuild);
@@ -271,7 +278,7 @@ export function island(o) {
     people.push(p); return p;
   }
   const me = mkPerson(o.me.src, 1.5, { name: o.me.name || '我', nk: 'me' });
-  if (o.spawn === 'door' && myHouse) { me.x = myHouse.door.x; me.z = myHouse.door.z + .4; } else if (o.spawn === 'shop') { me.x = SHOPS[0].x; me.z = SHOPS[0].z + 4.4; } else { me.x = 0; me.z = 11.5; }
+  if (o.spawn === 'door' && myHouse) { me.x = myHouse.face.x; me.z = myHouse.face.z - myHouse.inw * .9; } else if (o.spawn === 'shop') { me.x = SHOPS[0].face.x; me.z = SHOPS[0].face.z + .9; } else { me.x = 0; me.z = 11.5; }
 
   /* ───────── 碰撞、找路 ───────── */
   function inIsland(x, z) { const ax = Math.abs(x), az = Math.abs(z), W = IX + SAND - 1, Hh = IZ + SAND - 1, r = 14; if (x >= PIER[0] && x <= PIER[2] && z >= PIER[1] && z <= PIER[3]) return true; if (ax > W || az > Hh) return false; if (ax > W - r && az > Hh - r) return Math.hypot(ax - (W - r), az - (Hh - r)) < r; return true; }
@@ -314,6 +321,7 @@ export function island(o) {
   const toastEl = U(el('div', 'h3toast'));
   const card = U(el('div', 'h3card'));
   const pan = U(el('div', 'i3pan'));
+  const doorBtn = U(el('button', 'i3door')); doorBtn.type = 'button'; doorBtn.dataset.i3 = 'door';
   function toast(s) { toastEl.textContent = s; toastEl.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove('on'), 2400); }
   const S = { dead: false, mode: 'walk', yaw: .35, yawT: .35, pitch: .72, pitchT: .72, dist: 17, distT: 17, tgt: null, keys: {}, t: 0, talk: null, last: performance.now(), hourOff: 0, cam: new Vector3(me.x, 1, me.z) };
   const PHASES = [[null, '現在'], [8, '早上'], [13, '中午'], [17.6, '傍晚'], [21, '夜晚']];
@@ -355,13 +363,26 @@ export function island(o) {
     else if (a === 'done') setMode('walk');
     else if (a === 'tab') { edTab = b.dataset.k; drawPan(); }
     else if (a === 'opt') { const v = b.dataset.v; D.ex[edTab] = /^\d$/.test(v) ? +v : v; placeHouse(myHouse); drawPan(); save(); }
-    else if (a === 'home') { const h = myHouse; closeCard(); goTo(h.door.x, h.door.z, () => enterHouse('home')); }
-    else if (a === 'enter') { closeCard(); enterHouse('home'); }
-    else if (a === 'shopin') { closeCard(); const s0 = SHOPS[0]; goTo(s0.door.x, s0.door.z, () => enterHouse('shop')); }
+    else if (a === 'home') { closeCard(); goDoor(DOORS.find(d => d.kind === 'home')); }
+    else if (a === 'enter') { closeCard(); doorAct(DOORS.find(d => d.kind === 'home')); }
+    else if (a === 'shopin') { closeCard(); goDoor(DOORS.find(d => d.kind === 'shop')); }
+    else if (a === 'door') { doorAct(nearDoor); }
     else if (a === 'time') { phaseI = (phaseI + 1) % PHASES.length; hudBtns(); updInfo(); toast(phaseI ? `預覽：${PHASES[phaseI][1]}（再按回到現在時間）` : '回到現在時間'); }
   };
   root.addEventListener('click', onClick);
   function enterHouse(kind) { if (S.entering) return; S.entering = true; try { cb.enter && cb.enter(kind || 'home'); } catch (_) { S.entering = false; } }
+  /* 門：走到門前會浮出「開門」；點它、或直接往門裡走就會開門進去 */
+  const DOORS = houseObjs.map(h => ({ h, face: h.face, inw: h.inw, pivot: h.pivot, kind: h.own ? 'home' : 'npc', label: h.own ? (own ? '🚪 開門' : '🚪 拜訪') : '🔔 按門鈴', name: h.own ? '' : h.label }))
+    .concat(SHOPS.map(s => ({ s, face: s.face, inw: s.inw, kind: s.k === 'izakaya' ? 'shop' : 'closed', label: s.k === 'izakaya' ? (own ? '🏮 進店' : '🏮 進去逛') : '🚧 準備中', name: s.n })));
+  let nearDoor = null;
+  function doorAct(d) {
+    if (!d || S.ent) return;
+    if (d.kind === 'npc') { toast(`叮咚～ ${d.name}好像沒人在家`); return; }
+    if (d.kind === 'closed') { toast(`${d.name}還在準備中，之後就能進去了！`); return; }
+    closeCard(); S.tgt = null; S.ent = { d, t: 0, x0: me.x, z0: me.z };
+  }
+  function goDoor(d) { goTo(d.face.x, d.face.z - d.inw * .7, () => doorAct(d)); }
+  if (o.spawn === 'door' && myHouse && myHouse.pivot) { myHouse.pivot.rotation.y = 1.6; S.closing = myHouse.pivot; }
   function goTo(x, z, fn) { const pth = findPath(me.x, me.z, x, z); if (!pth) { toast('走不過去'); return; } S.tgt = { path: pth, fn }; }
 
   /* 輸入：拖曳轉鏡頭、點擊走路／互動 */
@@ -386,10 +407,11 @@ export function island(o) {
   document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
   function personAt(cx, cy) { let best = null, bd = 1e9; for (const p of npcs) { const f = proj(new Vector3(p.x, 0, p.z)), t = proj(new Vector3(p.x, p.h + .2, p.z)), hh = f.y - t.y; if (hh < 6) continue; const w = Math.max(hh * .38, 26), dx = Math.abs(cx - f.x); if (dx < w && cy > t.y - 10 && cy < f.y + 10) { const d = dx; if (d < bd) { bd = d; best = p; } } } return best; }
   function tap(cx, cy) {
-    if (S.mode === 'edit') return;
+    if (S.mode === 'edit' || S.ent) return;
     const p = personAt(cx, cy); if (p) { const d = Math.hypot(p.x - me.x, p.z - me.z); openCard(p); if (d > 3) goTo(p.x + (me.x - p.x) / d * 1.4, p.z + (me.z - p.z) / d * 1.4); return; }
     ray.setFromCamera(toNdc(cx, cy), camera); const hs = ray.intersectObjects(scene.children, true).filter(h => h.object.isMesh && (h.object.userData.house || h.object.userData.shop));
     if (hs.length) { const u = hs[0].object.userData;
+      if (u.house || u.shop) { const d = DOORS.find(x => x.h === u.house && u.house || x.s === u.shop && u.shop); closeCard(); if (d) goTo(d.face.x, d.face.z - d.inw * .8); return; }
       if (u.house) { const h = u.house; if (h.own) { infoCard(own ? '我的家' : `${(o.owner && o.owner.name) || '好友'}的家`, D.name || '', own ? '要進屋嗎？裡面可以布置家具、收收銀台的錢。' : '店長在家裡打盹，進去逛逛吧！', `<button class="h3n" type="button" data-i3="enter">🚪 進屋</button>`); goTo(h.door.x, h.door.z); } else { infoCard(h.label, '島上的居民', '門關著，主人好像出去散步了～'); goTo(h.door.x, h.door.z); } return; }
       if (u.shop) { const s = u.shop; if (s.k === 'izakaya') { infoCard(D.name || '居酒屋', own ? '你的店' : `${(o.owner && o.owner.name) || '好友'}的店`, own ? '你的居酒屋：進去可以布置、收收銀台的錢、看客人。' : '進去逛逛吧！', `<button class="h3n" type="button" data-i3="shopin">🏮 進店</button>`); goTo(s.door.x, s.door.z); return; } infoCard(s.n, '店鋪（造景）', '現在是造景，之後可以從這裡直接開店營業。'); goTo(s.door.x, s.door.z); return; } }
     closeCard(); if (ray.ray.intersectPlane(gplane, hit)) { const pth = findPath(me.x, me.z, hit.x, hit.z); if (pth) S.tgt = { path: pth }; }
@@ -419,7 +441,7 @@ export function island(o) {
   /* ───────── 控制介面 ───────── */
   const ctl = {
     get dead() { return S.dead; }, set dead(v) { if (v) dispose(); }, dispose, kind: 'island',
-    probe() { const P = v => { const f = proj(v); return { x: Math.round(f.x), y: Math.round(f.y) }; }; return { mode: S.mode, me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, yaw: +S.yaw.toFixed(2), pitch: +S.pitch.toFixed(2), ex: Object.assign({}, D.ex), night: +(S.night || 0).toFixed(2), card: card.classList.contains('on') ? card.textContent : '', myDoor: P(new Vector3(myHouse.door.x, 1.2, myHouse.door.z - 2.8 * (myHouse.f === 2 ? -1 : 1))), myHouse: P(new Vector3(myHouse.x, 2, myHouse.z)), npcs: npcs.map(p => Object.assign({ id: p.d.id, state: p.state }, P(new Vector3(p.x, p.h * .5, p.z)))) }; },
+    probe() { const P = v => { const f = proj(v); return { x: Math.round(f.x), y: Math.round(f.y) }; }; return { mode: S.mode, me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, yaw: +S.yaw.toFixed(2), pitch: +S.pitch.toFixed(2), ex: Object.assign({}, D.ex), night: +(S.night || 0).toFixed(2), card: card.classList.contains('on') ? card.textContent : '', door: doorBtn.classList.contains('on') ? doorBtn.textContent : '', doorXY: doorBtn.classList.contains('on') ? (() => { const b = doorBtn.getBoundingClientRect(); return { x: Math.round(b.left + b.width / 2), y: Math.round(b.top + b.height / 2) }; })() : null, ent: !!S.ent, myDoor: P(new Vector3(myHouse.door.x, 1.2, myHouse.door.z - 2.8 * (myHouse.f === 2 ? -1 : 1))), myHouse: P(new Vector3(myHouse.x, 2, myHouse.z)), npcs: npcs.map(p => Object.assign({ id: p.d.id, state: p.state }, P(new Vector3(p.x, p.h * .5, p.z)))) }; },
     px(x, y, z) { const f = proj(new Vector3(x, y, z)); return { x: Math.round(f.x), y: Math.round(f.y) }; },
     teleport(x, z) { me.x = x; me.z = z; S.cam.set(x, 1, z); }, setYaw(y) { S.yaw = S.yawT = y; }, setPitch(p) { S.pitch = S.pitchT = p; }, setDist(d) { S.dist = S.distT = d; }, setHour(h) { PHASES[0][0] = h; lastH = -1; },
   };
@@ -444,15 +466,27 @@ export function island(o) {
     const sy = Math.sin(S.yaw), cy = Math.cos(S.yaw); fwd.set(-sy, 0, -cy); rgt.set(cy, 0, -sy);
     /* 玩家移動 */
     me.moving = false;
-    if (S.mode === 'walk') {
+    if (S.mode === 'walk' && !S.ent) {
       let vx = 0, vz = 0, lim = 1e9; const ix = (K.arrowright || K.d ? 1 : 0) - (K.arrowleft || K.a ? 1 : 0), iy = (K.arrowup || K.w ? 1 : 0) - (K.arrowdown || K.s ? 1 : 0);
       if (ix || iy) { vx = rgt.x * ix + fwd.x * iy; vz = rgt.z * ix + fwd.z * iy; }
       else if (S.tgt) { const nx = S.tgt.path[0]; if (!nx) { const fn = S.tgt.fn; S.tgt = null; fn && fn(); } else { const dx = nx[0] - me.x, dz = nx[1] - me.z, d = Math.hypot(dx, dz); if (d < .1) S.tgt.path.shift(); else { vx = dx; vz = dz; lim = d; } } }
       const l = Math.hypot(vx, vz); if (l > .01) { const stp = Math.min(5 * dt, lim), mx = vx / l * stp, mz = vz / l * stp; let moved = false;
         if (!blocked(me.x + mx, me.z + mz, .3)) { me.x += mx; me.z += mz; moved = true; } else if (!blocked(me.x + mx, me.z, .3)) { me.x += mx; moved = true; } else if (!blocked(me.x, me.z + mz, .3)) { me.z += mz; moved = true; }
-        if (moved) { me.moving = true; me.ph += dt * 10; const sd = (vx / l) * rgt.x + (vz / l) * rgt.z; if (Math.abs(sd) > .2) me.face = sd > 0 ? 1 : -1; } else if (S.tgt) { S.tgt.stuck = (S.tgt.stuck || 0) + dt; if (S.tgt.stuck > .5) { const fn = S.tgt.fn; S.tgt = null; fn && fn(); } }
+        if (moved) { S.mvz = mz / Math.max(1e-6, Math.hypot(mx, mz)); me.moving = true; me.ph += dt * 10; const sd = (vx / l) * rgt.x + (vz / l) * rgt.z; if (Math.abs(sd) > .2) me.face = sd > 0 ? 1 : -1; } else if (S.tgt) { S.tgt.stuck = (S.tgt.stuck || 0) + dt; if (S.tgt.stuck > .5) { const fn = S.tgt.fn; S.tgt = null; fn && fn(); } }
         if (S.talk && Math.hypot(S.talk.x - me.x, S.talk.z - me.z) > 9) closeCard(); }
     }
+    /* 門：靠近就浮出提示；往門裡走就自動開門進去 */
+    nearDoor = null;
+    if (S.mode === 'walk' && !S.ent) { let bd = 2.6; for (const d of DOORS) { const dd = Math.hypot(me.x - d.face.x, me.z - d.face.z); if (dd < bd) { bd = dd; nearDoor = d; } }
+      if (nearDoor && (nearDoor.kind === 'home' || nearDoor.kind === 'shop') && bd < .8 && me.moving && (S.mvz || 0) * nearDoor.inw > .5) doorAct(nearDoor); }
+    if (nearDoor && !S.ent) { const d = nearDoor, p = proj(new Vector3(d.face.x, d.s ? 3.1 : 2.95, d.face.z + d.inw * .5)), r = rect(); doorBtn.textContent = d.label; doorBtn.classList.toggle('off', d.kind === 'npc' || d.kind === 'closed'); doorBtn.style.left = (p.x - r.left) + 'px'; doorBtn.style.top = (p.y - r.top) + 'px'; doorBtn.classList.add('on'); }
+    else doorBtn.classList.remove('on');
+    if (S.ent) { const E = S.ent, d = E.d; E.t += dt;
+      if (d.pivot) d.pivot.rotation.y = Math.min(1, E.t / .45) * 1.6;
+      const k = clamp((E.t - .2) / .75, 0, 1), tx2 = d.face.x, tz2 = d.face.z + d.inw * 1.1; me.x = lerp(E.x0, tx2, k); me.z = lerp(E.z0, tz2, k); me.moving = k > 0 && k < 1; if (me.moving) me.ph += dt * 10;
+      me.mat.opacity = 1 - clamp((E.t - .55) / .45, 0, 1); if (me.tag) me.tag.material.opacity = me.mat.opacity;
+      if (E.t > 1.05 && !E.done) { E.done = 1; enterHouse(d.kind); } }
+    if (S.closing) { S.closing.rotation.y = Math.max(0, S.closing.rotation.y - dt * 2.4); if (S.closing.rotation.y <= 0) S.closing = null; }
     /* 站在門前平台上就墊高一點 */
     me.y = 0; for (const hh of houseObjs) { if (+((hh.own ? D.ex : hh.ex).porch) && Math.abs(me.x - hh.x) < HW / 2 + .3) { const lz = (me.z - hh.z) * (hh.f === 2 ? -1 : 1); if (lz > 1.42 && lz < 3.15) me.y = .3; } }
     /* NPC */

@@ -143,6 +143,9 @@ const CSS = `
 .h3toast{top:70px;font-size:15px}
 }
 .home .modal.h3m::after{display:none}
+.h3door{position:absolute;transform:translate(-50%,-100%);z-index:4;border:3px solid #3a2a1a;border-radius:999px;background:#fff8ea;color:#3a2a1a;font-weight:900;font-size:17px;min-height:50px;padding:0 18px;box-shadow:0 4px 0 #0004;display:none;white-space:nowrap}
+.h3door.on{display:block}
+.h3door:after{content:'';position:absolute;left:50%;bottom:-11px;margin-left:-8px;border:8px solid transparent;border-top-color:#3a2a1a}
 .h3load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff3d6;font-size:18px;background:#140f2e;z-index:9}
 `;
 
@@ -540,6 +543,7 @@ export function start(o) {
   const selBar = U(el('div', 'h3sel'));
   const topBar = U(el('div', 'h3top'));
   const pan = U(el('div', 'h3pan'));
+  const exitBtn = U(el('button', 'h3door', '🚪 出門')); exitBtn.type = 'button'; exitBtn.dataset.h3 = 'exit';
   function toast(s) { toastEl.textContent = s; toastEl.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove('on'), 2200); }
   function hudBtns() {
     if (S.mode === 'build') { hud.innerHTML = `<button class="h3b hot" type="button" data-h3="done"><i>✓</i>完成</button>`; return; }
@@ -906,6 +910,7 @@ export function start(o) {
       }
     }
     if (o.island && !S.exited && me.z > RD + .5 && S.mode === 'walk') { S.exited = true; try { cb.exit && cb.exit(); } catch (_) { } return; }
+    if (ISL) { const nd = S.mode === 'walk' && !S.exited && me.z > RD - 2 && Math.abs(me.x - DX) < 2; exitBtn.classList.toggle('on', nd); if (nd) { const pp = proj(new Vector3(DX, S.low && S.low.front ? .5 : 2.7, RD - .15)), r = rect(); exitBtn.style.left = (pp.x - r.left) + 'px'; exitBtn.style.top = (pp.y - r.top) + 'px'; } }
     const wasIn = S.inside; S.inside = me.z < RD - .05;
     if (wasIn !== S.inside && S.mode === 'walk') { S.distT = S.inside ? 10.5 : 13; hint.textContent = S.inside ? `歡迎光臨「${D.name}」` : '店外'; hint.classList.add('on'); clearTimeout(hint.t); hint.t = setTimeout(() => hint.classList.remove('on'), 1800); }
     /* NPC */

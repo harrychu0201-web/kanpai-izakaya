@@ -2150,7 +2150,13 @@ def sc_home3d(b, base):
         if not ex or ex.get('roof') != 'round' or ex.get('wall') != '#6fb6ea':
             raise AssertionError('房子外觀改了之後沒有存到：%s' % ex)
         # 自己的家：家具目錄是住家用的（客廳分頁），買一盞立燈、放好，存在 data.home
-        p = i3_enter(c, '從島上走回家進屋', 'home')
+        # 走到自家門前：門上方浮出「🚪 開門」，真實點擊它 → 開門進屋
+        c.page.evaluate("HOME3.teleport(-15,-4.2);HOME3.setYaw(0)"); c.page.wait_for_timeout(1200)
+        ip = c.page.evaluate("(()=>{const p=HOME3.probe();delete p.npcs;return p})()")
+        if '開門' not in ip.get('door', '') or not ip.get('doorXY'):
+            raise AssertionError('走到自己家門前沒有出現「🚪 開門」：%s' % ip.get('door'))
+        c.page.mouse.click(ip['doorXY']['x'], ip['doorXY']['y'])
+        p = h3_wait(c, '點「開門」進屋', limit=30000)
         if not any(i['k'] == 'sofa' for i in p['items']) or any(i['k'] == 'register' for i in p['items']):
             raise AssertionError('家裡的預設家具不對（應該有沙發、沒有收銀台）：%s' % [i['k'] for i in p['items']])
         c.click('.home3 [data-h3=build]', wait=1200)
