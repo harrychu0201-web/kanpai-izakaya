@@ -14,7 +14,7 @@
   bar       月影酒吧（含倒酒的 3D 水柱：出現、蓋掉 CSS 直線、不支援 WebGL 時退回）：右邊卡片的步驟清單（不蓋到手邊酒瓶、做酒時標出目前這步）、教學三杯用真實按住／畫圈／來回滑做完（含轉身到酒櫃拿酒）、打烊結算；第二天在商店買酒和配料、
             故意做錯 → 重做、再做曼哈頓（抖苦精、馬丁尼杯、手邊滿三瓶要換）和瑪格麗特（配料 B 頁的鹽口）；第三天暫停回主頁
   tut       新手教學（小夜對話框）：居酒屋真實點擊進入並點完、上一步、海風壽司教學點完、製作教學跳過；立繪載入、對話框不超出、按鈕 44px
-  home3d    我的店（3D，作者限定）：一般玩家看不到入口；布置買家具扣錢、拖曳、存檔；收銀台收錢；重開還在；示範店點店長、留言板
+  home3d    我的島（3D，作者限定）：一般玩家看不到入口；島上拖曳轉鏡頭、改房子外觀並存檔、走回家進屋；布置買家具扣錢、拖曳、存檔；收銀台收錢；出門回島；重開還在；示範島、好友的島進屋留言送禮
   oko       御好燒店（作者限定）：從麵糊開始真實點擊加料做完四道菜、順序錯加不進去、空手連點倒掉、放太久會焦、做好放保溫台、📖 做法暫停
   saves     玩完整條路徑後，玩家原本的存檔欄位一個都不能少、不認得的欄位原封不動
 """
@@ -2092,6 +2092,22 @@ def h3_wait(c, why, limit=20000):
     raise AssertionError('%s：我的店 3D 沒有開起來\n%s' % (why, c.diag()))
 
 
+def i3_wait(c, why, limit=20000):
+    t0 = time.time()
+    while (time.time() - t0) * 1000 < limit:
+        if c.page.evaluate("!!(HOME3&&HOME3.kind==='island'&&document.querySelector('.home3 .i3hud button'))"):
+            c.page.wait_for_timeout(1000)
+            return c.page.evaluate("(()=>{const p=HOME3.probe();delete p.npcs;return p})()")
+        c.page.wait_for_timeout(300)
+    raise AssertionError('%s：3D 島沒有開起來\n%s' % (why, c.diag()))
+
+
+def i3_enter(c, why):
+    """在島上按「回家／他家」→ 自己走到門口進屋 → 等室內開起來"""
+    c.click('.home3 [data-i3=home]', wait=300)
+    return h3_wait(c, why, limit=40000)
+
+
 def h3_tap(c, x, y):
     c.page.mouse.move(x, y); c.page.mouse.down(); c.page.mouse.up(); c.page.wait_for_timeout(400)
 
@@ -2109,10 +2125,34 @@ def sc_home3d(b, base):
         c.page.evaluate("closeModal();CL.user={email:ADMIN_EMAIL,uid:'h3-admin',name:'Author Check',photo:''};coopPanel()")
         c.page.wait_for_timeout(400)
         c.click('.modal [data-act=h3open]', wait=300)
-        p = h3_wait(c, '進去我的店')
+        ip = i3_wait(c, '去我的島')
+        for bt in c.page.locator('.home3 .i3hud button').all():
+            bb = bt.bounding_box()
+            if not bb or bb['height'] < 44 or bb['width'] < 44:
+                raise AssertionError('島上的按鈕太小（實際 px）：%s' % bb)
+        # 拖曳畫面要轉鏡頭（不是走路）
+        y0 = ip['yaw']; cvb = c.page.locator('.home3 canvas.twcv').bounding_box()
+        c.page.mouse.move(cvb['x'] + cvb['width'] * .5, cvb['y'] + cvb['height'] * .6); c.page.mouse.down()
+        for k in range(1, 9):
+            c.page.mouse.move(cvb['x'] + cvb['width'] * .5 + k * 25, cvb['y'] + cvb['height'] * .6); c.page.wait_for_timeout(30)
+        c.page.mouse.up(); c.page.wait_for_timeout(500)
+        ip2 = c.page.evaluate("(()=>{const p=HOME3.probe();delete p.npcs;return p})()")
+        if abs(ip2['yaw'] - y0) < .3 or ip2['me'] != ip['me']:
+            raise AssertionError('島上拖曳沒有轉鏡頭（或角色跑掉了）：yaw %s→%s me %s→%s' % (y0, ip2['yaw'], ip['me'], ip2['me']))
+        # 房子外觀：換成圓拱屋頂、藍色牆
+        c.click('.home3 [data-i3=edit]', wait=600)
+        c.click('.home3 [data-i3=tab][data-k=roof]', wait=200)
+        c.click('.home3 [data-i3=opt][data-v=round]', wait=200)
+        c.click('.home3 [data-i3=tab][data-k=wall]', wait=200)
+        c.click('.home3 [data-i3=opt][data-v="#6fb6ea"]', wait=200)
+        c.click('.home3 [data-i3=done]', wait=1200)
+        ex = c.page.evaluate("(JSON.parse(localStorage.getItem('izakaya-home-v1')||'{}').ex)||null")
+        if not ex or ex.get('roof') != 'round' or ex.get('wall') != '#6fb6ea':
+            raise AssertionError('房子外觀改了之後沒有存到：%s' % ex)
+        p = i3_enter(c, '從島上走回家進屋')
         if not p['items'] or not any(i['k'] == 'register' for i in p['items']):
             raise AssertionError('新開的店沒有預設家具／收銀台：%s' % p['items'])
-        for bt in c.page.locator('.home3 .h3hud button, .home3 .h3cam button').all():
+        for bt in c.page.locator('.home3 .h3hud button').all():
             bb = bt.bounding_box()
             if not bb or bb['height'] < 44 or bb['width'] < 44:
                 raise AssertionError('我的店的按鈕太小（實際 px）：%s' % bb)
@@ -2160,19 +2200,26 @@ def sc_home3d(b, base):
             c.page.wait_for_timeout(300)
         if c.page.evaluate("load().coins") <= c1:
             raise AssertionError('點收銀台沒有收到錢\n%s' % c.diag())
-        # 關掉再打開：布置還在
+        # 走出門回到島上
+        c.click('.home3 [data-h3=exit]', wait=300)
+        i3_wait(c, '從屋裡出門')
+        # 關掉再打開：布置、外觀都還在
         c.click('.home3 [data-act=h3back]', wait=600)
         if not c.has('#coopmark'):
             raise AssertionError('關掉我的店之後沒有回到多人模式面板')
         c.click('.modal [data-act=h3open]', wait=300)
-        p = h3_wait(c, '再打開我的店')
+        ip = i3_wait(c, '再打開我的島')
+        if ip['ex'].get('roof') != 'round':
+            raise AssertionError('重開之後房子外觀沒有保留：%s' % ip['ex'])
+        p = i3_enter(c, '再進屋')
         if not any(i['k'] == 'andon' for i in p['items']):
             raise AssertionError('關掉再打開，剛剛擺的行燈不見了')
         c.page.screenshot(path='/tmp/check-home3d.png')
         c.click('.home3 [data-act=h3back]', wait=600)
         # 示範店：點店長 → 去留言
         c.click('.modal [data-act=h3demo]', wait=300)
-        p = h3_wait(c, '逛示範店')
+        i3_wait(c, '逛示範島')
+        p = i3_enter(c, '走進示範店')
         c.page.evaluate("HOME3.teleport(5,6);HOME3.setYaw(0)"); c.page.wait_for_timeout(1500)
         p = h3_probe(c)
         ow = [n for n in p['npcs'] if n['kind'] == 'owner']
@@ -2196,7 +2243,8 @@ def sc_home3d(b, base):
         c.page.evaluate("closeModal();window.__post=null;CL.api=Object.assign({},CL.api||{},{homeGet:()=>Promise.resolve({at:1,name:'Nabi的店',v:JSON.stringify(Object.assign(Home3D.demoHome(),{name:'Nabi的店'}))}),homeMsgs:()=>Promise.resolve([]),homePost:(o,d)=>{window.__post=[o,d];return Promise.resolve()}});FR.data={fl:{u2:1},lbs:{u2:{name:'Nabi'}},gifts:{},pend:[],on:{}};FR.t=Date.now();showVisit('u2')")
         c.page.wait_for_timeout(400)
         c.click('.modal [data-act=h3visit][data-id=u2]', wait=300)
-        p = h3_wait(c, '走進好友的店')
+        i3_wait(c, '去好友的島')
+        p = i3_enter(c, '走進好友的家')
         if 'Nabi' not in c.page.evaluate("document.querySelector('.home3 .h3info').textContent"):
             raise AssertionError('好友的店上方資訊沒有店長名字')
         c.click('.home3 [data-h3=board]', wait=300)

@@ -8489,17 +8489,17 @@ function showVisit(uid){const D=FR.data;if(!D)return;FR.view=uid;const x=D.lbs[u
   modal(`<h2>🏮 ${esc(T('{0} 的店',x.name||T('玩家')))}</h2><div class="lblist">
    ${row(T('營業天數'),T('第 {0} 天',x.day||'?'))}${row(T('單日淨利'),yen(x.best||0))}${row(T('累計營收'),yen(x.earned||0))}
    ${row(T('拉麵屋台'),x.ya?T('已開張'):T('還沒開張'))}${row(T('二號廚房'),x.k2?T('已擴建'):T('還沒擴建'))}${row(T('裝飾'),T('{0} 件',x.dc||0))}${row(T('店評價'),rtFull(x.rt))}</div>
-   <div class="btns">${homeDev()?`<button class="btn" data-act="h3visit" data-id="${esc(uid)}">🏠 走進他的店</button>`:''}<button class="btn" data-act="frgift" data-id="${esc(uid)}" ${sent?'disabled':''}>🎁 ${T('送禮物')}</button><button class="btn alt" data-act="frdel" data-id="${esc(uid)}">${T('移除好友')}</button><button class="btn alt" data-act="frback">${T('返回')}</button></div>`)}
+   <div class="btns">${homeDev()?`<button class="btn" data-act="h3visit" data-id="${esc(uid)}">🏝️ 去他的島</button>`:''}<button class="btn" data-act="frgift" data-id="${esc(uid)}" ${sent?'disabled':''}>🎁 ${T('送禮物')}</button><button class="btn alt" data-act="frdel" data-id="${esc(uid)}">${T('移除好友')}</button><button class="btn alt" data-act="frback">${T('返回')}</button></div>`)}
 /* ===== 我的店（3D、可以逛、可以布置；測試中，只有作者和管理員看得到）=====
-   three.js 打包檔在打開時才載入（img/home3d-fcc77a14.js）。原始碼 dev/home3d/（models.js 家具、src.js 場景）。
+   three.js 打包檔在打開時才載入（img/home3d-6c83d6bc.js）。原始碼 dev/home3d/（models.js 家具、src.js 場景）。
    存檔：本機 izakaya-home-v1（不放進遊戲存檔，所以不動 mergeRec），登入後同步到 home/<uid>（公開讓好友逛）。
    買家具、收收銀台的錢都用遊戲錢包（跟好友禮物領取一樣直接改 KEY 存檔的 coins）。 */
 const HOME_KEY='izakaya-home-v1',HOME_GIFT='izakaya-home-gift';
 let HOME3=null,HOMEBACK=null,H3P=null,HOME_CLOUD_WARN=false;
 function homeDev(){try{return !pview()&&canView()}catch(e){return false}}
-function homeRow(){if(!homeDev())return '';return `<div class="lbme" style="flex-wrap:wrap;gap:8px"><span style="flex:1 1 100%">🏠 <b>我的店</b>（3D・測試中，只有作者和管理員看得到）<br><small>布置自己的店、走進好友的店逛逛、在留言板留言送小禮物</small></span><button class="btn" data-act="h3open">進去我的店</button><button class="btn alt" data-act="h3demo">逛示範店</button></div>`}
+function homeRow(){if(!homeDev())return '';return `<div class="lbme" style="flex-wrap:wrap;gap:8px"><span style="flex:1 1 100%">🏝️ <b>我的島</b>（3D・測試中，只有作者和管理員看得到）<br><small>在島上散步、設計自己房子的外觀、進屋布置；走進好友的島逛逛、留言送小禮物</small></span><button class="btn" data-act="h3open">去我的島</button><button class="btn alt" data-act="h3demo">逛示範島</button></div>`}
 function loadHome3D(){if(window.Home3D)return Promise.resolve();if(H3P)return H3P;
-  H3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/home3d-fcc77a14.js';s.onload=()=>ok();s.onerror=()=>{H3P=null;no(new Error('home3d'))};document.head.appendChild(s)});return H3P}
+  H3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/home3d-6c83d6bc.js';s.onload=()=>ok();s.onerror=()=>{H3P=null;no(new Error('home3d'))};document.head.appendChild(s)});return H3P}
 function homeLocal(){try{return JSON.parse(localStorage.getItem(HOME_KEY)||'null')}catch(e){return null}}
 function homeNick(){const e=lbEntry();return (e&&e.name)||(loadRec().nick)||'我'}
 async function homeCloudGet(uid){if(!CL.api||!CL.api.homeGet)return null;try{const v=await Promise.race([CL.api.homeGet(uid),new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),5000))]);if(!v||!v.v)return null;const d=JSON.parse(v.v);d.at=v.at||0;return d}catch(e){console.warn('home get',e);return null}}
@@ -8518,7 +8518,7 @@ async function homeOpen(who){if(!homeDev()||!HOME)return;
   if(!own&&!demo&&!me){toast('登入後才能拜訪好友的店');return}
   HOMEBACK=document.getElementById('coopmark')?()=>coopPanel():(who&&!demo&&FR.data)?()=>showVisit(who):null;
   const back=`<button class="xbtn" data-act="h3back" aria-label="${T('關閉')}">×</button>`;
-  modal(`<div class="town home3"><canvas class="twcv"></canvas><div class="twtop"><b>🏠 ${own?'我的店':demo?'示範店':'好友的店'}</b><span class="twhint">拖曳走路・兩指或 ⟲⟳ 轉鏡頭・點人聊天</span>${back}</div></div>`);
+  modal(`<div class="town home3"><canvas class="twcv"></canvas><div class="twtop"><b>🏝️ ${own?'我的島':demo?'示範島':'好友的島'}</b><span class="twhint">拖曳轉鏡頭・點地面走路・點人聊天</span>${back}</div></div>`);
   const tw=document.querySelector('.modal .town');if(!tw)return;tw.closest('.card').classList.add('towncard');tw.closest('.modal').classList.add('townm','h3m');
   const ld=document.createElement('div');ld.className='tw3load';ld.textContent='🏮 …';tw.appendChild(ld);
   const fail=m=>{ld.remove();const x=document.createElement('div');x.className='tw3load';x.style.cssText='flex-direction:column;gap:14px;text-align:center;padding:20px';x.innerHTML=`<div>${m}</div><div><button class="btn" data-act="h3back">返回</button></div>`;tw.appendChild(x)};
@@ -8531,12 +8531,20 @@ async function homeOpen(who){if(!homeDev()||!HOME)return;
     if(!cl){fail(`${esc(x.name||'這位好友')} 還沒有布置自己的店（或雲端還沒開通）<br><small>可以先去示範店逛逛</small><br><button class="btn alt" data-act="h3demo" style="margin-top:10px">逛示範店</button>`);return}
     data=cl;owner={name:x.name||cl.name||'好友',src:TOWN_ME};msgs=()=>CL.api.homeMsgs(who);
     post=m=>CL.api.homePost(who,{from:me.uid,name:String(homeNick()).slice(0,24),msg:m.msg,gift:m.gift||''}).then(()=>{if(m.gift)homeGiftMark(who)})}
-  if(!document.contains(tw))return;ld.remove();if(HOME3)HOME3.dead=1;
-  const cv=tw.querySelector('canvas');let ctl=null;
-  try{ctl=Home3D.start({cv,root:tw,own,demo,data,me:{src:TOWN_ME,name:homeNick()},owner,walk:town3dWalk(),
-    cb:{save:own?(d,now)=>homeSave(d,now):null,coins:homeCoins,buy:homeSpend,collect:homeEarn,today:frDay,msgs,post,giftSent:()=>demo?true:homeGiftSent(who)}})}catch(e){console.warn('home3d',e);ctl=null}
-  if(!ctl){fail('這台裝置無法顯示我的店（需要支援 WebGL 的瀏覽器）');return}
-  HOME3=ctl}
+  if(!document.contains(tw))return;ld.remove();if(HOME3)HOME3.dead=1;HOME3=null;
+  /* 先到島上（開放地圖）；點自己家的門進屋（室內布置），走出門回島上。兩個場景輪流用新的 canvas（舊的 WebGL 已釋放） */
+  const mk=()=>{const old=tw.querySelector('canvas.twcv');const c=document.createElement('canvas');c.className='twcv';if(old)old.replaceWith(c);else tw.prepend(c);return c};
+  const cbs={save:own?(d,now)=>homeSave(d,now):null,coins:homeCoins,buy:homeSpend,collect:homeEarn,today:frDay,msgs,post,giftSent:()=>demo?true:homeGiftSent(who)};
+  const me3={src:TOWN_ME,name:homeNick()},title=tw.querySelector('.twtop b');
+  const goIsland=spawn=>{if(HOME3)HOME3.dead=1;HOME3=null;let c=null;
+    try{c=Home3D.island({cv:mk(),root:tw,own,data,me:me3,owner,walk:town3dWalk(),css:Home3D.H3CSS,spawn,cb:{save:cbs.save,enter:()=>setTimeout(goIn,0)}})}catch(e){console.warn('island',e)}
+    if(!c){fail('這台裝置無法顯示 3D 島（需要支援 WebGL 的瀏覽器）');return}
+    if(title)title.textContent=own?'🏝️ 我的島':demo?'🏝️ 示範島':'🏝️ 好友的島';HOME3=c};
+  const goIn=()=>{if(HOME3)HOME3.dead=1;HOME3=null;let c=null;
+    try{c=Home3D.start({cv:mk(),root:tw,own,demo,data,island:true,me:me3,owner,walk:town3dWalk(),cb:Object.assign({},cbs,{exit:()=>setTimeout(()=>goIsland('door'),0)})})}catch(e){console.warn('home3d',e)}
+    if(!c){fail('這台裝置無法顯示我的店（需要支援 WebGL 的瀏覽器）');return}
+    if(title)title.textContent=own?'🏠 我的家':'🏠 '+(demo?'示範店':'好友的家');HOME3=c};
+  goIsland('')}
 function frDelAsk(uid){const x=(FR.data&&FR.data.lbs[uid])||{};modal(`<h2>${T('移除好友')}</h2><p>${esc(T('要移除這位好友嗎？'))} ${esc(x.name||'')}</p><div class="btns"><button class="btn" data-act="frdelok" data-id="${esc(uid)}">${T('移除')}</button><button class="btn alt" data-act="frback">${T('取消')}</button></div>`)}
 async function frDel(uid){const me=CL.user;if(!me)return;try{await CL.api.frDel(me.uid,uid)}catch(e){console.warn('frdel',e);toast('好友功能暫時打不開，請稍後再試。');return}
   const r=loadRec();r.frRm=r.frRm||{};r.frRm[uid]=1;saveRec(r);FR.t=0;showFriends()}

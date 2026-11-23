@@ -139,6 +139,8 @@ const CSS = `
 .h3load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff3d6;font-size:18px;background:#140f2e;z-index:9}
 `;
 
+export const H3CSS = CSS;
+export { island, EXO, defaultEx } from './island.js';
 export function start(o) {
   const cv = o.cv, root = o.root, cb = o.cb || {};
   const own = !!o.own;
@@ -410,7 +412,7 @@ export function start(o) {
   }
   const me = mkPerson(o.me.src, 1.5, { me: 1, name: o.me.name || '我', nk: 'me' });
   me.x = DX; me.z = RD + 2.6;
-  if (own && o.startInside !== false) { me.x = DX; me.z = RD - 1.6; }
+  if ((own && o.startInside !== false) || o.island) { me.x = DX; me.z = RD - 1.6; }
 
   /* ───────── 走路的格子（NPC 找路） ───────── */
   const GX0 = EX0, GX1 = EX1, GZ1 = EZ1;
@@ -469,13 +471,13 @@ export function start(o) {
   function npcGo(p, tx, tz) { const path = findPath(p.x, p.z, tx, tz); if (path && path.length) { p.path = path; p.state = 'walk'; return true; } return false; }
 
   /* ───────── 鏡頭、輸入、介面 ───────── */
-  const S = { dead: false, mode: 'walk', yaw: 0, yawT: 0, dist: 11, distT: 11, camV: 0, tgt: null, joy: null, keys: {}, t: 0, talk: null, sel: null, drag: null, last: performance.now(), inside: me.z < RD, cam: new Vector3(me.x, 1, me.z), low: {} };
+  const S = { dead: false, mode: 'walk', yaw: 0, yawT: 0, dist: 11, distT: 11, camV: 0, tgt: null, joy: null, keys: {}, t: 0, talk: null, sel: null, drag: null, last: performance.now(), inside: me.z < RD, cam: new Vector3(me.x, 1, me.z), low: {}, pitch: .7, pitchT: .7 };
   const el = (tag, cls, html, par) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; (par || root).appendChild(e); return e; };
   const ui = [];
   const U = s => { ui.push(s); return s; };
   const info = U(el('div', 'h3info'));
   const hud = U(el('div', 'h3hud'));
-  const camEl = U(el('div', 'h3cam', '<button type="button" aria-label="向左轉" data-h3="camL">⟲</button><button type="button" aria-label="向右轉" data-h3="camR">⟳</button>'));
+  const camEl = (el('div', 'h3cam', '<button type="button" aria-label="向左轉" data-h3="camL">⟲</button><button type="button" aria-label="向右轉" data-h3="camR">⟳</button>'));
   const hint = U(el('div', 'h3hint'));
   const toastEl = U(el('div', 'h3toast'));
   const joyEl = U(el('div', 'h3j', '<i></i>'));
@@ -488,14 +490,14 @@ export function start(o) {
   function hudBtns() {
     if (S.mode === 'build') { hud.innerHTML = `<button class="h3b hot" type="button" data-h3="done"><i>✓</i>完成</button>`; return; }
     hud.innerHTML = own
-      ? `<button class="h3b hot" type="button" data-h3="build"><i>🔨</i>布置</button><button class="h3b" type="button" data-h3="rename"><i>🪧</i>店名</button><button class="h3b" type="button" data-h3="board"><i>📜</i>留言板</button>`
-      : `<button class="h3b hot" type="button" data-h3="board"><i>✉️</i>留言</button>`;
+      ? (o.island ? `<button class="h3b" type="button" data-h3="exit"><i>🚪</i>出門</button>` : '') + `<button class="h3b hot" type="button" data-h3="build"><i>🔨</i>布置</button><button class="h3b" type="button" data-h3="rename"><i>🪧</i>店名</button><button class="h3b" type="button" data-h3="board"><i>📜</i>留言板</button>`
+      : (o.island ? `<button class="h3b" type="button" data-h3="exit"><i>🚪</i>出門</button>` : '') + `<button class="h3b hot" type="button" data-h3="board"><i>✉️</i>留言</button>`;
   }
   function updInfo() {
     const c = cozyOf(serialize()), s = starsOf(c);
     info.innerHTML = `<b>🏮 ${esc(D.name)}</b><span class="h3st">${'★'.repeat(s)}${'☆'.repeat(5 - s)}</span> ${esc(STARS[s][1])}<br><small>溫馨度 ${c}${own ? `・每天收入 ${yen(dailyIncome(c))}` : `・店長 ${esc((o.owner && o.owner.name) || '')}`}</small>`;
   }
-  hudBtns(); updInfo();
+  hudBtns(); updInfo(); camEl.style.display = 'none';
   camEl.querySelectorAll('button').forEach((b, i) => { const dir = i ? -1 : 1; b.addEventListener('pointerdown', e => { e.preventDefault(); S.camV = dir; try { b.setPointerCapture(e.pointerId); } catch (_) { } }); const u2 = () => { S.camV = 0; }; b.addEventListener('pointerup', u2); b.addEventListener('pointercancel', u2); b.addEventListener('click', () => { if (!S.camV) S.yawT += dir * .5; }); });
 
   /* 點擊 / 拖曳 */
@@ -521,7 +523,7 @@ export function start(o) {
     e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) { }
     const l = local(e.clientX, e.clientY); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), dist: S.distT, ang: Math.atan2(b.y - a.y, b.x - a.x), yaw: S.yawT }; pd = null; S.joy = null; joyEl.style.display = 'none'; endDrag(); return; }
-    pd = { id: e.pointerId, sx: l.x, sy: l.y, cx: e.clientX, cy: e.clientY, moved: 0, btn: e.button, yaw0: S.yawT };
+    pd = { id: e.pointerId, sx: l.x, sy: l.y, cx: e.clientX, cy: e.clientY, moved: 0, btn: e.button, yaw0: S.yawT, pit0: S.pitchT };
     if (S.mode === 'build') { const it = itemHit(e.clientX, e.clientY); if (it && it === S.sel && !it.I.fixed2) { pd.dragItem = it; } else if (it) { pd.pickItem = it; } }
   });
   cv.addEventListener('pointermove', e => {
@@ -531,7 +533,7 @@ export function start(o) {
     const l = local(e.clientX, e.clientY), dx = l.x - pd.sx, dy = l.y - pd.sy, d = Math.hypot(dx, dy);
     if (!pd.moved && d > 10) { pd.moved = 1; if (pd.pickItem && S.mode === 'build') { select(pd.pickItem); pd.dragItem = pd.pickItem; } }
     if (!pd.moved) return;
-    if (pd.btn === 2 || (S.mode === 'build' && !pd.dragItem)) { S.yawT = pd.yaw0 - dx * .008; S.distT = clamp(S.distT + (e.movementY || 0) * 0, 6, 20); return; }
+    if (pd.btn === 2 || S.mode === 'walk' || (S.mode === 'build' && !pd.dragItem)) { S.yawT = pd.yaw0 - dx * .008; S.pitchT = clamp(pd.pit0 + dy * .005, .3, 1.25); return; }
     if (S.mode === 'build' && pd.dragItem) { dragTo(pd.dragItem, e.clientX, e.clientY); return; }
     if (S.mode === 'walk') { const R = 55, m = Math.min(1, d / R) / Math.max(d, 1e-6); S.joy = { x: dx * m, y: dy * m }; S.tgt = null; joyEl.style.display = 'block'; joyEl.style.left = pd.sx + 'px'; joyEl.style.top = pd.sy + 'px'; joyEl.firstChild.style.transform = `translate(${S.joy.x * 55}px,${S.joy.y * 55}px)`; }
   });
@@ -710,7 +712,7 @@ export function start(o) {
         form = `<hr style="border:0;border-top:2px solid #c8a878;margin:10px 0"><p style="margin:4px 0"><b>留言給店長</b>（最多 60 字）</p>${o.demo ? '<p style="margin:2px 0;color:#8a3a14;font-size:14px">（示範店：留言不會真的送出）</p>' : ''}<textarea id="h3msg" maxlength="60" rows="2" placeholder="例如：你的店好溫馨！下次再來～"></textarea>
           <p style="margin:8px 0 0">附上一份小禮物（每天一份，免費）：</p><div class="gifts">${sent ? '<span style="opacity:.7">今天已經送過禮物了</span>' : ['', ...GIFTS].map(k => `<button type="button" data-h3="gpick" data-k="${k}" class="${giftPickK === k ? 'on' : ''}">${k ? esc(IT[k].n) : '不附禮物'}</button>`).join('')}</div>
           <div class="h3bt"><button class="h3n alt" type="button" data-h3="pclose">關閉</button><button class="h3n" type="button" data-h3="post">送出留言</button></div>`;
-      } else form = `<div class="h3bt"><button class="h3n" type="button" data-h3="pclose">關閉</button></div>`;
+      } else { const un = list.filter(m => m.gift && IT[m.gift] && !D.gc[m.id]).length; form = `<div class="h3bt">${un ? `<button class="h3n" type="button" data-h3="claim">🎁 領取 ${un} 份禮物</button>` : ''}<button class="h3n alt" type="button" data-h3="pclose">關閉</button></div>`; }
       pan.innerHTML = `<h3>📜 ${esc(D.name)} 的留言板</h3>${rows}${form}`;
     });
   }
@@ -727,7 +729,7 @@ export function start(o) {
     giftBoxes.forEach(g => scene.remove(g)); giftBoxes.length = 0; giftPick.length = 0;
     if (!own || !msgs) return; const un = msgs.filter(m => m.gift && IT[m.gift] && !D.gc[m.id]);
     un.slice(0, 5).forEach((m, i) => { const g = new Group(); g.position.set(BOARD.x - 1.1 - (i % 3) * .55, 0, BOARD.z + .4 + Math.floor(i / 3) * .5); scene.add(g); const cs = ['#e2452f', '#3a7ad0', '#f2b630', '#4aa86a', '#c84a9a'][i % 5]; const b = box(.42, .36, .42, lam(cs), 0, .18, 0, g); box(.44, .38, .08, lam('#fff3d6'), 0, .18, 0, g); box(.08, .38, .44, lam('#fff3d6'), 0, .18, 0, g); const lid = box(.46, .08, .46, lam(cs), 0, .4, 0, g); const bw = new Mesh(new SphereGeometry(.08, 10, 8), lam('#fff3d6')); bw.position.y = .48; bw.scale.set(1.6, .8, 1); g.add(bw); g.traverse(x => { if (x.isMesh) giftPick.push(x); }); giftBoxes.push(g); g.userData.ph = i; });
-    if (un.length) toast(`門口有 ${un.length} 份禮物！`);
+    if (un.length) toast(o.island ? `有 ${un.length} 份禮物，按「📜 留言板」領取！` : `門口有 ${un.length} 份禮物！`);
   }
   function claimGifts() {
     if (!own || !msgs) return; const un = msgs.filter(m => m.gift && IT[m.gift] && !D.gc[m.id]); if (!un.length) return;
@@ -746,7 +748,9 @@ export function start(o) {
     else if (a === 'done') setMode('walk');
     else if (a === 'rename') openRename();
     else if (a === 'nameok') { const v = (pan.querySelector('#h3name').value || '').trim().slice(0, 12); if (v) { D.name = v; drawSign(); changed(); } pan.classList.remove('on'); }
-    else if (a === 'board') { if (S.mode !== 'walk') return; walkThen(BOARD.x, BOARD.z + 1, openBoard); }
+    else if (a === 'board') { if (S.mode !== 'walk') return; if (o.island) openBoard(); else walkThen(BOARD.x, BOARD.z + 1, openBoard); }
+    else if (a === 'claim') claimGifts();
+    else if (a === 'exit') { if (o.island) { S.exited = true; try { cb.exit && cb.exit(); } catch (_) { } } }
     else if (a === 'pclose') pan.classList.remove('on');
     else if (a === 'post') postMsg();
     else if (a === 'gpick') { giftPickK = k || ''; pan.querySelectorAll('[data-h3="gpick"]').forEach(x => x.classList.toggle('on', (x.dataset.k || '') === giftPickK)); }
@@ -818,7 +822,7 @@ export function start(o) {
     fpsT += dt; fpsN++; if (fpsT > 1.2) { const avg = fpsT / fpsN; if (avg > .028 && pr > .55) { pr = Math.max(.55, pr * .85); prCap = pr; renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } fpsT = 0; fpsN = 0; }
     /* 鏡頭轉 */
     const K = S.keys; if (K.q) S.yawT += dt * 1.8; if (K.e) S.yawT -= dt * 1.8; if (S.camV) S.yawT += S.camV * dt * 1.8;
-    S.yaw += (S.yawT - S.yaw) * Math.min(1, dt * 8); S.dist += (S.distT - S.dist) * Math.min(1, dt * 5);
+    S.yaw += (S.yawT - S.yaw) * Math.min(1, dt * 8); S.pitch += (S.pitchT - S.pitch) * Math.min(1, dt * 8); S.dist += (S.distT - S.dist) * Math.min(1, dt * 5);
     const sy = Math.sin(S.yaw), cy = Math.cos(S.yaw); fwd.set(-sy, 0, -cy); rgt.set(cy, 0, -sy);
     /* 玩家 */
     me.moving = false;
@@ -844,6 +848,7 @@ export function start(o) {
         if (S.talk && Math.hypot(S.talk.x - me.x, S.talk.z - me.z) > 6) closeCard();
       }
     }
+    if (o.island && !S.exited && me.z > RD + .5 && S.mode === 'walk') { S.exited = true; try { cb.exit && cb.exit(); } catch (_) { } return; }
     const wasIn = S.inside; S.inside = me.z < RD - .05;
     if (wasIn !== S.inside && S.mode === 'walk') { S.distT = S.inside ? 10.5 : 13; hint.textContent = S.inside ? `歡迎光臨「${D.name}」` : '店外'; hint.classList.add('on'); clearTimeout(hint.t); hint.t = setTimeout(() => hint.classList.remove('on'), 1800); }
     /* NPC */
@@ -863,7 +868,7 @@ export function start(o) {
     let tx = me.x, tz = me.z, ty = 1.1;
     if (S.mode === 'build') { if (S.inside) { tx = RW / 2 + sy * 2.2; tz = RD / 2 + cy * 2.2; } else { tx = DX + sy * 2; tz = RD + 2.5 + cy * 2; } ty = .4; }
     S.cam.x += (tx - S.cam.x) * Math.min(1, dt * (S.mode === 'build' ? 4 : 12)); S.cam.z += (tz - S.cam.z) * Math.min(1, dt * (S.mode === 'build' ? 4 : 12)); S.cam.y += (ty - S.cam.y) * Math.min(1, dt * 4);
-    const aspect = cw / ch, extra = aspect < 1.45 ? 1.45 / aspect : 1, dd = S.dist * extra, pitch = S.mode === 'build' ? .86 : .64;
+    const aspect = cw / ch, extra = aspect < 1.45 ? 1.45 / aspect : 1, dd = S.dist * extra, pitch = S.mode === 'build' ? Math.max(.75, S.pitch) : S.pitch;
     camPos.set(S.cam.x + sy * Math.cos(pitch) * dd, S.cam.y + Math.sin(pitch) * dd, S.cam.z + cy * Math.cos(pitch) * dd);
     camera.position.copy(camPos); camera.lookAt(S.cam.x, S.cam.y + .5, S.cam.z); sky.position.copy(camPos);
     /* 牆：人在店裡時擋到鏡頭的牆降下來、屋頂拿掉；在店外就是完整的房子 */
