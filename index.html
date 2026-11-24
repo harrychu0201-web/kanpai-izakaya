@@ -6753,7 +6753,7 @@ document.addEventListener('click',e=>{
   else if(act==='bank'&&R)bankWin();
   else if(act==='eloanok'&&R)takeLoan();
   else if(act==='resume'&&R){R.paused=!!TUT;closeModal();last=performance.now()}
-  else if(act==='quit'){showDayIntro()}
+  else if(act==='quit'){if(chOn()){chStart(CHG.hard)}else showDayIntro()} /* 2026-11-24 無限挑戰：暫停選單的「重新開始」要整個挑戰重來（失誤 0/3、時間歸零、第 1 天、¥3,000），以前只回到第一天說明、失誤數還留著 */
 });
 
 let DEMO=false,TUT=null,TUT_BACK=false,BARDEMO=false;

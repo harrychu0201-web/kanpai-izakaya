@@ -2305,7 +2305,32 @@ def sc_home3d(b, base):
         c.close()
 
 
-SCENARIOS = [('fblogin', sc_fblogin), ('coicons', sc_coicons), ('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
+def sc_chrestart(b, base):
+    """回歸測試（2026/11/24 玩家回報）：無限挑戰失誤 1/3 後，暫停選單按「重新開始」，失誤數、時間、天數、錢包都要歸零。"""
+    c = Ctx(b, base).open()
+    try:
+        c.dismiss_modals()
+        c.click('[data-act=chopen]', wait=500)
+        c.click('.modal [data-act=chstart]', wait=3000)
+        c.expect_clean('開始無限挑戰')
+        if not c.page.evaluate('chOn()&&!!R'):
+            raise AssertionError('按了標準挑戰，但沒有進入無限挑戰營業' + c.diag())
+        c.page.evaluate("chStrike('測試失誤')")
+        c.page.wait_for_timeout(400)
+        if c.page.evaluate('CHG.strikes') != 1 or '1/3' not in c.page.evaluate("document.querySelector('.pill.ch').textContent"):
+            raise AssertionError('製造一次失誤後，畫面沒有顯示 1/3' + c.diag())
+        c.click('[data-act=pause]', wait=500)
+        c.click('.modal [data-act=quit]', wait=3000)
+        c.expect_clean('無限挑戰暫停 → 重新開始')
+        res = c.page.evaluate("({on:chOn(),strikes:CHG&&CHG.strikes,day:ST.day,coins:ST.coins,sec:CHG&&CHG.sec,hasR:!!R,modal:!!document.querySelector('.modal'),pill:(document.querySelector('.pill.ch')||{}).textContent||''})")
+        if not res['on'] or res['strikes'] != 0 or res['day'] != 1 or res['coins'] != 3000 or res['sec'] > 5 or not res['hasR'] or res['modal'] or '0/3' not in res['pill']:
+            raise AssertionError('無限挑戰「重新開始」後沒有歸零：%s' % res)
+        c.page.evaluate("chQuit()")
+    finally:
+        c.close()
+
+
+SCENARIOS = [('chrestart', sc_chrestart), ('fblogin', sc_fblogin), ('coicons', sc_coicons), ('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves), ('keepbak', sc_keepbak),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barnew', sc_barnew), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
              ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d)]
