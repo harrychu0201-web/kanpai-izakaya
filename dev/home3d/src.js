@@ -563,7 +563,7 @@ export function start(o) {
     if (HOME) { info.innerHTML = `<b>🏠 ${esc(o.title || '我的家')}</b><span class="h3st">${'★'.repeat(s)}${'☆'.repeat(5 - s)}</span> 溫馨度 ${c}<br><small>${own ? '按「🔨 布置」擺家具、換地板牆壁' : `${esc((o.owner && o.owner.name) || '')} 的家`}</small>`; return; }
     info.innerHTML = `<b>🏮 ${esc(D.name)}</b><span class="h3st">${'★'.repeat(s)}${'☆'.repeat(5 - s)}</span> ${esc(STARS[s][1])}<br><small>溫馨度 ${c}${own ? `・每天收入 ${yen(dailyIncome(c))}` : `・店長 ${esc((o.owner && o.owner.name) || '')}`}</small>`;
   }
-  hudBtns(); updInfo(); camEl.style.display = 'none';
+  hudBtns(); updInfo(); camEl.style.display = 'none'; setTimeout(() => joyRest(), 50); window.addEventListener('resize', () => joyRest());
   camEl.querySelectorAll('button').forEach((b, i) => { const dir = i ? -1 : 1; b.addEventListener('pointerdown', e => { e.preventDefault(); S.camV = dir; try { b.setPointerCapture(e.pointerId); } catch (_) { } }); const u2 = () => { S.camV = 0; }; b.addEventListener('pointerup', u2); b.addEventListener('pointercancel', u2); b.addEventListener('click', () => { if (!S.camV) S.yawT += dir * .5; }); });
 
   /* 點擊 / 拖曳 */
@@ -583,16 +583,22 @@ export function start(o) {
   function boardHit(cx, cy) { ray.setFromCamera(toNdc(cx, cy), camera); return ray.intersectObjects(boardPick, false).length > 0; }
   const giftBoxes = []; const giftPick = [];
   function giftHit(cx, cy) { ray.setFromCamera(toNdc(cx, cy), camera); return ray.intersectObjects(giftPick, false).length > 0; }
-  const ptrs = new Map(); let pd = null, pinch = null;
+  const ptrs = new Map(); let pd = null, pinch = null, jd = null;
+  const TOUCH = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || 'ontouchstart' in window;
   cv.addEventListener('contextmenu', e => e.preventDefault());
   cv.addEventListener('pointerdown', e => {
+    S.pt = e.pointerType;
     e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) { }
-    const l = local(e.clientX, e.clientY); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), dist: S.distT, ang: Math.atan2(b.y - a.y, b.x - a.x), yaw: S.yawT }; pd = null; S.joy = null; joyEl.style.display = 'none'; endDrag(); return; }
+    const l = local(e.clientX, e.clientY);
+    /* 手機：按左半邊＝搖桿走路（其他手指照樣可以拖曳轉鏡頭） */
+    if (e.pointerType === 'touch' && !jd && S.mode === 'walk' && !pan.classList.contains('on')) { const r = rect(); if (e.clientX - r.left < r.width * .45) { jd = { id: e.pointerId, sx: l.x, sy: l.y }; S.tgt = null; joyEl.style.display = 'block'; joyEl.style.opacity = 1; joyEl.style.left = l.x + 'px'; joyEl.style.top = l.y + 'px'; joyEl.firstChild.style.transform = ''; return; } }
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), dist: S.distT, ang: Math.atan2(b.y - a.y, b.x - a.x), yaw: S.yawT }; pd = null; endDrag(); return; }
     pd = { id: e.pointerId, sx: l.x, sy: l.y, cx: e.clientX, cy: e.clientY, moved: 0, btn: e.button, yaw0: S.yawT, pit0: S.pitchT };
     if (S.mode === 'build') { const it = itemHit(e.clientX, e.clientY); if (it && it === S.sel && !it.I.fixed2) { pd.dragItem = it; } else if (it) { pd.pickItem = it; } }
   });
   cv.addEventListener('pointermove', e => {
+    if (jd && e.pointerId === jd.id) { const l = local(e.clientX, e.clientY), dx = l.x - jd.sx, dy = l.y - jd.sy, d = Math.hypot(dx, dy), R0 = 50, m = Math.min(1, d / R0) / Math.max(d, 1e-6); S.joy = { x: dx * m, y: dy * m }; joyEl.firstChild.style.transform = `translate(${S.joy.x * R0}px,${S.joy.y * R0}px)`; return; }
     if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch && ptrs.size >= 2) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); S.distT = clamp(pinch.dist * pinch.d / Math.max(20, d), 6, 20); S.yawT = pinch.yaw - (Math.atan2(b.y - a.y, b.x - a.x) - pinch.ang); return; }
     if (!pd || pd.id !== e.pointerId) return;
@@ -603,12 +609,14 @@ export function start(o) {
     if (S.mode === 'build' && pd.dragItem) { dragTo(pd.dragItem, e.clientX, e.clientY); return; }
     if (S.mode === 'walk') { const R = 55, m = Math.min(1, d / R) / Math.max(d, 1e-6); S.joy = { x: dx * m, y: dy * m }; S.tgt = null; joyEl.style.display = 'block'; joyEl.style.left = pd.sx + 'px'; joyEl.style.top = pd.sy + 'px'; joyEl.firstChild.style.transform = `translate(${S.joy.x * 55}px,${S.joy.y * 55}px)`; }
   });
+  const joyRest = () => { if (S.dead) return; if (TOUCH && S.mode === 'walk') { joyEl.style.display = 'block'; joyEl.style.opacity = .55; joyEl.style.left = '110px'; joyEl.style.top = (cv.clientHeight - 110) + 'px'; joyEl.firstChild.style.transform = ''; } else joyEl.style.display = 'none'; };
   const up = e => {
+    if (jd && e.pointerId === jd.id) { jd = null; S.joy = null; joyRest(); return; }
     ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null;
     if (!pd || pd.id !== e.pointerId) return;
     if (!pd.moved) tap(e.clientX, e.clientY, pd);
     if (pd.dragItem) endDrag();
-    pd = null; S.joy = null; joyEl.style.display = 'none';
+    pd = null;
   };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   cv.addEventListener('wheel', e => { e.preventDefault(); S.distT = clamp(S.distT + Math.sign(e.deltaY) * 1.2, 6, 20); }, { passive: false });
@@ -628,6 +636,7 @@ export function start(o) {
     if (it && it.k === 'register') { walkThen(it.g.position.x, it.g.position.z + 1.2, () => regTap(it)); return; }
     if (it && IT[it.k].L !== 'rug') { const pp = it.g.position; closeCard(); itemCard(it); S.tgt = nearFree(pp.x, pp.z); return; }
     closeCard();
+    if (S.pt === 'touch' && S.mode === 'walk') return; /* 手機用搖桿走，點地面不走 */
     const g = groundAt(cx, cy); if (g) S.tgt = { x: g.x, z: g.z };
   }
   function nearFree(x, z) { let best = null, bd = 1e9; for (const [dx, dz] of [[0, 1.1], [1.1, 0], [-1.1, 0], [0, -1.1], [.8, .8], [-.8, .8]]) { const nx = x + dx, nz = z + dz; if (okAt(nx, nz, nz < RD ? 0 : RD + 1)) { const d = Math.hypot(nx - me.x, nz - me.z); if (d < bd) { bd = d; best = { x: nx, z: nz }; } } } return best; }
@@ -677,7 +686,7 @@ export function start(o) {
 
   /* 布置模式 */
   function setMode(m) {
-    S.mode = m; select(null); closeCard(); S.tgt = null; hudBtns();
+    S.mode = m; select(null); closeCard(); S.tgt = null; hudBtns(); setTimeout(joyRest, 0);
     bp.classList.toggle('on', m === 'build'); topBar.classList.toggle('on', m === 'build'); if (m !== 'build') { camEl.style.bottom = ''; }
     info.style.display = m === 'build' ? 'none' : '';
     if (m === 'build') { topBar.textContent = '🔨 拖曳家具移動・拖空白處轉鏡頭'; drawPanel(); S.distT = 13.5; }
@@ -866,14 +875,14 @@ export function start(o) {
   }
 
   /* ───────── 每幀 ───────── */
-  let cw = 0, ch = 0, dprv = 0, pr = 1, fpsT = 0, fpsN = 0, prCap = 9;
+  let cw = 0, ch = 0, dprv = 0, pr = 1, fpsT = 0, fpsN = 0, prCap = 9, prFloor = .9;
   const fwd = new Vector3(), rgt = new Vector3(), camPos = new Vector3();
   function calcPS(H) { return Math.round(clamp(1.75 - (H - 380) / 440 * .6, 1.15, 1.75) * 20) / 20; }
   function resize() {
     const r = cv.getBoundingClientRect(), W = Math.max(1, cv.clientWidth), Hh = Math.max(1, cv.clientHeight), dpr = Math.min(2, window.devicePixelRatio || 1);
     const nps = calcPS(r.height || Hh); if (nps !== PS) { PS = nps; people.forEach(q => { q.h = q.h0 * PS; q.w = q.h * q.ar; }); }
     if (W === cw && Hh === ch && dpr === dprv) return;
-    cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2.2); pr = Math.min(pr, prCap, Math.sqrt(1.4e6 / (W * Hh)));
+    cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2.2); pr = Math.min(pr, Math.sqrt(2e6 / (W * Hh))); prFloor = Math.max(Math.min(pr, .9), pr * .8); pr = Math.max(prFloor, Math.min(pr, prCap));
     renderer.setPixelRatio(pr); renderer.setSize(W, Hh, false); camera.aspect = W / Hh; camera.updateProjectionMatrix();
   }
   function stepPerson(p, dt) {
@@ -889,7 +898,7 @@ export function start(o) {
     S.raf = requestAnimationFrame(frame);
     const dt = Math.min(.1, (now - S.last) / 1000); S.last = now; S.t += dt; const t = S.t;
     resize();
-    fpsT += dt; fpsN++; if (fpsT > 1.2) { const avg = fpsT / fpsN; if (avg > .028 && pr > .55) { pr = Math.max(.55, pr * .85); prCap = pr; renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } fpsT = 0; fpsN = 0; }
+    fpsT += dt; fpsN++; if (fpsT > 1.2) { const avg = fpsT / fpsN; if (avg > .028) { if (renderer.shadowMap.enabled) { renderer.shadowMap.enabled = false; scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => m.needsUpdate = true); }); } else if (pr > prFloor + .01) { pr = Math.max(prFloor, pr * .88); prCap = pr; renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } } fpsT = 0; fpsN = 0; }
     /* 鏡頭轉 */
     const K = S.keys; if (K.q) S.yawT += dt * 1.8; if (K.e) S.yawT -= dt * 1.8; if (S.camV) S.yawT += S.camV * dt * 1.8;
     S.yaw += (S.yawT - S.yaw) * Math.min(1, dt * 8); S.pitch += (S.pitchT - S.pitch) * Math.min(1, dt * 8); S.dist += (S.distT - S.dist) * Math.min(1, dt * 5);

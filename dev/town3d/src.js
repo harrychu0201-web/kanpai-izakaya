@@ -346,7 +346,7 @@ export function start(o) {
   let camT = new Vector3(me.x, 1.3, me.z);
 
   const hint = document.createElement('div'); hint.className = 'tw3hint'; tw.appendChild(hint);
-  const joyEl = document.createElement('div'); joyEl.className = 'tw3j'; joyEl.innerHTML = '<i></i>'; tw.appendChild(joyEl);
+  const joyEl = document.createElement('div'); joyEl.className = 'tw3j'; joyEl.innerHTML = '<i></i>'; tw.appendChild(joyEl); setTimeout(() => joyRest(), 50); window.addEventListener('resize', () => joyRest());
   const camEl = document.createElement('div'); camEl.className = 'tw3cam'; camEl.innerHTML = '<button type="button" aria-label="L">⟲</button><button type="button" aria-label="R">⟳</button>'; tw.appendChild(camEl);
   const fade = document.createElement('div'); fade.className = 'tw3fade'; tw.appendChild(fade);
   const card = document.createElement('div'); card.className = 'tw3card'; tw.appendChild(card);
@@ -372,11 +372,17 @@ export function start(o) {
     return best;
   }
   /* 拖曳＝轉鏡頭（左右轉、上下調俯角），兩指捏合＝縮放，點一下＝走過去／互動 */
-  let pd = null, pinch = null; const ptrs = new Map();
-  cv.addEventListener('pointerdown', e => { if (S.ent) return; e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) { } ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  let pd = null, pinch = null, jd = null; const ptrs = new Map();
+  const TOUCH = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || 'ontouchstart' in window;
+  /* 手機：左下角常駐搖桿，按住左半邊任何地方就從那裡開始推 */
+  const joyRest = () => { if (S.dead || S.ent || !TOUCH) { if (!TOUCH) joyEl.style.display = 'none'; return; } joyEl.style.display = 'block'; joyEl.style.opacity = .55; joyEl.style.left = '100px'; joyEl.style.top = (cv.clientHeight - 100) + 'px'; joyEl.firstChild.style.transform = ''; };
+  cv.addEventListener('pointerdown', e => { if (S.ent) return; S.pt = e.pointerType; e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) { }
+    if (e.pointerType === 'touch' && !jd) { const r = cv.getBoundingClientRect(); if (e.clientX - r.left < r.width * .45) { const l = local(e.clientX, e.clientY); jd = { id: e.pointerId, sx: l.x, sy: l.y }; S.tgt = null; closeCard(); joyEl.style.display = 'block'; joyEl.style.opacity = 1; joyEl.style.left = l.x + 'px'; joyEl.style.top = l.y + 'px'; joyEl.firstChild.style.transform = ''; return; } }
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), dist: S.distT }; pd = null; return; }
     const l = local(e.clientX, e.clientY); pd = { id: e.pointerId, sx: l.x, sy: l.y, moved: 0, yaw0: S.yawT, ph0: S.phT }; });
   cv.addEventListener('pointermove', e => {
+    if (jd && e.pointerId === jd.id) { if (S.ent) return; const l = local(e.clientX, e.clientY), dx = l.x - jd.sx, dy = l.y - jd.sy, d = Math.hypot(dx, dy), R0 = 50, m = Math.min(1, d / R0) / Math.max(d, 1e-6); S.joy = { x: dx * m, y: dy * m }; joyEl.firstChild.style.transform = `translate(${S.joy.x * R0}px,${S.joy.y * R0}px)`; return; }
     if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch && ptrs.size >= 2) { const [a, b] = [...ptrs.values()]; S.distT = clamp(pinch.dist * pinch.d / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)), 8, 20); return; }
     if (!pd || pd.id !== e.pointerId || S.ent) return; const l = local(e.clientX, e.clientY), dx = l.x - pd.sx, dy = l.y - pd.sy, d = Math.hypot(dx, dy);
@@ -384,10 +390,11 @@ export function start(o) {
     if (pd.moved) { S.yawT = clamp(pd.yaw0 - dx * .006, -1.4, 1.4); S.phT = clamp(pd.ph0 + dy * .004, .22, 1.05); }
   });
   const up = e => {
+    if (jd && e.pointerId === jd.id) { jd = null; S.joy = null; joyRest(); return; }
     ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null;
     if (!pd || pd.id !== e.pointerId) return;
     if (!pd.moved && !S.ent) tap(e.clientX, e.clientY);
-    pd = null; S.joy = null; joyEl.style.display = 'none';
+    pd = null;
   };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   cv.addEventListener('wheel', e => { e.preventDefault(); S.distT = clamp(S.distT + Math.sign(e.deltaY) * 1.5, 8, 20); }, { passive: false });
@@ -399,7 +406,7 @@ export function start(o) {
     if (hs.length && (!hg || hs[0].distance < hg.distanceTo(ray.ray.origin))) shop = hs[0].object.userData.shop;
     closeCard();
     if (shop) S.tgt = { x: shop.dx, z: Z_N + .1, shop };
-    else if (hg) S.tgt = { x: clamp(hit.x, BX0, BX1), z: clamp(hit.z, Z_N, Z_S) };
+    else if (hg && S.pt !== 'touch') S.tgt = { x: clamp(hit.x, BX0, BX1), z: clamp(hit.z, Z_N, Z_S) };
   }
   const kd = e => { if (!document.contains(cv)) return; const c = e.key.toLowerCase(); if (/^(arrowleft|arrowright|arrowup|arrowdown|w|a|s|d|q|e)$/.test(c)) { S.keys[c] = 1; if (/^(arrow|w|a|s|d)/.test(c)) S.tgt = null; e.preventDefault(); } };
   const ku = e => { delete S.keys[e.key.toLowerCase()]; };
@@ -436,7 +443,7 @@ export function start(o) {
     probe() { const P = v => { const f = proj(v); return { x: Math.round(f.x), y: Math.round(f.y) }; };
       return { ps: PS, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, tex: renderer.info.memory.textures, me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, yaw: +S.yaw.toFixed(2), talk: S.talk ? S.talk.d.id : null, ent: S.ent ? S.ent.sh.id : null, cardOn: card.classList.contains('on'), cardText: card.textContent,
         npcs: npcs.filter(p => !p.hidden).map(p => Object.assign({ id: p.d.id, state: p.state, kind: p.kind }, P(new Vector3(p.x, p.h * .5, p.z)))), shops: shops.map(s => Object.assign({ id: s.id }, P(new Vector3(s.dx, 1.5, .5)))) }; },
-    resume() { S.ent = null; me.z = 3.2; me.alpha = 1; fade.style.opacity = 0; S.distT = 14; },
+    resume() { S.ent = null; me.z = 3.2; me.alpha = 1; fade.style.opacity = 0; S.distT = 14; joyRest(); },
     dispose,
   };
   function dispose() {
@@ -448,14 +455,14 @@ export function start(o) {
   }
 
   /* ───────── 每幀 ───────── */
-  let cw = 0, ch = 0, dprv = 0, pr = 1, slow = 0, fpsT = 0, fpsN = 0, prCap = 9;
+  let cw = 0, ch = 0, dprv = 0, pr = 1, slow = 0, fpsT = 0, fpsN = 0, prCap = 9, prFloor = .9;
   const fwd = new Vector3(), rgt = new Vector3();
   function resize() {
     const r = cv.getBoundingClientRect(), W = Math.max(1, cv.clientWidth), Hh = Math.max(1, cv.clientHeight), dpr = Math.min(2, window.devicePixelRatio || 1);
     const nps = calcPS(r.height || Hh);
     if (nps !== PS) { PS = nps; people.forEach(q => { q.h = q.h0 * PS; q.w = q.h * q.ar; }); npcs.forEach(q => { if (q.off0) q.off = q.off0.clone().multiplyScalar(PS); }); }
     if (W === cw && Hh === ch && dpr === dprv) return;
-    cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2.2); pr = Math.min(pr, prCap, Math.sqrt(1.3e6 / (W * Hh))); /* 手機上總像素上限約 130 萬，不然高 DPR 手機會卡到人物延遲 */
+    cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2.2); pr = Math.min(pr, Math.sqrt(2e6 / (W * Hh))); prFloor = Math.max(Math.min(pr, .9), pr * .8); pr = Math.max(prFloor, Math.min(pr, prCap)); /* 手機上總像素上限約 130 萬，不然高 DPR 手機會卡到人物延遲 */
     renderer.setPixelRatio(pr); renderer.setSize(W, Hh, false); camera.aspect = W / Hh; camera.updateProjectionMatrix();
   }
   function frame(now) {
@@ -465,7 +472,7 @@ export function start(o) {
     const dt = Math.min(.12, (now - S.last) / 1000); S.last = now; S.t += dt; const t = S.t;
     resize();
     /* 效能自適應：連續太慢就降解析度 */
-    fpsT += dt; fpsN++; if (fpsT > 1) { const avg = fpsT / fpsN; if (avg > .026 && pr > .5) { pr = Math.max(.5, pr * .82); prCap = pr; renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } fpsT = 0; fpsN = 0; }
+    fpsT += dt; fpsN++; if (fpsT > 1) { const avg = fpsT / fpsN; if (avg > .026 && pr > prFloor + .01) { pr = Math.max(prFloor, pr * .88); prCap = pr; renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } fpsT = 0; fpsN = 0; }
     /* 鏡頭轉向 */
     const K = S.keys; if (K.q) S.yawT = clamp(S.yawT + dt * 1.6, -1.3, 1.3); if (K.e) S.yawT = clamp(S.yawT - dt * 1.6, -1.3, 1.3); if (S.camV) S.yawT = clamp(S.yawT + S.camV * dt * 1.6, -1.3, 1.3);
     S.yaw += (S.yawT - S.yaw) * Math.min(1, dt * 7); S.ph += (S.phT - S.ph) * Math.min(1, dt * 7); S.dist += (S.distT - S.dist) * Math.min(1, dt * 5);

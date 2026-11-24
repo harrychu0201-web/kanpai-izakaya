@@ -56,6 +56,9 @@ const CSS = `
 .i3opt{flex:none;min-width:76px;min-height:64px;border:3px solid #3a2a1a;border-radius:14px;background:#fff;color:#3a2a1a;font-weight:800;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px 8px}
 .i3opt i{display:block;width:30px;height:22px;border-radius:7px;border:2px solid #0003}
 .i3opt.on{background:#ffd27a;outline:3px solid #ff9a2a}
+.i3joy{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;background:#ffffff26;border:3px solid #ffffffaa;pointer-events:none;z-index:2;display:none}
+.i3joy i{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:#ffffffe0;box-shadow:0 2px 6px #0004}
+.i3joy.rest{display:block;opacity:.55}.i3joy.on{display:block;opacity:1}
 .i3door{position:absolute;transform:translate(-50%,-100%);z-index:4;border:3px solid #3a2a1a;border-radius:999px;background:#fff8ea;color:#3a2a1a;font-weight:900;font-size:17px;min-height:50px;padding:0 18px;box-shadow:0 4px 0 #0004;display:none;white-space:nowrap;animation:i3bob 1.2s ease-in-out infinite}
 .i3door.on{display:block}.i3door.off{background:#e8e2d4;color:#7a6a5a}
 .i3door:after{content:'';position:absolute;left:50%;bottom:-11px;margin-left:-8px;border:8px solid transparent;border-top-color:#3a2a1a}
@@ -321,6 +324,9 @@ export function island(o) {
   const toastEl = U(el('div', 'h3toast'));
   const card = U(el('div', 'h3card'));
   const pan = U(el('div', 'i3pan'));
+  const joyEl = U(el('div', 'i3joy', '<i></i>'));
+  const TOUCH = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || 'ontouchstart' in window;
+  const joyRest = () => { if (S.dead) return; const r = cv.getBoundingClientRect(), rr = root.getBoundingClientRect(); joyEl.style.left = (r.left - rr.left + 110) + 'px'; joyEl.style.top = (r.bottom - rr.top - 110) + 'px'; joyEl.firstChild.style.transform = ''; joyEl.className = 'i3joy' + (TOUCH && S.mode === 'walk' ? ' rest' : ''); };
   const doorBtn = U(el('button', 'i3door')); doorBtn.type = 'button'; doorBtn.dataset.i3 = 'door';
   function toast(s) { toastEl.textContent = s; toastEl.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove('on'), 2400); }
   const S = { dead: false, mode: 'walk', yaw: S0yaw, yawT: S0yaw, pitch: .72, pitchT: .72, dist: 17, distT: 17, tgt: null, keys: {}, t: 0, talk: null, last: performance.now(), hourOff: 0, cam: new Vector3(me.x, 1, me.z) };
@@ -332,7 +338,7 @@ export function island(o) {
     hud.innerHTML = (own ? `<button class="h3b hot" type="button" data-i3="edit"><i>🎨</i>外觀</button>` : '') + `<button class="h3b" type="button" data-i3="home"><i>🏠</i>${own ? '回家' : '他家'}</button><button class="h3b" type="button" data-i3="shopin"><i>🏮</i>${own ? '我的店' : '他的店'}</button>${cb.stats ? `<button class="h3b" type="button" data-i3="stats"><i>📋</i>店況</button>` : ''}<button class="h3b" type="button" data-i3="time"><i>🕐</i>${PHASES[phaseI][1]}</button>`;
   }
   function updInfo() { const h = hourNow(), hh = Math.floor(h), mm = Math.floor((h - hh) * 60); info.innerHTML = `<b>🏝️ ${esc(own ? (D.name ? D.name.replace(/的(小店|家)$/, '') + '的島' : '我的島') : ((o.owner && o.owner.name) || '好友') + '的島')}</b>${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}・${h < 5 || h >= 19.5 ? '夜晚 🌙' : h < 7 ? '清晨 🌅' : h < 16.5 ? '白天 ☀️' : '傍晚 🌇'}`; }
-  hudBtns(); updInfo();
+  hudBtns(); updInfo(); setTimeout(joyRest, 50); window.addEventListener('resize', joyRest);
 
   /* 外觀編輯 */
   let edTab = 'wall';
@@ -341,7 +347,7 @@ export function island(o) {
     const opts = EXO[edTab].map(([v, n]) => { const isC = typeof v === 'string' && v[0] === '#'; return `<button class="i3opt ${String(D.ex[edTab]) === String(v) ? 'on' : ''}" type="button" data-i3="opt" data-v="${v}">${isC ? `<i style="background:${v}"></i>` : ''}${esc(n)}</button>`; }).join('');
     pan.innerHTML = `<div class="h3tabs">${tabs}</div><div class="i3row">${opts}</div>`;
   }
-  function setMode(m) { S.mode = m; closeCard(); S.tgt = null; pan.classList.toggle('on', m === 'edit'); hudBtns(); info.style.display = m === 'edit' ? 'none' : ''; if (m === 'edit') { drawPan(); S.distT = 14; S.pitchT = .5; S.yawT = myHouse.f === 2 ? Math.PI : 0; } else { S.distT = 17; S.pitchT = .72; save(); } }
+  function setMode(m) { S.mode = m; setTimeout(joyRest, 0); closeCard(); S.tgt = null; pan.classList.toggle('on', m === 'edit'); hudBtns(); info.style.display = m === 'edit' ? 'none' : ''; if (m === 'edit') { drawPan(); S.distT = 14; S.pitchT = .5; S.yawT = myHouse.f === 2 ? Math.PI : 0; } else { S.distT = 17; S.pitchT = .72; save(); } }
   let saveT = 0; function save() { if (!own) return; clearTimeout(saveT); saveT = setTimeout(() => { try { cb.save && cb.save(D); } catch (_) { } }, 500); }
 
   /* 對話卡 */
@@ -393,14 +399,18 @@ export function island(o) {
   const proj = v => { const q = v.clone().project(camera), r = rect(); return { x: (q.x + 1) / 2 * r.width + r.left, y: (1 - q.y) / 2 * r.height + r.top }; };
   const ptrs = new Map(); let pd = null, pinch = null;
   cv.addEventListener('contextmenu', e => e.preventDefault());
-  cv.addEventListener('pointerdown', e => { e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) { } ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  let jd = null;
+  cv.addEventListener('pointerdown', e => { S.pt = e.pointerType; e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) { }
+    if (e.pointerType === 'touch' && !jd && S.mode === 'walk' && !S.ent) { const r = rect(); if (e.clientX - r.left < r.width * .45) { const rr = root.getBoundingClientRect(); jd = { id: e.pointerId, x: e.clientX, y: e.clientY }; S.tgt = null; joyEl.className = 'i3joy on'; joyEl.style.left = (e.clientX - rr.left) + 'px'; joyEl.style.top = (e.clientY - rr.top) + 'px'; joyEl.firstChild.style.transform = ''; return; } }
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), dist: S.distT, ang: Math.atan2(b.y - a.y, b.x - a.x), yaw: S.yawT }; pd = null; return; }
     pd = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0, yaw0: S.yawT, pit0: S.pitchT }; });
-  cv.addEventListener('pointermove', e => { if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  cv.addEventListener('pointermove', e => { if (jd && e.pointerId === jd.id) { const dx = e.clientX - jd.x, dy = e.clientY - jd.y, d = Math.hypot(dx, dy), R0 = 50, m = Math.min(1, d / R0) / Math.max(d, 1e-6); S.joy = { x: dx * m, y: dy * m }; joyEl.firstChild.style.transform = `translate(${S.joy.x * R0}px,${S.joy.y * R0}px)`; return; }
+    if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch && ptrs.size >= 2) { const [a, b] = [...ptrs.values()]; S.distT = clamp(pinch.dist * pinch.d / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)), 7, 40); S.yawT = pinch.yaw - (Math.atan2(b.y - a.y, b.x - a.x) - pinch.ang); return; }
     if (!pd || pd.id !== e.pointerId) return; const dx = e.clientX - pd.x, dy = e.clientY - pd.y; if (!pd.moved && Math.hypot(dx, dy) > 8) pd.moved = 1; if (!pd.moved) return;
     S.yawT = pd.yaw0 - dx * .007; S.pitchT = clamp(pd.pit0 + dy * .005, .22, 1.3); });
-  const up = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!pd || pd.id !== e.pointerId) return; if (!pd.moved) tap(e.clientX, e.clientY); pd = null; };
+  const up = e => { if (jd && e.pointerId === jd.id) { jd = null; S.joy = null; joyRest(); return; } ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!pd || pd.id !== e.pointerId) return; if (!pd.moved) tap(e.clientX, e.clientY); pd = null; };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   cv.addEventListener('wheel', e => { e.preventDefault(); S.distT = clamp(S.distT + Math.sign(e.deltaY) * 1.6, 7, 40); }, { passive: false });
   const kd = e => { if (!document.contains(cv) || /input|textarea/i.test((e.target && e.target.tagName) || '')) return; const c = e.key.toLowerCase(); if (/^(arrowleft|arrowright|arrowup|arrowdown|w|a|s|d|q|e)$/.test(c)) { S.keys[c] = 1; if (!/^[qe]$/.test(c)) S.tgt = null; e.preventDefault(); } };
@@ -415,7 +425,8 @@ export function island(o) {
       if (u.house || u.shop) { const d = DOORS.find(x => x.h === u.house && u.house || x.s === u.shop && u.shop); closeCard(); if (d) goTo(d.face.x, d.face.z - d.inw * .8); return; }
       if (u.house) { const h = u.house; if (h.own) { infoCard(own ? '我的家' : `${(o.owner && o.owner.name) || '好友'}的家`, D.name || '', own ? '要進屋嗎？裡面可以布置家具、收收銀台的錢。' : '店長在家裡打盹，進去逛逛吧！', `<button class="h3n" type="button" data-i3="enter">🚪 進屋</button>`); goTo(h.door.x, h.door.z); } else { infoCard(h.label, '島上的居民', '門關著，主人好像出去散步了～'); goTo(h.door.x, h.door.z); } return; }
       if (u.shop) { const s = u.shop; if (s.k === 'izakaya') { infoCard(D.name || '居酒屋', own ? '你的店' : `${(o.owner && o.owner.name) || '好友'}的店`, own ? '你的居酒屋：進去可以布置、收收銀台的錢、看客人。' : '進去逛逛吧！', `<button class="h3n" type="button" data-i3="shopin">🏮 進店</button>`); goTo(s.door.x, s.door.z); return; } infoCard(s.n, '店鋪（造景）', '現在是造景，之後可以從這裡直接開店營業。'); goTo(s.door.x, s.door.z); return; } }
-    closeCard(); if (ray.ray.intersectPlane(gplane, hit)) { const pth = findPath(me.x, me.z, hit.x, hit.z); if (pth) S.tgt = { path: pth }; }
+    closeCard(); if (S.pt === 'touch') return; /* 手機用搖桿走，點地面不走 */
+    if (ray.ray.intersectPlane(gplane, hit)) { const pth = findPath(me.x, me.z, hit.x, hit.z); if (pth) S.tgt = { path: pth }; }
   }
 
   /* ───────── 日夜 ───────── */
@@ -447,20 +458,20 @@ export function island(o) {
     teleport(x, z) { me.x = x; me.z = z; S.cam.set(x, 1, z); }, setYaw(y) { S.yaw = S.yawT = y; }, setPitch(p) { S.pitch = S.pitchT = p; }, setDist(d) { S.dist = S.distT = d; }, setHour(h) { PHASES[0][0] = h; lastH = -1; },
   };
   function dispose() { if (S.dead) return; S.dead = true; cancelAnimationFrame(S.raf); clearTimeout(saveT); if (own) { try { cb.save && cb.save(D, true); } catch (_) { } }
-    document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); root.removeEventListener('click', onClick); ui.forEach(e => e.remove());
+    document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); root.removeEventListener('click', onClick); window.removeEventListener('resize', joyRest); ui.forEach(e => e.remove());
     scene.traverse(ob => { if (ob.geometry) ob.geometry.dispose(); const ms = ob.material ? (Array.isArray(ob.material) ? ob.material : [ob.material]) : []; ms.forEach(m => { if (m.map) m.map.dispose(); m.dispose(); }); });
     try { renderer.dispose(); renderer.forceContextLoss(); } catch (_) { } }
 
   /* ───────── 每幀 ───────── */
-  let cw = 0, ch = 0, dprv = 0, pr = 1, fpsT = 0, fpsN = 0;
+  let cw = 0, ch = 0, dprv = 0, pr = 1, prFloor = 1, fpsT = 0, fpsN = 0;
   const fwd = new Vector3(), rgt = new Vector3(), camPos = new Vector3();
   function resize() { const r = cv.getBoundingClientRect(), W = Math.max(1, cv.clientWidth), Hh = Math.max(1, cv.clientHeight), dpr = Math.min(2, window.devicePixelRatio || 1);
     const nps = Math.round(clamp(1.75 - ((r.height || Hh) - 380) / 440 * .6, 1.15, 1.75) * 20) / 20; if (nps !== PS) { PS = nps; people.forEach(q => { q.h = q.h0 * PS; q.w = q.h * q.ar; }); }
-    if (W === cw && Hh === ch && dpr === dprv) return; cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2); pr = Math.min(pr, Math.sqrt(1.6e6 / (W * Hh))); renderer.setPixelRatio(pr); renderer.setSize(W, Hh, false); camera.aspect = W / Hh; camera.updateProjectionMatrix(); }
+    if (W === cw && Hh === ch && dpr === dprv) return; cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2); pr = Math.min(pr, Math.sqrt(2.2e6 / (W * Hh))); prFloor = Math.max(Math.min(pr, .9), pr * .8); renderer.setPixelRatio(pr); renderer.setSize(W, Hh, false); camera.aspect = W / Hh; camera.updateProjectionMatrix(); }
   function frame(now) {
     if (S.dead) return; if (!document.contains(cv)) { dispose(); return; } S.raf = requestAnimationFrame(frame);
     const dt = Math.min(.1, (now - S.last) / 1000); S.last = now; S.t += dt; const t = S.t; resize();
-    fpsT += dt; fpsN++; if (fpsT > 1.5) { if (fpsT / fpsN > .03 && pr > .6) { pr = Math.max(.6, pr * .85); renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } fpsT = 0; fpsN = 0; }
+    fpsT += dt; fpsN++; if (fpsT > 1.5) { const slowF = fpsT / fpsN > .03; if (slowF && renderer.shadowMap.enabled) { renderer.shadowMap.enabled = false; scene.traverse(m => { if (m.material) (Array.isArray(m.material) ? m.material : [m.material]).forEach(x => { x.needsUpdate = true; }); }); } else if (slowF && pr > prFloor + .01) { pr = Math.max(prFloor, pr * .9); renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } fpsT = 0; fpsN = 0; }
     const h = hourNow(); if (Math.abs(h - lastH) > .02) { applyTime(h); lastH = h; updInfo(); }
     const K = S.keys; if (K.q) S.yawT += dt * 1.8; if (K.e) S.yawT -= dt * 1.8;
     S.yaw += (S.yawT - S.yaw) * Math.min(1, dt * 9); S.pitch += (S.pitchT - S.pitch) * Math.min(1, dt * 9); S.dist += (S.distT - S.dist) * Math.min(1, dt * 6);
@@ -469,7 +480,8 @@ export function island(o) {
     me.moving = false;
     if (S.mode === 'walk' && !S.ent) {
       let vx = 0, vz = 0, lim = 1e9; const ix = (K.arrowright || K.d ? 1 : 0) - (K.arrowleft || K.a ? 1 : 0), iy = (K.arrowup || K.w ? 1 : 0) - (K.arrowdown || K.s ? 1 : 0);
-      if (ix || iy) { vx = rgt.x * ix + fwd.x * iy; vz = rgt.z * ix + fwd.z * iy; }
+      if (S.joy && Math.hypot(S.joy.x, S.joy.y) > .15) { vx = rgt.x * S.joy.x - fwd.x * S.joy.y; vz = rgt.z * S.joy.x - fwd.z * S.joy.y; lim = 5 * dt * Math.min(1, Math.hypot(S.joy.x, S.joy.y)); }
+      else if (ix || iy) { vx = rgt.x * ix + fwd.x * iy; vz = rgt.z * ix + fwd.z * iy; }
       else if (S.tgt) { const nx = S.tgt.path[0]; if (!nx) { const fn = S.tgt.fn; S.tgt = null; fn && fn(); } else { const dx = nx[0] - me.x, dz = nx[1] - me.z, d = Math.hypot(dx, dz); if (d < .1) S.tgt.path.shift(); else { vx = dx; vz = dz; lim = d; } } }
       const l = Math.hypot(vx, vz); if (l > .01) { const stp = Math.min(5 * dt, lim), mx = vx / l * stp, mz = vz / l * stp; let moved = false;
         if (!blocked(me.x + mx, me.z + mz, .3)) { me.x += mx; me.z += mz; moved = true; } else if (!blocked(me.x + mx, me.z, .3)) { me.x += mx; moved = true; } else if (!blocked(me.x, me.z + mz, .3)) { me.z += mz; moved = true; }
