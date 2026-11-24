@@ -157,8 +157,13 @@ export function island(o) {
     /* 屋頂 */
     const rc = lam(ex.roofC), top = .35 + HH;
     if (ex.roof === 'flat') { box(HW + .6, .35, HD + .6, rc, 0, top + .17, bz, g); box(HW + .2, .3, HD + .2, '#f4efe2', 0, top + .5, bz, g); box(1, .7, 1, '#9a9a9a', 1.4, top + .9, bz - .6, g); }
-    else if (ex.roof === 'round') { const rr = new Mesh(new CylinderGeometry(HD / 2 + .45, HD / 2 + .45, HW + .5, 24, 1, false, -Math.PI / 2, Math.PI), rc); rr.rotation.set(0, 0, Math.PI / 2); rr.position.set(0, top, bz); rr.castShadow = true; g.add(rr); for (const sx of [-1, 1]) { const cap = new Mesh(new CircleGeometry(HD / 2 + .45, 24, 0, Math.PI), wallM); cap.rotation.y = sx * Math.PI / 2; cap.position.set(sx * (HW / 2 + .26), top, bz); g.add(cap); } }
-    else if (ex.roof === 'hip') { const p = new Mesh(new ConeGeometry((HW + .9) / Math.SQRT2 * 1.0, 1.9, 4), rc); p.rotation.y = Math.PI / 4; p.scale.set(1, 1, (HD + .9) / (HW + .9)); p.position.set(0, top + .95, bz); p.castShadow = true; g.add(p); }
+    else if (ex.roof === 'round') { const rr = new Mesh(new CylinderGeometry(HD / 2 + .45, HD / 2 + .45, HW + .5, 24, 1, false, 0, Math.PI), rc); rr.rotation.set(0, 0, Math.PI / 2); rr.scale.set(.72, 1, 1); rr.position.set(0, top, bz); rr.castShadow = true; g.add(rr); for (const sx of [-1, 1]) { const cap = new Mesh(new CircleGeometry(HD / 2 + .45, 24, 0, Math.PI), wallM); cap.rotation.y = sx * Math.PI / 2; cap.scale.set(1, .72, 1); cap.position.set(sx * (HW / 2 + .251), top, bz); g.add(cap); } }
+    else if (ex.roof === 'hip') { const a = (HW + .9) / 2, b = (HD + .9) / 2, rh = 1.7, rl = Math.max(.3, a - b), P = (x, y, z) => [x, y, z];
+      const c1 = P(-a, 0, b), c2 = P(a, 0, b), c3 = P(a, 0, -b), c4 = P(-a, 0, -b), r1 = P(-rl, rh, 0), r2 = P(rl, rh, 0);
+      const tri = [c1, c2, r2, c1, r2, r1, /* 前 */ c3, c4, r1, c3, r1, r2, /* 後 */ c2, c3, r2, /* 右 */ c4, c1, r1 /* 左 */];
+      const hg = new BufferGeometry(); hg.setAttribute('position', new Float32BufferAttribute(tri.flat(), 3)); hg.computeVertexNormals();
+      const p = new Mesh(hg, rc.clone()); p.material.side = DoubleSide; p.position.set(0, top - .05, bz); p.castShadow = true; g.add(p);
+      box(2 * a, .12, 2 * b, '#f4efe2', 0, top - .02, bz, g).castShadow = false; }
     else { const sh = new Shape(); const hw = HD / 2 + .5; sh.moveTo(-hw, 0); sh.lineTo(0, 1.9); sh.lineTo(hw, 0); sh.lineTo(-hw, 0); const eg = new ExtrudeGeometry(sh, { depth: HW + .6, bevelEnabled: false }); eg.translate(0, 0, -(HW + .6) / 2); const rm = new Mesh(eg, [rc, rc]); rm.rotation.y = Math.PI / 2; rm.position.set(0, top - .05, bz); rm.castShadow = true; g.add(rm);
       const gsh = new Shape(); gsh.moveTo(-HD / 2, 0); gsh.lineTo(0, 1.55); gsh.lineTo(HD / 2, 0); const gm = new Mesh(new ShapeGeometry(gsh), wallM); gm.rotation.y = Math.PI / 2; for (const sx of [-1, 1]) { const q = gm.clone(); q.rotation.y = sx * Math.PI / 2; q.position.set(sx * (HW / 2 + .001), top, bz); g.add(q); }
       const rw = new Mesh(new CircleGeometry(.35, 20), winMat('#bfe6ff')); rw.position.set(0, top + .5, bz + HD / 2 + .02); g.add(rw); }

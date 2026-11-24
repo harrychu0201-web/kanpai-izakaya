@@ -2256,9 +2256,13 @@ def sc_home3d(b, base):
         c.click('.home3 [data-h3=exit]', wait=300)
         i3_wait(c, '從屋裡出門')
         # 關掉再打開：布置、外觀都還在
+        bb = c.page.locator('.home3 [data-act=h3back]').bounding_box()
+        if not bb or bb['height'] < 44 or bb['width'] < 44 or '回首頁' not in c.page.locator('.home3 [data-act=h3back]').inner_text():
+            raise AssertionError('右上角應該是「回首頁」按鈕（實際 px 至少 44）：%s' % bb)
         c.click('.home3 [data-act=h3back]', wait=600)
-        if not c.has('#coopmark'):
-            raise AssertionError('關掉我的店之後沒有回到多人模式面板')
+        if c.has('.home3') or not c.page.evaluate("HOME===true&&!document.querySelector('#modalLayer .modal')"):
+            raise AssertionError('按右上角「回首頁」之後沒有回到遊戲首頁')
+        c.page.evaluate("coopPanel()"); c.page.wait_for_timeout(400)
         c.click('.modal [data-act=h3open]', wait=300)
         ip = i3_wait(c, '再打開我的島')
         if ip['ex'].get('roof') != 'round':
@@ -2268,6 +2272,7 @@ def sc_home3d(b, base):
             raise AssertionError('關掉再打開，剛剛擺的行燈不見了')
         c.page.screenshot(path='/tmp/check-home3d.png')
         c.click('.home3 [data-act=h3back]', wait=600)
+        c.page.evaluate("coopPanel()"); c.page.wait_for_timeout(400)
         # 示範店：點店長 → 去留言
         c.click('.modal [data-act=h3demo]', wait=300)
         i3_wait(c, '逛示範島')
