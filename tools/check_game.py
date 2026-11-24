@@ -2139,6 +2139,24 @@ def sc_home3d(b, base):
         ip2 = c.page.evaluate("(()=>{const p=HOME3.probe();delete p.npcs;return p})()")
         if abs(ip2['yaw'] - y0) < .3 or ip2['me'] != ip['me']:
             raise AssertionError('島上拖曳沒有轉鏡頭（或角色跑掉了）：yaw %s→%s me %s→%s' % (y0, ip2['yaw'], ip['me'], ip2['me']))
+        # 廣場中間：沿著噴水池斜角繞圈（真實按鍵）不能卡住（2026/11/24 噴水池用方形碰撞，斜角處走不動）
+        for sx, sz, keys in [(-3.2, -3.2, ['w', 'd']), (3.2, 3.2, ['s', 'a']), (3.2, -3.2, ['s', 'd'])]:
+            c.page.evaluate("HOME3.teleport(%s,%s);HOME3.setYaw(0)" % (sx, sz)); c.page.wait_for_timeout(300)
+            p0 = c.page.evaluate("HOME3.probe().me")
+            for k in keys: c.page.keyboard.down(k)
+            c.page.wait_for_timeout(900)
+            for k in keys: c.page.keyboard.up(k)
+            c.page.wait_for_timeout(200)
+            p1 = c.page.evaluate("HOME3.probe().me")
+            if ((p1['x'] - p0['x']) ** 2 + (p1['z'] - p0['z']) ** 2) ** .5 < 1.5:
+                raise AssertionError('廣場噴水池旁按 %s 走不動（卡住）：%s → %s' % ('+'.join(keys), p0, p1))
+        # 側邊長椅（轉 90 度）旁邊要能沿著長椅走過去，不能被看不見的牆擋住
+        c.page.evaluate("HOME3.teleport(-5.5,1.6);HOME3.setYaw(0)"); c.page.wait_for_timeout(300)
+        p0 = c.page.evaluate("HOME3.probe().me"); c.page.keyboard.down('a'); c.page.wait_for_timeout(500); c.page.keyboard.up('a'); c.page.wait_for_timeout(200)
+        p1 = c.page.evaluate("HOME3.probe().me")
+        if p0['x'] - p1['x'] < 1.2:
+            raise AssertionError('廣場左側長椅後面有看不見的牆（往左走不過去）：%s → %s' % (p0, p1))
+        c.page.evaluate("HOME3.teleport(0,11.5)"); c.page.wait_for_timeout(300)
         # 房子外觀：換成圓拱屋頂、藍色牆
         c.click('.home3 [data-i3=edit]', wait=600)
         c.click('.home3 [data-i3=tab][data-k=roof]', wait=200)

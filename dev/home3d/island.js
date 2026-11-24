@@ -237,9 +237,11 @@ export function island(o) {
   SHOPS.forEach(shopBuild);
   /* 樹、路燈、長椅、海邊 */
   const solids = [];   // 擋路的方塊 [x1,z1,x2,z2]
+  const solidC = [];   // 擋路的圓 [x,z,r]（噴水池、花壇：圓的東西用圓形碰撞，才不會在斜角卡住）
   houseObjs.forEach(h => { solids.push([h.x - HW / 2 - .2, h.z - (h.f === 2 ? -.6 : .6) - HD / 2 - .2, h.x + HW / 2 + .2, h.z - (h.f === 2 ? -.6 : .6) + HD / 2 + .2]); });
   SHOPS.forEach(s => solids.push([s.x - 3.5, s.z - 3, s.x + 3.5, s.z + 2.4]));
-  solids.push([-3.6, -3.6, 3.6, 3.6]);
+  solidC.push([0, 0, 3.6]);
+  for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + .26; solidC.push([Math.cos(a) * 6.6, Math.sin(a) * 6.6, .7]); }
   function tree(x, z, s, kind) { const g = new Group(); g.position.set(x, 0, z); g.scale.setScalar(s); scene.add(g);
     if (kind === 'palm') { let px = 0, py = 0; for (let i = 0; i < 6; i++) { const seg = cyl(.22 - i * .02, .26 - i * .02, .8, '#a07850', px, py + .4, 0, g, 8); seg.rotation.z = -.08 * i; px += .06 * i; py += .78; } for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2; const lf = new Mesh(new ConeGeometry(.32, 2.6, 4), lam('#3fa04a', { flatShading: true })); lf.scale.z = .25; lf.position.set(px + Math.cos(a) * 1.1, py + .1, Math.sin(a) * 1.1); lf.rotation.set(Math.sin(a) * 1.6, 0, -Math.cos(a) * 1.6); lf.castShadow = true; g.add(lf); } sph(.18, '#6a4a2a', px, py - .1, .1, g); }
     else { cyl(.22, .3, 1.8, '#8a5a3a', 0, .9, 0, g, 8); sph(1.5, kind === 'pink' ? '#f4a8c0' : '#58b84a', 0, 2.8, 0, g, 1, .9, 1, true); sph(1.0, kind === 'pink' ? '#f8c0d0' : '#6ac85a', .8, 2.4, .4, g, 1, 1, 1, true); sph(.9, kind === 'pink' ? '#f094b0' : '#4aa83c', -.7, 2.3, -.3, g, 1, 1, 1, true); }
@@ -251,7 +253,7 @@ export function island(o) {
   [[8, 12.2], [-8, 12.2]].forEach(([x, z]) => tree(x, z, .8, 'pink'));
   function lampPost(x, z) { const g = new Group(); g.position.set(x, 0, z); scene.add(g); cyl(.09, .12, 3.6, '#3a3a44', 0, 1.8, 0, g, 8); const hd = sph(.28, bas('#fff4d0'), 0, 3.7, 0, g); cyl(.3, .2, .12, '#3a3a44', 0, 3.98, 0, g, 10); glowS(0, 3.7, 0, 5, g); const pool = new Mesh(new CircleGeometry(3, 20), new MeshBasicMaterial({ map: GLOW, transparent: true, blending: AdditiveBlending, depthWrite: false, opacity: 0 })); pool.rotation.x = -Math.PI / 2; pool.position.y = .08; g.add(pool); lamps.push(pool); pool.userData.k = .35; solids.push([x - .2, z - .2, x + .2, z + .2]); }
   for (const [x, z] of [[-6.2, 6.2], [6.2, 6.2], [-6.2, -6.2], [6.2, -6.2], [-20, 2.6], [20, 2.6], [-20, -2.6], [20, -2.6], [-31, 2.6], [31, -2.6], [-12, -15.4], [12, -15.4], [-12, 18.6], [12, 18.6], [2.6, -12], [-2.6, 11]]) lampPost(x, z);
-  function bench(x, z, ry) { const g = new Group(); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g); box(2, .12, .55, '#b8824a', 0, .5, 0, g); box(2, .5, .1, '#b8824a', 0, .85, -.25, g); for (const sx of [-.85, .85]) { box(.1, .5, .5, '#3a3a44', sx, .25, 0, g); } solids.push([x - 1, z - .4, x + 1, z + .4]); return g; }
+  function bench(x, z, ry) { const g = new Group(); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g); box(2, .12, .55, '#b8824a', 0, .5, 0, g); box(2, .5, .1, '#b8824a', 0, .85, -.25, g); for (const sx of [-.85, .85]) { box(.1, .5, .5, '#3a3a44', sx, .25, 0, g); } const rot = Math.abs(Math.sin(ry)) > .7, hx = rot ? .4 : 1, hz = rot ? 1 : .4; solids.push([x - hx, z - hz, x + hx, z + hz]); return g; }
   bench(0, 6.9, Math.PI); bench(0, -6.9, 0); bench(-6.9, 0, Math.PI / 2); bench(6.9, 0, -Math.PI / 2);
   /* 告示板 */
   const notice = new Group(); notice.position.set(4.6, 0, -4.6); notice.rotation.y = -Math.PI / 4; scene.add(notice);
@@ -285,7 +287,7 @@ export function island(o) {
 
   /* ───────── 碰撞、找路 ───────── */
   function inIsland(x, z) { const ax = Math.abs(x), az = Math.abs(z), W = IX + SAND - 1, Hh = IZ + SAND - 1, r = 14; if (x >= PIER[0] && x <= PIER[2] && z >= PIER[1] && z <= PIER[3]) return true; if (ax > W || az > Hh) return false; if (ax > W - r && az > Hh - r) return Math.hypot(ax - (W - r), az - (Hh - r)) < r; return true; }
-  function blocked(x, z, rad) { if (!inIsland(x, z)) return true; for (const b of solids) if (x > b[0] - rad && x < b[2] + rad && z > b[1] - rad && z < b[3] + rad) return true; return false; }
+  function blocked(x, z, rad) { if (!inIsland(x, z)) return true; for (const b of solids) if (x > b[0] - rad && x < b[2] + rad && z > b[1] - rad && z < b[3] + rad) return true; for (const c of solidC) if (Math.hypot(x - c[0], z - c[1]) < c[2] + rad) return true; return false; }
   const CELL = 1, GX0 = -IX - SAND, GZ0 = -IZ - SAND, GW = Math.ceil((IX + SAND) * 2), GH = Math.ceil((IZ + SAND) * 2 + 16);
   let grid = null;
   function buildGrid() { grid = new Uint8Array(GW * GH); for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) grid[j * GW + i] = blocked(GX0 + i + .5, GZ0 + j + .5, .35) ? 1 : 0; }
@@ -485,6 +487,7 @@ export function island(o) {
       else if (S.tgt) { const nx = S.tgt.path[0]; if (!nx) { const fn = S.tgt.fn; S.tgt = null; fn && fn(); } else { const dx = nx[0] - me.x, dz = nx[1] - me.z, d = Math.hypot(dx, dz); if (d < .1) S.tgt.path.shift(); else { vx = dx; vz = dz; lim = d; } } }
       const l = Math.hypot(vx, vz); if (l > .01) { const stp = Math.min(5 * dt, lim), mx = vx / l * stp, mz = vz / l * stp; let moved = false;
         if (!blocked(me.x + mx, me.z + mz, .3)) { me.x += mx; me.z += mz; moved = true; } else if (!blocked(me.x + mx, me.z, .3)) { me.x += mx; moved = true; } else if (!blocked(me.x, me.z + mz, .3)) { me.z += mz; moved = true; }
+        else { for (const da of [.6, -.6, 1.2, -1.2]) { const c = Math.cos(da), s = Math.sin(da), rx = (mx * c - mz * s) * .8, rz = (mx * s + mz * c) * .8; if (!blocked(me.x + rx, me.z + rz, .3)) { me.x += rx; me.z += rz; moved = true; break; } } }
         if (moved) { S.mvz = mz / Math.max(1e-6, Math.hypot(mx, mz)); me.moving = true; me.ph += dt * 10; const sd = (vx / l) * rgt.x + (vz / l) * rgt.z; if (Math.abs(sd) > .2) me.face = sd > 0 ? 1 : -1; } else if (S.tgt) { S.tgt.stuck = (S.tgt.stuck || 0) + dt; if (S.tgt.stuck > .5) { const fn = S.tgt.fn; S.tgt = null; fn && fn(); } }
         if (S.talk && Math.hypot(S.talk.x - me.x, S.talk.z - me.z) > 9) closeCard(); }
     }
