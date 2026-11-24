@@ -23,7 +23,7 @@
 ## 改版流程（固定順序，不跳步）
 ```
 1. 改程式
-2. tools/check.sh          # 語法 + 版本號 + 遊戲檢查，整套全綠才能往下（約 3 分鐘）
+2. tools/check.sh          # 語法 + 版本號 + 遊戲檢查，整套全綠才能往下（快的機器約 3 分鐘，慢的可到 25 分鐘；沒有逾時，等它跑完。工具單次呼叫上限 10 分鐘，所以要放背景跑：`tools/check.sh > /tmp/check.log 2>&1 &`，再定時看 log）
 3. tools/bump_sw.sh        # sw.js CACHE = 遠端 main 版本 + 1（以遠端為準，避免跟另一個對話撞號）
 4. git commit、push 到 main
 5. tools/verify_live.sh    # 線上 sw.js 版本與 index.html 都和本機一致才算上線

@@ -30,18 +30,10 @@ fi
 if [ "$FAST" -eq 1 ]; then
   echo "▶ 3/3 遊戲檢查：--fast 模式，略過（只驗了語法與版本號）"
 else
-  echo "▶ 3/3 遊戲檢查（headless Chrome・真實點擊；約 3 分鐘）"
-  # 逾時保護：正常約 3 分鐘；超過 8 分鐘就是卡住了（常見：殘留的 chrome 程序），直接砍掉並判失敗，不要無限等。
+  echo "▶ 3/3 遊戲檢查（headless Chrome・真實點擊；視機器快慢約 3～25 分鐘，慢的機器月影酒吧情境就要 6 分鐘，不設逾時、跑完為止）"
+  # 開跑前先清掉殘留的 chrome 程序（不然頁面載入會卡住）。不設逾時：以前 8 分鐘逾時會把慢機器上正常在跑的檢查砍掉，重跑也一樣被砍，白白浪費時間。
   pkill -f 'chrome.*--headless' >/dev/null 2>&1 || true
-  timeout --foreground -k 10 480 python3 -I tools/check_game.py
-  rc=$?
-  if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
-    echo "  ✗ check_game.py 超過 8 分鐘沒跑完，判定卡住並中止（殘留 chrome 已清）。重跑一次；再卡就用 --fast 並回報使用者 check_game 卡住。"
-    pkill -f 'chrome.*--headless' >/dev/null 2>&1 || true
-    fail=1
-  elif [ "$rc" -ne 0 ]; then
-    fail=1
-  fi
+  python3 -u -I tools/check_game.py || fail=1
 fi
 
 if [ "$fail" -ne 0 ]; then echo; echo "❌ check.sh 失敗：修好後整套重跑，全綠才能 push。"; exit 1; fi
