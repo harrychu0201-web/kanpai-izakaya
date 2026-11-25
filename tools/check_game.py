@@ -2356,6 +2356,9 @@ def sc_chrestart(b, base):
         c.click('[data-act=chopen]', wait=500)
         c.click('.modal [data-act=chstart]', wait=3000)
         c.expect_clean('開始無限挑戰')
+        # 2026/11/25：開始無限挑戰先到選店對話框，要按「開店營業」才真正進營業
+        if c.page.evaluate("!!document.querySelector('.modal [data-act=start]')"):
+            c.click('.modal [data-act=start]', wait=1000)
         if not c.page.evaluate('chOn()&&!!R'):
             raise AssertionError('按了標準挑戰，但沒有進入無限挑戰營業' + c.diag())
         c.page.evaluate("chStrike('測試失誤')")
@@ -2365,9 +2368,23 @@ def sc_chrestart(b, base):
         c.click('[data-act=pause]', wait=500)
         c.click('.modal [data-act=quit]', wait=3000)
         c.expect_clean('無限挑戰暫停 → 重新開始')
-        res = c.page.evaluate("({on:chOn(),strikes:CHG&&CHG.strikes,day:ST.day,coins:ST.coins,sec:CHG&&CHG.sec,hasR:!!R,modal:!!document.querySelector('.modal'),pill:(document.querySelector('.pill.ch')||{}).textContent||''})")
-        if not res['on'] or res['strikes'] != 0 or res['day'] != 1 or res['coins'] != 3000 or res['sec'] > 5 or not res['hasR'] or res['modal'] or '0/3' not in res['pill']:
-            raise AssertionError('無限挑戰「重新開始」後沒有歸零：%s' % res)
+        # 2026/11/25 玩家回報：重新開始後不能選其它店家。現在應該先到選店對話框（和打烊後一樣），不是直接開居酒屋
+        res = c.page.evaluate("({on:chOn(),strikes:CHG&&CHG.strikes,day:ST.day,coins:ST.coins,sec:CHG&&CHG.sec,hasR:!!R,hasStart:!!document.querySelector('.modal [data-act=start]'),shops:document.querySelectorAll('.modal .shopc').length,pill:(document.querySelector('.pill.ch')||{}).textContent||''})")
+        if not res['on'] or res['strikes'] != 0 or res['day'] != 1 or res['coins'] != 3000 or res['sec'] > 5 or not res['hasStart'] or res['shops'] < 1:
+            raise AssertionError('無限挑戰「重新開始」後沒有回到選店對話框：%s' % res)
+        # 能真的換店：挑一家不是居酒屋、可以點的店，點了之後目前店要跟著換
+        other = c.page.evaluate("(()=>{const b=[...document.querySelectorAll('.modal .shopc[data-act=where]:not(.lock)')].map(x=>x.dataset.id).find(i=>i!=='iz');return b||null})()")
+        if other:
+            c.click('.modal .shopc[data-act=where][data-id="%s"]' % other, wait=600)
+            cur = c.page.evaluate("CUR")
+            if cur != other:
+                raise AssertionError('無限挑戰重新開始後點了其它店（%s），目前店沒有換：CUR=%s' % (other, cur) + c.diag())
+            c.click('.modal [data-act=start]', wait=800)
+        else:
+            c.click('.modal [data-act=start]', wait=800)
+        res2 = c.page.evaluate("({on:chOn(),strikes:CHG&&CHG.strikes,day:ST.day,coins:ST.coins,sec:CHG&&CHG.sec,hasR:!!R,modal:!!document.querySelector('.modal'),pill:(document.querySelector('.pill.ch')||{}).textContent||'',dl:DAYLEN})")
+        if not res2['on'] or res2['strikes'] != 0 or res2['day'] != 1 or res2['coins'] != 3000 or res2['sec'] > 5 or not res2['hasR'] or res2['modal'] or '0/3' not in res2['pill'] or abs(res2['dl'] - 159*24/8.5) > 0.01:
+            raise AssertionError('無限挑戰「開店營業」後狀態不對（應該歸零、營業時間為無限挑戰長度）：%s' % res2)
         c.page.evaluate("chQuit()")
     finally:
         c.close()

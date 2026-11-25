@@ -1124,7 +1124,8 @@ function chStart(hard){ARCTOWN=null;if(CHG)chQuit();LB.ch=0;CHEND='';
   ST=Object.assign(load()||fresh(),{day:1,coins:3000,debt:0,loans:0,dues:[],stars:{},where:'iz',pendingNext:false,pre:null});
   delete ST.today;delete ST.past;
   closeModal();closeHome();R=null;setCur('iz');
-  pickToday();startDay();DAYLEN=159*24/8.5;goFS();playReset();refitBurst();
+  /* 2026-11-25 玩家回報：重新開始後不能選其它店家。這裡改回先到選店對話框（和一般打烊後一樣），由「開店營業」按鈕才真正開始營業（DAYLEN 在 start 按鈕裡設定） */
+  pickToday();showDayIntro();
   toast(T(hard?'極限挑戰開始！禁用店員和道具':'無限挑戰開始！三次失誤就結束'))}
 function showChallenge(){const r=loadRec();
   modal(`<h2>♾️ ${T('無限挑戰')}</h2><p>${T('店不打烊，一直營業下去。三次失誤就結束，排行榜比的是營業時間（暫停和選單的時間不算）。')}</p>
@@ -6686,7 +6687,7 @@ document.addEventListener('click',e=>{
   else if(act==='calendar')showCalendar();
   else if(act==='closem'){if(SETBACK){showSndModal(false);return}closeModal();if(FR.dirty){FR.dirty=0;showHome()}}
   else if(act==='chopen')showChallenge();else if(act==='chstart')chStart(false);else if(act==='chstarth')chStart(true);else if(act==='home')showHome();
-  else if(act==='start'){goFS();startDay();playReset();refitBurst();let seen=false;try{seen=localStorage.getItem('izakaya-iostip')==='1'}catch(e){}if(IOS&&!STANDALONE&&!seen)setTimeout(()=>{if(R&&!TUT)iosTip()},400)}
+  else if(act==='start'){goFS();startDay();if(chOn())DAYLEN=159*24/8.5;playReset();refitBurst();let seen=false;try{seen=localStorage.getItem('izakaya-iostip')==='1'}catch(e){}if(IOS&&!STANDALONE&&!seen)setTimeout(()=>{if(R&&!TUT)iosTip()},400)}
   else if(act==='iostipok'){closeModal();if(R&&IOSTIPR)R.paused=false;IOSTIPR=false;try{localStorage.setItem('izakaya-iostip','1')}catch(e){}}
   else if(act==='next'||act==='back'){if(SHOPHOME){SHOPHOME=false;showHome()}else advance(1)}
   else if(act==='retry'){ST.pendingNext=false;save();showDayIntro()}
