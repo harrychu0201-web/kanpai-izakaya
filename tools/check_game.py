@@ -2353,10 +2353,48 @@ def sc_chrestart(b, base):
         c.close()
 
 
+def sc_homekeep(b, base):
+    """家（我的島）的存檔保險：①舊存檔（本機）重新整理／再開一次，件數一件都不能少；②覆蓋前會自動備份，
+    被「變少」的存檔蓋掉後，備份還在、能真實點擊「還原備份」救回來。"""
+    c = Ctx(b, base).open()
+    try:
+        c.dismiss_modals()
+        c.page.evaluate("CL.user={email:ADMIN_EMAIL,uid:'h3-admin',name:'Author Check',photo:''};if(!FB_CONFIG)window.FB_CONFIG=true;const r=loadRec();r.nick='測試員';saveRec(r)")
+        # 種一份有 30 件的舊存檔（用 Home3D 的預設再多放幾件）
+        c.page.evaluate("FR.data={fl:{},on:{}};FR.t=Date.now();coopPanel()"); c.page.wait_for_timeout(400)
+        c.click('.modal [data-act=h3open]', wait=300); i3_wait(c, 'island')
+        c.click('.home3 [data-act=h3back]', wait=800)
+        n0 = c.page.evaluate("""(()=>{const d=JSON.parse(localStorage.getItem('izakaya-home-v1'));d.home=Home3D.freshHomeInterior();d.home.it.push(['books',2,6,0],['laptop',5,3,0],['armchair',3,5,0]);d.at=Date.now();
+          localStorage.setItem('izakaya-home-v1',JSON.stringify(d));return homeCount(d)})()""")
+        c.page.reload(); c.page.wait_for_timeout(1500); c.dismiss_modals()
+        n1 = c.page.evaluate("homeCount(homeLocal())")
+        if n1 != n0:
+            raise AssertionError('重新整理後家的存檔件數變了：%s → %s' % (n0, n1))
+        # 用「變少」的存檔蓋掉（模擬壞更新／空白存檔）
+        c.page.evaluate("homeSave({v:1,name:'x',it:[],inv:{},home:{v:1,it:[['tv',1,0,0]],inv:{}}},true)")
+        if c.page.evaluate("homeCount(homeLocal())") >= n0:
+            raise AssertionError('測試前提錯誤：存檔沒有變少')
+        bak = c.page.evaluate("homeBakList().map(x=>homeCount(x.d))")
+        if n0 not in bak:
+            raise AssertionError('覆蓋後找不到完整備份：%s（原本 %s 件）' % (bak, n0))
+        c.page.evaluate("CL.user={email:ADMIN_EMAIL,uid:'h3-admin',name:'Author Check',photo:''};if(!FB_CONFIG)window.FB_CONFIG=true;FR.data={fl:{},on:{}};FR.t=Date.now();coopPanel()"); c.page.wait_for_timeout(400)
+        if not c.has('.modal [data-act=h3bak]'):
+            raise AssertionError('有備份但看不到「還原備份」按鈕')
+        c.click('.modal [data-act=h3bak]', wait=300)
+        c.click('.modal [data-act=h3bakgo][data-i="0"]', wait=600)
+        n2 = c.page.evaluate("homeCount(homeLocal())")
+        if n2 != n0:
+            raise AssertionError('按「還原備份」後件數不對：%s（應該 %s）' % (n2, n0))
+        if c.errors:
+            raise AssertionError('頁面錯誤：%s' % c.errors[:3])
+    finally:
+        c.close()
+
+
 SCENARIOS = [('chrestart', sc_chrestart), ('fblogin', sc_fblogin), ('coicons', sc_coicons), ('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves), ('keepbak', sc_keepbak),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barnew', sc_barnew), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
-             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d)]
+             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d), ('homekeep', sc_homekeep)]
 
 
 def main():

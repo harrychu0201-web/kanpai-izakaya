@@ -6617,6 +6617,9 @@ document.addEventListener('click',e=>{
   else if(act==='frsort'){FR.sort=a.dataset.id;frDraw()}
   else if(act==='frvisit'){if(homeDev())homeOpen(a.dataset.id);else showVisit(a.dataset.id)}
   else if(act==='frstats'){if(HOME3)HOME3.dead=1;HOME3=null;HOMEBACK=null;showVisit(a.dataset.id)}
+  else if(act==='h3bak'){const L=homeBakList();modal(`<h2>還原我的島備份</h2><p>選一份還原（會取代目前的布置，目前這份會先自動備份）</p><div class="btns">${L.map((x,i)=>`<button class="btn${i?' alt':''}" data-act="h3bakgo" data-i="${i}">${i?'上一次存檔':'擺最多的那份'}・${homeCount(x.d)} 件・${new Date(x.t).toLocaleString('zh-TW',{hour12:false})}</button>`).join('')}<button class="btn alt" data-act="closem">取消</button></div>`)}
+  else if(act==='h3bakgo'){const x=homeBakList()[+a.dataset.i];if(x){const cur=homeLocal();if(cur&&homeCount(cur)){try{const b=JSON.parse(localStorage.getItem(HOME_BAK)||'{}')||{};b.prev={t:Date.now(),d:cur};lsSet(HOME_BAK,JSON.stringify(b))}catch(e){}}
+      lsSet(HOME_KEY,JSON.stringify(Object.assign({},x.d,{at:Date.now()})));toast('已還原');closeModal();showHome()}}
   else if(act==='h3open')homeOpen(null);else if(act==='h3demo')homeOpen('demo');else if(act==='h3visit')homeOpen(a.dataset.id);else if(act==='h3back'){HOMEBACK=null;if(HOME3)HOME3.dead=1;HOME3=null;showHome()}
   else if(act==='frgift')frGift(a.dataset.id);
   else if(act==='frgiftall')frGiftAll();
@@ -8500,14 +8503,21 @@ function showVisit(uid){const D=FR.data;if(!D)return;FR.view=uid;const x=D.lbs[u
 const HOME_KEY='izakaya-home-v1',HOME_GIFT='izakaya-home-gift';
 let HOME3=null,HOMEBACK=null,H3P=null,HOME_CLOUD_WARN=false;
 function homeDev(){try{return !pview()&&canView()}catch(e){return false}}
-function homeRow(){if(!homeDev())return '';return `<div class="lbme" style="flex-wrap:wrap;gap:8px"><span style="flex:1 1 100%">🏝️ <b>我的島</b>（3D・測試中，只有作者和管理員看得到）<br><small>在島上散步、設計自己房子的外觀、進屋布置；走進好友的島逛逛、留言送小禮物</small></span><button class="btn" data-act="h3open">去我的島</button><button class="btn alt" data-act="h3demo">逛示範島</button></div>`}
+function homeRow(){if(!homeDev())return '';return `<div class="lbme" style="flex-wrap:wrap;gap:8px"><span style="flex:1 1 100%">🏝️ <b>我的島</b>（3D・測試中，只有作者和管理員看得到）<br><small>在島上散步、設計自己房子的外觀、進屋布置；走進好友的島逛逛、留言送小禮物</small></span><button class="btn" data-act="h3open">去我的島</button><button class="btn alt" data-act="h3demo">逛示範島</button>${homeBakList().length?'<button class="btn alt" data-act="h3bak">還原備份</button>':''}</div>`}
 function loadHome3D(){if(window.Home3D)return Promise.resolve();if(H3P)return H3P;
   H3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/home3d-02457603.js';s.onload=()=>ok();s.onerror=()=>{H3P=null;no(new Error('home3d'))};document.head.appendChild(s)});return H3P}
 function homeLocal(){try{return JSON.parse(localStorage.getItem(HOME_KEY)||'null')}catch(e){return null}}
 function homeNick(){const e=lbEntry();return (e&&e.name)||(loadRec().nick)||'我'}
 async function homeCloudGet(uid){if(!CL.api||!CL.api.homeGet)return null;try{const v=await Promise.race([CL.api.homeGet(uid),new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),5000))]);if(!v||!v.v)return null;const d=JSON.parse(v.v);d.at=v.at||0;return d}catch(e){console.warn('home get',e);return null}}
 let homePutT=0;
-function homeSave(d,now){const o=Object.assign({},d,{at:Date.now()});lsSet(HOME_KEY,JSON.stringify(o));
+const HOME_BAK='izakaya-home-bak';
+function homeCount(d){return d?((d.it||[]).length+((d.home&&d.home.it)||[]).length):0}
+/* 覆蓋前先留備份：bak.max＝歷來擺最多的一份（永不被變少的存檔蓋掉）、bak.prev＝上一次存檔（每 10 分鐘最多換一次） */
+function homeBackup(newD){try{const cur=homeLocal();if(!cur||!homeCount(cur))return;let b={};try{b=JSON.parse(localStorage.getItem(HOME_BAK)||'{}')||{}}catch(e){}
+  const now=Date.now();if(!b.max||homeCount(cur)>=homeCount(b.max.d))b.max={t:now,d:cur};
+  if(!b.prev||now-b.prev.t>6e5)b.prev={t:now,d:cur};lsSet(HOME_BAK,JSON.stringify(b))}catch(e){console.warn('home bak',e)}}
+function homeBakList(){try{const b=JSON.parse(localStorage.getItem(HOME_BAK)||'{}')||{};return [b.max,b.prev].filter(x=>x&&x.d&&homeCount(x.d))}catch(e){return []}}
+function homeSave(d,now){homeBackup(d);const o=Object.assign({},d,{at:Date.now()});lsSet(HOME_KEY,JSON.stringify(o));
   if(!CL.user||!CL.api||!CL.api.homePut)return;clearTimeout(homePutT);
   const go=()=>{const pub={v:d.v,name:d.name,fl:d.fl,wa:d.wa,fo:d.fo,wo:d.wo,it:d.it,inv:d.inv,cl:d.cl,gc:d.gc,ex:d.ex,home:d.home,sz:d.sz};CL.api.homePut(CL.user.uid,{name:String(d.name||'').slice(0,24),v:JSON.stringify(pub)}).catch(e=>{console.warn('home put',e);if(!HOME_CLOUD_WARN&&e&&/PERMISSION/i.test(String(e.code||e))){HOME_CLOUD_WARN=true;toast('我的店：雲端還沒開通（Firebase 規則要先貼上），目前只存在這台裝置')}})};
   if(now)go();else homePutT=setTimeout(go,2500)}
