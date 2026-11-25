@@ -3455,6 +3455,7 @@ const BXSTORY={reiko:['年輕的時候，我在銀座的一間酒吧唱歌。那
      只改一樣、量不多時，碰到隱藏配方（BXSURP 多加一樣／BXSWAP 換掉基酒）一定驚喜；其他亂配有小機會「意外地好喝」（改一樣 10%、兩樣 4%、三樣以上 0）。
    驚喜的話照樣要技術過關，客人付錢＋大筆小費；隱藏配方記在酒譜（ST.bar.disc）。 */
 const BXNOIMG=['hot','matcha']; /* 沒有圖的材料：不放進加料面板，用到它們的酒譜暫不出給客人 */
+function bxNoImg(k){return !!BXR[k]&&BXR[k].st.some(x=>(x[0]==='m'||x[0]==='top')&&BXNOIMG.includes(x[1]))} /* 酒譜用到沒圖材料：客人不點，也不算進「至少留 3 道在賣」 */
 function bxUnderNeed(s){return !!(s&&s[0]==='mix'&&s[1].some(x=>!BXCABS.includes(x[1])))}
 /* 「加料」鈕只在輪到加吧台下材料時出現：這步背後酒櫃的酒（量酒、抖苦精）都倒過了才顯示，選酒、倒酒時不顯示 */
 function bxUnderTurn(s){return !!s&&(s[0]==='top'||s[0]==='pour')||!!s&&s[0]==='mix'&&s[1].filter(x=>BXCABS.includes(x[1])).every(x=>(BX.d.ml[x[1]]||0)>0||(BX.d.dash[x[1]]||0)>0)} /* 這步要用吧台下的材料才顯示「加料」鈕 */
@@ -6706,7 +6707,7 @@ document.addEventListener('click',e=>{
   else if(act==='rmhome'){RMBACK=!!a.closest('.shopsw,.brpick');rmHome()}
   else if(act==='dayshop'){SHOPTAB=CUR==='rm'&&ST.rm?(RMTABS.includes(SHOPTAB)?SHOPTAB:'rmenu'):(RMTABS.includes(SHOPTAB)?'menu':SHOPTAB);showShop()}
   else if(act==='buyk2'){if(ST.rm&&!rmK2()&&ST.coins>=K2_PRICE){keepScroll();ST.coins-=K2_PRICE;ST.rm.k2=1;ST.menu=ST.menu||{};ST.menu.koro=true;ST.fresh=(ST.fresh||[]).concat('koro');save();drawBg();showShop();renderHUD();toast(T('二號廚房擴建好了！開店時點吧台右邊的按鈕切換廚房'))}}
-  else if(act==='offtog'){const k=a.dataset.id;if(ST&&ITEMS[k]){const shp=ITEMS[k].shop,sush=shp==='sushi'||shp==='tep'||shp==='oko'||shp==='bar';const pool=(sush?Object.keys(ITEMS).filter(x=>ITEMS[x].shop===shp&&has(x)):unlocked(ST.day)).filter(x=>x!=='beer'&&!isOff(x));if(!isOff(k)&&pool.length<=3){toast(T('至少要留 3 道菜在賣'));return}keepScroll();ST.soff=ST.soff||{};if(ST.soff[k])delete ST.soff[k];else ST.soff[k]=1;save();drawBg();if(shp==='tep')tepHome();else if(shp==='oko')okoHome();else if(shp==='bar')barHome();else if(sush)sushiHome();else showShop()}}
+  else if(act==='offtog'){const k=a.dataset.id;if(ST&&ITEMS[k]){const shp=ITEMS[k].shop,sush=shp==='sushi'||shp==='tep'||shp==='oko'||shp==='bar';const pool=(sush?Object.keys(ITEMS).filter(x=>ITEMS[x].shop===shp&&has(x)&&!(shp==='bar'&&bxNoImg(x))):unlocked(ST.day)).filter(x=>x!=='beer'&&!isOff(x));if(!isOff(k)&&pool.length<=3){toast(T('至少要留 3 道菜在賣'));return}keepScroll();ST.soff=ST.soff||{};if(ST.soff[k])delete ST.soff[k];else ST.soff[k]=1;save();drawBg();if(shp==='tep')tepHome();else if(shp==='oko')okoHome();else if(shp==='bar')barHome();else if(sush)sushiHome();else showShop()}}
   else if(act==='gomatog'){if(ST.rm&&has('goma')){keepScroll();ST.rm.off=ST.rm.off||{};ST.rm.off.goma=!ST.rm.off.goma;save();drawBg();showShop()}}
   else if(act==='buyrmenu'){const r=RNEW.find(x=>x.id===a.dataset.id);if(r&&ST.rm&&!has(r.id)&&(!r.k2||rmK2())&&(!r.need||r.need())&&ST.coins>=r.cost){keepScroll();ST.coins-=r.cost;ST.menu=ST.menu||{};ST.menu[r.id]=true;if(ITEMS[r.id])ST.fresh=(ST.fresh||[]).concat(r.id);save();drawBg();showShop();renderHUD()}}
   else if(act==='rmstaff'){const l=rmStaffLv(),nx=RSTAFF.lv[l];if(ST.rm&&nx&&ST.coins>=nx.cost){keepScroll();ST.coins-=nx.cost;ST.rm.up.staff=l+1;save();drawBg();showShop();renderHUD()}}
