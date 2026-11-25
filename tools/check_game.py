@@ -2209,6 +2209,16 @@ def sc_home3d(b, base):
         hs = c.page.evaluate("(JSON.parse(localStorage.getItem('izakaya-home-v1')||'{}').home)||null")
         if not hs or sum(1 for e in hs['it'] if e[0] == 'flamp') < 2:
             raise AssertionError('家裡買的立燈沒有存到 data.home：%s' % (hs and [e[0] for e in hs['it']]))
+        # 家裡也能切第一人稱／第三人稱：頂部 👁 按鈕真實點擊 → 鏡頭進到眼睛高度、看不到自己；再點一次切回來
+        c.click('.home3 [data-h3=fp]', wait=1000)
+        p = h3_probe(c)
+        if not p.get('fp') or p.get('fpK', 0) < .9:
+            raise AssertionError('家裡按 👁 沒有切到第一人稱：fp=%s fpK=%s' % (p.get('fp'), p.get('fpK')))
+        c.page.screenshot(path='/tmp/check-house-fp.png')
+        c.click('.home3 [data-h3=fp]', wait=1000)
+        p = h3_probe(c)
+        if p.get('fp') or p.get('fpK', 1) > .1:
+            raise AssertionError('家裡再按一次沒有切回第三人稱：fp=%s fpK=%s' % (p.get('fp'), p.get('fpK')))
         c.click('.home3 [data-h3=exit]', wait=300)
         i3_wait(c, '從家裡出門')
         p = i3_enter(c, '走進島上的居酒屋（我的店）')

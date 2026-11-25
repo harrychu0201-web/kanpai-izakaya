@@ -6,7 +6,7 @@ import {
   WebGLRenderer, Scene, PerspectiveCamera, Color, Fog, HemisphereLight, DirectionalLight, AmbientLight, Group, Mesh,
   BoxGeometry, PlaneGeometry, CylinderGeometry, SphereGeometry, ConeGeometry, CircleGeometry, IcosahedronGeometry, TorusGeometry, RingGeometry, ShapeGeometry, Shape,
   MeshBasicMaterial, MeshLambertMaterial, CanvasTexture, TextureLoader, SRGBColorSpace, Sprite, SpriteMaterial, BufferGeometry, Float32BufferAttribute,
-  BackSide, DoubleSide, RepeatWrapping, AdditiveBlending, Vector3, Vector2, Raycaster, Plane, PCFSoftShadowMap, ExtrudeGeometry,
+  BackSide, DoubleSide, RepeatWrapping, AdditiveBlending, Vector3, Vector2, Raycaster, Plane, PCFShadowMap, ExtrudeGeometry,
 } from 'three';
 import { NPCS, KIND } from '../town3d/npcs.js';
 import { ctex, rrect, GLOW, FONT } from './models.js';
@@ -69,6 +69,8 @@ const CSS = `
 @media (max-height:520px){.i3door{font-size:15px;min-height:46px;padding:0 14px}.i3hud{top:64px;gap:8px}.i3info{top:64px;font-size:12px;padding:4px 10px}.i3info b{font-size:15px}.i3opt{min-width:64px;min-height:50px;font-size:11.5px;border-width:2px}.i3opt i{width:24px;height:16px}}
 `;
 
+/* 第一人稱偏好：在島上、屋內之間切換場景時保留（同一次開遊戲內有效） */
+export const FPPREF = { v: false };
 export function island(o) {
   const cv = o.cv, root = o.root, cb = o.cb || {}, own = !!o.own;
   const D = o.data || {}; D.ex = Object.assign(defaultEx(), D.ex || {});
@@ -76,7 +78,7 @@ export function island(o) {
   if (!document.getElementById('h3css') && o.css) { const s = document.createElement('style'); s.id = 'h3css'; s.textContent = o.css; document.head.appendChild(s); }
   const mobile = Math.min(screen.width, screen.height) < 600;
   const renderer = new WebGLRenderer({ canvas: cv, antialias: (window.devicePixelRatio || 1) < 2, powerPreference: 'high-performance', preserveDrawingBuffer: !!o.test });
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = PCFSoftShadowMap;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = PCFShadowMap; renderer.shadowMap.autoUpdate = false;
   const scene = new Scene(); const fog = new Fog(0xbfe6ff, 60, 170); scene.fog = fog;
   const camera = new PerspectiveCamera(38, 2, .3, 600);
   const TL = new TextureLoader(); const loadTex = (url, f) => TL.load(url, t => { t.colorSpace = SRGBColorSpace; f && f(t); });
@@ -339,7 +341,7 @@ export function island(o) {
   const joyRest = () => { if (S.dead) return; const r = cv.getBoundingClientRect(), rr = root.getBoundingClientRect(); joyEl.style.left = (r.left - rr.left + 110) + 'px'; joyEl.style.top = (r.bottom - rr.top - 110) + 'px'; joyEl.firstChild.style.transform = ''; joyEl.className = 'i3joy' + (TOUCH && S.mode === 'walk' ? ' rest' : ''); };
   const doorBtn = U(el('button', 'i3door')); doorBtn.type = 'button'; doorBtn.dataset.i3 = 'door';
   function toast(s) { toastEl.textContent = s; toastEl.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove('on'), 2400); }
-  const S = { dead: false, mode: 'walk', yaw: S0yaw, yawT: S0yaw, pitch: .72, pitchT: .72, dist: 17, distT: 17, fp: false, fpK: 0, fpP: 0, tgt: null, keys: {}, t: 0, talk: null, last: performance.now(), hourOff: 0, cam: new Vector3(me.x, 1, me.z) };
+  const S = { dead: false, mode: 'walk', yaw: S0yaw, yawT: S0yaw, pitch: .72, pitchT: .72, dist: 17, distT: 17, fp: FPPREF.v, fpK: 0, fpP: 0, tgt: null, keys: {}, t: 0, talk: null, last: performance.now(), hourOff: 0, cam: new Vector3(me.x, 1, me.z) };
   const PHASES = [[null, '現在'], [8, '早上'], [13, '中午'], [17.6, '傍晚'], [21, '夜晚']];
   let phaseI = 0;
   function hourNow() { if (PHASES[phaseI][0] !== null) return PHASES[phaseI][0]; const d = new Date(); return d.getHours() + d.getMinutes() / 60; }
@@ -389,7 +391,7 @@ export function island(o) {
     else if (a === 'shopin') { closeCard(); goDoor(DOORS.find(d => d.kind === 'shop')); }
     else if (a === 'door') { doorAct(nearDoor); }
     else if (a === 'stats') { try { cb.stats && cb.stats(); } catch (_) { } }
-    else if (a === 'fp') { S.fp = !S.fp; hudBtns(); }
+    else if (a === 'fp') { S.fp = !S.fp; FPPREF.v = S.fp; hudBtns(); }
     else if (a === 'time') { phaseI = (phaseI + 1) % PHASES.length; hudBtns(); updInfo(); toast(phaseI ? `預覽：${PHASES[phaseI][1]}（再按回到現在時間）` : '回到現在時間'); }
   };
   root.addEventListener('click', onClick);
@@ -480,6 +482,8 @@ export function island(o) {
 
   /* ───────── 每幀 ───────── */
   let cw = 0, ch = 0, dprv = 0, pr = 1, prFloor = 1, fpsT = 0, fpsN = 0;
+  /* 陰影：太陽跟著角色走、不跟鏡頭轉，所以只有角色移動、時間變了或隔一段時間才重畫（不用每幀畫一次） */
+  let shX = 1e9, shZ = 1e9, shT = 0, shFlag = true;
   const fwd = new Vector3(), rgt = new Vector3(), camPos = new Vector3(), eyeV = new Vector3(), lookV = new Vector3(), lookFP = new Vector3();
   function resize() { const r = cv.getBoundingClientRect(), W = Math.max(1, cv.clientWidth), Hh = Math.max(1, cv.clientHeight), dpr = Math.min(2, window.devicePixelRatio || 1);
     const nps = Math.round(clamp(1.75 - ((r.height || Hh) - 380) / 440 * .6, 1.15, 1.75) * 20) / 20; if (nps !== PS) { PS = nps; people.forEach(q => { q.h = q.h0 * PS; q.w = q.h * q.ar; }); }
@@ -488,7 +492,8 @@ export function island(o) {
     if (S.dead) return; if (!document.contains(cv)) { dispose(); return; } S.raf = requestAnimationFrame(frame);
     const dt = Math.min(.1, (now - S.last) / 1000); S.last = now; S.t += dt; const t = S.t; resize();
     fpsT += dt; fpsN++; if (fpsT > 1.5) { const slowF = fpsT / fpsN > .03; if (slowF && renderer.shadowMap.enabled) { renderer.shadowMap.enabled = false; scene.traverse(m => { if (m.material) (Array.isArray(m.material) ? m.material : [m.material]).forEach(x => { x.needsUpdate = true; }); }); } else if (slowF && pr > prFloor + .01) { pr = Math.max(prFloor, pr * .9); renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } fpsT = 0; fpsN = 0; }
-    const h = hourNow(); if (Math.abs(h - lastH) > .02) { applyTime(h); lastH = h; updInfo(); }
+    const h = hourNow(); if (Math.abs(h - lastH) > .02) { applyTime(h); lastH = h; updInfo(); shFlag = true; }
+    shT -= dt; if (shFlag || shT <= 0 || Math.hypot(S.cam.x - shX, S.cam.z - shZ) > .04) { renderer.shadowMap.needsUpdate = true; shX = S.cam.x; shZ = S.cam.z; shT = .25; shFlag = false; }
     const K = S.keys; if (K.q) S.yawT += dt * 1.8; if (K.e) S.yawT -= dt * 1.8;
     S.yaw += (S.yawT - S.yaw) * Math.min(1, dt * 9); S.pitch += (S.pitchT - S.pitch) * Math.min(1, dt * 9); S.dist += (S.distT - S.dist) * Math.min(1, dt * 6);
     const sy = Math.sin(S.yaw), cy = Math.cos(S.yaw); fwd.set(-sy, 0, -cy); rgt.set(cy, 0, -sy);

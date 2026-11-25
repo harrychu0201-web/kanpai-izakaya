@@ -10,6 +10,7 @@ import {
   Vector3, Raycaster, Plane, Vector2, WebGLRenderTarget, Box3,
 } from 'three';
 import { NPCS, KIND } from '../town3d/npcs.js';
+import { FPPREF } from './island.js';
 import { ITEMS, IT, CATS, HCATS, FLOORS, WALLS, build, lam, bas, ctex, rrect, GLOW, FONT } from './models.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -82,6 +83,9 @@ const CSS = `
 .h3b{min-width:92px;min-height:76px;border-radius:20px;border:3px solid #2a1810;background:#fff6e0;color:#3a1e0c;font-weight:900;font-size:19px;line-height:1.15;padding:6px 10px;box-shadow:0 5px 0 #0007;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .h3b i{font-style:normal;font-size:30px;line-height:1}
 .h3b:active{transform:translateY(3px);box-shadow:0 2px 0 #0007}
+.home3 .twtop{background:none}
+.h3tb{flex:none;min-width:44px;min-height:44px;border:0;background:transparent;color:#fff3d6;font-size:28px;line-height:1;padding:0 4px;border-radius:50%;text-shadow:0 2px 4px #000a;cursor:pointer}
+.h3tb.on{background:#fff3d633}
 .h3b.hot{background:#ffd27a}
 .h3b:disabled{opacity:.45}
 .h3info{position:absolute;left:max(12px,env(safe-area-inset-left));top:92px;background:#2a1810d9;color:#fff3d6;border:2px solid #ffd27a;border-radius:16px;padding:8px 14px;font-size:16px;line-height:1.35;z-index:3;pointer-events:none;max-width:44%}
@@ -534,7 +538,8 @@ export function start(o) {
   function npcGo(p, tx, tz) { const path = findPath(p.x, p.z, tx, tz); if (path && path.length) { p.path = path; p.state = 'walk'; return true; } return false; }
 
   /* ───────── 鏡頭、輸入、介面 ───────── */
-  const S = { dead: false, mode: 'walk', yaw: 0, yawT: 0, dist: 11, distT: 11, camV: 0, tgt: null, joy: null, keys: {}, t: 0, talk: null, sel: null, drag: null, last: performance.now(), inside: me.z < RD, cam: new Vector3(me.x, 1, me.z), low: {}, pitch: .7, pitchT: .7 };
+  const S = { dead: false, mode: 'walk', yaw: 0, yawT: 0, dist: 11, distT: 11, camV: 0, tgt: null, joy: null, keys: {}, t: 0, talk: null, sel: null, drag: null, last: performance.now(), inside: me.z < RD, cam: new Vector3(me.x, 1, me.z), low: {}, fp: FPPREF.v, fpK: 0, fpP: 0, pitch: .7, pitchT: .7 };
+  const eyeV = new Vector3(), lookV = new Vector3(), lookFP = new Vector3();
   const el = (tag, cls, html, par) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; (par || root).appendChild(e); return e; };
   const ui = [];
   const U = s => { ui.push(s); return s; };
@@ -550,8 +555,13 @@ export function start(o) {
   const topBar = U(el('div', 'h3top'));
   const pan = U(el('div', 'h3pan'));
   const exitBtn = U(el('button', 'h3door', '🚪 出門')); exitBtn.type = 'button'; exitBtn.dataset.h3 = 'exit';
+  /* 👁 第一人稱／第三人稱：放在頂部「回首頁」左邊，只有圖示 */
+  const topHead = root.querySelector('.twtop'), topBack = topHead && topHead.querySelector('.twlist');
+  const fpTop = document.createElement('button'); fpTop.type = 'button'; fpTop.className = 'h3tb'; fpTop.dataset.h3 = 'fp'; fpTop.setAttribute('aria-label', '第一人稱／第三人稱'); fpTop.textContent = '👁';
+  if (topHead) topHead.insertBefore(fpTop, topBack || null); ui.push(fpTop);
   function toast(s) { toastEl.textContent = s; toastEl.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove('on'), 2200); }
   function hudBtns() {
+    fpTop.style.display = S.mode === 'build' ? 'none' : ''; fpTop.classList.toggle('on', !!S.fp);
     if (S.mode === 'build') { hud.innerHTML = `<button class="h3b hot" type="button" data-h3="done"><i>✓</i>完成</button>`; return; }
     hud.innerHTML = own && HOME ? `<button class="h3b" type="button" data-h3="exit"><i>🚪</i>出門</button><button class="h3b hot" type="button" data-h3="build"><i>🔨</i>布置</button><button class="h3b" type="button" data-h3="board"><i>📜</i>留言板</button>`
       : own
@@ -594,7 +604,7 @@ export function start(o) {
     if (e.pointerType === 'touch' && !jd && S.mode === 'walk' && !pan.classList.contains('on')) { const r = rect(); if (e.clientX - r.left < r.width * .45) { jd = { id: e.pointerId, sx: l.x, sy: l.y }; S.tgt = null; joyEl.style.display = 'block'; joyEl.style.opacity = 1; joyEl.style.left = l.x + 'px'; joyEl.style.top = l.y + 'px'; joyEl.firstChild.style.transform = ''; return; } }
     ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), dist: S.distT, ang: Math.atan2(b.y - a.y, b.x - a.x), yaw: S.yawT }; pd = null; endDrag(); return; }
-    pd = { id: e.pointerId, sx: l.x, sy: l.y, cx: e.clientX, cy: e.clientY, moved: 0, btn: e.button, yaw0: S.yawT, pit0: S.pitchT };
+    pd = { id: e.pointerId, sx: l.x, sy: l.y, cx: e.clientX, cy: e.clientY, moved: 0, btn: e.button, yaw0: S.yawT, pit0: S.pitchT, fp0: S.fpP };
     if (S.mode === 'build') { const it = itemHit(e.clientX, e.clientY); if (it && it === S.sel && !it.I.fixed2) { pd.dragItem = it; } else if (it) { pd.pickItem = it; } }
   });
   cv.addEventListener('pointermove', e => {
@@ -605,7 +615,7 @@ export function start(o) {
     const l = local(e.clientX, e.clientY), dx = l.x - pd.sx, dy = l.y - pd.sy, d = Math.hypot(dx, dy);
     if (!pd.moved && d > 10) { pd.moved = 1; if (pd.pickItem && S.mode === 'build') { select(pd.pickItem); pd.dragItem = pd.pickItem; } }
     if (!pd.moved) return;
-    if (pd.btn === 2 || S.mode === 'walk' || (S.mode === 'build' && !pd.dragItem)) { S.yawT = pd.yaw0 - dx * .008; S.pitchT = clamp(pd.pit0 + dy * .005, .3, 1.25); return; }
+    if (pd.btn === 2 || S.mode === 'walk' || (S.mode === 'build' && !pd.dragItem)) { S.yawT = pd.yaw0 - dx * .008; if (S.fp && S.mode === 'walk') S.fpP = clamp(pd.fp0 - dy * .005, -1.2, 1.2); else S.pitchT = clamp(pd.pit0 + dy * .005, .3, 1.25); return; }
     if (S.mode === 'build' && pd.dragItem) { dragTo(pd.dragItem, e.clientX, e.clientY); return; }
     if (S.mode === 'walk') { const R = 55, m = Math.min(1, d / R) / Math.max(d, 1e-6); S.joy = { x: dx * m, y: dy * m }; S.tgt = null; joyEl.style.display = 'block'; joyEl.style.left = pd.sx + 'px'; joyEl.style.top = pd.sy + 'px'; joyEl.firstChild.style.transform = `translate(${S.joy.x * 55}px,${S.joy.y * 55}px)`; }
   });
@@ -619,7 +629,7 @@ export function start(o) {
     pd = null;
   };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
-  cv.addEventListener('wheel', e => { e.preventDefault(); S.distT = clamp(S.distT + Math.sign(e.deltaY) * 1.2, 6, 20); }, { passive: false });
+  cv.addEventListener('wheel', e => { e.preventDefault(); if (!S.fp) S.distT = clamp(S.distT + Math.sign(e.deltaY) * 1.2, 6, 20); }, { passive: false });
   const kd = e => { if (!document.contains(cv) || /input|textarea/i.test((e.target && e.target.tagName) || '')) return; const c = e.key.toLowerCase(); if (/^(arrowleft|arrowright|arrowup|arrowdown|w|a|s|d|q|e|r)$/.test(c)) { if (c === 'r' && S.sel) { rotateSel(); e.preventDefault(); return; } S.keys[c] = 1; if (/^(arrow|w|a|s|d)/.test(c)) S.tgt = null; e.preventDefault(); } };
   const ku = e => { delete S.keys[e.key.toLowerCase()]; };
   document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
@@ -828,6 +838,7 @@ export function start(o) {
     else if (a === 'nameok') { const v = (pan.querySelector('#h3name').value || '').trim().slice(0, 12); if (v) { D.name = v; drawSign(); changed(); } pan.classList.remove('on'); }
     else if (a === 'board') { if (S.mode !== 'walk') return; if (o.island) openBoard(); else walkThen(BOARD.x, BOARD.z + 1, openBoard); }
     else if (a === 'claim') claimGifts();
+    else if (a === 'fp') { S.fp = !S.fp; FPPREF.v = S.fp; hudBtns(); }
     else if (a === 'exit') { if (o.island) { S.exited = true; try { cb.exit && cb.exit(); } catch (_) { } } }
     else if (a === 'pclose') pan.classList.remove('on');
     else if (a === 'post') postMsg();
@@ -853,7 +864,7 @@ export function start(o) {
     data: () => JSON.parse(JSON.stringify(serialize())),
     probe() {
       const P = v => { const f = proj(v); return { x: Math.round(f.x), y: Math.round(f.y) }; };
-      return { mode: S.mode, inside: S.inside, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, yaw: +S.yaw.toFixed(2), sel: S.sel ? { k: S.sel.k, x: S.sel.x, z: S.sel.z, r: S.sel.r, ok: S.sel.ok } : null,
+      return { mode: S.mode, fp: S.fp, fpK: +S.fpK.toFixed(2), inside: S.inside, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, yaw: +S.yaw.toFixed(2), sel: S.sel ? { k: S.sel.k, x: S.sel.x, z: S.sel.z, r: S.sel.r, ok: S.sel.ok } : null,
         items: placed.map(e => Object.assign({ k: e.k, x: e.x, z: e.z, r: e.r }, P(new Vector3(e.g.position.x, e.g.position.y + .4, e.g.position.z)))),
         npcs: npcs.filter(p => !p.hidden).map(p => Object.assign({ id: p.d.id || p.kind2, kind: p.kind2, state: p.state }, P(new Vector3(p.x, p.h * .5, p.z)))),
         board: P(new Vector3(BOARD.x, 1.15, BOARD.z)), gifts: giftBoxes.length, card: card.classList.contains('on') ? card.textContent : '', pan: pan.classList.contains('on') ? pan.textContent : '',
@@ -956,7 +967,13 @@ export function start(o) {
     S.cam.x += (tx - S.cam.x) * Math.min(1, dt * (S.mode === 'build' ? 4 : 12)); S.cam.z += (tz - S.cam.z) * Math.min(1, dt * (S.mode === 'build' ? 4 : 12)); S.cam.y += (ty - S.cam.y) * Math.min(1, dt * 4);
     const aspect = cw / ch, extra = aspect < 1.45 ? 1.45 / aspect : 1, dd = S.dist * extra * Math.max(RW / 10, RD / 8), pitch = S.mode === 'build' ? Math.max(.75, S.pitch) : S.pitch;
     camPos.set(S.cam.x + sy * Math.cos(pitch) * dd, S.cam.y + Math.sin(pitch) * dd, S.cam.z + cy * Math.cos(pitch) * dd);
-    camera.position.copy(camPos); camera.lookAt(S.cam.x, S.cam.y + .5, S.cam.z); sky.position.copy(camPos);
+    /* 第一人稱：鏡頭移到角色眼睛高度，和第三人稱之間平滑過渡；之後的牆判斷用過渡後的鏡頭位置 */
+    S.fpK += ((S.fp && S.mode === 'walk' ? 1 : 0) - S.fpK) * Math.min(1, dt * 5);
+    const fpK = S.fpK, cpf = Math.cos(S.fpP), spf = Math.sin(S.fpP);
+    eyeV.set(S.cam.x, 1.5, S.cam.z); lookV.set(S.cam.x, S.cam.y + .5, S.cam.z);
+    lookFP.set(eyeV.x - sy * cpf * 10, eyeV.y + spf * 10, eyeV.z - cy * cpf * 10);
+    camPos.lerp(eyeV, fpK); lookV.lerp(lookFP, fpK);
+    camera.position.copy(camPos); camera.lookAt(lookV); sky.position.copy(camPos);
     /* 牆：人在店裡時擋到鏡頭的牆降下來、屋頂拿掉；在店外就是完整的房子 */
     const indoor = S.inside || (S.mode === 'build' && S.inside);
     roof.visible = !indoor;
@@ -967,6 +984,7 @@ export function start(o) {
     for (const g of nbs) g.visible = !(indoor && ((low.left && g.position.x < 0) || (low.right && g.position.x > RW)));
     warm1.intensity = warm2.intensity = indoor ? 14 : 6;
     /* 人物 */
+    me.hidden = S.fpK > .5; /* 第一人稱時看不到自己 */
     const camYaw = Math.atan2(camPos.x - S.cam.x, camPos.z - S.cam.z);
     for (const p of people) {
       const vis = !p.hidden, thru = !indoor && p.z < RD; p.grp.visible = vis; p.sh.visible = vis; if (p.tag) p.tag.visible = vis && !thru; if (p.bub) p.bub.visible = vis && !thru && p !== S.talk && p.state !== 'leave';
