@@ -389,7 +389,7 @@ export function island(o) {
     else if (a === 'shopin') { closeCard(); goDoor(DOORS.find(d => d.kind === 'shop')); }
     else if (a === 'door') { doorAct(nearDoor); }
     else if (a === 'stats') { try { cb.stats && cb.stats(); } catch (_) { } }
-    else if (a === 'fp') { S.fp = !S.fp; hudBtns(); toast(S.fp ? '第一人稱：拖曳看四周，搖桿走路' : '第三人稱：拖曳轉鏡頭'); }
+    else if (a === 'fp') { S.fp = !S.fp; hudBtns(); }
     else if (a === 'time') { phaseI = (phaseI + 1) % PHASES.length; hudBtns(); updInfo(); toast(phaseI ? `預覽：${PHASES[phaseI][1]}（再按回到現在時間）` : '回到現在時間'); }
   };
   root.addEventListener('click', onClick);
