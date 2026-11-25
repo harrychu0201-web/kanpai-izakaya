@@ -2139,6 +2139,16 @@ def sc_home3d(b, base):
         ip2 = c.page.evaluate("(()=>{const p=HOME3.probe();delete p.npcs;return p})()")
         if abs(ip2['yaw'] - y0) < .3 or ip2['me'] != ip['me']:
             raise AssertionError('島上拖曳沒有轉鏡頭（或角色跑掉了）：yaw %s→%s me %s→%s' % (y0, ip2['yaw'], ip['me'], ip2['me']))
+        # 第一人稱／第三人稱切換：真實點擊「👁 第一人稱」→ 鏡頭進到眼睛高度；再點一次切回來
+        c.click('.home3 [data-i3=fp]', wait=900)
+        p = c.page.evaluate("HOME3.probe()")
+        if not p.get('fp') or p.get('fpK', 0) < .9:
+            raise AssertionError('按「第一人稱」後沒有切換：fp=%s fpK=%s' % (p.get('fp'), p.get('fpK')))
+        c.page.screenshot(path='/tmp/check-island-fp.png')
+        c.click('.home3 [data-i3=fp]', wait=900)
+        p = c.page.evaluate("HOME3.probe()")
+        if p.get('fp') or p.get('fpK', 1) > .1:
+            raise AssertionError('再按一次沒有切回第三人稱：fp=%s fpK=%s' % (p.get('fp'), p.get('fpK')))
         # 廣場中間：沿著噴水池斜角繞圈（真實按鍵）不能卡住（2026/11/24 噴水池用方形碰撞，斜角處走不動）
         for sx, sz, keys in [(-3.2, -3.2, ['w', 'd']), (3.2, 3.2, ['s', 'a']), (3.2, -3.2, ['s', 'd'])]:
             c.page.evaluate("HOME3.teleport(%s,%s);HOME3.setYaw(0)" % (sx, sz)); c.page.wait_for_timeout(300)

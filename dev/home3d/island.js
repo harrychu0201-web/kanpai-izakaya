@@ -336,13 +336,13 @@ export function island(o) {
   const joyRest = () => { if (S.dead) return; const r = cv.getBoundingClientRect(), rr = root.getBoundingClientRect(); joyEl.style.left = (r.left - rr.left + 110) + 'px'; joyEl.style.top = (r.bottom - rr.top - 110) + 'px'; joyEl.firstChild.style.transform = ''; joyEl.className = 'i3joy' + (TOUCH && S.mode === 'walk' ? ' rest' : ''); };
   const doorBtn = U(el('button', 'i3door')); doorBtn.type = 'button'; doorBtn.dataset.i3 = 'door';
   function toast(s) { toastEl.textContent = s; toastEl.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove('on'), 2400); }
-  const S = { dead: false, mode: 'walk', yaw: S0yaw, yawT: S0yaw, pitch: .72, pitchT: .72, dist: 17, distT: 17, tgt: null, keys: {}, t: 0, talk: null, last: performance.now(), hourOff: 0, cam: new Vector3(me.x, 1, me.z) };
+  const S = { dead: false, mode: 'walk', yaw: S0yaw, yawT: S0yaw, pitch: .72, pitchT: .72, dist: 17, distT: 17, fp: false, fpK: 0, fpP: 0, tgt: null, keys: {}, t: 0, talk: null, last: performance.now(), hourOff: 0, cam: new Vector3(me.x, 1, me.z) };
   const PHASES = [[null, '現在'], [8, '早上'], [13, '中午'], [17.6, '傍晚'], [21, '夜晚']];
   let phaseI = 0;
   function hourNow() { if (PHASES[phaseI][0] !== null) return PHASES[phaseI][0]; const d = new Date(); return d.getHours() + d.getMinutes() / 60; }
   function hudBtns() {
     if (S.mode === 'edit') { hud.innerHTML = `<button class="h3b hot" type="button" data-i3="done"><i>✓</i>完成</button>`; return; }
-    hud.innerHTML = (own ? `<button class="h3b hot" type="button" data-i3="edit"><i>🎨</i>外觀</button>` : '') + `<button class="h3b" type="button" data-i3="home"><i>🏠</i>${own ? '回家' : '他家'}</button><button class="h3b" type="button" data-i3="shopin"><i>🏮</i>${own ? '我的店' : '他的店'}</button>${cb.stats ? `<button class="h3b" type="button" data-i3="stats"><i>📋</i>店況</button>` : ''}<button class="h3b" type="button" data-i3="time"><i>🕐</i>${PHASES[phaseI][1]}</button>`;
+    hud.innerHTML = (own ? `<button class="h3b hot" type="button" data-i3="edit"><i>🎨</i>外觀</button>` : '') + `<button class="h3b" type="button" data-i3="home"><i>🏠</i>${own ? '回家' : '他家'}</button><button class="h3b" type="button" data-i3="shopin"><i>🏮</i>${own ? '我的店' : '他的店'}</button>${cb.stats ? `<button class="h3b" type="button" data-i3="stats"><i>📋</i>店況</button>` : ''}<button class="h3b" type="button" data-i3="fp"><i>👁</i>${S.fp ? '第三人稱' : '第一人稱'}</button><button class="h3b" type="button" data-i3="time"><i>🕐</i>${PHASES[phaseI][1]}</button>`;
   }
   function updInfo() { const h = hourNow(), hh = Math.floor(h), mm = Math.floor((h - hh) * 60); info.innerHTML = `<b>🏝️ ${esc(own ? (D.name ? D.name.replace(/的(小店|家)$/, '') + '的島' : '我的島') : ((o.owner && o.owner.name) || '好友') + '的島')}</b>${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}・${h < 5 || h >= 19.5 ? '夜晚 🌙' : h < 7 ? '清晨 🌅' : h < 16.5 ? '白天 ☀️' : '傍晚 🌇'}`; }
   hudBtns(); updInfo(); setTimeout(joyRest, 50); window.addEventListener('resize', joyRest);
@@ -381,6 +381,7 @@ export function island(o) {
     else if (a === 'shopin') { closeCard(); goDoor(DOORS.find(d => d.kind === 'shop')); }
     else if (a === 'door') { doorAct(nearDoor); }
     else if (a === 'stats') { try { cb.stats && cb.stats(); } catch (_) { } }
+    else if (a === 'fp') { S.fp = !S.fp; hudBtns(); toast(S.fp ? '第一人稱：拖曳看四周，搖桿走路' : '第三人稱：拖曳轉鏡頭'); }
     else if (a === 'time') { phaseI = (phaseI + 1) % PHASES.length; hudBtns(); updInfo(); toast(phaseI ? `預覽：${PHASES[phaseI][1]}（再按回到現在時間）` : '回到現在時間'); }
   };
   root.addEventListener('click', onClick);
@@ -411,15 +412,15 @@ export function island(o) {
     if (e.pointerType === 'touch' && !jd && S.mode === 'walk' && !S.ent) { const r = rect(); if (e.clientX - r.left < r.width * .45) { const rr = root.getBoundingClientRect(); jd = { id: e.pointerId, x: e.clientX, y: e.clientY }; S.tgt = null; joyEl.className = 'i3joy on'; joyEl.style.left = (e.clientX - rr.left) + 'px'; joyEl.style.top = (e.clientY - rr.top) + 'px'; joyEl.firstChild.style.transform = ''; return; } }
     ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), dist: S.distT, ang: Math.atan2(b.y - a.y, b.x - a.x), yaw: S.yawT }; pd = null; return; }
-    pd = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0, yaw0: S.yawT, pit0: S.pitchT }; });
+    pd = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0, yaw0: S.yawT, pit0: S.pitchT, fp0: S.fpP }; });
   cv.addEventListener('pointermove', e => { if (jd && e.pointerId === jd.id) { const dx = e.clientX - jd.x, dy = e.clientY - jd.y, d = Math.hypot(dx, dy), R0 = 50, m = Math.min(1, d / R0) / Math.max(d, 1e-6); S.joy = { x: dx * m, y: dy * m }; joyEl.firstChild.style.transform = `translate(${S.joy.x * R0}px,${S.joy.y * R0}px)`; return; }
     if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch && ptrs.size >= 2) { const [a, b] = [...ptrs.values()]; S.distT = clamp(pinch.dist * pinch.d / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)), 7, 40); S.yawT = pinch.yaw - (Math.atan2(b.y - a.y, b.x - a.x) - pinch.ang); return; }
     if (!pd || pd.id !== e.pointerId) return; const dx = e.clientX - pd.x, dy = e.clientY - pd.y; if (!pd.moved && Math.hypot(dx, dy) > 8) pd.moved = 1; if (!pd.moved) return;
-    S.yawT = pd.yaw0 - dx * .007; S.pitchT = clamp(pd.pit0 + dy * .005, .22, 1.3); });
+    S.yawT = pd.yaw0 - dx * .007; if (S.fp) S.fpP = clamp(pd.fp0 + dy * .005, -1.2, 1.2); else S.pitchT = clamp(pd.pit0 + dy * .005, .22, 1.3); });
   const up = e => { if (jd && e.pointerId === jd.id) { jd = null; S.joy = null; joyRest(); return; } ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!pd || pd.id !== e.pointerId) return; if (!pd.moved) tap(e.clientX, e.clientY); pd = null; };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
-  cv.addEventListener('wheel', e => { e.preventDefault(); S.distT = clamp(S.distT + Math.sign(e.deltaY) * 1.6, 7, 40); }, { passive: false });
+  cv.addEventListener('wheel', e => { e.preventDefault(); if (!S.fp) S.distT = clamp(S.distT + Math.sign(e.deltaY) * 1.6, 7, 40); }, { passive: false });
   const kd = e => { if (!document.contains(cv) || /input|textarea/i.test((e.target && e.target.tagName) || '')) return; const c = e.key.toLowerCase(); if (/^(arrowleft|arrowright|arrowup|arrowdown|w|a|s|d|q|e)$/.test(c)) { S.keys[c] = 1; if (!/^[qe]$/.test(c)) S.tgt = null; e.preventDefault(); } };
   const ku = e => { delete S.keys[e.key.toLowerCase()]; };
   document.addEventListener('keydown', kd); document.addEventListener('keyup', ku);
@@ -460,7 +461,7 @@ export function island(o) {
   /* ───────── 控制介面 ───────── */
   const ctl = {
     get dead() { return S.dead; }, set dead(v) { if (v) dispose(); }, dispose, kind: 'island',
-    probe() { const P = v => { const f = proj(v); return { x: Math.round(f.x), y: Math.round(f.y) }; }; return { mode: S.mode, me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, yaw: +S.yaw.toFixed(2), pitch: +S.pitch.toFixed(2), ex: Object.assign({}, D.ex), night: +(S.night || 0).toFixed(2), card: card.classList.contains('on') ? card.textContent : '', door: doorBtn.classList.contains('on') ? doorBtn.textContent : '', doorXY: doorBtn.classList.contains('on') ? (() => { const b = doorBtn.getBoundingClientRect(); return { x: Math.round(b.left + b.width / 2), y: Math.round(b.top + b.height / 2) }; })() : null, ent: !!S.ent, myDoor: P(new Vector3(myHouse.door.x, 1.2, myHouse.door.z - 2.8 * (myHouse.f === 2 ? -1 : 1))), myHouse: P(new Vector3(myHouse.x, 2, myHouse.z)), npcs: npcs.map(p => Object.assign({ id: p.d.id, state: p.state }, P(new Vector3(p.x, p.h * .5, p.z)))) }; },
+    probe() { const P = v => { const f = proj(v); return { x: Math.round(f.x), y: Math.round(f.y) }; }; return { mode: S.mode, fp: S.fp, fpK: +S.fpK.toFixed(2), me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, yaw: +S.yaw.toFixed(2), pitch: +S.pitch.toFixed(2), ex: Object.assign({}, D.ex), night: +(S.night || 0).toFixed(2), card: card.classList.contains('on') ? card.textContent : '', door: doorBtn.classList.contains('on') ? doorBtn.textContent : '', doorXY: doorBtn.classList.contains('on') ? (() => { const b = doorBtn.getBoundingClientRect(); return { x: Math.round(b.left + b.width / 2), y: Math.round(b.top + b.height / 2) }; })() : null, ent: !!S.ent, myDoor: P(new Vector3(myHouse.door.x, 1.2, myHouse.door.z - 2.8 * (myHouse.f === 2 ? -1 : 1))), myHouse: P(new Vector3(myHouse.x, 2, myHouse.z)), npcs: npcs.map(p => Object.assign({ id: p.d.id, state: p.state }, P(new Vector3(p.x, p.h * .5, p.z)))) }; },
     px(x, y, z) { const f = proj(new Vector3(x, y, z)); return { x: Math.round(f.x), y: Math.round(f.y) }; },
     teleport(x, z) { me.x = x; me.z = z; S.cam.set(x, 1, z); }, setYaw(y) { S.yaw = S.yawT = y; }, setPitch(p) { S.pitch = S.pitchT = p; }, setDist(d) { S.dist = S.distT = d; }, setHour(h) { PHASES[0][0] = h; lastH = -1; },
   };
@@ -471,7 +472,7 @@ export function island(o) {
 
   /* ───────── 每幀 ───────── */
   let cw = 0, ch = 0, dprv = 0, pr = 1, prFloor = 1, fpsT = 0, fpsN = 0;
-  const fwd = new Vector3(), rgt = new Vector3(), camPos = new Vector3();
+  const fwd = new Vector3(), rgt = new Vector3(), camPos = new Vector3(), eyeV = new Vector3(), lookV = new Vector3(), lookFP = new Vector3();
   function resize() { const r = cv.getBoundingClientRect(), W = Math.max(1, cv.clientWidth), Hh = Math.max(1, cv.clientHeight), dpr = Math.min(2, window.devicePixelRatio || 1);
     const nps = Math.round(clamp(1.75 - ((r.height || Hh) - 380) / 440 * .6, 1.15, 1.75) * 20) / 20; if (nps !== PS) { PS = nps; people.forEach(q => { q.h = q.h0 * PS; q.w = q.h * q.ar; }); }
     if (W === cw && Hh === ch && dpr === dprv) return; cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2); pr = Math.min(pr, Math.sqrt(2.2e6 / (W * Hh))); prFloor = Math.max(Math.min(pr, .9), pr * .8); renderer.setPixelRatio(pr); renderer.setSize(W, Hh, false); camera.aspect = W / Hh; camera.updateProjectionMatrix(); }
@@ -521,7 +522,14 @@ export function island(o) {
     S.cam.x += (tx - S.cam.x) * Math.min(1, dt * 8); S.cam.z += (tz - S.cam.z) * Math.min(1, dt * 8); S.cam.y += ((S.mode === 'edit' ? 1.8 : 1.1) - S.cam.y) * Math.min(1, dt * 4);
     const aspect = cw / ch, dd = S.dist * (aspect < 1.4 ? 1.4 / aspect : 1);
     camPos.set(S.cam.x + sy * Math.cos(S.pitch) * dd, S.cam.y + Math.sin(S.pitch) * dd, S.cam.z + cy * Math.cos(S.pitch) * dd); if (camPos.y < .8) camPos.y = .8;
-    camera.position.copy(camPos); camera.lookAt(S.cam.x, S.cam.y + .4, S.cam.z); sky.position.copy(camPos);
+    /* 第一人稱：鏡頭放在角色眼睛高度，和第三人稱之間平滑過渡 */
+    S.fpK += ((S.fp && S.mode === 'walk' && !S.ent ? 1 : 0) - S.fpK) * Math.min(1, dt * 5);
+    const fpK = S.fpK, cpf = Math.cos(S.fpP), spf = Math.sin(S.fpP);
+    eyeV.set(S.cam.x, me.y + 1.55, S.cam.z);
+    lookV.set(S.cam.x, S.cam.y + .4, S.cam.z); lookFP.set(eyeV.x - sy * cpf * 10, eyeV.y + spf * 10, eyeV.z - cy * cpf * 10);
+    camPos.lerp(eyeV, fpK); lookV.lerp(lookFP, fpK);
+    me.grp.visible = fpK < .5; me.sh.visible = fpK < .5; if (me.tag) me.tag.visible = fpK < .5;
+    camera.position.copy(camPos); camera.lookAt(lookV); sky.position.copy(camPos);
     sun.position.set(S.cam.x + 30, 60, S.cam.z + 22); sun.target.position.set(S.cam.x, 0, S.cam.z);
     if (S.night > .6) { sun.position.set(S.cam.x - 25, 50, S.cam.z + 30); }
     /* 人 */
