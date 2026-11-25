@@ -48,6 +48,9 @@ const SHOPS = [{ x: -22, z: -24, k: 'izakaya', n: '居酒屋' }, { x: -8, z: -24
 
 const CSS = `
 .i3hud{position:absolute;right:max(14px,env(safe-area-inset-right));top:96px;display:flex;flex-direction:column;gap:12px;z-index:3}
+.home3 .twtop{background:none}
+.i3tb{flex:none;min-width:44px;min-height:44px;border:0;background:transparent;color:#fff3d6;font-size:28px;line-height:1;padding:0 4px;border-radius:50%;text-shadow:0 2px 4px #000a;cursor:pointer}
+.i3tb.on{background:#fff3d633}
 .i3info{position:absolute;left:max(12px,env(safe-area-inset-left));top:92px;background:#ffffffe6;color:#3a2a1a;border:3px solid #3a2a1a;border-radius:16px;padding:6px 14px;font-size:15px;line-height:1.35;z-index:3;pointer-events:none;box-shadow:0 4px 0 #0003}
 .i3info b{font-size:19px;display:block}
 .i3pan{position:absolute;left:0;right:0;bottom:0;background:#fff8eaf2;border-top:4px solid #3a2a1a;z-index:5;padding:6px max(10px,env(safe-area-inset-right)) 10px max(10px,env(safe-area-inset-left));display:none;color:#3a2a1a}
@@ -341,10 +344,15 @@ export function island(o) {
   let phaseI = 0;
   function hourNow() { if (PHASES[phaseI][0] !== null) return PHASES[phaseI][0]; const d = new Date(); return d.getHours() + d.getMinutes() / 60; }
   function hudBtns() {
+    timeTop.style.display = fpTop.style.display = S.mode === 'edit' ? 'none' : ''; fpTop.classList.toggle('on', !!S.fp);
     if (S.mode === 'edit') { hud.innerHTML = `<button class="h3b hot" type="button" data-i3="done"><i>✓</i>完成</button>`; return; }
-    hud.innerHTML = (own ? `<button class="h3b hot" type="button" data-i3="edit"><i>🎨</i>外觀</button>` : '') + `<button class="h3b" type="button" data-i3="home"><i>🏠</i>${own ? '回家' : '他家'}</button><button class="h3b" type="button" data-i3="shopin"><i>🏮</i>${own ? '我的店' : '他的店'}</button>${cb.stats ? `<button class="h3b" type="button" data-i3="stats"><i>📋</i>店況</button>` : ''}<button class="h3b" type="button" data-i3="fp"><i>👁</i>${S.fp ? '第三人稱' : '第一人稱'}</button><button class="h3b" type="button" data-i3="time"><i>🕐</i>${PHASES[phaseI][1]}</button>`;
+    hud.innerHTML = (own ? `<button class="h3b hot" type="button" data-i3="edit"><i>🎨</i>外觀</button>` : '') + `<button class="h3b" type="button" data-i3="home"><i>🏠</i>${own ? '回家' : '他家'}</button><button class="h3b" type="button" data-i3="shopin"><i>🏮</i>${own ? '我的店' : '他的店'}</button>${cb.stats ? `<button class="h3b" type="button" data-i3="stats"><i>📋</i>店況</button>` : ''}`;
   }
   function updInfo() { const h = hourNow(), hh = Math.floor(h), mm = Math.floor((h - hh) * 60); info.innerHTML = `<b>🏝️ ${esc(own ? (D.name ? D.name.replace(/的(小店|家)$/, '') + '的島' : '我的島') : ((o.owner && o.owner.name) || '好友') + '的島')}</b>${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}・${h < 5 || h >= 19.5 ? '夜晚 🌙' : h < 7 ? '清晨 🌅' : h < 16.5 ? '白天 ☀️' : '傍晚 🌇'}`; }
+  /* 頂部列：🕐 時間、👁 視角，放在「回首頁」左邊（無外框，只有圖示） */
+  const topBar = root.querySelector('.twtop'), backBtn = topBar && topBar.querySelector('.twlist');
+  const mkTop = (act, icon, label) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'i3tb'; b.dataset.i3 = act; b.setAttribute('aria-label', label); b.textContent = icon; if (topBar) topBar.insertBefore(b, backBtn || null); ui.push(b); return b; };
+  const timeTop = mkTop('time', '🕐', '時間'), fpTop = mkTop('fp', '👁', '第一人稱／第三人稱');
   hudBtns(); updInfo(); setTimeout(joyRest, 50); window.addEventListener('resize', joyRest);
 
   /* 外觀編輯 */
@@ -417,7 +425,7 @@ export function island(o) {
     if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch && ptrs.size >= 2) { const [a, b] = [...ptrs.values()]; S.distT = clamp(pinch.dist * pinch.d / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)), 7, 40); S.yawT = pinch.yaw - (Math.atan2(b.y - a.y, b.x - a.x) - pinch.ang); return; }
     if (!pd || pd.id !== e.pointerId) return; const dx = e.clientX - pd.x, dy = e.clientY - pd.y; if (!pd.moved && Math.hypot(dx, dy) > 8) pd.moved = 1; if (!pd.moved) return;
-    S.yawT = pd.yaw0 - dx * .007; if (S.fp) S.fpP = clamp(pd.fp0 + dy * .005, -1.2, 1.2); else S.pitchT = clamp(pd.pit0 + dy * .005, .22, 1.3); });
+    S.yawT = pd.yaw0 - dx * .007; if (S.fp) S.fpP = clamp(pd.fp0 - dy * .005, -1.2, 1.2); else S.pitchT = clamp(pd.pit0 + dy * .005, .22, 1.3); });
   const up = e => { if (jd && e.pointerId === jd.id) { jd = null; S.joy = null; joyRest(); return; } ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!pd || pd.id !== e.pointerId) return; if (!pd.moved) tap(e.clientX, e.clientY); pd = null; };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   cv.addEventListener('wheel', e => { e.preventDefault(); if (!S.fp) S.distT = clamp(S.distT + Math.sign(e.deltaY) * 1.6, 7, 40); }, { passive: false });
