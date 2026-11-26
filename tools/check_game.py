@@ -2145,12 +2145,28 @@ def sc_home3d(b, base):
         ip2 = c.page.evaluate("(()=>{const p=HOME3.probe();delete p.npcs;return p})()")
         if abs(ip2['yaw'] - y0) < .3 or ip2['me'] != ip['me']:
             raise AssertionError('島上拖曳沒有轉鏡頭（或角色跑掉了）：yaw %s→%s me %s→%s' % (y0, ip2['yaw'], ip['me'], ip2['me']))
+        # 第三人稱往下拖要能把鏡頭壓低、抬頭看遠方（2026/11/26 原本最低只到 .22）
+        c.page.mouse.move(cvb['x'] + cvb['width'] * .5, cvb['y'] + cvb['height'] * .8); c.page.mouse.down()
+        for k in range(1, 13):
+            c.page.mouse.move(cvb['x'] + cvb['width'] * .5, cvb['y'] + cvb['height'] * .8 - k * 15); c.page.wait_for_timeout(30)
+        c.page.mouse.up(); c.page.wait_for_timeout(900)
+        pt = c.page.evaluate("HOME3.probe().pitch")
+        if pt > .12:
+            raise AssertionError('第三人稱沒辦法把鏡頭壓低抬頭：pitch=%s' % pt)
+        c.page.screenshot(path='/tmp/check-island-lowpitch.png')
+        c.page.evaluate("HOME3.setPitch(.6)"); c.page.wait_for_timeout(300)
         # 第一人稱／第三人稱切換：真實點擊「👁 第一人稱」→ 鏡頭進到眼睛高度；再點一次切回來
         c.click('.home3 [data-i3=fp]', wait=900)
         p = c.page.evaluate("HOME3.probe()")
         if not p.get('fp') or p.get('fpK', 0) < .9:
             raise AssertionError('按「第一人稱」後沒有切換：fp=%s fpK=%s' % (p.get('fp'), p.get('fpK')))
         c.page.screenshot(path='/tmp/check-island-fp.png')
+        # 第一人稱看別人：紙片人要正面對著鏡頭，不能轉成側面變一條線（2026/11/26 使用者回報人不見了）
+        for yy in (0, 1.57, 3.14, 4.71):
+            c.page.evaluate("HOME3.setYaw(%s)" % yy); c.page.wait_for_timeout(500)
+            w = c.page.evaluate("HOME3.probe().npcW")
+            if w is not None and w < 12:
+                raise AssertionError('第一人稱看到的人變成一條線（寬 %s px），紙片人沒轉向鏡頭' % w)
         c.click('.home3 [data-i3=fp]', wait=900)
         p = c.page.evaluate("HOME3.probe()")
         if p.get('fp') or p.get('fpK', 1) > .1:

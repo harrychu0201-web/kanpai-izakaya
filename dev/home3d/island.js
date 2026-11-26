@@ -501,7 +501,7 @@ export function island(o) {
     if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch && ptrs.size >= 2) { const [a, b] = [...ptrs.values()]; S.distT = clamp(pinch.dist * pinch.d / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)), 7, 40); S.yawT = pinch.yaw - (Math.atan2(b.y - a.y, b.x - a.x) - pinch.ang); return; }
     if (!pd || pd.id !== e.pointerId) return; const dx = e.clientX - pd.x, dy = e.clientY - pd.y; if (!pd.moved && Math.hypot(dx, dy) > 8) pd.moved = 1; if (!pd.moved) return;
-    S.yawT = pd.yaw0 - dx * .007; if (S.fp) S.fpP = clamp(pd.fp0 - dy * .005, -1.2, 1.2); else S.pitchT = clamp(pd.pit0 + dy * .005, .22, 1.3); });
+    S.yawT = pd.yaw0 - dx * .007; if (S.fp) S.fpP = clamp(pd.fp0 - dy * .005, -1.2, 1.2); else S.pitchT = clamp(pd.pit0 + dy * .005, .04, 1.3); });  /* 2026/11/26 下限 .22→.04：第三人稱可以把鏡頭壓低、抬頭看天空和遠方 */
   const up = e => { if (jd && e.pointerId === jd.id) { jd = null; S.joy = null; joyRest(); return; } ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!pd || pd.id !== e.pointerId) return; if (!pd.moved) tap(e.clientX, e.clientY); pd = null; };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   cv.addEventListener('wheel', e => { e.preventDefault(); if (!S.fp) S.distT = clamp(S.distT + Math.sign(e.deltaY) * 1.6, 7, 40); }, { passive: false });
@@ -545,7 +545,7 @@ export function island(o) {
   /* ───────── 控制介面 ───────── */
   const ctl = {
     get dead() { return S.dead; }, set dead(v) { if (v) dispose(); }, dispose, kind: 'island',
-    probe() { const P = v => { const f = proj(v); return { x: Math.round(f.x), y: Math.round(f.y) }; }; return { mode: S.mode, fp: S.fp, fpK: +S.fpK.toFixed(2), me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, yaw: +S.yaw.toFixed(2), pitch: +S.pitch.toFixed(2), ex: Object.assign({}, D.ex), night: +(S.night || 0).toFixed(2), card: card.classList.contains('on') ? card.textContent : '', door: doorBtn.classList.contains('on') ? doorBtn.textContent : '', doorXY: doorBtn.classList.contains('on') ? (() => { const b = doorBtn.getBoundingClientRect(); return { x: Math.round(b.left + b.width / 2), y: Math.round(b.top + b.height / 2) }; })() : null, ent: !!S.ent, myDoor: P(new Vector3(myHouse.door.x, 1.2, myHouse.door.z - 2.8 * (myHouse.f === 2 ? -1 : 1))), myHouse: P(new Vector3(myHouse.x, 2, myHouse.z)), npcs: npcs.map(p => Object.assign({ id: p.d.id, state: p.state }, P(new Vector3(p.x, p.h * .5, p.z)))) }; },
+    probe() { const P = v => { const f = proj(v); return { x: Math.round(f.x), y: Math.round(f.y) }; }; return { mode: S.mode, fp: S.fp, fpK: +S.fpK.toFixed(2), me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, yaw: +S.yaw.toFixed(2), pitch: +S.pitch.toFixed(2), ex: Object.assign({}, D.ex), night: +(S.night || 0).toFixed(2), card: card.classList.contains('on') ? card.textContent : '', door: doorBtn.classList.contains('on') ? doorBtn.textContent : '', doorXY: doorBtn.classList.contains('on') ? (() => { const b = doorBtn.getBoundingClientRect(); return { x: Math.round(b.left + b.width / 2), y: Math.round(b.top + b.height / 2) }; })() : null, ent: !!S.ent, myDoor: P(new Vector3(myHouse.door.x, 1.2, myHouse.door.z - 2.8 * (myHouse.f === 2 ? -1 : 1))), myHouse: P(new Vector3(myHouse.x, 2, myHouse.z)), npcs: npcs.map(p => Object.assign({ id: p.d.id, state: p.state }, P(new Vector3(p.x, p.h * .5, p.z)))), npcW: (() => { let mn = null; for (const p of people) { if (p === me || !p.grp.visible) continue; const c = new Vector3(p.x, p.h * .5, p.z); if (c.distanceTo(camPos) > 30 || c.clone().project(camera).z > 1) continue; p.m.updateMatrixWorld(true); const a = proj(p.m.localToWorld(new Vector3(-.5, .5, 0))), b = proj(p.m.localToWorld(new Vector3(.5, .5, 0))); const ww = Math.hypot(a.x - b.x, a.y - b.y); mn = mn === null ? ww : Math.min(mn, ww); } return mn === null ? null : Math.round(mn); })() }; },
     px(x, y, z) { const f = proj(new Vector3(x, y, z)); return { x: Math.round(f.x), y: Math.round(f.y) }; },
     teleport(x, z) { me.x = x; me.z = z; S.cam.set(x, 1, z); }, setYaw(y) { S.yaw = S.yawT = y; }, setPitch(p) { S.pitch = S.pitchT = p; }, setDist(d) { S.dist = S.distT = d; }, setHour(h) { PHASES[0][0] = h; lastH = -1; },
   };
@@ -618,16 +618,16 @@ export function island(o) {
     S.bobA = (S.bobA || 0) + ((me.moving ? 1 : 0) - (S.bobA || 0)) * Math.min(1, dt * 8);
     const bobY = (Math.abs(Math.sin(me.ph * .5)) * .09 - .045) * S.bobA, bobX = Math.sin(me.ph * .5) * .045 * S.bobA;
     eyeV.set(S.cam.x + rgt.x * bobX, me.y + 2.3 + bobY, S.cam.z + rgt.z * bobX);  /* 2026/11/26 原本 1.55 太低（像小孩視角），調高 */
-    lookV.set(S.cam.x, S.cam.y + .4, S.cam.z); lookFP.set(eyeV.x - sy * cpf * 10, eyeV.y + spf * 10, eyeV.z - cy * cpf * 10);
+    const upK = clamp((.3 - S.pitch) / .26, 0, 1);  /* 鏡頭壓得越低，看的點越往上抬（看得到天空） */
+    lookV.set(S.cam.x, S.cam.y + .4 + upK * 2.2, S.cam.z); lookFP.set(eyeV.x - sy * cpf * 10, eyeV.y + spf * 10, eyeV.z - cy * cpf * 10);
     camPos.lerp(eyeV, fpK); lookV.lerp(lookFP, fpK);
     me.grp.visible = fpK < .5; me.sh.visible = fpK < .5; if (me.tag) me.tag.visible = fpK < .5;
     camera.position.copy(camPos); camera.lookAt(lookV); sky.position.copy(camPos);
     sun.position.set(shX + 30, 60, shZ + 22); sun.target.position.set(shX, 0, shZ);
     if (S.night > .6) { sun.position.set(shX - 25, 50, shZ + 30); }
     /* 人 */
-    const camYaw = Math.atan2(camPos.x - S.cam.x, camPos.z - S.cam.z);
     for (const p of people) { const w = p.w, hh = p.h, walk = p.moving, s = Math.sin(p.ph), bob = walk ? Math.abs(s) * .06 : 0, tilt = walk ? s * .06 : Math.sin(t * 1.6 + p.ph) * .01, sq = walk ? 1 + Math.cos(p.ph * 2) * .025 : 1 + Math.sin(t * 1.6 + p.ph) * .008;
-      p.grp.position.set(p.x, (p.y || 0) + bob, p.z); p.m.rotation.set(0, camYaw, tilt * p.face); p.m.scale.set(w * p.face * (2 - sq), hh * sq, 1); p.sh.position.set(p.x, (p.y || 0) + .07, p.z); p.sh.scale.set(w * .7, w * .4, 1);
+      p.grp.position.set(p.x, (p.y || 0) + bob, p.z); p.m.rotation.set(0, Math.atan2(camPos.x - p.x, camPos.z - p.z), tilt * p.face); p.m.scale.set(w * p.face * (2 - sq), hh * sq, 1); p.sh.position.set(p.x, (p.y || 0) + .07, p.z); p.sh.scale.set(w * .7, w * .4, 1);
       if (p.tag) p.tag.position.set(p.x, (p.y || 0) + hh + .35, p.z); if (p.bub) { p.bub.visible = p !== S.talk; p.bub.position.set(p.x, hh + .5 + Math.sin(t * 2.3 + p.ph) * .06, p.z); } }
     /* 動畫 */
     waveT.offset.set(t * .004, t * .006); water.forEach((w, i) => { if (i === 0) w.rotation.z = t * .3; else w.scale.y = 1 + Math.sin(t * 6) * .08; });

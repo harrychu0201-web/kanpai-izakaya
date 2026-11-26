@@ -1022,13 +1022,12 @@ export function start(o) {
     warm1.intensity = warm2.intensity = indoor ? 14 : 6;
     /* 人物 */
     me.hidden = S.fpK > .5; /* 第一人稱時看不到自己 */
-    const camYaw = Math.atan2(camPos.x - S.cam.x, camPos.z - S.cam.z);
     for (const p of people) {
       const vis = !p.hidden, thru = !indoor && p.z < RD; p.grp.visible = vis; p.sh.visible = vis; if (p.tag) p.tag.visible = vis && !thru; if (p.bub) p.bub.visible = vis && !thru && p !== S.talk && p.state !== 'leave';
       if (!vis) continue;
       const w = p.w, h = p.h, walk = p.moving ? 1 : 0, s = Math.sin(p.ph), bob = walk ? Math.abs(s) * .06 : 0, tilt = walk ? s * .06 : Math.sin(t * 1.6 + p.ph) * .01, sq = walk ? 1 + Math.cos(p.ph * 2) * .025 : 1 + Math.sin(t * 1.6 + p.ph) * .008;
       const sleep = p.state === 'sleep' ? Math.sin(t * 1.2) * .015 : 0;
-      p.grp.position.set(p.x, bob, p.z); p.m.rotation.set(0, camYaw, tilt * p.face + sleep); p.m.scale.set(w * p.face * (2 - sq), h * sq, 1);
+      p.grp.position.set(p.x, bob, p.z); p.m.rotation.set(0, Math.atan2(camPos.x - p.x, camPos.z - p.z), tilt * p.face + sleep);  /* 對每個人算轉向，第一人稱才不會看到側面一條線 */ p.m.scale.set(w * p.face * (2 - sq), h * sq, 1);
       p.mat.opacity = p.alpha == null ? 1 : p.alpha; p.sh.position.set(p.x, .025, p.z); p.sh.scale.set(w * .7, w * .4, 1);
       if (p.tag) { p.tag.position.set(p.x, h + .3, p.z); p.tag.material.opacity = p.alpha == null ? 1 : p.alpha; }
       if (p.bub) { p.bub.position.set(p.x, h + (p.tag ? .82 : .45) + Math.sin(t * 2.3 + p.ph) * .06, p.z); }
