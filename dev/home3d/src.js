@@ -1006,11 +1006,12 @@ export function start(o) {
     const fpK = S.fpK, cpf = Math.cos(S.fpP), spf = Math.sin(S.fpP);
     /* 第一人稱走路的晃動：跟著腳步上下點、左右微晃（沒有這個會像用飄的） */
     S.bobA = (S.bobA || 0) + ((me.moving ? 1 : 0) - (S.bobA || 0)) * Math.min(1, dt * 8);
-    const bobY = (Math.abs(Math.sin(me.ph * .5)) * .07 - .035) * S.bobA, bobX = Math.sin(me.ph * .5) * .035 * S.bobA;
+    const stp = me.ph * .9, bobY = (Math.abs(Math.sin(stp)) - .6) * .13 * S.bobA, bobX = Math.sin(stp) * .07 * S.bobA;  /* 麥塊式：一秒約 2.6～2.9 步，左右一步一邊 */
     eyeV.set(S.cam.x + rgt.x * bobX, 1.5 + bobY, S.cam.z + rgt.z * bobX); lookV.set(S.cam.x, S.cam.y + .5, S.cam.z);
     lookFP.set(eyeV.x - sy * cpf * 10, eyeV.y + spf * 10, eyeV.z - cy * cpf * 10);
     camPos.lerp(eyeV, fpK); lookV.lerp(lookFP, fpK);
     camera.position.copy(camPos); camera.lookAt(lookV); sky.position.copy(camPos);
+    if (fpK > .01) { const k = S.bobA * fpK; camera.rotateZ(Math.sin(stp) * .016 * k); camera.rotateX(-Math.abs(Math.cos(stp)) * .009 * k); }  /* 踏步時畫面跟著微微歪、點一下 */
     /* 布置模式下方有家具面板蓋住約一半畫面：把畫面中心往上移到面板上方的可見區域 */
     { const vt = S.mode === 'build' ? Math.max(0, ((bp.offsetHeight || 0) - 60) / 2) : 0; S.vo = (S.vo || 0) + (vt - (S.vo || 0)) * Math.min(1, dt * 6); if (Math.abs(S.vo) > .5) camera.setViewOffset(cw, ch, 0, S.vo * ch / Math.max(1, cv.clientHeight || ch), cw, ch); else if (camera.view && camera.view.enabled) { S.vo = 0; camera.clearViewOffset(); } }
     for (const q of placed) { if (!q.pop) continue; const k = (S.t - q.pop.t) / (q.pop.k === 'spawn' ? .45 : .25); if (k >= 1) { q.g.scale.setScalar(1); q.pop = null; continue; } q.g.scale.setScalar(q.pop.k === 'spawn' ? .35 + .65 * (1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2)) : 1 + Math.sin(k * Math.PI) * .12); }
