@@ -518,6 +518,18 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 #game .bank{font-size:calc(15px*var(--fz,1))}
 #game .salepick small{font-size:calc(13px*var(--fz,1))}
 #game .new{font-size:calc(11px*var(--fz,1))}
+/* 商店小字放大（玩家回報傷眼）：手機上跟著 --fz 放大六成幅度，桌機只多 1px，不要太大 */
+#game .card{--fz2:calc(1 + (var(--fz,1) - 1)*.6)}
+#game .card .goalrow{font-size:calc(16px*var(--fz2))}
+#game .card .stabs .stab{font-size:calc(19px*var(--fz2))}
+#game .card .sh{font-size:calc(18px*var(--fz2))}
+#game .card .up b{font-size:calc(17px*var(--fz2))}
+#game .card .up .price{font-size:calc(17px*var(--fz2))}
+#game .card .up .row>span:not(.price),#game .card .up small,#game .card .needm{font-size:calc(14px*var(--fz2))}
+#game .card .lvchain{font-size:calc(13px*var(--fz2))}
+#game .card .up .row>span:not(.price){font-size:calc(14px*var(--fz2))!important}
+#game .card .up .stlvp,#game .card .up .stlvb{font-size:calc(14px*var(--fz2))}
+#game .card .up .rtag{font-size:calc(12.5px*var(--fz2))}
 .home .card{max-height:calc(100vh - 44px);max-height:calc(100dvh - 44px);box-sizing:border-box}.lbrow.me{background:#ffd98a;box-shadow:0 0 0 2px #e0412c}
 .lbrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lbrow em{font-style:normal;font-variant-numeric:tabular-nums;color:var(--lacquer);font-weight:900}
 .lbme{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:#f1e2c2;border-radius:12px;padding:8px 12px;font-size:14px}
@@ -6998,9 +7010,9 @@ function gunArt(l){
   if(l===1)return `<path d="M10 22h62l6 8v8H40l-6 18H16l6-18H10z" fill="#ff8a2a" stroke="${O}" stroke-width="4" stroke-linejoin="round"/><rect x="72" y="22" width="16" height="9" rx="3" fill="#2fb3a8" stroke="${O}" stroke-width="3"/><circle cx="50" cy="30" r="4" fill="#fff"/>`;
   if(l===2)return `<path d="M6 20h70v12H44l-4 6H30l-6 20H8l6-24H6z" fill="#8a9098" stroke="${O}" stroke-width="4" stroke-linejoin="round"/><circle cx="38" cy="32" r="9" fill="#5a5f66" stroke="${O}" stroke-width="3"/><path d="M76 20h16v8H76" fill="#5a5f66" stroke="${O}" stroke-width="3"/><path d="M14 46l10 2" stroke="#6b4026" stroke-width="6"/>`;
   return `<path d="M2 30l26-6h66v10H40l-10 4-24 14L2 44z" fill="#8a5228" stroke="${O}" stroke-width="4" stroke-linejoin="round"/><rect x="38" y="16" width="58" height="9" rx="3" fill="#5a5f66" stroke="${O}" stroke-width="3"/><rect x="50" y="25" width="22" height="9" rx="2" fill="#3a3f46" stroke="${O}" stroke-width="2.5"/>`}
-function shopProps(){const inv=loadRec().inv||{};return `<h3 class="sh">${T('🎒 道具')}</h3><p style="font-size:13px;margin:0 0 -4px">${T('買到的道具放進背包。開店前按「🎒 道具」先備妥，或營業中從背包拿出來用。')}</p><div class="shop">${Object.keys(PROPS).map(k=>{const p=PROPS[k],n=inv[k]||0,poor=ST.coins<p.p;
+function shopProps(){const inv=loadRec().inv||{};return `<h3 class="sh">${T('🎒 道具')}</h3><p style="font-size:calc(14px*var(--fz2,1));margin:0 0 -4px">${T('買到的道具放進背包。開店前按「🎒 道具」先備妥，或營業中從背包拿出來用。')}</p><div class="shop">${Object.keys(PROPS).map(k=>{const p=PROPS[k],n=inv[k]||0,poor=ST.coins<p.p;
   return `<div class="up"><b><span style="font-size:22px;margin-right:4px">${p.ic}</span>${T(p.n)} <small style="font-weight:700;color:#7a5">${T('持有 ×{0}',n)}</small></b><p>${T(p.d)}</p><div class="row"><span class="price">${yen(p.p)}</span>${p.auto&&n>=FRZ_MAX?`<span>${T('已達上限')}</span>`:`<button class="btn ${poor?'poor':''}" data-act="shopprop" data-id="${k}">${T('購買')}</button>`}</div>${poor&&!(p.auto&&n>=FRZ_MAX)?`<span class="needm" id="needp${k}">${T('錢包不夠，還差 {0}',yen(p.p-ST.coins))}</span>`:''}</div>`}).join('')}</div>`}
-function shopGuns(from){const S=ST||load()||{coins:0};return `<h3 class="sh">${T('防身用品・趕走劫匪')}</h3><p style="font-size:13px;margin:0 0 -4px">${T('劫匪只能用槍趕走。買了之後，槍會放在保溫台左邊，營業時點一下拿起來就能開槍。小心別打到客人，會被罰很多錢！')}</p><div class="shop">${GUNS.map((g,i)=>{const own=(S.weapon||0)>i,cur=(S.weapon||0)===i+1;
+function shopGuns(from){const S=ST||load()||{coins:0};return `<h3 class="sh">${T('防身用品・趕走劫匪')}</h3><p style="font-size:calc(14px*var(--fz2,1));margin:0 0 -4px">${T('劫匪只能用槍趕走。買了之後，槍會放在保溫台左邊，營業時點一下拿起來就能開槍。小心別打到客人，會被罰很多錢！')}</p><div class="shop">${GUNS.map((g,i)=>{const own=(S.weapon||0)>i,cur=(S.weapon||0)===i+1;
   return `<div class="up ${own?'done':''}"><b><span class="wi">${sv(gunArt(i+1),'0 0 100 60')}</span>${T(g.zh)}</b><p>${T(g.d)}</p><div class="row"><span class="price">${yen(g.cost)}</span>${cur?`<span>${T('使用中')}</span>`:own?`<span>${T('已擁有')}</span>`:`<button class="btn ${S.coins<g.cost?'poor':''}" data-act="buygun" data-id="${i}" data-from="${from||''}">${T('購買')}</button>`}</div>${!own&&S.coins<g.cost?`<span class="needm" id="needg${i}">${T('錢包不夠，還差 {0}',yen(g.cost-S.coins))}</span>`:''}</div>`}).join('')}</div>`}
 function robSet(m){const r=R.rob;if(r&&r.el)r.el.dataset.m=m}
 function evStep(dt,hr){
