@@ -1,4 +1,4 @@
-/* 我的店 3D：家具與擺飾的模型（全部用 three.js 幾何體畫，沒有外部模型檔）。
+/* 我的店 3D：家具與擺飾的模型（程式畫的幾何體；家裡的主要家具有 Kenney 模型的會換成模型，見 kmodels.js）。
    每個 build(k) 回傳 Group：原點在「佔地中心、地板高度」，正面朝 +z。佔地 w×d 格（1 格 = 1 公尺）。 */
 import {
   Group, Mesh, BoxGeometry, CylinderGeometry, SphereGeometry, ConeGeometry, TorusGeometry, IcosahedronGeometry,
@@ -6,6 +6,8 @@ import {
   Sprite, SpriteMaterial, AdditiveBlending, CapsuleGeometry, LatheGeometry, Vector2,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { kbuild, kready } from './kmodels.js';
+export { kready };
 
 export const FONT = "'Zen Maru Gothic','Noto Sans TC','Noto Sans JP','PingFang TC','Microsoft JhengHei',sans-serif";
 const MC = {};
@@ -213,8 +215,10 @@ F.carpet = g => { const t = ctex(256, 256, (x, w, h) => { x.fillStyle = '#f2e6d0
 const mulberry2 = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
 export function build(k) {
-  const g = new Group(); const f = F[k]; if (f) f(g); else B(g, .8, .8, .8, '#f0f', 0, .4, 0);
-  compact(g);
+  let g = new Group(); const f = F[k]; if (f) f(g); else B(g, .8, .8, .8, '#f0f', 0, .4, 0);
+  let kg = null; try { kg = kbuild(k, g, IT[k]); } catch (_) { kg = null; }
+  if (kg) { g.children.filter(c => c.isSprite).forEach(sp => kg.add(sp)); g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); g = kg; }
+  else compact(g);
   g.traverse(o => { if (o.isMesh) o.userData.item = g; });
   return g;
 }

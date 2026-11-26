@@ -7,7 +7,9 @@ import {
   BoxGeometry, PlaneGeometry, CylinderGeometry, SphereGeometry, ConeGeometry, CircleGeometry, IcosahedronGeometry, TorusGeometry, RingGeometry, ShapeGeometry, Shape,
   MeshBasicMaterial, MeshLambertMaterial, CanvasTexture, TextureLoader, SRGBColorSpace, Sprite, SpriteMaterial, BufferGeometry, Float32BufferAttribute,
   BackSide, DoubleSide, RepeatWrapping, AdditiveBlending, Vector3, Vector2, Raycaster, Plane, PCFShadowMap, ExtrudeGeometry,
+  InstancedMesh, Object3D,
 } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { NPCS, KIND } from '../town3d/npcs.js';
 import { ctex, rrect, GLOW, FONT } from './models.js';
 
@@ -108,7 +110,7 @@ export function island(o) {
   /* 雲 */
   const clouds = new Group(); scene.add(clouds);
   { const r = mulberry(4); for (let i = 0; i < 14; i++) { const c = new Group(); const n = 3 + (r() * 3 | 0); for (let j = 0; j < n; j++) { const m = new Mesh(new IcosahedronGeometry(3 + r() * 3, 1), new MeshLambertMaterial({ color: '#ffffff', flatShading: true, transparent: true, opacity: .95, fog: false })); m.position.set(j * 4 - n * 2, r() * 1.5, r() * 2); m.scale.y = .6; c.add(m); } const a = r() * Math.PI * 2, R = 110 + r() * 60; c.position.set(Math.cos(a) * R, 40 + r() * 25, Math.sin(a) * R); c.userData.a = a; c.userData.R = R; clouds.add(c); } }
-  const hemi = new HemisphereLight(0xdff2ff, 0x7aa05a, 1.4); scene.add(hemi);
+  const hemi = new HemisphereLight(0xfff2dc, 0x7a9a5a, 1.4); scene.add(hemi);
   const amb = new AmbientLight(0xffffff, .25); scene.add(amb);
   const sun = new DirectionalLight(0xfff2dc, 2.2); sun.castShadow = true; const SS = mobile ? 1024 : 2048; sun.shadow.mapSize.set(SS, SS);
   Object.assign(sun.shadow.camera, { left: -34, right: 34, top: 34, bottom: -34, near: 1, far: 160 }); sun.shadow.bias = -.0008; sun.shadow.normalBias = .03; scene.add(sun); scene.add(sun.target);
@@ -122,11 +124,18 @@ export function island(o) {
   const sandT = ctex(128, 128, (x, w, h) => { x.fillStyle = '#f3dfa8'; x.fillRect(0, 0, w, h); const r = mulberry(7); for (let i = 0; i < 300; i++) { x.fillStyle = r() < .5 ? 'rgba(200,170,110,.35)' : 'rgba(255,250,230,.5)'; x.fillRect(r() * w, r() * h, 2, 2); } });
   { const g = new ExtrudeGeometry(rounded(IX + SAND, IZ + SAND, 16), { depth: 1, bevelEnabled: true, bevelSize: 2.5, bevelThickness: .8, bevelSegments: 2, curveSegments: 10 }); g.rotateX(Math.PI / 2); const m = new Mesh(g, new MeshLambertMaterial({ map: rep(sandT, .4, .4) })); m.position.y = -.83; m.receiveShadow = true; scene.add(m);
     const shore = new Mesh(new ShapeGeometry(rounded(IX + SAND + 3.4, IZ + SAND + 3.4, 18), 12), new MeshBasicMaterial({ color: '#bdf0f6', transparent: true, opacity: .55, depthWrite: false })); shore.rotation.x = -Math.PI / 2; shore.position.y = -.38; scene.add(shore); }
-  const grassT = ctex(256, 256, (x, w, h) => { x.fillStyle = '#7ccb5a'; x.fillRect(0, 0, w, h); const r = mulberry(5); for (let i = 0; i < 900; i++) { x.fillStyle = r() < .5 ? 'rgba(60,140,40,.28)' : 'rgba(180,230,120,.3)'; const px = r() * w, py = r() * h; x.fillRect(px, py, 2, 5); } });
-  { const g = new ShapeGeometry(rounded(IX, 27, 12), 10); g.rotateX(-Math.PI / 2); g.translate(0, 0, -7); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 8, uv.getY(i) / 8); const m = new Mesh(g, new MeshLambertMaterial({ map: rep(grassT, 1, 1) })); m.position.y = .02; m.receiveShadow = true; scene.add(m); }
+  /* 草地：大塊深淺色斑＋細草紋（可無縫重複），看起來才不會是一整片平平的綠 */
+  const grassT = ctex(512, 512, (x, w, h) => { x.fillStyle = '#7cc65a'; x.fillRect(0, 0, w, h); const r = mulberry(5);
+    const blob = (px, py, rad, col) => { for (const ox of [-w, 0, w]) for (const oy of [-h, 0, h]) { const g = x.createRadialGradient(px + ox, py + oy, 0, px + ox, py + oy, rad); g.addColorStop(0, col); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(px + ox - rad, py + oy - rad, rad * 2, rad * 2); } };
+    for (let i = 0; i < 26; i++) blob(r() * w, r() * h, 50 + r() * 90, r() < .5 ? 'rgba(70,150,50,.22)' : 'rgba(170,220,110,.25)');
+    for (let i = 0; i < 4200; i++) { const px = r() * w, py = r() * h, v = r(); x.fillStyle = v < .45 ? 'rgba(52,128,40,.30)' : v < .9 ? 'rgba(178,228,120,.32)' : 'rgba(255,250,210,.35)'; x.save(); x.translate(px, py); x.rotate((r() - .5) * .8); x.fillRect(-1, -4, 2, 8); x.restore(); }
+    for (let i = 0; i < 70; i++) { const px = r() * w, py = r() * h; x.fillStyle = 'rgba(60,140,50,.35)'; for (let k = 0; k < 3; k++) { x.beginPath(); x.arc(px + Math.cos(k * 2.1) * 3, py + Math.sin(k * 2.1) * 3, 3, 0, 7); x.fill(); } } });
+  { const g = new ShapeGeometry(rounded(IX, 27, 12), 10); g.rotateX(-Math.PI / 2); g.translate(0, 0, -7); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 14, uv.getY(i) / 14); const m = new Mesh(g, new MeshLambertMaterial({ map: rep(grassT, 1, 1) })); m.position.y = .02; m.receiveShadow = true; scene.add(m); }
   /* 路 */
-  const roadT = ctex(128, 128, (x, w, h) => { x.fillStyle = '#d9d4cc'; x.fillRect(0, 0, w, h); const r = mulberry(8); for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) { const v = (r() * 14 | 0) - 7; x.fillStyle = `rgb(${206 + v},${200 + v},${190 + v})`; x.fillRect(i * 32 + 1, j * 32 + 1, 30, 30); } });
-  const curbM = lam('#f4f1ea');
+  /* 路：暖色石板（圓角石塊錯開排，像動森的石板路） */
+  const roadT = ctex(256, 256, (x, w, h) => { x.fillStyle = '#c9b796'; x.fillRect(0, 0, w, h); const r = mulberry(8);
+    for (let j = 0; j < 4; j++) for (let i = -1; i < 4; i++) { const v = (r() * 18 | 0) - 9, sx = i * 64 + (j % 2 ? 32 : 0) + 3, sy = j * 64 + 3; x.fillStyle = `rgb(${236 + v},${222 + v},${196 + v})`; rrect(x, sx, sy, 58, 58, 14); x.fill(); x.fillStyle = 'rgba(255,255,255,.18)'; rrect(x, sx + 4, sy + 4, 50, 22, 10); x.fill(); x.fillStyle = 'rgba(120,90,50,.08)'; rrect(x, sx + 4, sy + 36, 50, 18, 8); x.fill(); } });
+  const curbM = lam('#efe2c6');
   for (const [x1, z1, x2, z2] of ROADS) {
     const L = Math.hypot(x2 - x1, z2 - z1) + RW2 * 2, cx = (x1 + x2) / 2, cz = (z1 + z2) / 2, hor = z1 === z2;
     const m = new Mesh(new PlaneGeometry(hor ? L : RW2 * 2, hor ? RW2 * 2 : L), new MeshLambertMaterial({ map: rep(roadT, (hor ? L : 4) / 2, (hor ? 4 : L) / 2) })); m.rotation.x = -Math.PI / 2; m.position.set(cx, .04, cz); m.receiveShadow = true; scene.add(m);
@@ -252,9 +261,19 @@ export function island(o) {
   SHOPS.forEach(s => solids.push([s.x - 3.5, s.z - 3, s.x + 3.5, s.z + 2.4]));
   solidC.push([0, 0, 3.6]);
   for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + .26; solidC.push([Math.cos(a) * 6.6, Math.sin(a) * 6.6, .7]); }
+  /* 樹冠：幾顆圓球合成一團，頂端亮、底部暗（頂點顏色），整棵樹輕輕搖 */
+  const sway = []; const canopyM = new MeshLambertMaterial({ vertexColors: true });
+  const CAN = {};
+  function canopyG(pink, seed) { const key = pink + ':' + (seed % 4 + 4) % 4; if (CAN[key]) return CAN[key]; const r = mulberry(31 + (seed % 4 + 4) % 4 * 17 + pink);
+    const top = pink ? [1, .78, .86] : [.56, .82, .36], bot = pink ? [.88, .5, .64] : [.22, .5, .2];
+    const blobs = [[0, 1.25, 0, 1.45]]; for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2 + r() * .6; blobs.push([Math.cos(a) * (.9 + r() * .3), .75 + r() * .6, Math.sin(a) * (.9 + r() * .3), .8 + r() * .35]); } blobs.push([(r() - .5) * .6, 2.0 + r() * .3, (r() - .5) * .6, .85]);
+    const gs = blobs.map(([bx, by, bz, br]) => { const sg = new SphereGeometry(br, 14, 10); sg.translate(bx, by, bz); const p = sg.attributes.position, n = sg.attributes.normal, col = new Float32Array(p.count * 3);
+      for (let i = 0; i < p.count; i++) { const k = clamp((p.getY(i) + .2) / 3.0 * .7 + n.getY(i) * .3 + .15, 0, 1), j = (r() - .5) * .04; for (let c = 0; c < 3; c++) col[i * 3 + c] = Math.pow(clamp(bot[c] + (top[c] - bot[c]) * k + j, 0, 1), 2.2); }
+      sg.setAttribute('color', new Float32BufferAttribute(col, 3)); return sg; });
+    return CAN[key] = mergeGeometries(gs, false); }
   function tree(x, z, s, kind) { const g = new Group(); g.position.set(x, 0, z); g.scale.setScalar(s); scene.add(g);
     if (kind === 'palm') { let px = 0, py = 0; for (let i = 0; i < 6; i++) { const seg = cyl(.22 - i * .02, .26 - i * .02, .8, '#a07850', px, py + .4, 0, g, 8); seg.rotation.z = -.08 * i; px += .06 * i; py += .78; } for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2; const lf = new Mesh(new ConeGeometry(.32, 2.6, 4), lam('#3fa04a', { flatShading: true })); lf.scale.z = .25; lf.position.set(px + Math.cos(a) * 1.1, py + .1, Math.sin(a) * 1.1); lf.rotation.set(Math.sin(a) * 1.6, 0, -Math.cos(a) * 1.6); lf.castShadow = true; g.add(lf); } sph(.18, '#6a4a2a', px, py - .1, .1, g); }
-    else { cyl(.22, .3, 1.8, '#8a5a3a', 0, .9, 0, g, 8); sph(1.5, kind === 'pink' ? '#f4a8c0' : '#58b84a', 0, 2.8, 0, g, 1, .9, 1, true); sph(1.0, kind === 'pink' ? '#f8c0d0' : '#6ac85a', .8, 2.4, .4, g, 1, 1, 1, true); sph(.9, kind === 'pink' ? '#f094b0' : '#4aa83c', -.7, 2.3, -.3, g, 1, 1, 1, true); }
+    else { cyl(.2, .32, 2.0, '#8a5a3a', 0, 1.0, 0, g, 10); const cn = new Mesh(canopyG(kind === 'pink' ? 1 : 0, (x * 7 + z * 13) | 0), canopyM); cn.position.y = 1.7; cn.castShadow = true; cn.rotation.y = x + z; g.add(cn); sway.push([cn, x * .3 + z * .7]); }
     solids.push([x - .5 * s, z - .5 * s, x + .5 * s, z + .5 * s]);
   }
   const r1 = mulberry(77);
@@ -276,6 +295,40 @@ export function island(o) {
     const boat = new Group(); boat.position.set(14, -.2, IZ + 17); scene.add(boat); box(1.8, .6, 4, '#f4efe2', 0, .3, 0, boat); box(1.9, .15, 4.1, '#e8553f', 0, .65, 0, boat); cyl(.06, .06, 3, '#8a5a34', 0, 2, 0, boat, 6); const sail = new Mesh(new PlaneGeometry(1.6, 2.2), lam('#ffffff', { side: DoubleSide })); sail.position.set(0, 2.2, .6); sail.rotation.y = Math.PI / 2; boat.add(sail); clouds.userData.boat = boat; }
   /* 碼頭範圍可以走 */
   const PIER = [8.5, IZ + 4, 11.5, IZ + 19];
+
+  /* ───────── 草叢與小花（InstancedMesh，一次畫完；會隨風擺） ───────── */
+  const WIND = { value: 0 };
+  { const r = mulberry(123), m4 = new Object3D();
+    const onRoad = (x, z) => { for (const [x1, z1, x2, z2] of ROADS) { if (x > Math.min(x1, x2) - RW2 - .6 && x < Math.max(x1, x2) + RW2 + .6 && z > Math.min(z1, z2) - RW2 - .6 && z < Math.max(z1, z2) + RW2 + .6) return true; } return false; };
+    const inGrass = (x, z) => { const dx = Math.max(Math.abs(x) - (IX - 12), 0), dz = Math.max(Math.abs(z + 7) - (27 - 12), 0); return Math.hypot(dx, dz) < 10.5; };
+    const free = (x, z) => { if (!inGrass(x, z) || onRoad(x, z) || Math.hypot(x, z) < PLAZA_R + .9) return false; for (const b of solids) if (x > b[0] - .4 && x < b[2] + .4 && z > b[1] - .4 && z < b[3] + .4) return false; for (const c of solidC) if (Math.hypot(x - c[0], z - c[1]) < c[2] + .4) return false; return true; };
+    const pts = (n, cl) => { const out = []; let tries = 0; while (out.length < n && tries++ < n * 30) { let x = (r() * 2 - 1) * IX, z = -34 + r() * 54; if (cl && out.length && r() < .7) { const q = out[(r() * out.length) | 0]; x = q[0] + (r() - .5) * 3; z = q[1] + (r() - .5) * 3; } if (free(x, z)) out.push([x, z]); } return out; };
+    // 草叢：三片細葉，根部深、葉尖亮
+    const blades = []; for (let i = 0; i < 3; i++) { const b = new ConeGeometry(.07, .42, 3, 1); b.translate(0, .21, 0); b.rotateZ((i - 1) * .35); b.rotateY(i * 2.1); b.translate((i - 1) * .06, 0, (i % 2) * .05); blades.push(b); }
+    const tg = mergeGeometries(blades, false); { const p = tg.attributes.position, col = new Float32Array(p.count * 3); for (let i = 0; i < p.count; i++) { const k = clamp(p.getY(i) / .42, 0, 1); col[i * 3] = Math.pow(.28 + .3 * k, 2.2); col[i * 3 + 1] = Math.pow(.55 + .3 * k, 2.2); col[i * 3 + 2] = Math.pow(.2 + .16 * k, 2.2); } tg.setAttribute('color', new Float32BufferAttribute(col, 3)); }
+    const tp = pts(mobile ? 900 : 1500, true), tufts = new InstancedMesh(tg, new MeshLambertMaterial({ vertexColors: true }), tp.length);
+    tp.forEach(([x, z], i) => { m4.position.set(x, .02, z); m4.rotation.set(0, r() * 6.3, 0); const sc = .7 + r() * .7; m4.scale.set(sc, sc * (.8 + r() * .5), sc); m4.updateMatrix(); tufts.setMatrixAt(i, m4.matrix); });
+    tufts.material.userData.wind = 1; scene.add(tufts);
+    // 小花：細莖＋五瓣花
+    const stem = new CylinderGeometry(.012, .016, .26, 4); stem.translate(0, .13, 0);
+    const head = new CircleGeometry(.075, 5); head.rotateX(-Math.PI / 2); head.translate(0, .27, 0); const ctr = new CircleGeometry(.03, 6); ctr.rotateX(-Math.PI / 2); ctr.translate(0, .275, 0);
+    const fp = pts(mobile ? 220 : 380, true), FC = ['#ffffff', '#fff3a8', '#ffb3c8', '#c8b8ff', '#ffd08a', '#ff8a8a'];
+    const stems = new InstancedMesh(stem, new MeshLambertMaterial({ color: '#4f9a3c' }), fp.length), heads = new InstancedMesh(head, new MeshLambertMaterial({ color: '#ffffff', side: DoubleSide }), fp.length), ctrs = new InstancedMesh(ctr, new MeshBasicMaterial({ color: '#ffd23a' }), fp.length);
+    const cc = new Color();
+    fp.forEach(([x, z], i) => { m4.position.set(x, .02, z); m4.rotation.set(0, r() * 6.3, 0); const sc = .8 + r() * .6; m4.scale.set(sc, sc, sc); m4.updateMatrix(); stems.setMatrixAt(i, m4.matrix); heads.setMatrixAt(i, m4.matrix); ctrs.setMatrixAt(i, m4.matrix); heads.setColorAt(i, cc.set(FC[(r() * FC.length) | 0])); });
+    [stems, heads, ctrs].forEach(o => { o.material.userData.wind = 1; scene.add(o); });
+  }
+  /* 動森那種「地平線往下彎」的滾筒感：遠的東西往下沉（只在畫面上，碰撞和走路不受影響）。第一人稱時關掉。 */
+  const BEND = { k: { value: .0032 }, d: { value: 10 } };
+  function bendMat(m) { if (!m || m.userData.bent || m.fog === false) return; m.userData.bent = 1; const sprite = m.isSpriteMaterial, wind = m.userData.wind;
+    m.onBeforeCompile = sh => { sh.uniforms.uBendK = BEND.k; sh.uniforms.uBendD = BEND.d; sh.uniforms.uWind = WIND;
+      sh.vertexShader = 'uniform float uBendK; uniform float uBendD; uniform float uWind;\n' + sh.vertexShader;
+      const bend = 'float bZ = max(-mvPosition.z - uBendD, 0.0); mvPosition.y -= bZ * bZ * uBendK;';
+      if (sprite) sh.vertexShader = sh.vertexShader.replace('vec4 mvPosition = modelViewMatrix[ 3 ];', 'vec4 mvPosition = modelViewMatrix[ 3 ]; ' + bend);
+      else sh.vertexShader = sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n' + bend + ' gl_Position = projectionMatrix * mvPosition;');
+      if (wind) sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n#ifdef USE_INSTANCING\n float wP = instanceMatrix[3].x * .45 + instanceMatrix[3].z * .3; transformed.x += sin(uWind * 1.8 + wP) * .07 * max(position.y, 0.0) / .4; transformed.z += cos(uWind * 1.3 + wP) * .03 * max(position.y, 0.0) / .4;\n#endif'); };
+    m.customProgramCacheKey = () => (sprite ? 'bs' : 'bm') + (wind ? 'w' : ''); m.needsUpdate = true; }
+  function bendAll() { scene.traverse(o => { if (o === sky || o.parent === sky || o.parent === starSprites || (o.parent && o.parent.parent === clouds)) return; if (o.material) [].concat(o.material).forEach(bendMat); }); }
 
   /* ───────── 人 ───────── */
   const people = []; let PS = 1.5;
@@ -554,8 +607,11 @@ export function island(o) {
     waveT.offset.set(t * .004, t * .006); water.forEach((w, i) => { if (i === 0) w.rotation.z = t * .3; else w.scale.y = 1 + Math.sin(t * 6) * .08; });
     clouds.children.forEach(c => { c.userData.a += dt * .004; c.position.x = Math.cos(c.userData.a) * c.userData.R; c.position.z = Math.sin(c.userData.a) * c.userData.R; c.lookAt(0, c.position.y, 0); });
     const bt = clouds.userData.boat; if (bt) { bt.position.y = -.2 + Math.sin(t * 1.2) * .08; bt.rotation.z = Math.sin(t * .9) * .04; }
+    WIND.value = t; BEND.k.value = .0032 * (1 - fpK); BEND.d.value = S.dist * .9; for (const [c, ph] of sway) { c.rotation.z = Math.sin(t * 1.1 + ph) * .018; c.rotation.x = Math.cos(t * .9 + ph) * .012; }
+    if ((S.bendT = (S.bendT || 0) - dt) <= 0) { S.bendT = 1; bendAll(); }
     renderer.render(scene, camera);
   }
+  bendAll();
   S.raf = requestAnimationFrame(frame);
   return ctl;
 }

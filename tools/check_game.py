@@ -2187,6 +2187,11 @@ def sc_home3d(b, base):
         p = h3_wait(c, '點「開門」進屋', limit=30000)
         if not any(i['k'] == 'sofa' for i in p['items']) or any(i['k'] == 'register' for i in p['items']):
             raise AssertionError('家裡的預設家具不對（應該有沙發、沒有收銀台）：%s' % [i['k'] for i in p['items']])
+        # 家具 3D 模型（Kenney，打包在 home3d 裡）：沙發、床、冰箱這些要真的換成模型，不是退回程式畫的方塊
+        km = {i['k'] for i in p['items'] if i.get('km')}
+        for k in ('sofa', 'bed', 'fridge'):
+            if any(i['k'] == k for i in p['items']) and k not in km:
+                raise AssertionError('家裡的「%s」沒有用 3D 模型（模型沒載入？）：%s' % (k, sorted(km)))
         c.click('.home3 [data-h3=build]', wait=1200)
         if not c.has('.home3 [data-h3=cat][data-k=liv]') or c.has('.home3 [data-h3=cat][data-k=tbl]'):
             raise AssertionError('家裡的布置分頁應該是住家家具（客廳、臥室…），不是店裡的')

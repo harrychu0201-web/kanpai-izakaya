@@ -11,7 +11,9 @@ import {
 } from 'three';
 import { NPCS, KIND } from '../town3d/npcs.js';
 import { FPPREF } from './island.js';
-import { ITEMS, IT, CATS, HCATS, FLOORS, WALLS, build, lam, bas, ctex, rrect, GLOW, FONT } from './models.js';
+import { ITEMS, IT, CATS, HCATS, FLOORS, WALLS, build, lam, bas, ctex, rrect, GLOW, FONT, kready } from './models.js';
+/* 家具模型解析完才算載入好（index.html 的 loadHome3D 會等它） */
+export const ready = kready;
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -865,7 +867,7 @@ export function start(o) {
     probe() {
       const P = v => { const f = proj(v); return { x: Math.round(f.x), y: Math.round(f.y) }; };
       return { mode: S.mode, fp: S.fp, fpK: +S.fpK.toFixed(2), inside: S.inside, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, yaw: +S.yaw.toFixed(2), sel: S.sel ? { k: S.sel.k, x: S.sel.x, z: S.sel.z, r: S.sel.r, ok: S.sel.ok } : null,
-        items: placed.map(e => Object.assign({ k: e.k, x: e.x, z: e.z, r: e.r }, P(new Vector3(e.g.position.x, e.g.position.y + .4, e.g.position.z)))),
+        items: placed.map(e => Object.assign({ k: e.k, x: e.x, z: e.z, r: e.r, km: e.g.userData.km ? 1 : 0 }, P(new Vector3(e.g.position.x, e.g.position.y + .4, e.g.position.z)))),
         npcs: npcs.filter(p => !p.hidden).map(p => Object.assign({ id: p.d.id || p.kind2, kind: p.kind2, state: p.state }, P(new Vector3(p.x, p.h * .5, p.z)))),
         board: P(new Vector3(BOARD.x, 1.15, BOARD.z)), gifts: giftBoxes.length, card: card.classList.contains('on') ? card.textContent : '', pan: pan.classList.contains('on') ? pan.textContent : '',
         cozy: cozyOf(serialize()), inv: Object.assign({}, D.inv), name: D.name, fl: D.fl, wa: D.wa, tag: me.tag ? me.tag.visible : false,
