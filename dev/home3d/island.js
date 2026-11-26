@@ -345,17 +345,11 @@ export function island(o) {
     fp.forEach(([x, z], i) => { m4.position.set(x, .02, z); m4.rotation.set(0, r() * 6.3, 0); const sc = .8 + r() * .6; m4.scale.set(sc, sc, sc); m4.updateMatrix(); stems.setMatrixAt(i, m4.matrix); heads.setMatrixAt(i, m4.matrix); ctrs.setMatrixAt(i, m4.matrix); heads.setColorAt(i, cc.set(FC[(r() * FC.length) | 0])); });
     [stems, heads, ctrs].forEach(o => { o.material.userData.wind = 1; scene.add(o); });
   }
-  /* 動森那種「地平線往下彎」的滾筒感：遠的東西往下沉（只在畫面上，碰撞和走路不受影響）。第一人稱時關掉。 */
-  const BEND = { k: { value: .0032 }, d: { value: 10 } };
-  function bendMat(m) { if (!m || m.userData.bent || m.fog === false) return; m.userData.bent = 1; const sprite = m.isSpriteMaterial, wind = m.userData.wind;
-    m.onBeforeCompile = sh => { sh.uniforms.uBendK = BEND.k; sh.uniforms.uBendD = BEND.d; sh.uniforms.uWind = WIND;
-      sh.vertexShader = 'uniform float uBendK; uniform float uBendD; uniform float uWind;\n' + sh.vertexShader;
-      const bend = 'float bZ = max(-mvPosition.z - uBendD, 0.0); mvPosition.y -= bZ * bZ * uBendK;';
-      if (sprite) sh.vertexShader = sh.vertexShader.replace('vec4 mvPosition = modelViewMatrix[ 3 ];', 'vec4 mvPosition = modelViewMatrix[ 3 ]; ' + bend);
-      else sh.vertexShader = sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n' + bend + ' gl_Position = projectionMatrix * mvPosition;');
-      if (wind) sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n#ifdef USE_INSTANCING\n float wP = instanceMatrix[3].x * .45 + instanceMatrix[3].z * .3; transformed.x += sin(uWind * 1.8 + wP) * .07 * max(position.y, 0.0) / .4; transformed.z += cos(uWind * 1.3 + wP) * .03 * max(position.y, 0.0) / .4;\n#endif'); };
-    m.customProgramCacheKey = () => (sprite ? 'bs' : 'bm') + (wind ? 'w' : ''); m.needsUpdate = true; }
-  function bendAll() { scene.traverse(o => { if (o === sky || o.parent === sky || o.parent === starSprites || (o.parent && o.parent.parent === clouds)) return; if (o.material) [].concat(o.material).forEach(bendMat); }); }
+  /* 草叢、小花隨風擺（只改這幾種材質的頂點；2026/11/26 拿掉了遠處往下彎的滾筒效果：鏡頭一轉整個畫面會跟著扭，看起來到處亂動） */
+  function windMat(m) { if (!m || m.userData.bent || !m.userData.wind) return; m.userData.bent = 1;
+    m.onBeforeCompile = sh => { sh.uniforms.uWind = WIND; sh.vertexShader = 'uniform float uWind;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n#ifdef USE_INSTANCING\n float wP = instanceMatrix[3].x * .45 + instanceMatrix[3].z * .3; transformed.x += sin(uWind * 1.8 + wP) * .07 * max(position.y, 0.0) / .4; transformed.z += cos(uWind * 1.3 + wP) * .03 * max(position.y, 0.0) / .4;\n#endif'); };
+    m.customProgramCacheKey = () => 'wind'; m.needsUpdate = true; }
+  scene.traverse(o => { if (o.isInstancedMesh) windMat(o.material); });
 
   /* ───────── 人 ───────── */
   const people = []; let PS = 1.5;
@@ -620,7 +614,10 @@ export function island(o) {
     /* 第一人稱：鏡頭放在角色眼睛高度，和第三人稱之間平滑過渡 */
     S.fpK += ((S.fp && S.mode === 'walk' && !S.ent ? 1 : 0) - S.fpK) * Math.min(1, dt * 5);
     const fpK = S.fpK, cpf = Math.cos(S.fpP), spf = Math.sin(S.fpP);
-    eyeV.set(S.cam.x, me.y + 2.3, S.cam.z);  /* 2026/11/26 原本 1.55 太低（像小孩視角），調高 */
+    /* 第一人稱走路的晃動：跟著腳步上下點、左右微晃（沒有這個會像用飄的） */
+    S.bobA = (S.bobA || 0) + ((me.moving ? 1 : 0) - (S.bobA || 0)) * Math.min(1, dt * 8);
+    const bobY = (Math.abs(Math.sin(me.ph * .5)) * .09 - .045) * S.bobA, bobX = Math.sin(me.ph * .5) * .045 * S.bobA;
+    eyeV.set(S.cam.x + rgt.x * bobX, me.y + 2.3 + bobY, S.cam.z + rgt.z * bobX);  /* 2026/11/26 原本 1.55 太低（像小孩視角），調高 */
     lookV.set(S.cam.x, S.cam.y + .4, S.cam.z); lookFP.set(eyeV.x - sy * cpf * 10, eyeV.y + spf * 10, eyeV.z - cy * cpf * 10);
     camPos.lerp(eyeV, fpK); lookV.lerp(lookFP, fpK);
     me.grp.visible = fpK < .5; me.sh.visible = fpK < .5; if (me.tag) me.tag.visible = fpK < .5;
@@ -636,11 +633,9 @@ export function island(o) {
     waveT.offset.set(t * .004, t * .006); water.forEach((w, i) => { if (i === 0) w.rotation.z = t * .3; else w.scale.y = 1 + Math.sin(t * 6) * .08; });
     clouds.children.forEach(c => { c.userData.a += dt * .004; c.position.x = Math.cos(c.userData.a) * c.userData.R; c.position.z = Math.sin(c.userData.a) * c.userData.R; c.lookAt(0, c.position.y, 0); });
     const bt = clouds.userData.boat; if (bt) { bt.position.y = -.2 + Math.sin(t * 1.2) * .08; bt.rotation.z = Math.sin(t * .9) * .04; }
-    WIND.value = t; BEND.k.value = .0032 * (1 - fpK); BEND.d.value = S.dist * .9; for (const [c, ph] of sway) { c.rotation.z = Math.sin(t * 1.1 + ph) * .018; c.rotation.x = Math.cos(t * .9 + ph) * .012; }
-    if ((S.bendT = (S.bendT || 0) - dt) <= 0) { S.bendT = 1; bendAll(); }
+    WIND.value = t; for (const [c, ph] of sway) { c.rotation.z = Math.sin(t * 1.1 + ph) * .018; c.rotation.x = Math.cos(t * .9 + ph) * .012; }
     renderer.render(scene, camera);
   }
-  bendAll();
   S.raf = requestAnimationFrame(frame);
   return ctl;
 }

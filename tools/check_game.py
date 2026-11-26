@@ -2195,6 +2195,20 @@ def sc_home3d(b, base):
         for k in ('sofa', 'bed', 'fridge'):
             if any(i['k'] == k for i in p['items']) and k not in km:
                 raise AssertionError('家裡的「%s」沒有用 3D 模型（模型沒載入？）：%s' % (k, sorted(km)))
+        # 第一人稱在家裡：要有天花板（不能看到天空）、門口有門板，人走近門會打開、走遠會關上
+        c.click('.home3 [data-h3=fp]', wait=1500)
+        c.page.evaluate("HOME3.teleport(5,2);HOME3.setYaw(3.14)"); c.page.wait_for_timeout(1500)
+        q = h3_probe(c)
+        if not q.get('ceil') or q.get('door') is None or q['door'] > .2:
+            raise AssertionError('第一人稱在家裡：天花板沒出現或門沒關好：ceil=%s door=%s' % (q.get('ceil'), q.get('door')))
+        c.page.evaluate("HOME3.teleport(5,6.8)"); c.page.wait_for_timeout(1500)
+        q = h3_probe(c)
+        if (q.get('door') or 0) < 1.2:
+            raise AssertionError('第一人稱走到門口，門沒有打開：door=%s' % q.get('door'))
+        c.click('.home3 [data-h3=fp]', wait=1200)
+        c.page.evaluate("HOME3.teleport(5,4)"); c.page.wait_for_timeout(800)
+        if h3_probe(c).get('ceil'):
+            raise AssertionError('切回第三人稱後天花板沒有拿掉（會擋住俯視畫面）')
         c.click('.home3 [data-h3=build]', wait=1200)
         if not c.has('.home3 [data-h3=cat][data-k=liv]') or c.has('.home3 [data-h3=cat][data-k=tbl]'):
             raise AssertionError('家裡的布置分頁應該是住家家具（客廳、臥室…），不是店裡的')

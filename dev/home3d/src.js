@@ -289,6 +289,12 @@ export function start(o) {
   for (const sx of [D0 - .45, D1 + .45]) { const lg = new Group(); lg.position.set(sx, 1.95, RD + .45); facade.add(lg); const b = new Mesh(new SphereGeometry(.28, 16, 12), bas('#e2452f')); b.scale.y = 1.3; lg.add(b); box(.26, .06, .26, bas('#2a1810'), 0, .38, 0, lg); box(.26, .06, .26, bas('#2a1810'), 0, -.38, 0, lg); doorLan.push(glowS(0, 0, .12, 2.3, .55, lg)); }
   /* 屋頂（人在店外才出現） */
   const roof = new Group(); scene.add(roof);
+  let homeDoor = null;
+  /* 天花板＋吸頂燈：只有第一人稱在屋裡才看得到（第三人稱是從上面往下看，要拿掉） */
+  const ceil = new Group(); scene.add(ceil); ceil.visible = false;
+  { const cm = new Mesh(new PlaneGeometry(RW + .4, RD + .4), bas(HOME ? '#ebe0ca' : '#4a3020')); cm.rotation.x = Math.PI / 2; cm.position.set(RW / 2, WH - .01, RD / 2); ceil.add(cm);
+    const ceilLamp = new Mesh(new CylinderGeometry(.5, .56, .08, 28), bas("#fff4d6")); ceilLamp.position.set(RW / 2, WH - .06, RD / 2); ceil.add(ceilLamp);
+    if (!HOME) for (let i = 1; i < 4; i++) { const bm = new Mesh(new BoxGeometry(RW + .4, .16, .2), lam('#3a2214')); bm.position.set(RW / 2, WH - .09, RD * i / 4); ceil.add(bm); } }
   { const tileT = ctex(128, 128, (x, w, h) => { x.fillStyle = '#2c3044'; x.fillRect(0, 0, w, h); for (let j = 0; j < h; j += 16) { x.fillStyle = '#3a4058'; x.fillRect(0, j, w, 3); for (let i = (j / 16 % 2) * 16; i < w; i += 32) { x.fillStyle = '#20242f'; x.fillRect(i, j, 2, 16); } } });
     const rm = new MeshLambertMaterial({ map: rep(tileT, 6, 3) });
     const sl = Math.hypot(RD / 2 + .9, 1.6);
@@ -416,6 +422,13 @@ export function start(o) {
     facade.children.slice().forEach(c => { if (c !== facade.children[0] && c !== facade.children[1] && c !== facade.children[2]) c.visible = false; });
     doorLan.forEach(l => { l.visible = false; });
     roof.traverse(m => { if (m.isMesh && m.material && m.material.map) { m.material.map = null; m.material.color.set(ex.roofC || '#d8452f'); m.material.needsUpdate = true; } });
+    /* 家的門：一扇真的門板（顏色跟外觀設計的門一樣），人走近就往屋裡開、走遠就關上 */
+    const dg = new Group(); dg.position.set(DX, 0, RD + .1); scene.add(dg); walls.front.push(dg);
+    const dw = D1 - D0 - .26, piv = new Group(); piv.position.set(-dw / 2, 0, -.02); dg.add(piv);
+    const dm = lam(ex.doorC || '#f4efe2'); box(dw, 2.28, .08, dm, dw / 2, 1.14, 0, piv);
+    const pm = new MeshLambertMaterial({ color: new Color(ex.doorC || '#f4efe2').multiplyScalar(.86) }); for (const yy of [.55, 1.65]) for (const zz of [.05, -.05]) box(dw * .72, .62, .02, pm, dw / 2, yy, zz, piv);
+    for (const zz of [.07, -.07]) { const kn = new Mesh(new SphereGeometry(.055, 12, 8), lam('#c8a040')); kn.position.set(dw - .15, 1.08, zz); piv.add(kn); }
+    homeDoor = piv;
   }
   function refreshPots() { potSakura = placed.filter(e => e.k === 'sakura').map(e => ({ x: e.g.position.x, z: e.g.position.z, y: 2, r: .5 })); }
   refreshPots(); for (let i = 0; i < NP; i++) petalReset(i, 1);
@@ -866,7 +879,7 @@ export function start(o) {
     data: () => JSON.parse(JSON.stringify(serialize())),
     probe() {
       const P = v => { const f = proj(v); return { x: Math.round(f.x), y: Math.round(f.y) }; };
-      return { mode: S.mode, fp: S.fp, fpK: +S.fpK.toFixed(2), inside: S.inside, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, yaw: +S.yaw.toFixed(2), sel: S.sel ? { k: S.sel.k, x: S.sel.x, z: S.sel.z, r: S.sel.r, ok: S.sel.ok } : null,
+      return { mode: S.mode, fp: S.fp, fpK: +S.fpK.toFixed(2), inside: S.inside, ceil: ceil.visible, door: homeDoor ? +homeDoor.rotation.y.toFixed(2) : null, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, yaw: +S.yaw.toFixed(2), sel: S.sel ? { k: S.sel.k, x: S.sel.x, z: S.sel.z, r: S.sel.r, ok: S.sel.ok } : null,
         items: placed.map(e => Object.assign({ k: e.k, x: e.x, z: e.z, r: e.r, km: e.g.userData.km ? 1 : 0 }, P(new Vector3(e.g.position.x, e.g.position.y + .4, e.g.position.z)))),
         npcs: npcs.filter(p => !p.hidden).map(p => Object.assign({ id: p.d.id || p.kind2, kind: p.kind2, state: p.state }, P(new Vector3(p.x, p.h * .5, p.z)))),
         board: P(new Vector3(BOARD.x, 1.15, BOARD.z)), gifts: giftBoxes.length, card: card.classList.contains('on') ? card.textContent : '', pan: pan.classList.contains('on') ? pan.textContent : '',
@@ -972,13 +985,17 @@ export function start(o) {
     /* 第一人稱：鏡頭移到角色眼睛高度，和第三人稱之間平滑過渡；之後的牆判斷用過渡後的鏡頭位置 */
     S.fpK += ((S.fp && S.mode === 'walk' ? 1 : 0) - S.fpK) * Math.min(1, dt * 5);
     const fpK = S.fpK, cpf = Math.cos(S.fpP), spf = Math.sin(S.fpP);
-    eyeV.set(S.cam.x, 1.5, S.cam.z); lookV.set(S.cam.x, S.cam.y + .5, S.cam.z);
+    /* 第一人稱走路的晃動：跟著腳步上下點、左右微晃（沒有這個會像用飄的） */
+    S.bobA = (S.bobA || 0) + ((me.moving ? 1 : 0) - (S.bobA || 0)) * Math.min(1, dt * 8);
+    const bobY = (Math.abs(Math.sin(me.ph * .5)) * .07 - .035) * S.bobA, bobX = Math.sin(me.ph * .5) * .035 * S.bobA;
+    eyeV.set(S.cam.x + rgt.x * bobX, 1.5 + bobY, S.cam.z + rgt.z * bobX); lookV.set(S.cam.x, S.cam.y + .5, S.cam.z);
     lookFP.set(eyeV.x - sy * cpf * 10, eyeV.y + spf * 10, eyeV.z - cy * cpf * 10);
     camPos.lerp(eyeV, fpK); lookV.lerp(lookFP, fpK);
     camera.position.copy(camPos); camera.lookAt(lookV); sky.position.copy(camPos);
     /* 牆：人在店裡時擋到鏡頭的牆降下來、屋頂拿掉；在店外就是完整的房子 */
     const indoor = S.inside || (S.mode === 'build' && S.inside);
-    roof.visible = !indoor;
+    roof.visible = !indoor; ceil.visible = indoor && S.fpK > .5;
+    if (homeDoor) { const near = Math.hypot(me.x - DX, me.z - RD) < 1.9 || !S.inside; homeDoor.rotation.y += ((near ? 1.65 : 0) - homeDoor.rotation.y) * Math.min(1, dt * 6); }
     const low = S.low = { back: indoor && camPos.z < 0, front: indoor && camPos.z > RD, left: indoor && camPos.x < 0, right: indoor && camPos.x > RW };
     for (const k in walls) { const lo = low[k]; for (const g of walls[k]) { const ty2 = lo ? .14 : 1; g.scale.y += (ty2 - g.scale.y) * Math.min(1, dt * 10); } }
     for (const e of placed) if (IT[e.k].L === 'wall') { const side = wallSide(e.r); e.g.visible = !low[side] || !indoor; }
