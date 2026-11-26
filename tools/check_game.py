@@ -2262,14 +2262,38 @@ def sc_home3d(b, base):
         if c.page.evaluate("load().coins") != coins0 - 6000:
             raise AssertionError('買行燈沒有從遊戲錢包扣 ¥6,000（%s → %s）' % (coins0, c.page.evaluate("load().coins")))
         it = [i for i in p['items'] if i['k'] == 'andon'][0]
-        tg = c.page.evaluate("HOME3.px(8.5,0,6.5)")
+        # 買完的家具要在畫面裡（2026/11/26 使用者回報買完要到處找）：鏡頭會移過去，等它到位後要在家具面板上方的可見區域
+        c.page.wait_for_timeout(1200)
+        p = h3_probe(c); it = [i for i in p['items'] if i['k'] == 'andon'][0]
+        cvb = c.page.locator('.home3 canvas.twcv').bounding_box(); bpb = c.page.locator('.home3 .h3bp').bounding_box()
+        if not (cvb['x'] + 20 < it['x'] < cvb['x'] + cvb['width'] - 20 and cvb['y'] + 20 < it['y'] < bpb['y'] - 10):
+            c.page.screenshot(path='/tmp/check-fail.png')
+            raise AssertionError('買完的行燈不在畫面可見區域（被面板蓋住或在畫面外）：%s 面板頂 %s' % (it, bpb['y']))
+        # 快速拖（沒有長按）家具＝轉鏡頭，家具不能被移動（2026/11/26 改成長按才拖）
+        if not c.page.locator('.home3 [data-h3=ok]').is_disabled():
+            c.click('.home3 [data-h3=ok]', wait=300)
+        grid = "HOME3.data().it.filter(e=>e[0]==='andon').map(e=>[e[1],e[2]])"
+        g0 = c.page.evaluate(grid); p = h3_probe(c); y0 = p['yaw']
+        it = [i for i in p['items'] if i['k'] == 'andon'][0]
         c.page.mouse.move(it['x'], it['y']); c.page.mouse.down()
+        for k in range(1, 9):
+            c.page.mouse.move(it['x'] + k * 20, it['y']); c.page.wait_for_timeout(20)
+        c.page.mouse.up(); c.page.wait_for_timeout(600)
+        p = h3_probe(c)
+        if abs(p['yaw'] - y0) < .2 or c.page.evaluate(grid) != g0:
+            raise AssertionError('在家具上快速拖曳（沒長按）應該轉鏡頭、不移動家具：yaw %s→%s 位置 %s→%s' % (y0, p['yaw'], g0, c.page.evaluate(grid)))
+        c.page.evaluate("HOME3.setYaw(%s)" % y0); c.page.wait_for_timeout(500)
+        # 長按 0.35 秒後才拖得動：按住 0.6 秒再拖到 (8.5,6.5)
+        p = h3_probe(c); it = [i for i in p['items'] if i['k'] == 'andon'][0]
+        tg = c.page.evaluate("HOME3.px(8.5,0,6.5)")
+        c.page.mouse.move(it['x'], it['y']); c.page.mouse.down(); c.page.wait_for_timeout(600)
         for k in range(1, 13):
             c.page.mouse.move(it['x'] + (tg['x'] - it['x']) * k / 12, it['y'] + (tg['y'] - it['y']) * k / 12); c.page.wait_for_timeout(30)
         c.page.mouse.up(); c.page.wait_for_timeout(400)
         p = h3_probe(c)
-        if not p['sel'] or (p['sel']['x'], p['sel']['z']) == (it.get('gx'), None):
-            raise AssertionError('拖曳家具後選取不見了：%s' % p['sel'])
+        if not p['sel'] or p['sel']['k'] != 'andon' or abs(p['sel']['x'] - 8) > 1 or abs(p['sel']['z'] - 6) > 1:
+            c.page.screenshot(path='/tmp/check-fail.png')
+            raise AssertionError('長按後拖曳行燈沒有拖到 (8,6) 附近（或選取不見了）：%s' % p['sel'])
         moved = p['sel']
         c.click('.home3 [data-h3=rot]', wait=200)
         if c.page.locator('.home3 [data-h3=ok]').is_disabled():
