@@ -2126,6 +2126,9 @@ def sc_home3d(b, base):
         c.page.wait_for_timeout(400)
         c.click('.modal [data-act=h3open]', wait=300)
         ip = i3_wait(c, '去我的島')
+        # 效能（2026/11/26 島上很卡：一幀畫一千多次）：不會動的零件要合併，一幀的 draw call 不能爆量
+        if ip.get('calls', 0) > 400:
+            raise AssertionError('我的島一幀畫了 %s 次（draw call），手機會卡；新加的零件要經過 mergeStatic 合併' % ip.get('calls'))
         for bt in c.page.locator('.home3 .i3hud button').all():
             bb = bt.bounding_box()
             if not bb or bb['height'] < 44 or bb['width'] < 44:

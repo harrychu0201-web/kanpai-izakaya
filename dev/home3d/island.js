@@ -7,7 +7,7 @@ import {
   BoxGeometry, PlaneGeometry, CylinderGeometry, SphereGeometry, ConeGeometry, CircleGeometry, IcosahedronGeometry, TorusGeometry, RingGeometry, ShapeGeometry, Shape,
   MeshBasicMaterial, MeshLambertMaterial, CanvasTexture, TextureLoader, SRGBColorSpace, Sprite, SpriteMaterial, BufferGeometry, Float32BufferAttribute,
   BackSide, DoubleSide, RepeatWrapping, AdditiveBlending, Vector3, Vector2, Raycaster, Plane, PCFShadowMap, ExtrudeGeometry,
-  InstancedMesh, Object3D,
+  InstancedMesh, Object3D, Matrix4,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { NPCS, KIND } from '../town3d/npcs.js';
@@ -84,13 +84,34 @@ export function island(o) {
   const scene = new Scene(); const fog = new Fog(0xbfe6ff, 60, 170); scene.fog = fog;
   const camera = new PerspectiveCamera(38, 2, .3, 600);
   const TL = new TextureLoader(); const loadTex = (url, f) => TL.load(url, t => { t.colorSpace = SRGBColorSpace; f && f(t); });
-  const MC = {}; const lam = (c, op) => { if (op) return new MeshLambertMaterial(Object.assign({ color: c }, op)); return MC[c] || (MC[c] = new MeshLambertMaterial({ color: c })); };
+  const MC = {}, MCF = {}; const lamF = c => MCF[c] || (MCF[c] = new MeshLambertMaterial({ color: c, flatShading: true })); const lam = (c, op) => { if (op) return new MeshLambertMaterial(Object.assign({ color: c }, op)); return MC[c] || (MC[c] = new MeshLambertMaterial({ color: c })); };
   const bas = (c, op) => new MeshBasicMaterial(Object.assign({ color: c }, op || {}));
   const rep = (t, rx, ry) => { const c = t.clone(); c.wrapS = c.wrapT = RepeatWrapping; c.repeat.set(rx, ry); c.needsUpdate = true; return c; };
   const casters = [];
   function box(w, h, d, m, x, y, z, par, cast) { const b = new Mesh(new BoxGeometry(w, h, d), typeof m === 'string' ? lam(m) : m); b.position.set(x, y, z); (par || scene).add(b); if (cast !== false) { b.castShadow = true; } b.receiveShadow = true; return b; }
   function cyl(rt, rb, h, m, x, y, z, par, seg) { const b = new Mesh(new CylinderGeometry(rt, rb, h, seg || 14), typeof m === 'string' ? lam(m) : m); b.position.set(x, y, z); (par || scene).add(b); b.castShadow = true; b.receiveShadow = true; return b; }
-  function sph(r, m, x, y, z, par, sx, sy, sz, flat) { const b = new Mesh(flat ? new IcosahedronGeometry(r, 1) : new SphereGeometry(r, 16, 12), typeof m === 'string' ? (flat ? lam(m, { flatShading: true }) : lam(m)) : m); b.position.set(x, y, z); if (sx) b.scale.set(sx, sy, sz); (par || scene).add(b); b.castShadow = true; return b; }
+  function sph(r, m, x, y, z, par, sx, sy, sz, flat) { const b = new Mesh(flat ? new IcosahedronGeometry(r, 1) : new SphereGeometry(r, 16, 12), typeof m === 'string' ? (flat ? lamF(m) : lam(m)) : m); b.position.set(x, y, z); if (sx) b.scale.set(sx, sy, sz); (par || scene).add(b); b.castShadow = true; return b; }
+
+  /* 效能（2026/11/26 島上很卡）：島上原本有一千多個小零件，每個都要單獨畫一次（手機一幀畫一千多次就會卡）。
+     不會動的零件依材質合併成一個網格：同一棟房子內合併；路燈、樹幹、長椅等依材質＋區塊（24 格）合併，畫面外的區塊照樣不畫。
+     會動的（門、噴水池的水、船、雲、會搖的樹冠、草花）和頂點上色的不合併。 */
+  const _m4 = new Matrix4(), _inv = new Matrix4();
+  function collectStatic(obj, skip, out) { if (skip.has(obj)) return; if (obj.isMesh && !obj.isInstancedMesh && !Array.isArray(obj.material) && !obj.geometry.attributes.color && !obj.userData.keep) out.push(obj); for (const c of obj.children) collectStatic(c, skip, out); }
+  function mergeStatic(root, meshes, keyFn) {
+    root.updateMatrixWorld(true); _inv.copy(root.matrixWorld).invert();
+    const buckets = new Map();
+    for (const m of meshes) { _m4.multiplyMatrices(_inv, m.matrixWorld); if (_m4.determinant() <= 0) continue; const k = keyFn(m); let b = buckets.get(k); if (!b) buckets.set(k, b = []); b.push(m); }
+    for (const list of buckets.values()) {
+      if (list.length < 2) continue;
+      let n = 0; const gs = list.map(m => { const g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone(); if (!g.attributes.normal) g.computeVertexNormals(); _m4.multiplyMatrices(_inv, m.matrixWorld); g.applyMatrix4(_m4); n += g.attributes.position.count; return g; });
+      const P = new Float32Array(n * 3), N = new Float32Array(n * 3), U = new Float32Array(n * 2); let o3 = 0, o2 = 0;
+      for (const g of gs) { const c = g.attributes.position.count; P.set(g.attributes.position.array, o3); N.set(g.attributes.normal.array, o3); if (g.attributes.uv) U.set(g.attributes.uv.array, o2); o3 += c * 3; o2 += c * 2; g.dispose(); }
+      const geo = new BufferGeometry(); geo.setAttribute('position', new Float32BufferAttribute(P, 3)); geo.setAttribute('normal', new Float32BufferAttribute(N, 3)); geo.setAttribute('uv', new Float32BufferAttribute(U, 2));
+      const f = list[0], mm = new Mesh(geo, f.material); mm.castShadow = f.castShadow; mm.receiveShadow = f.receiveShadow; mm.userData = f.userData; mm.renderOrder = f.renderOrder; root.add(mm);
+      for (const m of list) m.parent.remove(m);
+    }
+  }
+  const matKey = m => m.material.uuid + (m.castShadow ? 'c' : '') + (m.receiveShadow ? 'r' : '');
   const lamps = [];   // 夜晚會亮的光暈
   function glowS(x, y, z, s, par, col) { const sp = new Sprite(new SpriteMaterial({ map: GLOW, blending: AdditiveBlending, transparent: true, depthWrite: false, opacity: 0 })); if (col) sp.material.color.set(col); sp.scale.set(s, s, 1); sp.position.set(x, y, z); (par || scene).add(sp); lamps.push(sp); return sp; }
   const nightMats = [];  // 夜晚變亮的窗戶材質（MeshBasic，白天顏色暗一點）
@@ -109,7 +130,7 @@ export function island(o) {
   { const st = ctex(16, 16, x => { x.fillStyle = '#fff8e0'; x.beginPath(); x.arc(8, 8, 3, 0, 7); x.fill(); }); const p = starsG.attributes.position; const sm = new SpriteMaterial({ map: st, fog: false, depthWrite: false, transparent: true, opacity: 0 }); for (let i = 0; i < p.count; i += 2) { const s = new Sprite(sm); s.position.set(p.getX(i), p.getY(i), p.getZ(i)); s.scale.set(1.4, 1.4, 1); starSprites.add(s); } starSprites.userData.m = sm; }
   /* 雲 */
   const clouds = new Group(); scene.add(clouds);
-  { const r = mulberry(4); for (let i = 0; i < 14; i++) { const c = new Group(); const n = 3 + (r() * 3 | 0); for (let j = 0; j < n; j++) { const m = new Mesh(new IcosahedronGeometry(3 + r() * 3, 1), new MeshLambertMaterial({ color: '#ffffff', flatShading: true, transparent: true, opacity: .95, fog: false })); m.position.set(j * 4 - n * 2, r() * 1.5, r() * 2); m.scale.y = .6; c.add(m); } const a = r() * Math.PI * 2, R = 110 + r() * 60; c.position.set(Math.cos(a) * R, 40 + r() * 25, Math.sin(a) * R); c.userData.a = a; c.userData.R = R; clouds.add(c); } }
+  { const r = mulberry(4); for (let i = 0; i < 14; i++) { const c = new Group(); const n = 3 + (r() * 3 | 0); for (let j = 0; j < n; j++) { const m = new Mesh(new IcosahedronGeometry(3 + r() * 3, 1), new MeshLambertMaterial({ color: '#ffffff', flatShading: true, transparent: true, opacity: .95, fog: false })); m.position.set(j * 4 - n * 2, r() * 1.5, r() * 2); m.scale.y = .6; c.add(m); } const a = r() * Math.PI * 2, R = 110 + r() * 60; c.position.set(Math.cos(a) * R, 40 + r() * 25, Math.sin(a) * R); c.userData.a = a; c.userData.R = R; clouds.add(c); mergeStatic(c, c.children.slice(), () => 'c'); } }
   const hemi = new HemisphereLight(0xfff2dc, 0x7a9a5a, 1.4); scene.add(hemi);
   const amb = new AmbientLight(0xffffff, .25); scene.add(amb);
   const sun = new DirectionalLight(0xfff2dc, 2.2); sun.castShadow = true; const SS = mobile ? 1024 : 2048; sun.shadow.mapSize.set(SS, SS);
@@ -231,13 +252,14 @@ export function island(o) {
     const ex = h.own ? D.ex : h.ex, name = h.own ? (o.houseName || '我的家') : h.label;
     h.g = buildHouse(ex, name); h.g.position.set(h.x, 0, h.z); h.g.rotation.y = h.f === 2 ? Math.PI : 0; scene.add(h.g);
     h.g.traverse(m => { if (m.isMesh) m.userData.house = h; });
+    { const ms = []; collectStatic(h.g, new Set([h.g.userData.doorPivot].filter(Boolean)), ms); mergeStatic(h.g, ms, matKey); }
     const d = h.g.userData.door.clone(); if (h.f === 2) { d.x = -d.x; d.z = -d.z; } h.door = { x: h.x + d.x, z: h.z + d.z };
     const sg = h.f === 2 ? -1 : 1, fz = h.g.userData.doorZ + .6; h.face = { x: h.x, z: h.z + sg * fz }; h.inw = -sg; h.pivot = h.g.userData.doorPivot;
   }
   HOUSES.forEach(h => { const hh = Object.assign({}, h); if (!hh.own) { hh.ex = randEx(r0); const d = NPCS.find(n => n.spr === h.npc || n.id === h.npc); hh.label = (d ? d.name.split(' ').pop() : '鄰居') + '的家'; } houseObjs.push(hh); placeHouse(hh); });
   const myHouse = houseObjs.find(h => h.own);
   function shopBuild(s) {
-    const g = new Group(); g.position.set(s.x, 0, s.z); scene.add(g);
+    const g = new Group(); g.position.set(s.x, 0, s.z); scene.add(g); g.userData.shopG = 1;
     const pal = { izakaya: ['#7a4a2a', '#2c3044', '#e2452f', '居酒屋'], ramen: ['#c8352a', '#3a3a3a', '#f2b630', 'ラーメン'], sushi: ['#f4efe2', '#2f4a7a', '#2f6bb8', '寿司'], bar: ['#3a2f5a', '#1c1f2a', '#9a6ad6', 'BAR'] }[s.k];
     box(7, .3, 5.6, '#e8e2d4', 0, .15, 0, g);
     box(6.6, 3.4, 5, pal[0], 0, 2, -.2, g);
@@ -250,6 +272,7 @@ export function island(o) {
     if (s.k === 'ramen') { for (let i = 0; i < 3; i++) cyl(.25, .25, .7, '#c8352a', -1.2 + i * 1.2, .35, 3.5, g, 12); }
     if (s.k === 'sushi') { const f = new Mesh(new ConeGeometry(.4, 1.2, 4), lam('#2f6bb8')); f.position.set(3.1, 3.2, 2.6); f.rotation.z = -1.3; g.add(f); }
     g.traverse(m => { if (m.isMesh) m.userData.shop = s; });
+    { const ms = []; collectStatic(g, new Set(), ms); mergeStatic(g, ms, matKey); }
     s.door = { x: s.x, z: s.z + 3.6 }; s.face = { x: s.x, z: s.z + 2.85 }; s.inw = -1;
     return g;
   }
@@ -272,7 +295,7 @@ export function island(o) {
       sg.setAttribute('color', new Float32BufferAttribute(col, 3)); return sg; });
     return CAN[key] = mergeGeometries(gs, false); }
   function tree(x, z, s, kind) { const g = new Group(); g.position.set(x, 0, z); g.scale.setScalar(s); scene.add(g);
-    if (kind === 'palm') { let px = 0, py = 0; for (let i = 0; i < 6; i++) { const seg = cyl(.22 - i * .02, .26 - i * .02, .8, '#a07850', px, py + .4, 0, g, 8); seg.rotation.z = -.08 * i; px += .06 * i; py += .78; } for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2; const lf = new Mesh(new ConeGeometry(.32, 2.6, 4), lam('#3fa04a', { flatShading: true })); lf.scale.z = .25; lf.position.set(px + Math.cos(a) * 1.1, py + .1, Math.sin(a) * 1.1); lf.rotation.set(Math.sin(a) * 1.6, 0, -Math.cos(a) * 1.6); lf.castShadow = true; g.add(lf); } sph(.18, '#6a4a2a', px, py - .1, .1, g); }
+    if (kind === 'palm') { let px = 0, py = 0; for (let i = 0; i < 6; i++) { const seg = cyl(.22 - i * .02, .26 - i * .02, .8, '#a07850', px, py + .4, 0, g, 8); seg.rotation.z = -.08 * i; px += .06 * i; py += .78; } for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2; const lf = new Mesh(new ConeGeometry(.32, 2.6, 4), lamF('#3fa04a')); lf.scale.z = .25; lf.position.set(px + Math.cos(a) * 1.1, py + .1, Math.sin(a) * 1.1); lf.rotation.set(Math.sin(a) * 1.6, 0, -Math.cos(a) * 1.6); lf.castShadow = true; g.add(lf); } sph(.18, '#6a4a2a', px, py - .1, .1, g); }
     else { cyl(.2, .32, 2.0, '#8a5a3a', 0, 1.0, 0, g, 10); const cn = new Mesh(canopyG(kind === 'pink' ? 1 : 0, (x * 7 + z * 13) | 0), canopyM); cn.position.y = 1.7; cn.castShadow = true; cn.rotation.y = x + z; g.add(cn); sway.push([cn, x * .3 + z * .7]); }
     solids.push([x - .5 * s, z - .5 * s, x + .5 * s, z + .5 * s]);
   }
@@ -293,6 +316,10 @@ export function island(o) {
   umbrella(-18, 28, '#2f6bb8'); lounger(-16.2, 28.4, '#6fd1c0'); lounger(-19.6, 28.8, '#f29ab8'); umbrella(-4, 30, '#e8553f'); lounger(-2.2, 30.2, '#f6cf4a'); umbrella(22, 29, '#3f8f4f'); lounger(23.8, 29.3, '#f29ab8'); umbrella(-30, 27, '#f6cf4a');
   { const pier = new Group(); pier.position.set(10, 0, IZ + 6); scene.add(pier); box(3, .3, 16, '#b8824a', 0, .15, 6, pier); for (let i = 0; i < 6; i++) for (const sx of [-1.4, 1.4]) cyl(.15, .15, 1.6, '#8a5a34', sx, -.5, -1 + i * 3, pier, 8); for (let i = 0; i < 16; i++) box(3, .02, .05, '#8a5a34', 0, .31, -1.8 + i, pier, false);
     const boat = new Group(); boat.position.set(14, -.2, IZ + 17); scene.add(boat); box(1.8, .6, 4, '#f4efe2', 0, .3, 0, boat); box(1.9, .15, 4.1, '#e8553f', 0, .65, 0, boat); cyl(.06, .06, 3, '#8a5a34', 0, 2, 0, boat, 6); const sail = new Mesh(new PlaneGeometry(1.6, 2.2), lam('#ffffff', { side: DoubleSide })); sail.position.set(0, 2.2, .6); sail.rotation.y = Math.PI / 2; boat.add(sail); clouds.userData.boat = boat; }
+  /* 其他不會動的零件（路緣、路燈、樹幹、長椅、花壇、海邊、碼頭、噴水池石台）：依材質＋區塊合併 */
+  { const skip = new Set([sky, clouds, clouds.userData.boat, sun, sun.target, ...water, ...lamps, ...sway.map(q => q[0])]); houseObjs.forEach(h => skip.add(h.g)); scene.children.forEach(c => { if (c.userData.shopG) skip.add(c); });
+    const ms = []; for (const c of scene.children.slice()) collectStatic(c, skip, ms); const wp = new Vector3();
+    mergeStatic(scene, ms, m => { m.getWorldPosition(wp); return matKey(m) + '@' + Math.floor(wp.x / 24) + ',' + Math.floor(wp.z / 24); }); }
   /* 碼頭範圍可以走 */
   const PIER = [8.5, IZ + 4, 11.5, IZ + 19];
 
@@ -438,7 +465,7 @@ export function island(o) {
     else if (a === 'edit') { if (S.mode === 'walk') setMode('edit'); }
     else if (a === 'done') setMode('walk');
     else if (a === 'tab') { edTab = b.dataset.k; drawPan(); }
-    else if (a === 'opt') { const v = b.dataset.v; D.ex[edTab] = /^\d$/.test(v) ? +v : v; placeHouse(myHouse); drawPan(); save(); }
+    else if (a === 'opt') { const v = b.dataset.v; D.ex[edTab] = /^\d$/.test(v) ? +v : v; placeHouse(myHouse); shFlag = true; drawPan(); save(); }
     else if (a === 'home') { closeCard(); goDoor(DOORS.find(d => d.kind === 'home')); }
     else if (a === 'enter') { closeCard(); doorAct(DOORS.find(d => d.kind === 'home')); }
     else if (a === 'shopin') { closeCard(); goDoor(DOORS.find(d => d.kind === 'shop')); }
@@ -514,8 +541,8 @@ export function island(o) {
     sun.color.copy(st.sunC); sun.intensity = st.sunI; hemi.intensity = st.hemiI; amb.intensity = .2 + st.night * .15; hemi.color.set(st.night > .5 ? '#8a9aff' : '#dff2ff');
     const sa = (h - 6) / 12 * Math.PI; const el2 = Math.sin(sa); sunSp.position.set(Math.cos(sa) * 260, Math.max(-40, el2 * 220), -60); sunSp.material.opacity = clamp(el2 * 3, 0, 1);
     const ma = ((h + 6) % 24 - 6) / 12 * Math.PI; moonSp.position.set(-Math.cos(sa) * 240, Math.max(30, Math.abs(Math.sin(ma)) * 200), -80); moonSp.material.opacity = st.night;
-    starSprites.userData.m.opacity = st.night * .9;
-    const n = st.night; lamps.forEach(l => { l.material.opacity = n * (l.userData.k || .75); });
+    starSprites.userData.m.opacity = st.night * .9; starSprites.visible = st.night > .02; sunSp.visible = sunSp.material.opacity > .01; moonSp.visible = st.night > .01;  /* 白天看不到的星星（200 顆）不要畫 */
+    const n = st.night; lamps.forEach(l => { l.material.opacity = n * (l.userData.k || .75); l.visible = n > .02; });
     nightMats.forEach(m => m.color.copy(m.userData.day).lerp(m.userData.night, n));
     seaM.color.set('#ffffff').lerp(tmp.set('#3a4a8a'), n * .6); clouds.children.forEach(c => c.children.forEach(m => m.material.color.set('#ffffff').lerp(tmp.set('#4a4a7a'), n * .8)));
     S.night = n;
@@ -540,13 +567,15 @@ export function island(o) {
   const fwd = new Vector3(), rgt = new Vector3(), camPos = new Vector3(), eyeV = new Vector3(), lookV = new Vector3(), lookFP = new Vector3();
   function resize() { const r = cv.getBoundingClientRect(), W = Math.max(1, cv.clientWidth), Hh = Math.max(1, cv.clientHeight), dpr = Math.min(2, window.devicePixelRatio || 1);
     const nps = Math.round(clamp(1.75 - ((r.height || Hh) - 380) / 440 * .6, 1.15, 1.75) * 20) / 20; if (nps !== PS) { PS = nps; people.forEach(q => { q.h = q.h0 * PS; q.w = q.h * q.ar; }); }
-    if (W === cw && Hh === ch && dpr === dprv) return; cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2); pr = Math.min(pr, Math.sqrt(2.2e6 / (W * Hh))); prFloor = Math.max(Math.min(pr, .9), pr * .8); renderer.setPixelRatio(pr); renderer.setSize(W, Hh, false); camera.aspect = W / Hh; camera.updateProjectionMatrix(); }
+    if (W === cw && Hh === ch && dpr === dprv) return; cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2); pr = Math.min(pr, Math.sqrt((mobile ? 1.3e6 : 2.2e6) / (W * Hh))); prFloor = Math.max(Math.min(pr, .9), pr * .8); renderer.setPixelRatio(pr); renderer.setSize(W, Hh, false); camera.aspect = W / Hh; camera.updateProjectionMatrix(); }
   function frame(now) {
     if (S.dead) return; if (!document.contains(cv)) { dispose(); return; } S.raf = requestAnimationFrame(frame);
     const dt = Math.min(.1, (now - S.last) / 1000); S.last = now; S.t += dt; const t = S.t; resize();
-    fpsT += dt; fpsN++; if (fpsT > 1.5) { const slowF = fpsT / fpsN > .03; if (slowF && renderer.shadowMap.enabled) { renderer.shadowMap.enabled = false; scene.traverse(m => { if (m.material) (Array.isArray(m.material) ? m.material : [m.material]).forEach(x => { x.needsUpdate = true; }); }); } else if (slowF && pr > prFloor + .01) { pr = Math.max(prFloor, pr * .9); renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } fpsT = 0; fpsN = 0; }
+    fpsT += dt; fpsN++; if (fpsT > 1.5) { const slowF = fpsT / fpsN > .024; if (slowF && renderer.shadowMap.enabled) { renderer.shadowMap.enabled = false; scene.traverse(m => { if (m.material) (Array.isArray(m.material) ? m.material : [m.material]).forEach(x => { x.needsUpdate = true; }); }); } else if (slowF && pr > prFloor + .01) { pr = Math.max(prFloor, pr * .9); renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } fpsT = 0; fpsN = 0; }
     const h = hourNow(); if (Math.abs(h - lastH) > .02) { applyTime(h); lastH = h; updInfo(); shFlag = true; }
-    shT -= dt; if (shFlag || shT <= 0 || Math.hypot(S.cam.x - shX, S.cam.z - shZ) > .04) { renderer.shadowMap.needsUpdate = true; shX = S.cam.x; shZ = S.cam.z; shT = .25; shFlag = false; }
+    /* 陰影範圍以 4 格為單位跟著角色挪（陰影貼圖和它的矩陣一起換，所以沒重畫時影子位置也不會錯），走路時不用每幀重畫陰影；樹會搖，所以每 0.5 秒還是重畫一次 */
+    const sgx = Math.round(S.cam.x / 4) * 4, sgz = Math.round(S.cam.z / 4) * 4;
+    shT -= dt; if (shFlag || shT <= 0 || sgx !== shX || sgz !== shZ) { renderer.shadowMap.needsUpdate = true; shX = sgx; shZ = sgz; shT = .5; shFlag = false; }
     const K = S.keys; if (K.q) S.yawT += dt * 1.8; if (K.e) S.yawT -= dt * 1.8;
     S.yaw += (S.yawT - S.yaw) * Math.min(1, dt * 9); S.pitch += (S.pitchT - S.pitch) * Math.min(1, dt * 9); S.dist += (S.distT - S.dist) * Math.min(1, dt * 6);
     const sy = Math.sin(S.yaw), cy = Math.cos(S.yaw); fwd.set(-sy, 0, -cy); rgt.set(cy, 0, -sy);
@@ -591,13 +620,13 @@ export function island(o) {
     /* 第一人稱：鏡頭放在角色眼睛高度，和第三人稱之間平滑過渡 */
     S.fpK += ((S.fp && S.mode === 'walk' && !S.ent ? 1 : 0) - S.fpK) * Math.min(1, dt * 5);
     const fpK = S.fpK, cpf = Math.cos(S.fpP), spf = Math.sin(S.fpP);
-    eyeV.set(S.cam.x, me.y + 1.55, S.cam.z);
+    eyeV.set(S.cam.x, me.y + 2.3, S.cam.z);  /* 2026/11/26 原本 1.55 太低（像小孩視角），調高 */
     lookV.set(S.cam.x, S.cam.y + .4, S.cam.z); lookFP.set(eyeV.x - sy * cpf * 10, eyeV.y + spf * 10, eyeV.z - cy * cpf * 10);
     camPos.lerp(eyeV, fpK); lookV.lerp(lookFP, fpK);
     me.grp.visible = fpK < .5; me.sh.visible = fpK < .5; if (me.tag) me.tag.visible = fpK < .5;
     camera.position.copy(camPos); camera.lookAt(lookV); sky.position.copy(camPos);
-    sun.position.set(S.cam.x + 30, 60, S.cam.z + 22); sun.target.position.set(S.cam.x, 0, S.cam.z);
-    if (S.night > .6) { sun.position.set(S.cam.x - 25, 50, S.cam.z + 30); }
+    sun.position.set(shX + 30, 60, shZ + 22); sun.target.position.set(shX, 0, shZ);
+    if (S.night > .6) { sun.position.set(shX - 25, 50, shZ + 30); }
     /* 人 */
     const camYaw = Math.atan2(camPos.x - S.cam.x, camPos.z - S.cam.z);
     for (const p of people) { const w = p.w, hh = p.h, walk = p.moving, s = Math.sin(p.ph), bob = walk ? Math.abs(s) * .06 : 0, tilt = walk ? s * .06 : Math.sin(t * 1.6 + p.ph) * .01, sq = walk ? 1 + Math.cos(p.ph * 2) * .025 : 1 + Math.sin(t * 1.6 + p.ph) * .008;
