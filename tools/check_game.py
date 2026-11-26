@@ -18,6 +18,7 @@
   oko       御好燒店（作者限定）：從麵糊開始真實點擊加料做完四道菜、順序錯加不進去、空手連點倒掉、放太久會焦、做好放保溫台、📖 做法暫停
   wagashi   和果子屋（作者限定）：一般玩家看不到入口；一天 6 位客人跑三檔難度、完美／普通品／超時、打烊隔夜食材、型拔成功與碎掉、裝飾、圖鑑、返回、存檔
   tepfix    炎舞鐵板燒：下架／上架、對話框上的提示看得到、燒焦時間
+  shopgun   每家店的商店都有武器分頁、買得到、營業時槍架拿得起來
   saves     玩完整條路徑後，玩家原本的存檔欄位一個都不能少、不認得的欄位原封不動
 """
 import argparse, functools, http.server, json, os, shutil, socketserver, sys, threading, time, traceback
@@ -2786,10 +2787,52 @@ def sc_tepfix(b, base):
         c.close()
 
 
+def sc_shopgun(b, base):
+    """2026/11/27 玩家回報找不到武器：每一家店的商店都要有「🔫 武器」分頁，真實點擊買得到，營業時槍架拿得起來"""
+    shops = [('iz', 'dayshop', 'stab', 'gun'), ('rm', 'dayshop', 'stab', 'rgun'), ('sushi', 'sushishop', 'sutab', 'gun'),
+             ('tep', 'tephome', 'tptab', 'gun'), ('bar', 'barhome', 'brtab', 'gun'), ('oko', 'okohome', 'okstab', 'gun')]
+    for sid, shop_act, tab_act, tab_id in shops:
+        c = Ctx(b, base).open()
+        try:
+            c.page.evaluate("""(w)=>{const s=JSON.parse(localStorage.getItem('izakaya-cook-v1'));s.menu=s.menu||{};
+              s.rm={up:{},dec:{},seen:true};s.sushi={up:{},seen:true,tutAsk:true,nv:1};s.tep={up:{}};s.oko={up:{}};s.bar={up:{},seen:true,tutAsk:true};
+              ['tamagonigiri','tpgarlic','okosaka'].forEach(k=>s.menu[k]=1);s.where=w;localStorage.setItem('izakaya-cook-v1',JSON.stringify(s))}""", sid)
+            c.page.reload(); c.page.wait_for_timeout(3000); c.dismiss_modals(8)
+            if sid == 'oko':
+                c.page.evaluate("window.okoDev=()=>true")
+            c.click('[data-act=cont]', wait=1000)
+            c.click('.modal [data-act=%s]' % shop_act, wait=800)
+            c.click('.modal [data-act=%s][data-id=%s]' % (tab_act, tab_id), wait=700)
+            coins = c.page.evaluate('ST.coins')
+            c.click('.modal [data-act=buygun][data-id="0"]', wait=800)
+            if c.page.evaluate('ST.weapon') != 1 or c.page.evaluate('ST.coins') != coins - 3000:
+                raise AssertionError('%s 商店買 BB 槍失敗' % sid + c.diag('買槍'))
+            if not c.has('.modal [data-act=buygun][data-id="1"]'):
+                raise AssertionError('%s 買完槍後沒有留在武器分頁' % sid + c.diag('買槍後'))
+            c.page.screenshot(path='/tmp/gunshop-%s.png' % sid)
+            if sid == 'bar':  # 月影酒吧的營業畫面沒有劫匪也沒有槍架，只驗商店買得到
+                c.expect_clean('bar 武器')
+                continue
+            c.click('.modal [data-act=back]', wait=900)
+            c.click('[data-act=start]', wait=2000)
+            c.dismiss_modals(2)
+            if not c.has('#st-gunT'):
+                raise AssertionError('%s 營業時看不到槍架 %s' % (sid, c.page.evaluate("[typeof CUR!=='undefined'&&CUR,!!R,ST&&ST.weapon,Object.keys(L)]")) + c.diag('槍架'))
+            bb = c.page.locator('#st-gunT').first.bounding_box()
+            c.page.screenshot(path='/tmp/gunday-%s.png' % sid)
+            c.page.mouse.click(bb['x'] + bb['width'] / 2, bb['y'] + bb['height'] / 2)
+            c.page.wait_for_timeout(500)
+            if not c.page.evaluate('R.aim'):
+                raise AssertionError('%s 槍架點了拿不起槍' % sid + c.diag('槍架'))
+            c.expect_clean('%s 武器' % sid)
+        finally:
+            c.close()
+
+
 SCENARIOS = [('chrestart', sc_chrestart), ('fblogin', sc_fblogin), ('coicons', sc_coicons), ('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves), ('keepbak', sc_keepbak),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barnew', sc_barnew), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
-             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d), ('homekeep', sc_homekeep), ('wagashi', sc_wagashi), ('tepfix', sc_tepfix)]
+             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d), ('homekeep', sc_homekeep), ('wagashi', sc_wagashi), ('tepfix', sc_tepfix), ('shopgun', sc_shopgun)]
 
 
 def main():
