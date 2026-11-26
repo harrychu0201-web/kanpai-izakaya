@@ -2315,10 +2315,53 @@ def sc_home3d(b, base):
             c.page.screenshot(path='/tmp/check-fail.png')
             raise AssertionError('長按後拖曳行燈沒有拖到 (8,6) 附近（或選取不見了）：%s' % p['sel'])
         moved = p['sel']
+        # 已選取（綠框）的家具不用長按，直接拖就要跟著走、鏡頭不能轉（2026/11/26 管理員回報拖不動）
+        # 家具剛好在「旋轉／收起來」按鈕底下時，先轉一下鏡頭讓它露出來
+        for yw in (0, .35, -.35, .7, -.7):
+            c.page.evaluate("HOME3.setYaw(%s)" % yw); c.page.wait_for_timeout(700)
+            p = h3_probe(c); it = [i for i in p['items'] if i['k'] == 'andon'][0]
+            if c.page.evaluate("document.elementFromPoint(%s,%s).tagName" % (it['x'], it['y'])) == 'CANVAS':
+                break
+        y1 = p['yaw']
+        tg = c.page.evaluate("HOME3.px(%s,0,%s)" % (moved['x'] - .5, moved['z'] + .5))
+        c.page.mouse.move(it['x'], it['y']); c.page.mouse.down()
+        for k in range(1, 9):
+            c.page.mouse.move(it['x'] + (tg['x'] - it['x']) * k / 8, it['y'] + (tg['y'] - it['y']) * k / 8); c.page.wait_for_timeout(20)
+        c.page.mouse.up(); c.page.wait_for_timeout(400)
+        p = h3_probe(c)
+        if not p['sel'] or p['sel']['x'] == moved['x'] or abs(p['yaw'] - y1) > .05:
+            c.page.screenshot(path='/tmp/check-fail.png')
+            raise AssertionError('已選取的行燈直接拖沒有移動：%s → %s yaw %s→%s' % (moved, p['sel'], y1, p['yaw']))
+        moved = p['sel']
         c.click('.home3 [data-h3=rot]', wait=200)
         if c.page.locator('.home3 [data-h3=ok]').is_disabled():
             c.click('.home3 [data-h3=rot]', wait=200)
         c.click('.home3 [data-h3=ok]', wait=300)
+        # 桌上的料理：點一下選取，再直接拖到隔壁那格桌面（用桌面高度算位置，不能掉到地板）
+        beers = [i for i in h3_probe(c)['items'] if i['k'] == 'beer']
+        if beers:
+            b0 = beers[0]; c.page.evaluate("HOME3.setYaw(0)"); c.page.wait_for_timeout(600)
+            b0 = [i for i in h3_probe(c)['items'] if i['k'] == 'beer' and i['x'] and i['z'] == b0['z'] and i['x'] == i['x']][0]
+            h3_tap(c, b0['x'], b0['y']); c.page.wait_for_timeout(900)
+            sel = h3_probe(c)['sel']
+            if sel and sel['k'] == 'beer':
+                it = [i for i in h3_probe(c)['items'] if i['k'] == 'beer' and i['x'] is not None and i['z'] == sel['z']][0]
+                p0 = c.page.evaluate("HOME3.px(%s,.74,%s)" % (sel['x'] + .5, sel['z'] + .5))
+                p1 = c.page.evaluate("HOME3.px(%s,.74,%s)" % (sel['x'] + 1.5, sel['z'] + .5))
+                c.page.mouse.move(p0['x'], p0['y']); c.page.mouse.down()
+                for k in range(1, 9):
+                    c.page.mouse.move(p0['x'] + (p1['x'] - p0['x']) * k / 8, p0['y'] + (p1['y'] - p0['y']) * k / 8); c.page.wait_for_timeout(20)
+                c.page.screenshot(path='/tmp/check-beer.png')
+                c.page.mouse.up(); c.page.wait_for_timeout(400)
+                s2 = h3_probe(c)['sel']
+                if not s2 or s2['k'] != 'beer' or s2['x'] != sel['x'] + 1 or s2['z'] != sel['z']:
+                    raise AssertionError('桌上的啤酒直接拖沒有移到隔壁格：%s → %s' % (sel, s2))
+                if c.page.locator('.home3 [data-h3=ok]').is_disabled():
+                    c.page.mouse.move(p1['x'], p1['y']); c.page.mouse.down()
+                    for k in range(1, 9):
+                        c.page.mouse.move(p1['x'] + (p0['x'] - p1['x']) * k / 8, p1['y'] + (p0['y'] - p1['y']) * k / 8); c.page.wait_for_timeout(20)
+                    c.page.mouse.up(); c.page.wait_for_timeout(300)
+                c.click('.home3 [data-h3=ok]', wait=300)
         c.click('.home3 [data-h3=done]', wait=1500)
         saved = c.page.evaluate("JSON.parse(localStorage.getItem('izakaya-home-v1')||'null')")
         if not saved or not any(e[0] == 'andon' for e in saved['it']):
@@ -2328,8 +2371,10 @@ def sc_home3d(b, base):
         rg = [i for i in p['items'] if i['k'] == 'register'][0]
         c1 = c.page.evaluate("load().coins")
         h3_tap(c, rg['x'], rg['y'])
-        if c.page.evaluate("document.querySelector('.home3 .h3card.on')!==null"):   # 剛好有客人走過擋住，關掉對話再點一次
-            c.click('.home3 .h3card [data-h3=close]', wait=300)
+        for _ in range(5):   # 剛好有客人走過擋住，關掉對話、等他走開再點
+            if not c.page.evaluate("document.querySelector('.home3 .h3card.on')!==null"):
+                break
+            c.click('.home3 .h3card [data-h3=close]', wait=2500)
             rg = [i for i in h3_probe(c)['items'] if i['k'] == 'register'][0]
             h3_tap(c, rg['x'], rg['y'])
         for _ in range(30):
@@ -2603,6 +2648,7 @@ def sc_wagashi(b, base):
             c.click('[data-act=wgmake]', wait=300)
             res = wg_make(c, aim)
             wg_check_res(c, res, diff, aim)
+            before['m'] = c.page.evaluate("__wg.S.money")  # 缺貨時開始做會先扣「跑腿補貨」錢，收入要從交付前算
             c.click('[data-act=wggive]', wait=1700)
             after = c.page.evaluate("({m:__wg.S.money,r:__wg.S.rep,n:__wg.S.today.n})")
             if after['n'] != before['n'] + 1:

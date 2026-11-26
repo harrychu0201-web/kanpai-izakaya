@@ -8506,7 +8506,7 @@ function showVisit(uid){const D=FR.data;if(!D)return;FR.view=uid;const x=D.lbs[u
    ${row(T('拉麵屋台'),x.ya?T('已開張'):T('還沒開張'))}${row(T('二號廚房'),x.k2?T('已擴建'):T('還沒擴建'))}${row(T('裝飾'),T('{0} 件',x.dc||0))}${row(T('店評價'),rtFull(x.rt))}</div>
    <div class="btns">${homeDev()?`<button class="btn" data-act="h3visit" data-id="${esc(uid)}">🏝️ 去他的島</button>`:''}<button class="btn" data-act="frgift" data-id="${esc(uid)}" ${sent?'disabled':''}>🎁 ${T('送禮物')}</button><button class="btn alt" data-act="frdel" data-id="${esc(uid)}">${T('移除好友')}</button><button class="btn alt" data-act="frback">${T('返回')}</button></div>`)}
 /* ===== 我的店（3D、可以逛、可以布置；測試中，只有作者和管理員看得到）=====
-   three.js 打包檔在打開時才載入（img/home3d-4303def7.js）。原始碼 dev/home3d/（models.js 家具、src.js 場景）。
+   three.js 打包檔在打開時才載入（img/home3d-cd11187c.js）。原始碼 dev/home3d/（models.js 家具、src.js 場景）。
    存檔：本機 izakaya-home-v1（不放進遊戲存檔，所以不動 mergeRec），登入後同步到 home/<uid>（公開讓好友逛）。
    買家具、收收銀台的錢都用遊戲錢包（跟好友禮物領取一樣直接改 KEY 存檔的 coins）。 */
 const HOME_KEY='izakaya-home-v1',HOME_GIFT='izakaya-home-gift';
@@ -8514,7 +8514,7 @@ let HOME3=null,HOMEBACK=null,H3P=null,HOME_CLOUD_WARN=false;
 function homeDev(){try{return !pview()&&canView()}catch(e){return false}}
 function homeRow(){if(!homeDev())return '';return `<div class="lbme" style="flex-wrap:wrap;gap:8px"><span style="flex:1 1 100%">🏝️ <b>我的島</b>（3D・測試中，只有作者和管理員看得到）<br><small>在島上散步、設計自己房子的外觀、進屋布置；走進好友的島逛逛、留言送小禮物</small></span><button class="btn" data-act="h3open">去我的島</button><button class="btn alt" data-act="h3demo">逛示範島</button>${homeBakList().length?'<button class="btn alt" data-act="h3bak">還原備份</button>':''}</div>`}
 function loadHome3D(){if(window.Home3D&&!H3P)return Promise.resolve(Home3D.ready).catch(()=>{});if(H3P)return H3P;
-  H3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/home3d-4303def7.js';s.onload=()=>{Promise.resolve(window.Home3D&&Home3D.ready).catch(()=>{}).then(()=>ok())};s.onerror=()=>{H3P=null;no(new Error('home3d'))};document.head.appendChild(s)});return H3P}
+  H3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/home3d-cd11187c.js';s.onload=()=>{Promise.resolve(window.Home3D&&Home3D.ready).catch(()=>{}).then(()=>ok())};s.onerror=()=>{H3P=null;no(new Error('home3d'))};document.head.appendChild(s)});return H3P}
 function homeLocal(){try{return JSON.parse(localStorage.getItem(HOME_KEY)||'null')}catch(e){return null}}
 function homeNick(){const e=lbEntry();return (e&&e.name)||(loadRec().nick)||'我'}
 async function homeCloudGet(uid){if(!CL.api||!CL.api.homeGet)return null;try{const v=await Promise.race([CL.api.homeGet(uid),new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),5000))]);if(!v||!v.v)return null;const d=JSON.parse(v.v);d.at=v.at||0;return d}catch(e){console.warn('home get',e);return null}}
@@ -8540,7 +8540,7 @@ async function homeOpen(who){if(!homeDev()||!HOME)return;
   if(!own&&!demo&&!me){toast('登入後才能拜訪好友的店');return}
   HOMEBACK=document.getElementById('coopmark')?()=>coopPanel():(who&&!demo&&FR.data)?()=>showVisit(who):null;
   const back=`<button class="btn twlist" data-act="h3back" aria-label="回首頁" style="min-height:44px;padding:8px 14px">🏠 回首頁</button>`;
-  modal(`<div class="town home3"><canvas class="twcv"></canvas><div class="twtop"><b>🏝️ ${own?'我的島':demo?'示範島':'好友的島'}</b><span class="twhint">${TOUCHUI()?'左下搖桿走路・右邊拖曳轉鏡頭・點人聊天':'拖曳轉鏡頭・點地面走路・點人聊天'}</span>${back}</div></div>`);
+  modal(`<div class="town home3"><canvas class="twcv"></canvas><div class="twtop"><b>🏝️ ${own?'我的島':demo?'示範島':'好友的島'}</b><span class="twhint"></span>${back}</div></div>`);
   const tw=document.querySelector('.modal .town');if(!tw)return;tw.closest('.card').classList.add('towncard');tw.closest('.modal').classList.add('townm','h3m');
   const ld=document.createElement('div');ld.className='tw3load';ld.textContent='🏮 …';tw.appendChild(ld);
   const fail=m=>{ld.remove();const x=document.createElement('div');x.className='tw3load';x.style.cssText='flex-direction:column;gap:14px;text-align:center;padding:20px';x.innerHTML=`<div>${m}</div><div><button class="btn" data-act="h3back">返回</button></div>`;tw.appendChild(x)};

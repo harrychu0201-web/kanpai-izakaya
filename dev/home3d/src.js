@@ -614,6 +614,7 @@ export function start(o) {
     for (const p of npcs) { if (p.hidden) continue; const f = proj(new Vector3(p.x, 0, p.z)), t = proj(new Vector3(p.x, p.h + .3, p.z)), hh = f.y - t.y; if (hh < 6) continue; const w = Math.max(hh * .36, 30), dx = Math.abs(cx - f.x); if (dx < w && cy > t.y - 14 && cy < f.y + 12) { const d = dx + Math.abs(cy - (f.y + t.y) / 2) * .3; if (d < bd) { bd = d; best = p; } } }
     return best;
   }
+  function ringHit(cx, cy) { if (!ring.visible) return false; ray.setFromCamera(toNdc(cx, cy), camera); return ray.intersectObject(ring, false).length > 0; }
   function boardHit(cx, cy) { ray.setFromCamera(toNdc(cx, cy), camera); return ray.intersectObjects(boardPick, false).length > 0; }
   const giftBoxes = []; const giftPick = [];
   function giftHit(cx, cy) { ray.setFromCamera(toNdc(cx, cy), camera); return ray.intersectObjects(giftPick, false).length > 0; }
@@ -630,7 +631,8 @@ export function start(o) {
     if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), dist: S.distT, ang: Math.atan2(b.y - a.y, b.x - a.x), yaw: S.yawT }; if (pd) clearTimeout(pd.lpT); pd = null; endDrag(); return; }
     pd = { id: e.pointerId, sx: l.x, sy: l.y, cx: e.clientX, cy: e.clientY, moved: 0, btn: e.button, yaw0: S.yawT, pit0: S.pitchT, fp0: S.fpP };
     /* 2026-11-26 使用者要求：家具要「長按」才拖得動（之前一碰就拖，轉鏡頭時常不小心移到）。短按＝選取，按住不動 0.35 秒＝拿起來拖 */
-    if (S.mode === 'build') { const it = itemHit(e.clientX, e.clientY); if (it && !it.I.fixed2) { const me2 = pd; pd.lpT = setTimeout(() => { if (pd !== me2 || me2.moved || S.dead || S.mode !== 'build') return; if (S.sel !== it) select(it); me2.dragItem = it; me2.lp = 1; S.bt = null; liftFx(it); }, 350); } }
+    /* 已經選取（綠框）的家具：按住它或綠框直接拖，不用再長按（2026/11/26 管理員回報「東西拖不動」） */
+    if (S.mode === 'build' && e.button !== 2) { const it = itemHit(e.clientX, e.clientY), s = S.sel; if (s && !s.I.fixed2 && (it === s || (ringHit(e.clientX, e.clientY) && (!it || s.I.L === 'top')))) { pd.dragItem = s; return; } if (it && !it.I.fixed2) { const me2 = pd; pd.lpT = setTimeout(() => { if (pd !== me2 || me2.moved || S.dead || S.mode !== 'build') return; if (S.sel !== it) select(it); me2.dragItem = it; me2.lp = 1; S.bt = null; liftFx(it); }, 350); } }
   });
   function liftFx(e) { e.pop = { t: S.t, k: 'lift' }; try { navigator.vibrate && navigator.vibrate(25); } catch (_) { } }
   cv.addEventListener('pointermove', e => {
@@ -727,7 +729,7 @@ export function start(o) {
     bp.classList.toggle('on', m === 'build'); topBar.classList.remove('on');  /* 2026-11-26 使用者要求：布置模式不顯示「拖曳家具移動」提示條（擋畫面） */ if (m !== 'build') { camEl.style.bottom = ''; }
     info.style.display = m === 'build' ? 'none' : '';
     S.bt = null;
-    if (m === 'build') { topBar.textContent = '🔨 長按家具拖動・拖空白處轉鏡頭'; drawPanel(); S.distT = BUILD_D; try { const n = +(localStorage.getItem('izakaya-h3lp') || 0); if (n < 3) { localStorage.setItem('izakaya-h3lp', n + 1); toast('長按家具就能拖動～'); } } catch (_) { } }
+    if (m === 'build') { topBar.textContent = '🔨 長按家具拖動・拖空白處轉鏡頭'; drawPanel(); S.distT = BUILD_D; try { const n = +(localStorage.getItem('izakaya-h3lp') || 0); if (n < 3) { localStorage.setItem('izakaya-h3lp', n + 1); toast('長按拿起家具，已選取的可以直接拖～'); } } catch (_) { } }
     else { S.distT = S.inside ? IN_D : 13; if (!okAt(me.x, me.z, me.z)) { const c = walkableCells(me.z < RD).sort((a, b) => Math.hypot(a[0] + .5 - me.x, a[1] + .5 - me.z) - Math.hypot(b[0] + .5 - me.x, b[1] + .5 - me.z)).find(c => okAt(c[0] + .5, c[1] + .5, c[1])); if (c) { me.x = c[0] + .5; me.z = c[1] + .5; } } changed(); }
   }
   let curCat = HOME ? 'liv' : 'tbl';
@@ -785,8 +787,10 @@ export function start(o) {
     else { const [w, d] = fp(I, e.r), [x, y, z] = posOf(e); ring.scale.set(w, d, 1); ring.rotation.z = 0; ring.position.set(x, y + .03, z); }
     const okb = selBar.querySelector('[data-h3="ok"]'); if (okb) okb.disabled = !ok;
   }
+  /* 桌上的小東西：用桌面高度算手指指到哪一格（用地板算會偏到桌子外面） */
+  function tableAt(cx, cy) { ray.setFromCamera(toNdc(cx, cy), camera); const v = new Vector3(), pl = new Plane(new Vector3(0, 1, 0), 0); for (const q of placed) { const h = IT[q.k].L === 'main' && IT[q.k].sf; if (!h) continue; pl.constant = -h; if (!ray.ray.intersectPlane(pl, v)) continue; const x = Math.floor(v.x), z = Math.floor(v.z); if (cellsOf(q).some(c => c[0] === x && c[1] === z)) return v.clone(); } return null; }
   function dragTo(e, cx, cy) {
-    const g = groundAt(cx, cy); if (!g) return; const I = IT[e.k];
+    const I = IT[e.k]; const g = (I.L === 'top' && tableAt(cx, cy)) || groundAt(cx, cy); if (!g) return;
     const ox = e.x, oz = e.z;
     if (I.L === 'wall') {
       const cs = [[g.z, 0], [g.x, 1], [RW - g.x, 3], [RD - g.z, 2]].filter(c => !S.low[wallSide(c[1])]).sort((a, b) => a[0] - b[0]); if (!cs.length) return; e.r = cs[0][1];
