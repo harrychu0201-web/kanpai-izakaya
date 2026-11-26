@@ -142,6 +142,7 @@ body.ovl .hud .icon-btn.bagbtn{width:auto;min-width:40px;height:36px;padding:0 9
 .pop.bad{color:#ff8a7a}
 @keyframes rise{from{transform:translate(-50%,0)}to{transform:translate(-50%,-60px);opacity:0}}
 .toast{position:absolute;left:50%;top:316px;transform:translateX(-50%);background:var(--soot);color:var(--paper);padding:5px 16px;border-radius:999px;font-size:15px;z-index:7;pointer-events:none;transition:opacity .3s;white-space:nowrap;opacity:0}
+.toast.toasttop{position:fixed;top:auto;bottom:22px;z-index:99999;width:max-content;max-width:90vw;white-space:normal;text-align:center;box-shadow:0 3px 10px #0006}
 .hand .gi svg{width:34px;height:22px;display:block}
 .hand{position:absolute;left:8px;top:232px;display:flex;align-items:center;gap:6px;background:#fffaf0;color:var(--soot);border:3px solid var(--soot);border-radius:12px;padding:2px 10px 2px 4px;font-size:13px;z-index:4;pointer-events:none}
 .hand svg{width:34px;height:34px}
@@ -2361,7 +2362,7 @@ function suAct(l){suSettle();
 /* ===== 炎舞鐵板燒：2026-11-05 做好（當時只有作者和管理員看得到），2026-11-12 開放給所有玩家 =====
    玩法：食材下到大鐵板，煎到一半會跳出 翻炒／翻面／刷醬／點火，沒點就失敗；
    提示剛跳出（標籤還是金色）時點下去算「完美」，連續完美 TPSHOW 次就來一場火焰秀：全場等餐的客人耐心回滿、每位多給一筆賞錢 */
-const TEP_PRICE=5000000,TP_SLOT6_COST=50000,TPGRACE=4.5,TPPERF=1.4,TPAUTO=2,TPSHOW=6;
+const TEP_PRICE=5000000,TP_SLOT6_COST=50000,TPGRACE=8,TPKEEP=12,/* 2026-11-26 玩家回報燒焦太快：提示等待 4.5→8 秒；煎好後多放 TPKEEP 秒才焦 */TPPERF=1.4,TPAUTO=2,TPSHOW=6;
 function tepDev(){return true} /* 炎舞鐵板燒：2026-11-12 開放給所有玩家 */
 const TPKEYS=TPP1.concat(TPP2,TPP3);
 const TPS={tpgarlic:['stir','stir'],tpcabbage:['stir'],tpchicken:['flip'],tpshrimp:['flip'],tpscallop:['flip'],tpwagyu:['flip','fire'],tplobster:['fire','flip','fire'],tpfilet:['flip'],tpsirloin:['flip'],tprib:['flip','sauce'],tpmatsu:['flip'],tpsnow:['flip'],tpsalt:['flip'],tppbeef:['stir','sauce'],tponbeef:['stir','fire'],tponpork:['stir','stir'],tpmackerel:['flip'],tpmilkfish:['flip','sauce'],tpbream:['flip'],tpabalone:['sauce','fire'],tpsanxian:['stir','stir'],tpseashrimp:['flip','sauce'],tpsprout:['stir'],tpmushroom:['stir','stir'],tpscalegg:['flip'],tpfriedegg:['flip'],tpcheeseroll:['flip','flip'],tpgoldegg:['flip','sauce'],tptofu:['flip','sauce'],tpredtofu:['sauce','stir']};
@@ -4422,7 +4423,7 @@ function ingArt(id){
   if(id==='boat')return sashimiG([]);
   return `<rect x="10" y="30" width="80" height="42" rx="10" fill="${FISHC[id][0]}" stroke="${O}" stroke-width="4"/><path d="M20 42h60" stroke="${FISHC[id][1]}" stroke-width="5" opacity=".8"/>`;
 }
-function burnAt(kind){if(BRREC[kind]||kind==='brwip')return 1e9;if(kind==='rice'||kind==='chashurice')return 1e9;if(SUKEYS.includes(kind))return 1e9;let b=COOK[kind]+12+(ST.up.warm?6:0);if(CUR==='rm'){if(kind==='noodle'&&rmUp('firm',0))b+=6;if((kind==='gyoza'||kind==='friedrice')&&rmUp('iron',0))b+=5;if(RFK.includes(kind)&&rmUp('oil',0))b+=5}if(OKN[kind])b+=13;return R&&R.fxNb?b+9999:b}
+function burnAt(kind){if(BRREC[kind]||kind==='brwip')return 1e9;if(kind==='rice'||kind==='chashurice')return 1e9;if(SUKEYS.includes(kind))return 1e9;let b=COOK[kind]+12+(ST.up.warm?6:0);if(CUR==='rm'){if(kind==='noodle'&&rmUp('firm',0))b+=6;if((kind==='gyoza'||kind==='friedrice')&&rmUp('iron',0))b+=5;if(RFK.includes(kind)&&rmUp('oil',0))b+=5}if(OKN[kind])b+=13;if(kind.slice(0,2)==='tp'&&TPS[kind])b+=TPKEEP;return R&&R.fxNb?b+9999:b}
 function cookState(t,kind){if(t<COOK[kind])return 'raw';if(ITEMS[kind]&&ITEMS[kind].shop==='sushi')return 'done';return t<burnAt(kind)?'done':'burnt'}
 const lockDiv=d=>UDAY()<d?`<div class="locked">${T('第 {0} 天<br>開放',d)}</div>`:'';
 function stHTML(name){
@@ -5323,7 +5324,10 @@ function renderRewards(){const inR=!!R&&!R.over&&!R.settled,r=loadRec(),inv=r.in
 function charge(n,x,y){if(!n)return;R.cost+=n;const d=document.createElement('div');d.className='pop cost';d.style.left=x+'px';d.style.top=y+'px';d.textContent='-'+yen(n);$('fx').appendChild(d);setTimeout(()=>d.remove(),1000)}
 function net(){return R?R.earned-R.cost-R.wage-R.rent-R.stolen-R.fines:0}
 function popup(x,y,txt,bad){const d=document.createElement('div');d.className='pop'+(bad?' bad':'');d.style.left=x+'px';d.style.top=y+'px';d.textContent=txt;$('fx').appendChild(d);{const hw=d.offsetWidth/2+6;if(hw>6)d.style.left=Math.min(W-hw,Math.max(hw,x))+'px'}setTimeout(()=>d.remove(),1200)}
-let toastT;function toast(m){const t=$('toastEl');if(!t)return;t.textContent=T(m);t.style.opacity=1;clearTimeout(toastT);toastT=setTimeout(()=>t.style.opacity=0,1500)}
+let toastT,toastLast;function toast(m){let t=$('toastEl');
+  /* 2026-11-26：商店等對話框開著時，營業畫面的提示列在對話框下面（或根本還沒建立），玩家按了像沒反應（鐵板燒「下架不了」）→ 改顯示在最上層 */
+  if(document.querySelector('#modalLayer .modal,#homeModal .modal')){t=$('toastTop');if(!t){t=document.createElement('div');t.id='toastTop';t.className='toast toasttop';document.body.appendChild(t)}}
+  if(!t)return;if(toastLast&&toastLast!==t)toastLast.style.opacity=0;toastLast=t;t.textContent=T(m);t.style.opacity=1;clearTimeout(toastT);toastT=setTimeout(()=>t.style.opacity=0,1500)}
 function nope(el){sfx('nope');if(!el)return;el.classList.remove('nope');void el.offsetWidth;el.classList.add('nope')}
 
 /* ---- interactions ---- */
@@ -8502,7 +8506,7 @@ function showVisit(uid){const D=FR.data;if(!D)return;FR.view=uid;const x=D.lbs[u
    ${row(T('拉麵屋台'),x.ya?T('已開張'):T('還沒開張'))}${row(T('二號廚房'),x.k2?T('已擴建'):T('還沒擴建'))}${row(T('裝飾'),T('{0} 件',x.dc||0))}${row(T('店評價'),rtFull(x.rt))}</div>
    <div class="btns">${homeDev()?`<button class="btn" data-act="h3visit" data-id="${esc(uid)}">🏝️ 去他的島</button>`:''}<button class="btn" data-act="frgift" data-id="${esc(uid)}" ${sent?'disabled':''}>🎁 ${T('送禮物')}</button><button class="btn alt" data-act="frdel" data-id="${esc(uid)}">${T('移除好友')}</button><button class="btn alt" data-act="frback">${T('返回')}</button></div>`)}
 /* ===== 我的店（3D、可以逛、可以布置；測試中，只有作者和管理員看得到）=====
-   three.js 打包檔在打開時才載入（img/home3d-1f3ae90c.js）。原始碼 dev/home3d/（models.js 家具、src.js 場景）。
+   three.js 打包檔在打開時才載入（img/home3d-4303def7.js）。原始碼 dev/home3d/（models.js 家具、src.js 場景）。
    存檔：本機 izakaya-home-v1（不放進遊戲存檔，所以不動 mergeRec），登入後同步到 home/<uid>（公開讓好友逛）。
    買家具、收收銀台的錢都用遊戲錢包（跟好友禮物領取一樣直接改 KEY 存檔的 coins）。 */
 const HOME_KEY='izakaya-home-v1',HOME_GIFT='izakaya-home-gift';
@@ -8510,7 +8514,7 @@ let HOME3=null,HOMEBACK=null,H3P=null,HOME_CLOUD_WARN=false;
 function homeDev(){try{return !pview()&&canView()}catch(e){return false}}
 function homeRow(){if(!homeDev())return '';return `<div class="lbme" style="flex-wrap:wrap;gap:8px"><span style="flex:1 1 100%">🏝️ <b>我的島</b>（3D・測試中，只有作者和管理員看得到）<br><small>在島上散步、設計自己房子的外觀、進屋布置；走進好友的島逛逛、留言送小禮物</small></span><button class="btn" data-act="h3open">去我的島</button><button class="btn alt" data-act="h3demo">逛示範島</button>${homeBakList().length?'<button class="btn alt" data-act="h3bak">還原備份</button>':''}</div>`}
 function loadHome3D(){if(window.Home3D&&!H3P)return Promise.resolve(Home3D.ready).catch(()=>{});if(H3P)return H3P;
-  H3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/home3d-1f3ae90c.js';s.onload=()=>{Promise.resolve(window.Home3D&&Home3D.ready).catch(()=>{}).then(()=>ok())};s.onerror=()=>{H3P=null;no(new Error('home3d'))};document.head.appendChild(s)});return H3P}
+  H3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/home3d-4303def7.js';s.onload=()=>{Promise.resolve(window.Home3D&&Home3D.ready).catch(()=>{}).then(()=>ok())};s.onerror=()=>{H3P=null;no(new Error('home3d'))};document.head.appendChild(s)});return H3P}
 function homeLocal(){try{return JSON.parse(localStorage.getItem(HOME_KEY)||'null')}catch(e){return null}}
 function homeNick(){const e=lbEntry();return (e&&e.name)||(loadRec().nick)||'我'}
 async function homeCloudGet(uid){if(!CL.api||!CL.api.homeGet)return null;try{const v=await Promise.race([CL.api.homeGet(uid),new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),5000))]);if(!v||!v.v)return null;const d=JSON.parse(v.v);d.at=v.at||0;return d}catch(e){console.warn('home get',e);return null}}

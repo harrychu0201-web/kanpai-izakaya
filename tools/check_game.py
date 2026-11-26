@@ -17,6 +17,7 @@
   home3d    我的島（3D，作者限定）：一般玩家看不到入口；島上拖曳轉鏡頭、改房子外觀並存檔、走回家進屋；布置買家具扣錢、拖曳、存檔；收銀台收錢；出門回島；重開還在；示範島、好友的島進屋留言送禮
   oko       御好燒店（作者限定）：從麵糊開始真實點擊加料做完四道菜、順序錯加不進去、空手連點倒掉、放太久會焦、做好放保溫台、📖 做法暫停
   wagashi   和果子屋（作者限定）：一般玩家看不到入口；一天 6 位客人跑三檔難度、完美／普通品／超時、打烊隔夜食材、型拔成功與碎掉、裝飾、圖鑑、返回、存檔
+  tepfix    炎舞鐵板燒：下架／上架、對話框上的提示看得到、燒焦時間
   saves     玩完整條路徑後，玩家原本的存檔欄位一個都不能少、不認得的欄位原封不動
 """
 import argparse, functools, http.server, json, os, shutil, socketserver, sys, threading, time, traceback
@@ -2705,10 +2706,44 @@ def sc_wagashi(b, base):
         c.close()
 
 
+def sc_tepfix(b, base):
+    """炎舞鐵板燒（2026/11/26 玩家回報）：商店下架／重新上架（真實點擊）；只剩 3 道時提示要看得到；
+    營業中下料後提示等 6 秒不能失敗，煎好後至少多放 20 秒才焦"""
+    c = Ctx(b, base).open()
+    try:
+        c.page.evaluate("(()=>{const s=JSON.parse(localStorage.getItem('izakaya-cook-v1'));s.tep={up:{}};s.menu=s.menu||{};['tpgarlic','tpcabbage','tpchicken','tpshrimp'].forEach(k=>s.menu[k]=1);s.where='tep';localStorage.setItem('izakaya-cook-v1',JSON.stringify(s))})()")
+        c.page.reload(); c.page.wait_for_timeout(3500); c.dismiss_modals(8)
+        c.click('[data-act=cont]', wait=1000)
+        c.click('.modal [data-act=tephome]', wait=800)
+        c.click('.modal [data-act=offtog][data-id=tpshrimp]', wait=600)
+        if not c.page.evaluate("!!(ST.soff&&ST.soff.tpshrimp)"):
+            raise AssertionError('按「暫時下架」沒有下架')
+        c.click('.modal [data-act=offtog][data-id=tpchicken]', wait=500)
+        t = c.page.evaluate("(()=>{const e=document.getElementById('toastTop');if(!e)return null;const r=e.getBoundingClientRect();return {o:getComputedStyle(e).opacity,z:+getComputedStyle(e).zIndex,h:r.height,b:r.bottom,vh:innerHeight,t:e.textContent}})()")
+        if not t or float(t['o']) < .5 or t['z'] < 100 or not t['h'] or t['b'] > t['vh'] or '3' not in t['t']:
+            raise AssertionError('只剩 3 道時下架，提示沒有顯示在最上層：%s' % t)
+        c.click('.modal [data-act=offtog][data-id=tpshrimp]', wait=600)
+        if c.page.evaluate("!!(ST.soff&&ST.soff.tpshrimp)"):
+            raise AssertionError('按「重新上架」沒有上架')
+        keep = c.page.evaluate("burnAt('tpchicken')-COOK.tpchicken")
+        if keep < 20:
+            raise AssertionError('鐵板燒煎好後只放 %s 秒就焦' % keep)
+        c.click('.modal [data-act=back]', wait=900)
+        c.click('[data-act=start]', wait=2000)
+        c.page.click('[data-st=rawTpChicken]'); c.page.wait_for_timeout(400)
+        c.page.wait_for_function("R.tpn.some(g=>g&&needTp(g))", timeout=20000)
+        c.page.wait_for_timeout(6000)
+        if c.page.evaluate("R.tpn.some(g=>g&&g.bad)"):
+            raise AssertionError('翻面提示等 6 秒就失敗了')
+        c.expect_clean('鐵板燒下架與燒焦時間')
+    finally:
+        c.close()
+
+
 SCENARIOS = [('chrestart', sc_chrestart), ('fblogin', sc_fblogin), ('coicons', sc_coicons), ('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves), ('keepbak', sc_keepbak),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barnew', sc_barnew), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
-             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d), ('homekeep', sc_homekeep), ('wagashi', sc_wagashi)]
+             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d), ('homekeep', sc_homekeep), ('wagashi', sc_wagashi), ('tepfix', sc_tepfix)]
 
 
 def main():

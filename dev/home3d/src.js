@@ -590,7 +590,7 @@ export function start(o) {
     if (HOME) { info.innerHTML = `<b>🏠 ${esc(o.title || '我的家')}</b><span class="h3st">${'★'.repeat(s)}${'☆'.repeat(5 - s)}</span> 溫馨度 ${c}<br><small>${own ? '按「🔨 布置」擺家具、換地板牆壁' : `${esc((o.owner && o.owner.name) || '')} 的家`}</small>`; return; }
     info.innerHTML = `<b>🏮 ${esc(D.name)}</b><span class="h3st">${'★'.repeat(s)}${'☆'.repeat(5 - s)}</span> ${esc(STARS[s][1])}<br><small>溫馨度 ${c}${own ? `・每天收入 ${yen(dailyIncome(c))}` : `・店長 ${esc((o.owner && o.owner.name) || '')}`}</small>`;
   }
-  hudBtns(); updInfo(); camEl.style.display = 'none'; setTimeout(() => joyRest(), 50); window.addEventListener('resize', () => joyRest());
+  hudBtns(); updInfo(); camEl.style.display = 'none'; setTimeout(() => joyRest(), 50); const onRs = () => joyRest(); window.addEventListener('resize', onRs);
   camEl.querySelectorAll('button').forEach((b, i) => { const dir = i ? -1 : 1; b.addEventListener('pointerdown', e => { e.preventDefault(); S.camV = dir; try { b.setPointerCapture(e.pointerId); } catch (_) { } }); const u2 = () => { S.camV = 0; }; b.addEventListener('pointerup', u2); b.addEventListener('pointercancel', u2); b.addEventListener('click', () => { if (!S.camV) S.yawT += dir * .5; }); });
 
   /* 點擊 / 拖曳 */
@@ -908,7 +908,7 @@ export function start(o) {
   };
   function dispose() {
     if (S.dead) return; S.dead = true; cancelAnimationFrame(S.raf); clearTimeout(saveT); if (own) { try { serialize(); cb.save && cb.save(D, true); } catch (_) { } }
-    document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); root.removeEventListener('click', onClick);
+    document.removeEventListener('keydown', kd); document.removeEventListener('keyup', ku); root.removeEventListener('click', onClick); window.removeEventListener('resize', onRs);
     ui.forEach(e => e.remove());
     scene.traverse(ob => { if (ob.geometry) ob.geometry.dispose(); const ms = ob.material ? (Array.isArray(ob.material) ? ob.material : [ob.material]) : []; ms.forEach(m => { if (m.map) m.map.dispose(); m.dispose(); }); });
     if (thumbR) thumbR.dispose();
