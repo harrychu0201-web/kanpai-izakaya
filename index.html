@@ -7998,6 +7998,7 @@ async function cloudInit1(){
       claimRelease:(id,uid)=>rt((rd,r)=>rd.runTransaction(rd.ref(r,'claim/'+id),cur=>{if(cur&&cur.by===uid)return null;return}).then(res=>!!res.committed)),
       fbPubList:n=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'fbpub'),rd.orderByChild('t'),rd.limitToLast(n))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.reverse()})),
       fbPubBackfill:rows=>rt((rd,r)=>{const u={};rows.forEach(f=>{u['fbpub/'+f.id]=Object.assign({cat:f.cat||'other',text:String(f.text).slice(0,800),t:f.t},f.re?{re:f.re}:{})});return rd.update(rd.ref(r),u).then(()=>rows.length)}),
+      fbStatsOld:skip=>rt((rd,r)=>rd.get(rd.ref(r,'fb')).then(s=>{const o={total:0,done:0,pend:0,pin:0};s.forEach(c=>{if(skip.has(c.key))return;const v=c.val()||{};o.total++;const d=!!(v.re||v.rd);if(d)o.done++;if(v.pin)o.pin++;if(!d&&!v.pin)o.pend++});return o})),
       fbList:n=>rt((rd,r)=>rd.get(rd.query(rd.ref(r,'fb'),rd.orderByChild('t'),rd.limitToLast(n))).then(s=>{const a=[];s.forEach(c=>{a.push(Object.assign({id:c.key},c.val()))});return a.reverse()})),
       fbDel:(id,row)=>rt((rd,r)=>{const u={['fb/'+id]:null,['fbpub/'+id]:null,['claim/'+id]:null};if(row){const c=Object.assign({},row);delete c.id;u['trash/'+id]=Object.assign(c,{by:CL.user.uid,delT:rd.serverTimestamp()})}return rd.update(rd.ref(r),u)}),
       // read/unread is saved on the item itself so it shows the same on every device the author logs into (true on-read, removed on-unread; never written for Firestore fallback rows)
@@ -8777,10 +8778,11 @@ async function inboxThr(id){const f=INB.rows.concat(INB.old).find(x=>x.id===id);
   try{INB.thr[id]=(await CL.api.fbThread(f.uid,f.thr))||'none'}catch(e){INB.thr[id]='err'}inboxDraw()}
 async function showInbox(reload){if(!canInbox())return;
   {INB.err='';modal(`<h2>📬 收件匣</h2><p style="font-size:14px">載入中…</p>`);
-    try{INB.rows=await CL.api.fbList(150);INB.claims=await CL.api.claimGet()}catch(e){INB.err=String(e&&e.code||e)}}
+    try{INB.rows=await CL.api.fbList(150);INB.claims=await CL.api.claimGet()}catch(e){INB.err=String(e&&e.code||e)}
+    try{INB.stat=await CL.api.fbStatsOld(new Set((INB.rows||[]).map(f=>f.id)))}catch(e){INB.stat=null}}
   inboxDraw()}
 function inboxDraw(){
-  const all=INB.rows.concat(INB.old),nDone=all.filter(isDone).length;let shown=INB.showDone?all:all.filter(f=>!isDone(f));
+  const all=INB.rows.concat(INB.old),S=INB.stat||{total:0,done:0,pend:0,pin:0},nDoneRows=all.filter(isDone).length,nDone=nDoneRows+S.done;let shown=INB.showDone?all:all.filter(f=>!isDone(f));
   /* 📌 pinned ideas are kept out of the inbox and only listed in the 📌 待做 view, so they stay put even after a reply or 已讀 */
   const pins=INB.rows.filter(f=>f.pin);
   shown=shown.filter(f=>!f.pin);
@@ -8793,10 +8795,11 @@ function inboxDraw(){
     ${!op&&INB.drafts[f.id]?'<p class="inbh">📝 有未送出的草稿</p>':''}${op?`<textarea class="fbtext" id="inbtext" data-id="${esc(f.id)}" maxlength="1000" oninput="fbDraftSet(this.dataset.id,this.value)" placeholder="回覆給這位玩家…">${esc(INB.drafts[f.id]||'')}</textarea>
       <div class="btns" style="justify-content:flex-start"><button class="btn" data-act="inbsend">${INB.busy?'送出中…':'送出回覆'}</button><button class="btn alt" data-act="inbre" data-id="">取消</button></div>`
     :`<div class="btns" style="justify-content:flex-start">${f.uid?`<button class="btn alt" data-act="inbre" data-id="${esc(f.id)}">${f.re?'再回覆一次':'回覆'}</button>`:`<span class="inbh">沒登入送出的，只能用聯絡方式回</span>`}${f.old?'':`<button class="btn alt" data-act="inbread" data-id="${esc(f.id)}">${f.rd?'↩ 取消已讀':'✔ 已讀'}</button>`}${f.old?'':`<button class="btn alt" data-act="inbpin" data-id="${esc(f.id)}">${f.pin?'📌 取消待做':'📌 收進待做'}</button>`}${f.thr&&f.uid?`<button class="btn alt" data-act="inbthr" data-id="${esc(f.id)}">${INB.thr[f.id]&&INB.thr[f.id]!=='err'?'🙈 收起對話':'💬 看完整對話'}</button>`:''}${f.uid&&!INB.who?`<button class="btn alt" data-act="inbwho" data-id="${esc(f.uid)}">👤 看這位玩家全部</button>`:''}${f.old?'':`<button class="btn alt" data-act="inbdel" data-id="${esc(f.id)}">刪除</button>`}</div>`}</div>`};
-  modal(`<h2>${INB.onlyPin?'📌 待做・蒐藏（'+pins.length+'）':'📬 收件匣（'+INB.rows.filter(f=>!isDone(f)&&!f.pin).length+'）'}</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
-  <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button>${nDone?`<button class="btn alt" data-act="inbdone">${INB.showDone?'🙈 隱藏已回覆・已讀':'👁 顯示已回覆・已讀（'+nDone+'）'}</button>`:''}<button class="btn alt" data-act="inbpinview">${INB.onlyPin?'← 返回收件匣':'📌 待做（'+INB.rows.filter(f=>f.pin).length+'）'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
+  modal(`<h2>${INB.onlyPin?'📌 待做・蒐藏（'+(pins.length+S.pin)+'）':'📬 收件匣（'+(INB.rows.filter(f=>!isDone(f)&&!f.pin).length+S.pend)+'）'}</h2>${INB.err?`<p class="chatwarn">讀取失敗：${esc(INB.err)}（Realtime Database 規則可能還沒更新）</p>`:''}
+  <div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbox" data-id="1">⟳ 重新整理</button>${nDone?`<button class="btn alt" data-act="inbdone">${INB.showDone?'🙈 隱藏已回覆・已讀':'👁 顯示已回覆・已讀（'+nDone+'）'}</button>`:''}<button class="btn alt" data-act="inbpinview">${INB.onlyPin?'← 返回收件匣':'📌 待做（'+(INB.rows.filter(f=>f.pin).length+S.pin)+'）'}</button>${canPost()?'<button class="btn alt" data-act="inbnotice">📢 發布公告</button>':''}<button class="btn alt" data-act="noticelist">📜 編輯公告</button>${isAdmin()?'<button class="btn alt" data-act="inblog">📋 操作紀錄</button>':''}</div>
   ${INB.who?`<div class="btns" style="justify-content:flex-start"><button class="btn alt" data-act="inbwho" data-id="">← 返回全部意見</button><span class="inbh">這位玩家的全部意見，由舊到新</span></div>`:''}
-  ${shown.length?shown.map(item).join(''):'<p style="font-size:14px">'+(INB.onlyPin?'還沒有待做的意見。':nDone?'未回覆的意見都處理完了 🎉':'還沒有新的意見。')+'</p>'}
+  ${S.total&&!INB.who&&!INB.onlyPin?`<p class="inbh">列表只載入最近 150 則；更早的 ${S.total} 則已計入上面的數字</p>`:''}
+  ${shown.length?shown.map(item).join(''):'<p style="font-size:14px">'+(INB.onlyPin?'還沒有待做的意見。':(nDoneRows&&!S.pend)?'未回覆的意見都處理完了 🎉':'還沒有新的意見。')+'</p>'}
   <div class="btns"><button class="btn alt" data-act="fb">返回</button></div>`);
   const t=$('inbtext');if(t&&!('ontouchstart' in window))t.focus()}
 async function inboxImg(id){if(INB.imgs[id]&&INB.imgs[id]!=='err')return;INB.imgs[id]='load';inboxDraw();try{const a=await CL.api.fbImgGet(id);INB.imgs[id]=a.length?a:'err'}catch(e){INB.imgs[id]='err'}inboxDraw()}
