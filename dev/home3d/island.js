@@ -341,7 +341,7 @@ export function island(o) {
   const joyRest = () => { if (S.dead) return; const r = cv.getBoundingClientRect(), rr = root.getBoundingClientRect(); joyEl.style.left = (r.left - rr.left + 110) + 'px'; joyEl.style.top = (r.bottom - rr.top - 110) + 'px'; joyEl.firstChild.style.transform = ''; joyEl.className = 'i3joy' + (TOUCH && S.mode === 'walk' ? ' rest' : ''); };
   const doorBtn = U(el('button', 'i3door')); doorBtn.type = 'button'; doorBtn.dataset.i3 = 'door';
   function toast(s) { toastEl.textContent = s; toastEl.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove('on'), 2400); }
-  const S = { dead: false, mode: 'walk', yaw: S0yaw, yawT: S0yaw, pitch: .72, pitchT: .72, dist: 17, distT: 17, fp: FPPREF.v, fpK: 0, fpP: 0, tgt: null, keys: {}, t: 0, talk: null, last: performance.now(), hourOff: 0, cam: new Vector3(me.x, 1, me.z) };
+  const S = { dead: false, mode: 'walk', yaw: S0yaw, yawT: S0yaw, pitch: .6, pitchT: .6, dist: 11, distT: 11, fp: FPPREF.v, fpK: 0, fpP: 0, tgt: null, keys: {}, t: 0, talk: null, last: performance.now(), hourOff: 0, cam: new Vector3(me.x, 1, me.z) };
   const PHASES = [[null, '現在'], [8, '早上'], [13, '中午'], [17.6, '傍晚'], [21, '夜晚']];
   let phaseI = 0;
   function hourNow() { if (PHASES[phaseI][0] !== null) return PHASES[phaseI][0]; const d = new Date(); return d.getHours() + d.getMinutes() / 60; }
@@ -364,7 +364,7 @@ export function island(o) {
     const opts = EXO[edTab].map(([v, n]) => { const isC = typeof v === 'string' && v[0] === '#'; return `<button class="i3opt ${String(D.ex[edTab]) === String(v) ? 'on' : ''}" type="button" data-i3="opt" data-v="${v}">${isC ? `<i style="background:${v}"></i>` : ''}${esc(n)}</button>`; }).join('');
     pan.innerHTML = `<div class="h3tabs">${tabs}</div><div class="i3row">${opts}</div>`;
   }
-  function setMode(m) { S.mode = m; setTimeout(joyRest, 0); closeCard(); S.tgt = null; pan.classList.toggle('on', m === 'edit'); hudBtns(); info.style.display = m === 'edit' ? 'none' : ''; if (m === 'edit') { drawPan(); S.distT = 14; S.pitchT = .5; S.yawT = myHouse.f === 2 ? Math.PI : 0; } else { S.distT = 17; S.pitchT = .72; save(); } }
+  function setMode(m) { S.mode = m; setTimeout(joyRest, 0); closeCard(); S.tgt = null; pan.classList.toggle('on', m === 'edit'); hudBtns(); info.style.display = m === 'edit' ? 'none' : ''; if (m === 'edit') { drawPan(); S.distT = 14; S.pitchT = .5; S.yawT = myHouse.f === 2 ? Math.PI : 0; } else { S.distT = 11; S.pitchT = .6; save(); } }
   let saveT = 0; function save() { if (!own) return; clearTimeout(saveT); saveT = setTimeout(() => { try { cb.save && cb.save(D); } catch (_) { } }, 500); }
 
   /* 對話卡 */
