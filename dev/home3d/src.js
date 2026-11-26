@@ -697,7 +697,7 @@ export function start(o) {
   /* 布置模式 */
   function setMode(m) {
     S.mode = m; select(null); closeCard(); S.tgt = null; hudBtns(); setTimeout(joyRest, 0);
-    bp.classList.toggle('on', m === 'build'); topBar.classList.toggle('on', m === 'build'); if (m !== 'build') { camEl.style.bottom = ''; }
+    bp.classList.toggle('on', m === 'build'); topBar.classList.remove('on');  /* 2026-11-26 使用者要求：布置模式不顯示「拖曳家具移動」提示條（擋畫面） */ if (m !== 'build') { camEl.style.bottom = ''; }
     info.style.display = m === 'build' ? 'none' : '';
     if (m === 'build') { topBar.textContent = '🔨 拖曳家具移動・拖空白處轉鏡頭'; drawPanel(); S.distT = 13.5; }
     else { S.distT = S.inside ? 10.5 : 13; if (!okAt(me.x, me.z, me.z)) { const c = walkableCells(me.z < RD).sort((a, b) => Math.hypot(a[0] + .5 - me.x, a[1] + .5 - me.z) - Math.hypot(b[0] + .5 - me.x, b[1] + .5 - me.z)).find(c => okAt(c[0] + .5, c[1] + .5, c[1])); if (c) { me.x = c[0] + .5; me.z = c[1] + .5; } } changed(); }
