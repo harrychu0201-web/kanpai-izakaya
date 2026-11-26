@@ -5779,7 +5779,9 @@ function shopCards(o,cur,act,withTown){
   const cards=L.filter(x=>x[4]).map(([id,em,nm,own,,lk])=>{const lo=TOWN_LOOK[id]||{},on=id===cur&&own;
     return `<button type="button" class="shopc${on?' cur':''}${own?'':' lock'}" data-act="${own?act:lk}" ${own?`data-id="${id}" `:''}data-town="${id}"><span class="sc-ban"><i class="sc-em">${em}</i><span class="sc-kan">${lo.kan||''}</span></span><span class="sc-bar" style="background:${lo.noren||'#7a3f24'}"></span><span class="sc-name">${T(nm)}</span><span class="sc-st">${on?'📍 '+T('目前'):own?'':'🔒 '+T('花錢解鎖')}</span></button>`}).join('');
   const go=withTown&&townDev()?`<button type="button" class="shopc towngo" data-act="town"><span class="sc-ban"><i class="sc-em">🚶</i><span class="sc-kan">暖簾街</span></span><span class="sc-bar" style="background:#2a2350"></span><span class="sc-name">${T('暖簾街')}</span><span class="sc-st">${T('逛逛暖簾街')}</span></button>`:'';
-  return `<div class="shopcar${act==='pickbranch'?' brpick':''}" role="list">${go}${cards}</div>`}
+  /* 和果子屋（2026-11-26）：作者／管理員限定測試店，獨立錢包與存檔，點卡片直接進店（不經 where/pickbranch，所以不影響居酒屋的開店地點） */
+  const wgc=typeof wgDev==='function'&&wgDev()?`<button type="button" class="shopc" data-act="wg"><span class="sc-ban"><i class="sc-em">🍡</i><span class="sc-kan">和菓子</span></span><span class="sc-bar" style="background:#e8a0a0"></span><span class="sc-name">和果子屋</span><span class="sc-st">🔧 管理員測試</span></button>`:'';
+  return `<div class="shopcar${act==='pickbranch'?' brpick':''}" role="list">${go}${cards}${wgc}</div>`}
 function centerShopCar(){const car=document.querySelector('.modal .shopcar'),on=car&&car.querySelector('.cur');if(car&&on)car.scrollLeft=Math.max(0,on.offsetLeft-(car.clientWidth-on.offsetWidth)/2)}
 function brRow(o,cur){const btn=(id,name,sub,ok)=>`<button class="btn ${cur===id?'':'alt'}" data-act="pickbranch" data-id="${id}" data-town="${id}" ${ok?'':'disabled'}>${T(name)}${cur===id?` · ${T('目前')}`:''}<small>${T(sub)}</small></button>`;
   const lk=(id,act,name)=>`<button class="btn alt" data-act="${act}" data-town="${id}">${T(name)}<small>${T('花錢解鎖')}</small></button>`;
@@ -6528,6 +6530,7 @@ document.addEventListener('click',e=>{
   else if(act==='arcade'){if(HOME)ARCTOWN=null;showArcade()}
   else if(act==='arcadetown'){ARCTOWN=TOWNBACK||'townback';showArcade()}
   else if(act==='arcreturn'){const b=ARCTOWN;ARCTOWN=null;if(b==='shopback')branchPick();else townWhere()}
+  else if(/^wg[a-z0-9]*$/.test(act)){if(window.wgAct)wgAct(act,a)}
   else if(/^fc(buy|tab|qty|up|claim|claimall|cloud|lb)?$/.test(act))fcAct(act,a);
   else if(act==='arcslot')showArcSlot();
   else if(act==='arcpin')showArcPin();
@@ -9930,6 +9933,511 @@ function voLobbyBtns(){return `<button class="btn alt" data-act="coopmic">${VO.o
 <script>/* 拉麵台味噌／擔擔圖下加字 (2026-11-10) */Object.assign(I18N["zh-Hans"],{"味噌":"味噌","擔擔":"担担"});Object.assign(I18N["en"],{"味噌":"Miso","擔擔":"Dan"});Object.assign(I18N["ja"],{"味噌":"味噌","擔擔":"担々"});Object.assign(I18N["ko"],{"味噌":"미소","擔擔":"탄탄"});Object.assign(I18N["id"],{"味噌":"Miso","擔擔":"Dandan"});</script>
 <script>/* 直式擋板：所有畫面（含首頁）直式都擋，補說明 (2026-11-11) */Object.assign(I18N["zh-Hans"],{"轉了沒反應？請確認手機的「自動旋轉」有打開（iPhone 請關掉「直向鎖定」）": "转了没反应？请确认手机的“自动旋转”已打开（iPhone 请关掉“竖排方向锁定”）", "還是轉不過去，請點右上角「⋮」，選「用瀏覽器開啟」": "还是转不过去，请点右上角“⋮”，选“用浏览器打开”", "還是轉不過去，請點右下角「⋯」或分享鈕，選「用 Safari 開啟」": "还是转不过去，请点右下角“⋯”或分享键，选“用 Safari 打开”"});Object.assign(I18N["en"],{"轉了沒反應？請確認手機的「自動旋轉」有打開（iPhone 請關掉「直向鎖定」）": "Nothing happens? Make sure auto-rotate is on (on iPhone, turn off Portrait Orientation Lock).", "還是轉不過去，請點右上角「⋮」，選「用瀏覽器開啟」": "Still stuck? Tap the “⋮” at the top right and choose “Open in browser”.", "還是轉不過去，請點右下角「⋯」或分享鈕，選「用 Safari 開啟」": "Still stuck? Tap “⋯” at the bottom right or the Share button and choose “Open in Safari”."});Object.assign(I18N["ja"],{"轉了沒反應？請確認手機的「自動旋轉」有打開（iPhone 請關掉「直向鎖定」）": "回転しないときは「画面の自動回転」をオンにしてください（iPhone は「画面縦向きのロック」をオフ）", "還是轉不過去，請點右上角「⋮」，選「用瀏覽器開啟」": "それでも回らないときは、右上の「⋮」から「ブラウザで開く」を選んでください", "還是轉不過去，請點右下角「⋯」或分享鈕，選「用 Safari 開啟」": "それでも回らないときは、右下の「⋯」または共有ボタンから「Safari で開く」を選んでください"});Object.assign(I18N["ko"],{"轉了沒反應？請確認手機的「自動旋轉」有打開（iPhone 請關掉「直向鎖定」）": "회전이 안 되면 '자동 회전'을 켜 주세요 (iPhone은 '세로 방향 잠금'을 끄세요)", "還是轉不過去，請點右上角「⋮」，選「用瀏覽器開啟」": "그래도 안 되면 오른쪽 위 '⋮'를 눌러 '브라우저에서 열기'를 선택하세요", "還是轉不過去，請點右下角「⋯」或分享鈕，選「用 Safari 開啟」": "그래도 안 되면 오른쪽 아래 '⋯' 또는 공유 버튼을 눌러 'Safari로 열기'를 선택하세요"});Object.assign(I18N["id"],{"轉了沒反應？請確認手機的「自動旋轉」有打開（iPhone 請關掉「直向鎖定」）": "Tidak berputar? Pastikan putar otomatis aktif (di iPhone, matikan Kunci Orientasi Potret).", "還是轉不過去，請點右上角「⋮」，選「用瀏覽器開啟」": "Masih macet? Ketuk “⋮” di kanan atas lalu pilih “Buka di browser”.", "還是轉不過去，請點右下角「⋯」或分享鈕，選「用 Safari 開啟」": "Masih macet? Ketuk “⋯” di kanan bawah atau tombol Bagikan lalu pilih “Buka di Safari”."});Object.assign(I18N["zh-Hans"],{"請先用 Chrome 打開這個網頁": "请先用 Chrome 打开这个网页", "請先用 Safari 打開這個網頁": "请先用 Safari 打开这个网页", "點右上角的「⋯」，選「用瀏覽器開啟」": "点右上角的“⋯”，选“用浏览器打开”", "點右下角的「⋯」或分享鈕，選「用 Safari 開啟」": "点右下角的“⋯”或分享键，选“用 Safari 打开”", "App 裡面的瀏覽器沒辦法用 Google 登入": "App 里面的浏览器没办法用 Google 登录", "還是轉不過去，請點右上角的選單（「⋯」或「⋮」），選「用瀏覽器開啟」": "还是转不过去，请点右上角的菜单（“⋯”或“⋮”），选“用浏览器打开”"});Object.assign(I18N["en"],{"請先用 Chrome 打開這個網頁": "Please open this page in Chrome first", "請先用 Safari 打開這個網頁": "Please open this page in Safari first", "點右上角的「⋯」，選「用瀏覽器開啟」": "Tap “⋯” at the top right and choose “Open in browser”", "點右下角的「⋯」或分享鈕，選「用 Safari 開啟」": "Tap “⋯” at the bottom right or the Share button and choose “Open in Safari”", "App 裡面的瀏覽器沒辦法用 Google 登入": "Google sign-in doesn't work in an app's built-in browser", "還是轉不過去，請點右上角的選單（「⋯」或「⋮」），選「用瀏覽器開啟」": "Still stuck? Tap the menu at the top right (“⋯” or “⋮”) and choose “Open in browser”."});Object.assign(I18N["ja"],{"請先用 Chrome 打開這個網頁": "まず Chrome でこのページを開いてください", "請先用 Safari 打開這個網頁": "まず Safari でこのページを開いてください", "點右上角的「⋯」，選「用瀏覽器開啟」": "右上の「⋯」から「ブラウザで開く」を選んでください", "點右下角的「⋯」或分享鈕，選「用 Safari 開啟」": "右下の「⋯」または共有ボタンから「Safari で開く」を選んでください", "App 裡面的瀏覽器沒辦法用 Google 登入": "アプリ内ブラウザでは Google ログインができません", "還是轉不過去，請點右上角的選單（「⋯」或「⋮」），選「用瀏覽器開啟」": "それでも回らないときは、右上のメニュー（「⋯」または「⋮」）から「ブラウザで開く」を選んでください"});Object.assign(I18N["ko"],{"請先用 Chrome 打開這個網頁": "먼저 Chrome으로 이 페이지를 열어 주세요", "請先用 Safari 打開這個網頁": "먼저 Safari로 이 페이지를 열어 주세요", "點右上角的「⋯」，選「用瀏覽器開啟」": "오른쪽 위 '⋯'를 눌러 '브라우저에서 열기'를 선택하세요", "點右下角的「⋯」或分享鈕，選「用 Safari 開啟」": "오른쪽 아래 '⋯' 또는 공유 버튼을 눌러 'Safari로 열기'를 선택하세요", "App 裡面的瀏覽器沒辦法用 Google 登入": "앱 안의 브라우저에서는 Google 로그인을 할 수 없어요", "還是轉不過去，請點右上角的選單（「⋯」或「⋮」），選「用瀏覽器開啟」": "그래도 안 되면 오른쪽 위 메뉴('⋯' 또는 '⋮')를 눌러 '브라우저에서 열기'를 선택하세요"});Object.assign(I18N["id"],{"請先用 Chrome 打開這個網頁": "Buka halaman ini di Chrome dulu", "請先用 Safari 打開這個網頁": "Buka halaman ini di Safari dulu", "點右上角的「⋯」，選「用瀏覽器開啟」": "Ketuk “⋯” di kanan atas lalu pilih “Buka di browser”", "點右下角的「⋯」或分享鈕，選「用 Safari 開啟」": "Ketuk “⋯” di kanan bawah atau tombol Bagikan lalu pilih “Buka di Safari”", "App 裡面的瀏覽器沒辦法用 Google 登入": "Browser di dalam aplikasi tidak bisa login dengan Google", "還是轉不過去，請點右上角的選單（「⋯」或「⋮」），選「用瀏覽器開啟」": "Masih macet? Ketuk menu di kanan atas (“⋯” atau “⋮”) lalu pilih “Buka di browser”."});applyLang();</script>
 <script>/* 送錯菜改成客人氣走 (2026-11-11) */(function(){const A={"zh-Hans":["送错菜了！","送错菜了！客人气走了，不会付钱","上错客人（客人会气走）、食物烧焦、客人等太久生气走了。上错客人只算一次失误。"],"en":["Wrong dish!","Wrong dish! The customer stormed off without paying","Serving the wrong customer (they storm off), burning food, or a customer storming off after waiting too long. A wrong serve only counts as one strike."],"ja":["違う料理だ！","違う料理を出してしまい、お客は怒ってお金を払わず帰った","別のお客に出す（お客は怒って帰る）、料理を焦がす、待ちくたびれたお客が怒って帰る。間違いは一回だけ数える。"],"ko":["잘못 나갔어요!","잘못 서빙해서 손님이 화나서 돈도 안 내고 나갔어요","다른 손님에게 서빙(손님이 화나서 나감), 음식 태우기, 오래 기다린 손님이 화나서 나가기. 잘못 서빙은 한 번만 세요."],"id":["Salah menu!","Salah menu! Tamu pergi marah tanpa membayar","Salah antar ke tamu (tamu pergi marah), makanan gosong, atau tamu pergi marah karena menunggu terlalu lama. Salah antar hanya dihitung sekali."]};const K=["送錯菜了！","送錯菜了！客人氣走了，不會付錢","上錯客人（客人會氣走）、食物燒焦、客人等太久生氣走了。上錯客人只算一次失誤。"];for(const L in A){const t=I18N[L]=I18N[L]||{};K.forEach((k,i)=>{t[k]=A[L][i]})}})();</script>
+<script>/* 和果子屋の四季（2026-11-26，作者／管理員限定測試店）
+   獨立的小店玩法：自己的錢包、口碑、存檔（只存這台裝置 localStorage「izakaya-wagashi-v1」），
+   不碰居酒屋存檔（izakaya-cook-v1／rec）、不進雲端、不上排行榜，所以不需要 mergeRec。
+   流程：備料 → 接單聽故事 → 製作小遊戲（三步進度條判定）→ 交付 → 口碑／金錢 → 下一位；每天 6 位客人，打烊處理隔夜食材。
+   週末是祭典日：型拔き（抠糖）小遊戲拿限定包裝與高階配方。介面先只有繁體中文（管理員測試用，開放給玩家前要補 I18N）。 */
+(function(){
+const KEY='izakaya-wagashi-v1';
+const PER_DAY=6;
+const g=id=>document.getElementById(id);
+const fmt=n=>(n<0?'-':'')+'¥'+Math.abs(Math.round(n)).toLocaleString('en-US');
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const pickA=a=>a[Math.floor(Math.random()*a.length)];
+function wgDev(){try{return !pview()&&canView()}catch(e){return false}}
+window.wgDev=wgDev;
+// 音效預留接口：之後要加音效，只要定義 window.wgSfx=(名稱)=>{...}
+function sfx(n){try{if(typeof window.wgSfx==='function')window.wgSfx(n)}catch(e){}}
+
+// ---------------- 資料 ----------------
+// 難度：w＝判定窗口（毫秒，對應指針走過的時間）
+const DIFF={easy:{n:'輕鬆',w:200},std:{n:'標準',w:100},art:{n:'匠人',w:50}};
+// 甜點：每款三個製作步驟 [名稱, 提示, 指針速度倍率]
+const SWEETS={
+  daifuku:{asset:'sweet_strawberry_daifuku',n:'草莓大福',hiN:'金箔草莓大福',price:280,cost:90,
+    steps:[['揉麻糬','把麻糬皮揉到光亮、有彈性',1.0],['包餡','紅豆餡裹住整顆草莓，不能露縫',1.15],['收口','捏緊收口，滾成圓潤的形狀',1.3]]},
+  sakura:{asset:'sweet_sakura_mochi',n:'櫻餅',hiN:'八重櫻餅',price:240,cost:80,
+    steps:[['煎餅皮','小火煎出粉紅薄皮，不能焦',1.05],['捲餡','把紅豆餡輕輕捲進餅皮',1.2],['包櫻葉','用鹽漬櫻葉包起來',1.3]]},
+  pudding:{asset:'sweet_pudding',n:'復古硬布丁',hiN:'老鋪焦糖布丁',price:320,cost:110,
+    steps:[['煮焦糖','變成琥珀色的瞬間離火',1.1],['蒸布丁','小火慢蒸，表面不能起泡',1.2],['倒扣脫模','一口氣倒扣，讓焦糖流下來',1.35]]}
+};
+const SKEYS=['daifuku','sakura','pudding'];
+// 季節：每 7 天換一季；第三欄＝當季甜點（售價 +20%、比較多人點）
+const SEASONS=[['春','🌸','sakura','櫻花季'],['夏','🎐','pudding','冰鎮布丁季'],['秋','🍁',null,'栗子季（開發中）'],['冬','❄️','daifuku','草莓季']];
+const WEEK=['週一','週二','週三','週四','週五','週六','週日'];
+// 顧客小故事：每人 3 輪對話、每輪最多 2 句；art＝匠人全完美時的特別評價
+const CUSTS=[
+  {id:'customer_grandpa',n:'老爺爺',av:'👴',fav:'pudding',rep:0,
+    lines:[['一個布丁。','焦糖，要苦一點的。'],['焦糖的苦味剛好，','和我老伴以前做的一樣。'],['今天買兩個。','一個，放在她的照片前面。']],
+    art:'……她看到，也會說好吧。',reward:{t:'recipe',k:'pudding'}},
+  {id:'customer_kid',n:'背書包的男孩',av:'👦',fav:'daifuku',rep:0,
+    lines:[['我存了三天的零用錢！','要最大顆的草莓大福。'],['妹妹說草莓的地方最好吃。','所以我先吃白白的部分。'],['今天要兩個，一個給妹妹。','她今天可以回家了！']],
+    art:'比電視上的還厲害！',reward:{t:'decor',s:'orn',k:'orn_rabbit'}},
+  {id:'customer_ol',n:'加班的小姐',av:'👩‍💼',fav:'sakura',rep:35,
+    lines:[['這麼晚還開著，真好。','一個櫻餅，有葉子的那種。'],['老家院子也有一棵櫻花樹。','媽媽說今年開得特別早。'],['我買了回家的車票。','再多包一盒，路上吃。']],
+    art:'這個，我想拍照寄給媽媽。',reward:{t:'decor',s:'noren',k:'noren_sakura'}},
+  {id:'customer_painter',n:'帶素描本的青年',av:'🧑‍🎨',fav:'daifuku',rep:45,
+    lines:[['可以畫你們的暖簾嗎？','……順便，一個大福。'],['切開的大福，紅白很好看。','可惜畫不出味道。'],['我的畫入選了，叫〈小巷〉。','畫裡，有這家店。']],
+    art:'這個顏色……我想畫下來。',reward:{t:'decor',s:'sign',k:'sign_alley'}},
+  {id:'customer_student',n:'球隊的女孩',av:'👧',fav:'pudding',rep:55,
+    lines:[['教練說比賽前不能吃甜的。','所以……只吃一個。'],['輸了。','布丁要硬一點的，比較耐咬。'],['贏了！','五個布丁，全隊一起吃！']],
+    art:'完美！像我的最後一球！',reward:{t:'pack',k:'pk_win'}}
+];
+const WALK=[['👩','買菜回家的太太'],['🧔','下班的大叔'],['🧑‍🦱','觀光客'],['👵','隔壁的奶奶'],['👨‍👧','帶女兒的爸爸'],['🧑‍💻','熬夜的工程師']];
+const WALKL=[['路過聞到好香。','來一個{s}。'],['聽說這裡的{s}很有名？'],['給我一個{s}，帶去探病。'],['今天天氣真好。','{s}一個。'],['女兒吵著要吃{s}。'],['想吃點甜的。','{s}好了。']];
+const REACT=[['形狀有點歪……','不過，味道很溫柔。'],['謝謝，看起來很好吃。'],['好漂亮！'],['哇……捨不得吃了。']];
+// 店鋪裝飾：三個裝飾位；rep＝每單口碑加成、tip＝售價 %、pat＝顧客耐心秒數；story＝完成該顧客故事才拿得到
+const DECOR={
+  noren:{n:'暖簾',list:[
+    {id:'noren_plain',n:'素色暖簾',p:0,c:'#7a5a4a'},
+    {id:'noren_indigo',n:'藍染暖簾',p:1200,c:'#3a5a8a',rep:1},
+    {id:'noren_kohaku',n:'紅白暖簾',p:2000,c:'#d85a5a',c2:'#fff4ec',tip:5},
+    {id:'noren_sakura',n:'櫻花暖簾',story:'customer_ol',c:'#e8a0a0',c2:'#fbe3e6',tip:8}]},
+  sign:{n:'木牌',list:[
+    {id:'sign_none',n:'不掛',p:0},
+    {id:'sign_wood',n:'手寫木牌',p:800,txt:'營業中',pat:10},
+    {id:'sign_alley',n:'「小巷」木牌',story:'customer_painter',txt:'小巷',rep:1},
+    {id:'sign_gold',n:'金字招牌',p:5000,txt:'老舖',gold:1,tip:10}]},
+  orn:{n:'季節擺件',list:[
+    {id:'orn_none',n:'不擺',p:0},
+    {id:'orn_sakura',n:'櫻花枝',p:1500,e:'🌸',rep:1},
+    {id:'orn_furin',n:'風鈴',p:1500,e:'🎐',pat:10},
+    {id:'orn_maple',n:'紅葉盆景',p:1800,e:'🍁',tip:5},
+    {id:'orn_rabbit',n:'兔子擺件',story:'customer_kid',e:'🐇',pat:15},
+    {id:'orn_kamakura',n:'小雪屋',p:2600,e:'⛄',rep:1,tip:3}]}
+};
+// 限定包裝（每收集一種，全部甜點售價 +3%）；第四欄＝只能從故事拿
+const PACKS=[['pk_sakura','櫻吹雪','🌸'],['pk_wave','青海波','🌊'],['pk_asanoha','麻葉紋','✳️'],['pk_rabbit','月兔','🐇'],['pk_crane','鶴紋','🕊️'],['pk_maple','紅葉','🍁'],['pk_snow','雪輪','❄️'],['pk_win','勝利','🏅',1]];
+// 型拔き圖案：st＝難度星數
+const KSH=[{id:'circle',n:'圓',st:1},{id:'tri',n:'三角',st:2},{id:'heart',n:'愛心',st:2},{id:'star',n:'星星',st:3},{id:'sakura',n:'櫻花',st:3}];
+
+// ---------------- 存檔（只新增欄位，舊欄位原樣保留） ----------------
+function fresh(){return{v:1,money:3000,rep:30,day:1,diff:'std',
+  inv:{daifuku:{f:0,o:0},sakura:{f:0,o:0},pudding:{f:0,o:0}},
+  story:{},recipe:{},useHi:{},pack:{},kshape:{},
+  decor:{own:{noren_plain:1,sign_none:1,orn_none:1},eq:{noren:'noren_plain',sign:'sign_none',orn:'orn_none'}},
+  stats:{served:0,perfect:0,art:0,kata:0,best:0,earn:0},
+  today:{n:0,earn:0,rep0:30,kata:0,prep:0,who:[]},buff:0,combo:0}}
+function fill(s,d){for(const k in d){if(s[k]===undefined||s[k]===null)s[k]=d[k];else if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k])&&typeof s[k]==='object')fill(s[k],d[k])}return s}
+function loadS(){let s=null;try{s=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}return(s&&typeof s==='object')?fill(s,fresh()):fresh()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+let S=null;
+const WG={st:'idle',c:null,mk:null,res:null,raf:0,last:0,back:'intro',kt:null,ovOpen:false};
+window.__wg={get S(){return S},WG};
+
+// ---------------- 小工具 ----------------
+const season=()=>Math.floor((S.day-1)/7)%4;
+const wday=()=>(S.day-1)%7;
+const weekend=()=>wday()>=5;
+function eff(){const e={rep:0,tip:0,pat:0};for(const sl in DECOR){const it=DECOR[sl].list.find(x=>x.id===S.decor.eq[sl]);if(it){e.rep+=it.rep||0;e.tip+=it.tip||0;e.pat+=it.pat||0}}
+  e.pack=PACKS.filter(p=>S.pack[p[0]]).length*3;return e}
+function effTxt(it){const a=[];if(it.rep)a.push('口碑 +'+it.rep+'／每單');if(it.tip)a.push('售價 +'+it.tip+'%');if(it.pat)a.push('顧客耐心 +'+it.pat+' 秒');return a.join('、')||'沒有加成'}
+function stock(k){const v=S.inv[k];return(v.f||0)+(v.o||0)}
+function custById(id){return CUSTS.find(c=>c.id===id)}
+function decorById(id){for(const sl in DECOR){const it=DECOR[sl].list.find(x=>x.id===id);if(it)return it}return null}
+function say(m){const t=g('wgToast');if(!t)return;t.textContent=m;t.classList.remove('on');void t.offsetWidth;t.classList.add('on');clearTimeout(WG.tt);WG.tt=setTimeout(()=>t.classList.remove('on'),2200)}
+function floatTxt(txt,cls){const sc=g('wgScene');if(!sc)return;const d=document.createElement('div');d.className='wg-float '+(cls||'');d.textContent=txt;sc.appendChild(d);setTimeout(()=>d.remove(),1600)}
+
+// ---------------- 甜點插圖（SVG 佔位，stage 0～3 對應製作進度） ----------------
+function sw(k,stage,hi){if(stage==null)stage=3;const O='#7a5a44';let s='';
+  if(k==='daifuku'){
+    if(stage===0)s=`<path d="M20 70Q14 48 36 42Q50 30 66 40Q86 46 80 70Q50 82 20 70Z" fill="#fbf6ee" stroke="${O}" stroke-width="3"/><ellipse cx="40" cy="52" rx="8" ry="4" fill="#fff" opacity=".8"/>`;
+    else if(stage===1)s=`<ellipse cx="50" cy="72" rx="36" ry="12" fill="#fbf6ee" stroke="${O}" stroke-width="3"/><circle cx="50" cy="58" r="17" fill="#6a2f2a" stroke="${O}" stroke-width="3"/><path d="M42 46Q50 28 58 46Q50 52 42 46Z" fill="#e84a5a" stroke="${O}" stroke-width="2.5"/><path d="M47 33l3-6 3 6" fill="#6aa04a"/>`;
+    else s=`<ellipse cx="50" cy="84" rx="40" ry="8" fill="#e6d2bc"/><path d="M14 78Q14 32 50 30Q86 32 86 78Q50 88 14 78Z" fill="#fffaf3" stroke="${O}" stroke-width="3"/><ellipse cx="50" cy="36" rx="9" ry="5" fill="#f6b8c0" opacity=".75"/><ellipse cx="34" cy="48" rx="9" ry="5" fill="#fff" opacity=".9"/>`
+      +(stage>=3?`<g fill="#f1e8dc"><circle cx="30" cy="62" r="1.8"/><circle cx="44" cy="70" r="1.6"/><circle cx="62" cy="58" r="1.8"/><circle cx="70" cy="70" r="1.5"/><circle cx="56" cy="46" r="1.4"/></g>`:'')
+      +(hi&&stage>=3?`<g fill="#e8b84a" stroke="#b8862a" stroke-width=".8"><rect x="40" y="40" width="6" height="5" transform="rotate(20 43 42)"/><rect x="58" y="50" width="5" height="4" transform="rotate(-15 60 52)"/><rect x="48" y="60" width="4" height="4"/></g>`:'');
+  }else if(k==='sakura'){
+    if(stage===0)s=`<ellipse cx="50" cy="66" rx="40" ry="16" fill="#4a3a34"/><ellipse cx="50" cy="62" rx="30" ry="11" fill="#f6b6c4" stroke="${O}" stroke-width="3"/><ellipse cx="42" cy="59" rx="8" ry="3" fill="#fff" opacity=".6"/>`;
+    else if(stage===1)s=`<ellipse cx="50" cy="82" rx="38" ry="7" fill="#e6d2bc"/><rect x="18" y="50" width="64" height="28" rx="14" fill="#f6b6c4" stroke="${O}" stroke-width="3"/><ellipse cx="80" cy="64" rx="7" ry="12" fill="#6a2f2a" stroke="${O}" stroke-width="2.5"/>`;
+    else s=`<ellipse cx="50" cy="84" rx="40" ry="7" fill="#e6d2bc"/><rect x="20" y="46" width="62" height="32" rx="16" fill="#f6b6c4" stroke="${O}" stroke-width="3"/><path d="M14 74Q30 40 70 44Q92 48 90 60Q60 92 14 74Z" fill="#7aa86a" stroke="${O}" stroke-width="3" opacity=".95"/><path d="M20 72Q50 60 86 58M40 66l-4-8M56 62l-3-9M70 60l-2-8" stroke="#4f7a44" stroke-width="2" fill="none"/>`
+      +(stage>=3?`<ellipse cx="38" cy="52" rx="8" ry="3" fill="#fff" opacity=".55"/>`:'')
+      +(hi&&stage>=3?`<g transform="translate(58 36)">${[0,72,144,216,288].map(a=>`<ellipse rx="4" ry="7" cy="-6" fill="#ffd0dc" stroke="#d07090" stroke-width="1" transform="rotate(${a})"/>`).join('')}<circle r="2.5" fill="#f2c94c"/></g>`:'');
+  }else{
+    if(stage===0)s=`<path d="M22 48h56l-6 32H28Z" fill="#9aa0a6" stroke="${O}" stroke-width="3"/><ellipse cx="50" cy="48" rx="28" ry="7" fill="#c07a2a" stroke="${O}" stroke-width="2.5"/><path d="M78 50h14" stroke="${O}" stroke-width="5" stroke-linecap="round"/><ellipse cx="44" cy="47" rx="8" ry="2" fill="#f2b05a"/>`;
+    else if(stage===1)s=`<ellipse cx="50" cy="84" rx="36" ry="7" fill="#e6d2bc"/><path d="M26 42h48l-5 38H31Z" fill="#f4ece2" stroke="${O}" stroke-width="3"/><ellipse cx="50" cy="42" rx="24" ry="6" fill="#f6d36a" stroke="${O}" stroke-width="2.5"/>`;
+    else s=`<ellipse cx="50" cy="84" rx="42" ry="8" fill="#e6d2bc"/><path d="M30 38h40l8 42H22Z" fill="#f6d36a" stroke="${O}" stroke-width="3"/>`
+      +(stage>=3?`<path d="M30 38h40l2 8q-4 6-8 0q-5 9-10 0q-5 8-10 0q-5 7-9 0Z" fill="#8a4a1a" stroke="${O}" stroke-width="2"/><ellipse cx="40" cy="50" rx="4" ry="8" fill="#fff" opacity=".45"/>`:'')
+      +(hi&&stage>=3?`<ellipse cx="50" cy="34" rx="11" ry="6" fill="#fffaf0" stroke="${O}" stroke-width="2"/><circle cx="50" cy="27" r="5" fill="#d8283a" stroke="${O}" stroke-width="2"/>`:'');
+  }
+  return `<svg viewBox="0 0 100 100" class="wg-sw" aria-label="${SWEETS[k].asset}">${s}</svg>`}
+
+// ---------------- 畫面骨架 ----------------
+function open(a){
+  WG.back=a&&a.closest&&a.closest('.brpick')?'branch':'intro';
+  S=loadS();WG.st='idle';WG.c=null;WG.mk=null;WG.res=null;WG.kt=null;
+  modal(`<style>${CSS}</style><div id="wgRoot" class="wg"><div class="wg-top" id="wgTop"></div><div class="wg-main"><div class="wg-scene" id="wgScene"></div><div class="wg-side" id="wgSide"></div></div><div class="wg-ov" id="wgOv" hidden></div><div class="wg-toast" id="wgToast"></div></div>`);
+  const r=g('wgRoot');if(!r)return;const card=r.closest('.card'),md=r.closest('.modal');if(card)card.classList.add('wgcard');if(md)md.classList.add('wgm');
+  top();scene();side();
+  cancelAnimationFrame(WG.raf);WG.last=performance.now();WG.raf=requestAnimationFrame(loop);
+  if(!S.today.prep)prep();
+}
+function exit(){save();cancelAnimationFrame(WG.raf);WG.kt=null;
+  try{if(WG.back==='branch'&&typeof branchList==='function'){branchList();return}
+    if(typeof ST!=='undefined'&&ST&&!HOME&&typeof showDayIntro==='function'){showDayIntro();return}}catch(e){}
+  closeModal()}
+function top(){const t=g('wgTop');if(!t)return;const se=SEASONS[season()];
+  const btnD=Object.keys(DIFF).map(d=>`<button class="${S.diff===d?'on':''}" data-act="wgdiff" data-d="${d}">${DIFF[d].n}</button>`).join('');
+  t.innerHTML=`<div class="wg-title">🍡 和果子屋<small>の四季・管理員測試</small></div>
+  <div class="wg-info"><div class="l1">第 ${S.day} 天・${WEEK[wday()]}・${se[1]} ${se[0]}${weekend()?'<em class="wg-fes">🏮 祭典日</em>':''}</div>
+  <div class="l2"><span class="${S.money<0?'neg':''}">💰 ${fmt(S.money)}</span><span>口碑 ${S.rep} <span class="wg-repbar"><b style="width:${S.rep}%"></b></span></span>${S.combo>1?`<span class="wg-combo">連續完美 ×${S.combo}</span>`:''}</div></div>
+  <div class="wg-seg" title="難度">${btnD}</div>
+  <button class="wg-ib" data-act="wgprep"><i>🧺</i>備料</button><button class="wg-ib" data-act="wgdecor"><i>🎨</i>裝飾</button><button class="wg-ib${weekend()&&S.today.kata<3?' hot':''}" data-act="wgfest"><i>🍬</i>祭典</button><button class="wg-ib" data-act="wgdex"><i>📖</i>圖鑑</button><button class="wg-x" data-act="wgx" aria-label="返回">✕</button>`}
+function scene(){const sc=g('wgScene');if(!sc)return;const eq=S.decor.eq,nr=decorById(eq.noren)||DECOR.noren.list[0],sg=decorById(eq.sign),on=decorById(eq.orn),si=season();
+  const fallE=['🌸','✨','🍁','❄️'][si];
+  const falls=[8,22,37,55,70,86].map((l,i)=>`<span style="left:${l}%;animation-duration:${7+i%3*2.3}s;animation-delay:${-i*1.7}s">${fallE}</span>`).join('');
+  const strips=[0,1,2,3].map(i=>`<i style="background:${i%2&&nr.c2?nr.c2:nr.c}"></i>`).join('');
+  const caseH=SKEYS.map(k=>{const v=S.inv[k];return `<div class="wg-cs"><div class="wg-csw">${sw(k,3,!!(S.recipe[k]&&S.useHi[k]))}</div><b>${SWEETS[k].n}</b><small>${v.f?'新鮮 '+v.f:''}${v.f&&v.o?'・':''}${v.o?'隔夜 '+v.o:''}${!v.f&&!v.o?'售完':''}</small></div>`}).join('');
+  sc.className='wg-scene s'+si;
+  sc.innerHTML=`<div class="wg-fall">${falls}</div><div class="wg-rod"></div><div class="wg-noren">${strips}<span style="color:${nr.c2&&nr.c2!==nr.c?'#fff':'#fff8ee'}">和菓子</span></div>
+  ${sg&&sg.txt?`<div class="wg-sign${sg.gold?' gold':''}"><span>${sg.txt}</span></div>`:''}
+  <div class="wg-win"><span>${['🌸','🎋','🍁','⛄'][si]}</span></div>
+  <div class="wg-cu" id="wgCu"></div>
+  ${on&&on.e?`<div class="wg-orn">${on.e}</div>`:''}
+  <div class="wg-case">${caseH}</div>`;
+  custEl()}
+function custEl(){const el=g('wgCu');if(!el)return;const c=WG.c;
+  if(!c){el.className='wg-cu';el.innerHTML='';return}
+  el.className='wg-cu '+(c.leaving?'out':'in');
+  el.innerHTML=`<div class="wg-av">${c.av}</div><div class="wg-nm">${c.n}${c.story?` <em>${c.round+1}/3</em>`:''}</div>${WG.st==='order'?`<div class="wg-pat"><b id="wgPat" style="width:${clamp(c.left/c.pat*100,0,100)}%"></b></div>`:''}<div class="wg-bub" id="wgBub">${(c.say||c.line).map(x=>`<p>${x}</p>`).join('')}</div>`}
+
+// ---------------- 右邊面板（依狀態） ----------------
+function side(){const sd=g('wgSide');if(!sd)return;const st=WG.st;
+  if(st==='idle'){
+    const left=PER_DAY-S.today.n;
+    sd.innerHTML=`<h3 class="wg-h">今天的客人 ${S.today.n}／${PER_DAY}</h3>
+    <p class="wg-p">${S.buff?'🍙 昨天吃了員工餐，今天手感很好：判定區 +25%<br>':''}難度「${DIFF[S.diff].n}」：${S.diff==='easy'?'有輔助線，指針進綠區會變慢，幾乎不會失敗':S.diff==='std'?'三步的準度決定星級':'判定很窄；三步全完美會解鎖高階配方與特別評價'}</p>
+    ${S.today.prep?`<button class="wg-big" data-act="wgserve">🎐 開始接待顧客</button><p class="wg-p sm">還有 ${left} 位客人會來。做壞了也能當「普通品」交出去，不會卡住。</p>`:`<button class="wg-big" data-act="wgprep">🧺 先去備料</button>`}
+    ${SEASONS[season()][2]?`<p class="wg-p sm">${SEASONS[season()][1]} 當季：${SWEETS[SEASONS[season()][2]].n} 售價 +20%</p>`:`<p class="wg-p sm">🍁 ${SEASONS[season()][3]}</p>`}`;
+  }else if(st==='enter'){sd.innerHTML=`<p class="wg-p wg-wait">叮鈴——有客人進來了</p>`;
+  }else if(st==='order'){const c=WG.c,k=c.fav,s=SWEETS[k],v=S.inv[k],n=stock(k),hiOk=!!S.recipe[k],hi=hiOk&&!!S.useHi[k];
+    sd.innerHTML=`<h3 class="wg-h">訂單</h3><div class="wg-ord"><div class="wg-ordsw">${sw(k,3,hi)}</div><div><b>${hi?s.hiN:s.n}</b><p class="wg-p sm">基本售價 ${fmt(s.price*(hi?1.6:1))}${SEASONS[season()][2]===k?'・當季 +20%':''}</p><p class="wg-p sm">庫存：新鮮 ${v.f}／隔夜 ${v.o}${v.o?'（先用隔夜的，品質 -10%）':''}</p></div></div>
+    ${hiOk?`<button class="wg-btn${hi?' on':''}" data-act="wghi">${hi?'✅':'⬜'} 用高階配方「${s.hiN}」（售價 ×1.6，判定更窄）</button>`:''}
+    ${n?`<button class="wg-big" data-act="wgmake">🔪 開始製作</button>`:`<button class="wg-big" data-act="wgmake">🏃 緊急補貨並製作（${fmt(s.cost*1.5)}）</button><p class="wg-p sm">材料用完了，跑腿補貨比較貴，但不會讓客人白等。</p>`}
+    <p class="wg-p sm">慢慢來，客人等的時候不會生氣，只是太久會先離開。</p>`;
+  }else if(st==='make'){const m=WG.mk,s=SWEETS[m.k],stp=s.steps[m.i];
+    sd.innerHTML=`<div class="wg-mk" id="wgTap"><div class="wg-mkh"><b>步驟 ${m.i+1}／3・${stp[0]}</b><small>${stp[1]}</small></div>
+    <div class="wg-mksw" id="wgMkSw">${sw(m.k,m.i,m.hi)}</div>
+    <div class="wg-track" id="wgTrack"><i class="wg-zone" id="wgZone" style="left:${(m.cz-m.hw)*100}%;width:${m.hw*200}%"></i><i class="wg-gold" style="left:${(m.cz-m.ph)*100}%;width:${m.ph*200}%"></i>${S.diff==='easy'?`<i class="wg-guide" style="left:${m.cz*100}%"></i>`:''}<i class="wg-ptr" id="wgPtr" style="left:0%"></i></div>
+    <div class="wg-dots">${[0,1,2].map(i=>`<span class="${m.res[i]==null?'':['miss','good','perf'][m.res[i]]}">${m.res[i]==null?(i===m.i?'●':'○'):['✕','○','◎'][m.res[i]]}</span>`).join('')}</div>
+    <div class="wg-fb" id="wgFb">${m.wait?'準備……':'指針停在綠色區就點！金色是完美'}</div>
+    <button class="wg-big wg-hit" id="wgHit">點！</button></div>`;
+    const tp=g('wgTap');if(tp)tp.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();hit(e.timeStamp)});
+  }else if(st==='done'){const r=WG.res,k=r.k,s=SWEETS[k];
+    sd.innerHTML=`<h3 class="wg-h">${r.art?'✨ 匠心之作 ✨':r.stars?'完成！':'完成（普通品）'}</h3><div class="wg-ord"><div class="wg-ordsw big">${sw(k,3,r.hi)}</div><div><b>${r.hi?s.hiN:s.n}</b><p class="wg-stars">${'★'.repeat(r.stars)}${'☆'.repeat(3-r.stars)}</p><p class="wg-p sm">${r.stars?'':'形狀不太好，售價和口碑加成比較低，但還是能交。'}${r.old?'用了隔夜食材，品質 -10%。':''}</p></div></div>
+    <p class="wg-p">${WG.c&&WG.c.cat?'三花貓付不出錢……但聽說牠會帶來好運':`預估收入 <b>${fmt(r.price)}</b>・口碑 ${r.rep>=0?'+':''}${r.rep}`}</p><button class="wg-big" data-act="wggive">🎁 擺盤交給客人</button>`;
+  }else if(st==='leave'){const c=WG.c;
+    sd.innerHTML=`<h3 class="wg-h">${c&&c.timeout?'客人先離開了':'謝謝光臨'}</h3><p class="wg-p">${WG.last2||''}</p>${S.today.n>=PER_DAY?`<button class="wg-big" data-act="wgcloseday">🏮 打烊結算</button>`:`<button class="wg-big" data-act="wgnext">🎐 請下一位</button>`}<p class="wg-p sm">今天的客人 ${S.today.n}／${PER_DAY}</p>`;
+  }
+}
+
+// ---------------- 接客 ----------------
+function weightedSweet(){const sk=SEASONS[season()][2],a=SKEYS.concat(sk?[sk,sk]:[]);return pickA(a)}
+function nextCust(){const wd=wday(),who=S.today.who||(S.today.who=[]);
+  const avail=CUSTS.filter(c=>(S.story[c.id]||0)<3&&S.rep>=c.rep&&!who.includes(c.id));
+  const mk=c=>{const r=S.story[c.id]||0;return{id:c.id,av:c.av,n:c.n,fav:c.fav,line:c.lines[r],round:r,story:1,art:c.art}};
+  if(wd===2&&S.today.n===0){const gp=avail.find(c=>c.id==='customer_grandpa');if(gp)return mk(gp)} // 老爺爺每週三一定第一個來
+  if(S.today.n>0&&Math.random()<.06)return{av:'🐈',n:'三花貓',cat:1,fav:pickA(SKEYS),line:['喵。','（盯著櫃子裡的和果子）']};
+  const pool=avail.filter(c=>c.id!=='customer_grandpa'||wd===2||Math.random()<.3);
+  if(pool.length&&Math.random()<.6)return mk(pickA(pool));
+  const w=pickA(WALK),k=weightedSweet();return{av:w[0],n:w[1],fav:k,line:pickA(WALKL).map(x=>x.replace('{s}',SWEETS[k].n))}}
+function serve(){if(WG.st!=='idle'&&WG.st!=='leave')return;if(!S.today.prep){prep();return}if(S.today.n>=PER_DAY){closeDay();return}
+  const c=nextCust();c.pat=60+eff().pat;c.left=c.pat;WG.c=c;if(c.id)S.today.who.push(c.id);WG.st='enter';sfx('bell');custEl();side();
+  setTimeout(()=>{if(WG.c!==c||!g('wgRoot'))return;WG.st='order';custEl();side()},700)}
+function custLeave(after){const c=WG.c;if(!c)return;c.leaving=1;custEl();setTimeout(()=>{if(WG.c===c){WG.c=null;custEl()}if(after)after()},650)}
+function timeout(){const c=WG.c;if(!c)return;c.timeout=1;c.say=['……好像要等很久。','下次再來吧。'];S.rep=clamp(S.rep-2,0,100);S.combo=0;S.today.n++;WG.st='leave';WG.last2='口碑 -2。沒關係，下一位客人還會來。';save();top();custEl();side();floatTxt('口碑 -2','bad');setTimeout(()=>custLeave(),1300)}
+
+// ---------------- 製作小遊戲 ----------------
+function startMake(){if(WG.st!=='order'||!WG.c)return;const k=WG.c.fav,s=SWEETS[k],v=S.inv[k];let old=false;
+  if(v.o>0){v.o--;old=true}else if(v.f>0)v.f--;else{S.money-=Math.round(s.cost*1.5);say('跑腿補貨 '+fmt(s.cost*1.5))}
+  const hi=!!(S.recipe[k]&&S.useHi[k]);WG.mk={k,i:0,res:[],old,hi};WG.st='make';save();top();scene();setStep()}
+function setStep(){const m=WG.mk,s=SWEETS[m.k],stp=s.steps[m.i],D=DIFF[S.diff];
+  m.sp=stp[2]*(m.hi?1.15:1);m.tp=2000/m.sp; // 指針走完整條要 tp 毫秒（約 2 秒內）
+  m.hw=D.w/m.tp*(m.hi?.85:1)*(S.buff?1.25:1); // 判定區半寬（佔整條的比例）＝ 判定窗口 ÷ 走完時間
+  m.ph=m.hw/2;m.cz=.36+Math.random()*.48;m.pos=0;m.run=false;m.wait=true;side();
+  clearTimeout(m.wt);m.wt=setTimeout(()=>{if(WG.mk!==m)return;m.wait=false;m.run=true;const fb=g('wgFb');if(fb)fb.textContent='指針停在綠色區就點！金色是完美'},550)}
+function hit(ts){const m=WG.mk;if(!m||!m.run||WG.st!=='make')return;m.run=false;
+  // 用「按下那一刻」的時間（事件 timeStamp）補算指針位置，畫面卡一格也不影響判定
+  const now=ts&&ts>0&&ts<=performance.now()+5?ts:performance.now();const ex=clamp(now-WG.last,-40,60)/m.tp*(S.diff==='easy'&&Math.abs(m.pos-m.cz)<=m.hw?.45:1);m.pos=clamp(m.pos+ex,0,1);const d=Math.abs(m.pos-m.cz),r=d<=m.ph?2:d<=m.hw?1:0;(m.log=m.log||[]).push([+d.toFixed(5),+m.ph.toFixed(5),+m.hw.toFixed(5),r]);grade(r)}
+function grade(r){const m=WG.mk;m.res[m.i]=r;sfx(['miss','good','perfect'][r]);
+  const fb=g('wgFb');if(fb){fb.textContent=['失手了……','不錯！','完美！'][r];fb.className='wg-fb r'+r}
+  const tr=g('wgTrack');if(tr)tr.classList.add('hit'+r);
+  const ms=g('wgMkSw');if(ms){ms.innerHTML=sw(m.k,m.i+1,m.hi);ms.classList.add('pop')}
+  setTimeout(()=>{if(WG.mk!==m||!g('wgRoot'))return;if(m.i<2){m.i++;setStep()}else finish()},750)}
+function finish(){const m=WG.mk,pts=m.res.reduce((a,b)=>a+b,0),stars=pts>=6?3:pts>=4?2:pts>=2?1:0,art=S.diff==='art'&&pts===6;
+  if(stars===3){S.combo=(S.combo||0)+1;S.stats.perfect++}else S.combo=0;
+  const e=eff(),sea=SEASONS[season()][2]===m.k?1.2:1,qm=[.6,.85,1,1.2][stars]*(art?1.3:1),combo=1+Math.min(.25,Math.max(0,S.combo-1)*.05);
+  const price=Math.round(SWEETS[m.k].price*qm*(m.old?.9:1)*(m.hi?1.6:1)*sea*(1+(e.tip+e.pack)/100)*combo*(1+S.rep/400)/10)*10;
+  const rep=[0,1,3,5][stars]+(art?2:0)+(stars?e.rep:0)+(m.hi&&stars?1:0);
+  WG.res={k:m.k,stars,art,price,rep,old:m.old,hi:m.hi,log:m.log||[],pts};
+  if(art){S.stats.art++;if(!S.recipe[m.k]){S.recipe[m.k]=1;say('🎉 解鎖高階配方「'+SWEETS[m.k].hiN+'」')}}
+  WG.mk=null;WG.st='done';save();top();side()}
+function give(){if(WG.st!=='done'||!WG.c)return;const r=WG.res,c=WG.c;
+  S.money+=c.cat?0:r.price;S.rep=clamp(S.rep+r.rep+(c.cat?3:0),0,100);S.today.n++;S.today.earn+=c.cat?0:r.price;S.stats.served++;S.stats.earn+=c.cat?0:r.price;
+  let extra='';
+  if(c.cat){c.say=['喵～','（放下一片櫻花瓣就走了）'];extra='三花貓沒有錢，但口碑 +3 🌸'}
+  else{c.say=r.art&&c.art?[c.art]:r.art?['……這是匠人的手藝。']:REACT[r.stars];
+    if(c.story){S.story[c.id]=(S.story[c.id]||0)+1;if(S.story[c.id]>=3)setTimeout(()=>storyDone(c.id),1500)}}
+  WG.last2=(c.cat?extra:`收入 ${fmt(r.price)}・口碑 ${r.rep>=0?'+':''}${r.rep}`)+(S.combo>1?`・連續完美 ×${S.combo}（售價加成）`:'');
+  sfx('coin');floatTxt(c.cat?'🌸 +3':'+'+fmt(r.price),'good');WG.st='leave';WG.res=null;save();top();scene();side();
+  setTimeout(()=>custLeave(),1400)}
+function storyDone(id){const c=custById(id);if(!c||!g('wgRoot'))return;const rw=c.reward;let txt='';
+  if(rw.t==='recipe'){S.recipe[rw.k]=1;txt='高階配方「'+SWEETS[rw.k].hiN+'」'}
+  else if(rw.t==='decor'){S.decor.own[rw.k]=1;txt='裝飾「'+decorById(rw.k).n+'」'}
+  else if(rw.t==='pack'){S.pack[rw.k]=1;txt='限定包裝「'+PACKS.find(p=>p[0]===rw.k)[1]+'」'}
+  save();top();
+  ov(`<h2 class="wg-h2">${c.av} ${c.n}的故事</h2><div class="wg-story">${c.lines.map((l,i)=>`<p><em>第 ${i+1} 次</em>${l.join('')}</p>`).join('')}</div><p class="wg-p">謝謝你一直為他做${SWEETS[c.fav].n}。<br>得到：<b>${txt}</b></p><div class="wg-row"><button class="wg-btn" data-act="wgovx">收下</button></div>`)}
+
+// ---------------- 打烊、隔夜食材 ----------------
+function closeDay(){const old=SKEYS.reduce((a,k)=>a+S.inv[k].o,0),fr=SKEYS.reduce((a,k)=>a+S.inv[k].f,0),dr=S.rep-(S.today.rep0||0);
+  const disc=SKEYS.reduce((a,k)=>a+S.inv[k].o*Math.round(SWEETS[k].price*.5/10)*10,0);
+  ov(`<h2 class="wg-h2">🏮 第 ${S.day} 天打烊</h2><p class="wg-p">今天收入 <b>${fmt(S.today.earn)}</b>・口碑 ${dr>=0?'+':''}${dr}（現在 ${S.rep}）</p>
+  ${old?`<p class="wg-p">還剩 ${old} 份已經放了一晚的材料，不能再放了：</p><div class="wg-row"><button class="wg-btn" data-act="wgleft" data-m="disc">🏷️ 做成折扣品賣掉（+${fmt(disc)}）</button><button class="wg-btn" data-act="wgleft" data-m="meal">🍙 當員工餐（明天手感 +25%）</button></div>`
+  :`${fr?`<p class="wg-p sm">剩下 ${fr} 份新鮮材料會變成隔夜食材（品質 -10%），明天會先用掉。</p>`:''}<div class="wg-row"><button class="wg-btn" data-act="wgnextday">🌙 進入下一天</button></div>`}`,true)}
+function leftover(m){const old=SKEYS.reduce((a,k)=>a+S.inv[k].o,0);if(!old)return nextDay();
+  if(m==='disc'){const v=SKEYS.reduce((a,k)=>a+S.inv[k].o*Math.round(SWEETS[k].price*.5/10)*10,0);S.money+=v;S.buff=0;say('折扣品賣光了 +'+fmt(v))}
+  else{S.buff=1;say('大家吃得很開心，明天手感 +25%')}
+  SKEYS.forEach(k=>S.inv[k].o=0);nextDay(true)}
+function nextDay(keepBuff){SKEYS.forEach(k=>{S.inv[k].o+=S.inv[k].f;S.inv[k].f=0});if(!keepBuff)S.buff=0;
+  S.stats.best=Math.max(S.stats.best||0,S.today.earn);S.day++;S.today={n:0,earn:0,rep0:S.rep,kata:0,prep:0,who:[]};WG.st='idle';WG.c=null;save();top();scene();side();prep()}
+
+// ---------------- 浮層：備料、裝飾、圖鑑、祭典 ----------------
+function ov(html,lock){const o=g('wgOv');if(!o)return;WG.ovOpen=true;WG.ovLock=!!lock;o.hidden=false;o.innerHTML=`<div class="wg-ovc">${lock?'':'<button class="wg-ovx" data-act="wgovx" aria-label="關閉">✕</button>'}${html}</div>`}
+function ovClose(){const o=g('wgOv');if(!o)return;if(WG.ovLock)return;o.hidden=true;o.innerHTML='';WG.ovOpen=false;WG.kt=null}
+function prep(){if(WG.st==='make')return;WG.kt=null;const rows=SKEYS.map(k=>{const s=SWEETS[k],v=S.inv[k];return `<div class="wg-prow"><div class="wg-psw">${sw(k)}</div><div class="wg-pin"><b>${s.n}</b><small>新鮮 ${v.f}・隔夜 ${v.o}　｜　一份 ${fmt(s.cost)}</small></div>
+    <button class="wg-btn sm" data-act="wgbuy" data-k="${k}" data-n="1" ${S.money<s.cost?'disabled':''}>+1</button><button class="wg-btn sm" data-act="wgbuy" data-k="${k}" data-n="3" ${S.money<s.cost*3?'disabled':''}>+3</button></div>`}).join('');
+  const tot=SKEYS.reduce((a,k)=>a+stock(k),0);
+  ov(`<h2 class="wg-h2">🧺 備料・第 ${S.day} 天</h2><p class="wg-p sm">今天會來 ${PER_DAY} 位客人；材料不夠時可以緊急跑腿補貨（貴 50%），所以不用怕買少。</p>${rows}
+  <div class="wg-row"><span class="wg-p">💰 ${fmt(S.money)}・材料共 ${tot} 份</span>${S.today.prep?`<button class="wg-btn" data-act="wgovx">回到店裡</button>`:`<button class="wg-big" data-act="wgopenshop">🏮 開店營業</button>`}</div>`,!S.today.prep)}
+function buy(k,n){const s=SWEETS[k];if(!s)return;const c=s.cost*n;if(S.money<c){say('錢不夠');return}S.money-=c;S.inv[k].f+=n;sfx('buy');save();top();scene();prep()}
+function decor(){if(WG.st==='make')return;WG.kt=null;
+  const sec=Object.keys(DECOR).map(sl=>{const D=DECOR[sl];return `<h3 class="wg-h">${D.n}</h3><div class="wg-dgrid">${D.list.map(it=>{const own=!!S.decor.own[it.id],eq=S.decor.eq[sl]===it.id,lockS=it.story&&!own;
+    const prev=it.e?`<span class="wg-de">${it.e}</span>`:it.c?`<span class="wg-dn" style="background:${it.c}"></span>`:it.txt?`<span class="wg-ds${it.gold?' gold':''}">${it.txt}</span>`:'<span class="wg-de">—</span>';
+    const btn=eq?`<button class="wg-btn sm on" disabled>已裝上</button>`:own?`<button class="wg-btn sm" data-act="wgdeq" data-s="${sl}" data-id="${it.id}">裝上</button>`:lockS?`<button class="wg-btn sm" disabled>🔒 ${custById(it.story).n}的故事</button>`:`<button class="wg-btn sm" data-act="wgdbuy" data-s="${sl}" data-id="${it.id}" ${S.money<it.p?'disabled':''}>買 ${fmt(it.p)}</button>`;
+    return `<div class="wg-dc${eq?' on':''}">${prev}<b>${it.n}</b><small>${effTxt(it)}</small>${btn}</div>`}).join('')}</div>`}).join('');
+  ov(`<h2 class="wg-h2">🎨 店鋪裝飾</h2><p class="wg-p sm">三個裝飾位：暖簾、木牌、季節擺件。裝上的東西會出現在店裡，加成也會生效。</p>${sec}`)}
+function dbuy(sl,id){const it=decorById(id);if(!it||S.decor.own[id]||it.story)return;if(S.money<it.p){say('錢不夠');return}S.money-=it.p;S.decor.own[id]=1;S.decor.eq[sl]=id;sfx('buy');say('買了「'+it.n+'」並裝上');save();top();scene();decor()}
+function deq(sl,id){if(!S.decor.own[id])return;S.decor.eq[sl]=id;save();scene();decor()}
+function dex(){if(WG.st==='make')return;WG.kt=null;
+  const cs=CUSTS.map(c=>{const n=S.story[c.id]||0,lock=!n&&S.rep<c.rep;
+    return `<div class="wg-xc${lock?' lock':''}"><span class="wg-xa">${lock?'❔':c.av}</span><div><b>${lock?'？？？':c.n}</b>${lock?`<small>口碑 ${c.rep} 以上會出現</small>`:`<small>常點：${SWEETS[c.fav].n}・故事 ${n}／3${n>=3?' ✅':''}</small>${c.lines.slice(0,n).map(l=>`<p>「${l.join('')}」</p>`).join('')}`}</div></div>`}).join('');
+  const rc=SKEYS.map(k=>`<div class="wg-xr"><span class="wg-xsw">${sw(k,3,!!S.recipe[k])}</span><div><b>${S.recipe[k]?SWEETS[k].hiN:'？？？'}</b><small>${S.recipe[k]?'已解鎖：售價 ×1.6':'在「匠人」難度三步全完美可解鎖'}</small></div></div>`).join('');
+  const pk=PACKS.map(p=>`<span class="wg-pk${S.pack[p[0]]?' on':''}" title="${p[1]}">${S.pack[p[0]]?p[2]:'？'}<small>${S.pack[p[0]]?p[1]:p[3]?'故事':'祭典'}</small></span>`).join('');
+  const st=S.stats;
+  ov(`<h2 class="wg-h2">📖 圖鑑</h2><h3 class="wg-h">顧客故事</h3>${cs}<h3 class="wg-h">高階配方</h3>${rc}<h3 class="wg-h">限定包裝（每種售價 +3%）</h3><div class="wg-pks">${pk}</div>
+  <h3 class="wg-h">紀錄</h3><p class="wg-p sm">接待 ${st.served} 位・完美作品 ${st.perfect} 個・匠心之作 ${st.art} 個・型拔成功 ${st.kata} 次・單日最高收入 ${fmt(st.best)}</p>
+  <div class="wg-row"><button class="wg-btn sm" data-act="wgreset">🧹 重置和果子屋存檔（測試用）</button></div>`)}
+
+// ---------------- 型拔き（抠糖）小遊戲 ----------------
+function shapePts(id){const raw=[],N=900;
+  for(let i=0;i<N;i++){const t=i/N*Math.PI*2;let x,y;
+    if(id==='circle'){x=.5*Math.cos(t);y=.5*Math.sin(t)}
+    else if(id==='heart'){x=16*Math.pow(Math.sin(t),3)/17*.56;y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))/17*.56+.04}
+    else if(id==='sakura'){const r=.33+.24*Math.pow(Math.abs(Math.cos(2.5*(t+Math.PI/2))),.7)-.06*Math.pow(Math.abs(Math.sin(5*(t+Math.PI/2))),8);x=r*Math.cos(t);y=r*Math.sin(t)}
+    else{const n=id==='tri'?3:5,R=id==='tri'?.6:.62,ri=id==='tri'?.6*.5:.26,seg=id==='tri'?n:n*2,f=i/N*seg,j=Math.floor(f),u=f-j;
+      const P=q=>{const a=-Math.PI/2+q/seg*Math.PI*2,rr=id==='tri'?R:(q%2?ri:R);return[rr*Math.cos(a),rr*Math.sin(a)]};
+      const a=P(j),b=P(j+1);x=a[0]+(b[0]-a[0])*u;y=a[1]+(b[1]-a[1])*u;if(id==='tri')y+=.12}
+    raw.push([x,y])}
+  // 依弧長重新取樣成 160 點
+  const L=[0];for(let i=1;i<=raw.length;i++){const a=raw[i-1],b=raw[i%raw.length];L.push(L[i-1]+Math.hypot(b[0]-a[0],b[1]-a[1]))}
+  const tot=L[L.length-1],M=160,out=[];let j=0;
+  for(let i=0;i<M;i++){const d=i/M*tot;while(L[j+1]<d)j++;const a=raw[j],b=raw[(j+1)%raw.length],u=(d-L[j])/((L[j+1]-L[j])||1);out.push([200+(a[0]+(b[0]-a[0])*u)*210,200+(a[1]+(b[1]-a[1])*u)*210])}
+  return out}
+function fest(){if(WG.st==='make')return;ktNew(true)}
+function ktNew(first){const prev=WG.kt&&WG.kt.sh;let sh=pickA(KSH);if(prev&&KSH.length>1)while(sh.id===prev.id)sh=pickA(KSH);
+  const band={easy:16,std:11,art:8}[S.diff],cost={easy:.6,std:1,art:1.6}[S.diff];
+  WG.kt={sh,pts:shapePts(sh.id),cut:new Array(160).fill(0),crack:0,cracks:[],band,cost,down:false,lx:0,ly:0,end:0,pop:0,px:-99,py:-99};
+  const wk=weekend(),left=3-S.today.kata;
+  ov(`<div class="wg-kt"><canvas id="wgKt" width="800" height="800"></canvas><div class="wg-kts"><h2 class="wg-h2">🍬 型拔き</h2>
+  <p class="wg-p sm">${wk?'🏮 今天是祭典日！成功可得限定包裝或高階配方':'平日是練習攤位，獎勵比較少；週六、週日是祭典日'}（今日獎勵剩 ${Math.max(0,left)} 次）</p>
+  <p class="wg-p"><b>圖案：${sh.n}</b> ${'★'.repeat(sh.st)}</p><p class="wg-p sm">用手指沿著虛線慢慢描，把圖案抠下來。偏離線太遠，糖片會裂開。</p>
+  <div class="wg-kbar"><span>抠除進度</span><i><b id="wgKP" style="width:0%"></b></i></div><div class="wg-kbar crack"><span>裂痕</span><i><b id="wgKC" style="width:0%"></b></i></div>
+  <p class="wg-fb" id="wgKM"></p><div class="wg-row"><button class="wg-btn" data-act="wgkt">🔄 換一片</button><button class="wg-btn" data-act="wgovx">回到店裡</button></div></div></div>`);
+  const cv=g('wgKt');if(!cv)return;
+  const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)/r.width*400,(e.clientY-r.top)/r.height*400]};
+  cv.addEventListener('pointerdown',e=>{const k=WG.kt;if(!k||k.end)return;e.preventDefault();try{cv.setPointerCapture(e.pointerId)}catch(_){}k.down=true;const[x,y]=pos(e);k.lx=x;k.ly=y;carve(x,y,0)});
+  cv.addEventListener('pointermove',e=>{const k=WG.kt;if(!k)return;const[x,y]=pos(e);k.px=x;k.py=y;if(!k.down||k.end)return;e.preventDefault();
+    const dx=x-k.lx,dy=y-k.ly,dist=Math.hypot(dx,dy),n=Math.max(1,Math.ceil(dist/3));for(let i=1;i<=n;i++)carve(k.lx+dx*i/n,k.ly+dy*i/n,dist/n);k.lx=x;k.ly=y});
+  const up=()=>{if(WG.kt)WG.kt.down=false};cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);cv.addEventListener('pointerleave',up);
+  ktDraw()}
+function carve(x,y,step){const k=WG.kt;if(!k||k.end)return;k.px=x;k.py=y;let best=1e9;
+  for(const p of k.pts){const d=Math.hypot(p[0]-x,p[1]-y);if(d<best)best=d}
+  if(best<=k.band){k.pts.forEach((p,i)=>{if(Math.hypot(p[0]-x,p[1]-y)<=k.band+4)k.cut[i]=1})}
+  else if(best>k.band*1.8&&Math.hypot(x-200,y-200)<178){const before=k.crack;k.crack=Math.min(100,k.crack+k.cost*Math.max(step,1.5)/6);
+    [25,50,75,100].forEach(t=>{if(before<t&&k.crack>=t)addCrack(x,y)});sfx('crack')}
+  const done=k.cut.reduce((a,b)=>a+b,0)/k.cut.length;
+  const kp=g('wgKP'),kc=g('wgKC');if(kp)kp.style.width=(done*100).toFixed(0)+'%';if(kc)kc.style.width=k.crack.toFixed(0)+'%';
+  if(k.crack>=100){k.end=2;k.down=false;ktEnd(false)}else if(done>=.97){k.end=1;k.down=false;ktEnd(true)}}
+function addCrack(x,y){const k=WG.kt,a=Math.atan2(y-200,x-200)+(Math.random()-.5)*.6,pts=[];let r=178;
+  while(r>60){pts.push([200+Math.cos(a+(Math.random()-.5)*.25)*r,200+Math.sin(a+(Math.random()-.5)*.25)*r]);r-=14+Math.random()*16}k.cracks.push(pts)}
+function ktEnd(win){const k=WG.kt,m=g('wgKM');let msg='';
+  if(win){S.stats.kata++;S.kshape[k.sh.id]=(S.kshape[k.sh.id]||0)+1;sfx('pop');
+    if(S.today.kata<3){S.today.kata++;
+      if(weekend()){const pool=PACKS.filter(p=>!p[3]&&!S.pack[p[0]]),rc=SKEYS.filter(x=>!S.recipe[x]),coin=150*k.sh.st;S.money+=coin;
+        if(pool.length&&(Math.random()<.75||!rc.length)){const p=pickA(pool);S.pack[p[0]]=1;msg=`啪！完整抠下來了！得到限定包裝「${p[2]} ${p[1]}」和 ${fmt(coin)}`}
+        else if(rc.length){const r=pickA(rc);S.recipe[r]=1;msg=`啪！完整抠下來了！攤主送你一張食譜：高階配方「${SWEETS[r].hiN}」和 ${fmt(coin)}`}
+        else msg=`啪！完整抠下來了！得到 ${fmt(coin*2)}`,S.money+=coin}
+      else{const coin=40*k.sh.st;S.money+=coin;msg=`啪！練習成功，得到 ${fmt(coin)}（祭典日獎勵更好）`}}
+    else msg='啪！完整抠下來了！（今天的獎勵次數用完了，這次是純練習）';
+  }else{msg='啪嚓……糖片碎掉了。換一片再試試？';sfx('break')}
+  if(m){m.textContent=msg;m.className='wg-fb '+(win?'r2':'r0')}save();top();
+  if(win){const t0=performance.now();const an=()=>{if(WG.kt!==k)return;k.pop=Math.min(1,(performance.now()-t0)/500);ktDraw();if(k.pop<1)requestAnimationFrame(an)};requestAnimationFrame(an)}else ktDraw()}
+function ktDraw(){const k=WG.kt,cv=g('wgKt');if(!k||!cv)return;const c=cv.getContext('2d');c.setTransform(2,0,0,2,0,0);c.clearRect(0,0,400,400);
+  const sh=k.end===2?6:0,jit=()=>(Math.random()-.5)*sh;
+  // 糖片
+  const gr=c.createRadialGradient(170,160,20,200,200,190);gr.addColorStop(0,'#f8d98a');gr.addColorStop(1,'#d9962e');
+  c.save();if(k.end===2)c.translate(jit(),jit());c.fillStyle=gr;c.beginPath();c.arc(200,200,180,0,Math.PI*2);c.fill();c.lineWidth=4;c.strokeStyle='#a8661e';c.stroke();
+  c.fillStyle='#fff3c6';for(let i=0;i<40;i++){const a=i*2.4,r=(i*37%170);c.globalAlpha=.35;c.fillRect(200+Math.cos(a)*r,200+Math.sin(a)*r,2,2)}c.globalAlpha=1;
+  // 圖案虛線
+  const P=k.pts;c.setLineDash([5,6]);c.lineWidth=2;c.strokeStyle='rgba(110,55,10,.6)';c.beginPath();P.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.stroke();c.setLineDash([]);
+  // 已抠的溝
+  c.lineWidth=5;c.lineCap='round';c.strokeStyle='#6a3410';
+  for(let i=0;i<P.length;i++){const j=(i+1)%P.length;if(k.cut[i]&&k.cut[j]){c.beginPath();c.moveTo(P[i][0],P[i][1]);c.lineTo(P[j][0],P[j][1]);c.stroke()}}
+  // 裂痕
+  c.lineWidth=k.end===2?4:2.5;c.strokeStyle='#5a2a08';k.cracks.forEach(pt=>{c.beginPath();pt.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.stroke()});
+  c.restore();
+  // 成功：圖案彈出來
+  if(k.end===1){const s=1+.12*k.pop;c.save();c.translate(200,200-10*k.pop);c.scale(s,s);c.translate(-200,-200);c.shadowColor='rgba(90,40,0,.45)';c.shadowBlur=18*k.pop;c.shadowOffsetY=8*k.pop;
+    c.fillStyle='#ffe6a0';c.beginPath();P.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fill();c.shadowColor='transparent';c.lineWidth=3;c.strokeStyle='#b8761e';c.stroke();c.restore()}
+  // 針
+  if(!k.end&&k.px>0){c.fillStyle='rgba(255,255,255,.85)';c.strokeStyle='#5a3a2a';c.lineWidth=2;c.beginPath();c.arc(k.px,k.py,5,0,Math.PI*2);c.fill();c.stroke()}
+  if(k.end===2){c.fillStyle='rgba(60,30,10,.35)';c.fillRect(0,0,400,400)}}
+
+// ---------------- 主迴圈：耐心值、指針 ----------------
+function loop(now){if(!g('wgRoot')){save();WG.kt=null;return}
+  const dt=Math.min(100,now-WG.last);WG.last=now;
+  const c=WG.c;
+  if(c&&WG.st==='order'&&!WG.ovOpen&&!c.leaving){c.left-=dt/1000;const p=g('wgPat');if(p){p.style.width=clamp(c.left/c.pat*100,0,100)+'%';p.className=c.left<15?'low':''}if(c.left<=0)timeout()}
+  const m=WG.mk;
+  if(m&&m.run&&WG.st==='make'){const inZ=Math.abs(m.pos-m.cz)<=m.hw;m.pos+=dt/m.tp*(S.diff==='easy'&&inZ?.45:1);
+    const pt=g('wgPtr');if(pt)pt.style.left=(Math.min(1,m.pos)*100)+'%';
+    const tr=g('wgTrack');if(tr)tr.classList.toggle('inz',inZ);
+    if(m.pos>=1){m.run=false;const fb=g('wgFb');(m.log=m.log||[]).push([1,m.ph,m.hw,0]);grade(0);if(fb)fb.textContent='太慢了……'}}
+  if(WG.kt&&!WG.kt.end&&g('wgKt'))ktDraw();
+  WG.raf=requestAnimationFrame(loop)}
+document.addEventListener('keydown',e=>{if(!g('wgRoot'))return;if((e.code==='Space'||e.key==='Enter')&&WG.st==='make'){e.preventDefault();e.stopPropagation();if(!e.repeat)hit(e.timeStamp)}},true);
+window.addEventListener('pagehide',()=>{if(S&&g('wgRoot'))save()});
+
+// ---------------- 按鈕分派（data-act 以 wg 開頭） ----------------
+window.wgAct=function(act,a){
+  if(act==='wg'){if(!wgDev()){try{toast('和果子屋目前只開放管理員測試')}catch(e){}return}open(a);return}
+  if(!g('wgRoot')||!S)return;
+  const ds=a&&a.dataset||{};
+  switch(act){
+    case 'wgx':exit();break;
+    case 'wgdiff':if(WG.st==='make'){say('製作中不能換難度');break}if(DIFF[ds.d]){S.diff=ds.d;save();top();if(WG.st==='idle')side();if(WG.kt)ktNew()}break;
+    case 'wgprep':prep();break;
+    case 'wgbuy':buy(ds.k,+ds.n||1);break;
+    case 'wgopenshop':S.today.prep=1;if(S.today.rep0==null)S.today.rep0=S.rep;save();WG.ovLock=false;ovClose();side();say('開店了！');break;
+    case 'wgovx':WG.ovLock=false;ovClose();break;
+    case 'wgserve':case 'wgnext':serve();break;
+    case 'wghi':if(WG.c){const k=WG.c.fav;S.useHi[k]=!S.useHi[k];save();side()}break;
+    case 'wgmake':startMake();break;
+    case 'wggive':give();break;
+    case 'wgcloseday':closeDay();break;
+    case 'wgleft':WG.ovLock=false;leftover(ds.m);break;
+    case 'wgnextday':WG.ovLock=false;nextDay();break;
+    case 'wgdecor':decor();break;
+    case 'wgdbuy':dbuy(ds.s,ds.id);break;
+    case 'wgdeq':deq(ds.s,ds.id);break;
+    case 'wgfest':fest();break;
+    case 'wgkt':ktNew();break;
+    case 'wgdex':dex();break;
+    case 'wgreset':ov(`<h2 class="wg-h2">確定要重置？</h2><p class="wg-p">和果子屋的錢、口碑、故事、裝飾會全部回到第 1 天（不會動到居酒屋的存檔）。</p><div class="wg-row"><button class="wg-btn" data-act="wgreset2">確定重置</button><button class="wg-btn" data-act="wgovx">取消</button></div>`);break;
+    case 'wgreset2':S=fresh();save();WG.st='idle';WG.c=null;WG.mk=null;WG.ovLock=false;ovClose();top();scene();side();prep();break;
+  }
+};
+
+const CSS=`.card.wgcard{width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;padding:0!important;border:0!important;border-radius:0!important;overflow:hidden!important;position:relative;background:#F5E6D3;gap:0!important;box-shadow:none!important}
+.modal.wgm{padding:0!important}
+.wg{position:absolute;inset:0;display:flex;flex-direction:column;background:#F5E6D3;color:#5a3a2a;overflow:hidden;-webkit-user-select:none;user-select:none}
+.wg button{font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wg button:disabled{opacity:.45;cursor:default}
+.wg-top{flex:0 0 96px;display:flex;align-items:center;gap:8px;padding:6px 10px;background:#fffaf2;border-bottom:3px solid #e2c9ad;box-sizing:border-box}
+.wg-title{font-size:24px;font-weight:900;white-space:nowrap;color:#8a4a32;line-height:1.05}.wg-title small{display:block;font-size:13px;font-weight:700;color:#b08a72}
+.wg-info{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1;overflow:hidden}
+.wg-info .l1,.wg-info .l2{font-size:21px;font-weight:800;white-space:nowrap;display:flex;align-items:center;gap:10px}
+.wg-info .neg{color:#c0452e}
+.wg-fes{font-style:normal;background:#e8a0a0;color:#fff;border-radius:10px;padding:1px 8px;font-size:13px}
+.wg-combo{background:#f2c94c;color:#6a3a10;border-radius:10px;padding:1px 8px;font-size:13px}
+.wg-repbar{display:inline-block;width:72px;height:12px;border-radius:8px;background:#ead8c4;overflow:hidden;vertical-align:middle}.wg-repbar b{display:block;height:100%;background:linear-gradient(90deg,#E8A0A0,#d86a7a);border-radius:8px;transition:width .5s}
+.wg-seg{display:flex;border:3px solid #c9a98a;border-radius:16px;overflow:hidden;flex:0 0 auto}
+.wg-seg button{width:80px;height:82px;border:0;background:#fff6ea;color:#7a5a4a;font-size:19px;font-weight:800;border-left:2px solid #e2c9ad;padding:0}.wg-seg button:first-child{border-left:0}
+.wg-seg button.on{background:#A8C3A0;color:#fff}
+.wg-ib{flex:0 0 auto;width:84px;height:82px;border:3px solid #c9a98a;border-radius:16px;background:#fff6ea;color:#7a3f2a;font-size:16px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;line-height:1;padding:0}
+.wg-ib i{font-style:normal;font-size:26px}.wg-ib.hot{background:#ffe2e2;border-color:#E8A0A0;animation:wgPulse 1.4s infinite}
+@keyframes wgPulse{50%{transform:scale(1.07)}}
+.wg-x{flex:0 0 auto;width:82px;height:82px;border-radius:50%;border:3px solid #c9a98a;background:#fff;font-size:26px;font-weight:900;color:#7a3f2a;padding:0}
+.wg-main{flex:1;display:flex;min-height:0}
+.wg-scene{position:relative;flex:1.3;min-width:0;overflow:hidden;background:repeating-linear-gradient(90deg,transparent 0 118px,#c99f74 118px 126px),linear-gradient(#f4e4cf,#ebd5b8 70%,#a8764e 70%,#8a5a38)}
+.wg-scene.s1{background:repeating-linear-gradient(90deg,transparent 0 118px,#c99f74 118px 126px),linear-gradient(#eef0df,#e2e3c8 70%,#a8764e 70%,#8a5a38)}
+.wg-scene.s2{background:repeating-linear-gradient(90deg,transparent 0 118px,#c08a5a 118px 126px),linear-gradient(#f3dcc0,#e8c79e 70%,#9a6a42 70%,#7a4a2a)}
+.wg-scene.s3{background:repeating-linear-gradient(90deg,transparent 0 118px,#b8a08a 118px 126px),linear-gradient(#eef0f2,#dfe2e6 70%,#9a7a5e 70%,#7a5a40)}
+.wg-fall{position:absolute;inset:0;pointer-events:none;z-index:1}.wg-fall span{position:absolute;top:-40px;font-size:22px;opacity:.75;animation:wgFall 8s linear infinite}
+@keyframes wgFall{to{transform:translate(-60px,640px) rotate(300deg)}}
+.wg-rod{position:absolute;left:14%;right:14%;top:6px;height:10px;border-radius:5px;background:#6a4428;z-index:2}
+.wg-noren{position:absolute;left:16%;right:16%;top:12px;height:112px;display:flex;gap:5px;z-index:2}
+.wg-noren i{flex:1;border-radius:0 0 10px 10px;box-shadow:inset 0 -6px 0 #0001}
+.wg-noren span{position:absolute;left:0;right:0;top:30px;text-align:center;font-size:42px;font-weight:900;letter-spacing:18px;font-family:serif;text-shadow:0 2px 0 #0003}
+.wg-sign{position:absolute;left:3%;top:140px;width:58px;height:150px;background:linear-gradient(90deg,#d8b080,#c29466);border:4px solid #7a5032;border-radius:8px;display:flex;align-items:center;justify-content:center;z-index:2;box-shadow:0 4px 0 #0002}
+.wg-sign span{writing-mode:vertical-rl;font-family:serif;font-size:28px;font-weight:900;color:#4a2a14}
+.wg-sign.gold{background:linear-gradient(90deg,#3a2414,#24160c)}.wg-sign.gold span{color:#f2c94c}
+.wg-win{position:absolute;right:2.5%;top:132px;width:100px;height:100px;border:6px solid #8a5a38;border-radius:50%;background:radial-gradient(#fffdf6,#cfe6f0);z-index:1;display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden}
+.wg-orn{position:absolute;right:6%;bottom:31%;font-size:64px;z-index:4;filter:drop-shadow(0 4px 0 #0002)}
+.wg-cu{position:absolute;left:30%;bottom:30%;width:160px;margin-left:-80px;z-index:3;text-align:center;transition:transform .6s,opacity .6s;opacity:0;transform:translateX(-120px)}
+.wg-cu.in{opacity:1;transform:none}.wg-cu.out{opacity:0;transform:translateX(160px)}
+.wg-av{font-size:112px;line-height:1.05;filter:drop-shadow(0 5px 0 #0002)}
+.wg-nm{display:inline-block;margin-top:2px;background:#fffaf2;border:2px solid #c9a98a;border-radius:12px;padding:2px 10px;font-size:18px;font-weight:800;white-space:nowrap}.wg-nm em{font-style:normal;color:#d86a7a}
+.wg-pat{margin:6px auto 0;width:130px;height:10px;border-radius:6px;background:#ead8c4;overflow:hidden}.wg-pat b{display:block;height:100%;background:#A8C3A0;transition:width .2s}.wg-pat b.low{background:#e8a0a0}
+.wg-bub{position:absolute;left:150px;bottom:110px;width:240px;background:#fff;border:3px solid #c9a98a;border-radius:18px;padding:10px 14px;text-align:left;font-size:22px;font-weight:700;line-height:1.45;box-shadow:0 4px 0 #0001}
+.wg-bub p{margin:0}.wg-bub::before{content:'';position:absolute;left:-14px;bottom:20px;border:8px solid transparent;border-right:12px solid #c9a98a}
+.wg-case{position:absolute;left:3%;right:3%;bottom:3%;height:29%;display:flex;gap:8px;padding:10px 12px;box-sizing:border-box;background:linear-gradient(#e6f4f2cc,#c4dcd8cc);border:4px solid #7a5032;border-top-width:12px;border-radius:12px;z-index:3}
+.wg-cs{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-width:0}.wg-csw{width:84px;height:70px}.wg-csw .wg-sw{width:100%;height:100%}
+.wg-cs b{font-size:20px;white-space:nowrap}.wg-cs small{font-size:16px;color:#6a5a4a;white-space:nowrap}
+.wg-float{position:absolute;left:30%;bottom:58%;z-index:6;font-size:30px;font-weight:900;color:#4a8a4a;text-shadow:0 2px 0 #fff;animation:wgUp 1.5s ease-out forwards;pointer-events:none}.wg-float.bad{color:#c0452e}
+@keyframes wgUp{to{transform:translateY(-90px);opacity:0}}
+.wg-side{flex:1;min-width:340px;max-width:500px;background:#fffaf2;border-left:3px solid #e2c9ad;padding:12px 16px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;overflow:auto}
+.wg .wg-h{margin:0;font-size:24px!important;color:#8a4a32}.wg .wg-h2{margin:0 0 6px;font-size:34px!important;color:#8a4a32}
+.wg-p{margin:0;font-size:20px;line-height:1.45}.wg-p.sm{font-size:17px;color:#7a6252}.wg-wait{font-size:22px;text-align:center;margin-top:60px}
+.wg-big{min-height:84px;border:3px solid #c97a7a;border-radius:20px;background:#E8A0A0;color:#fff;font-size:24px;font-weight:900;box-shadow:0 5px 0 #c97a7a;padding:6px 14px}
+.wg-big:active{transform:translateY(3px);box-shadow:0 2px 0 #c97a7a}
+.wg-btn{min-height:82px;min-width:82px;border:3px solid #9ab890;border-radius:16px;background:#f1f7ee;color:#3e5a38;font-size:19px;font-weight:800;padding:6px 14px}.wg-btn.on{background:#A8C3A0;color:#fff}.wg-btn.sm{min-height:82px;font-size:17px;padding:4px 10px}
+.wg-ord{display:flex;gap:12px;align-items:center;background:#fff;border:3px dashed #e2c9ad;border-radius:16px;padding:8px}.wg-ord b{font-size:25px}
+.wg-ordsw{flex:0 0 96px;height:96px}.wg-ordsw.big{flex-basis:120px;height:120px}.wg-ordsw .wg-sw{width:100%;height:100%}
+.wg-stars{margin:2px 0;font-size:30px;color:#f2a93a;letter-spacing:2px}
+.wg-mk{display:flex;flex-direction:column;gap:8px;height:100%;touch-action:manipulation}
+.wg-mkh b{display:block;font-size:26px;color:#8a4a32}.wg-mkh small{font-size:19px;color:#7a6252}
+.wg-mksw{height:104px;display:flex;justify-content:center}.wg-mksw .wg-sw{height:100%;width:auto}.wg-mksw.pop{animation:wgPop .4s}
+@keyframes wgPop{40%{transform:scale(1.18)}}
+.wg-track{position:relative;height:66px;border-radius:29px;background:#ead8c4;border:3px solid #c9a98a;overflow:hidden;flex:0 0 auto}
+.wg-zone{position:absolute;top:0;bottom:0;background:#A8C3A0}.wg-gold{position:absolute;top:0;bottom:0;background:#f2c94c}
+.wg-guide{position:absolute;top:0;bottom:0;border-left:3px dashed #3e6a3a}
+.wg-ptr{position:absolute;top:2px;bottom:2px;width:10px;margin-left:-5px;background:#6a3a22;border-radius:5px;box-shadow:0 0 0 3px #fff}
+.wg-track.inz{border-color:#7aa86a}.wg-track.hit2{box-shadow:0 0 0 5px #f2c94c}.wg-track.hit1{box-shadow:0 0 0 5px #A8C3A0}.wg-track.hit0{box-shadow:0 0 0 5px #e8a0a0}
+.wg-dots{display:flex;gap:14px;justify-content:center;font-size:22px;font-weight:900;color:#b8a08a}.wg-dots .perf{color:#e0a020}.wg-dots .good{color:#5a9a5a}.wg-dots .miss{color:#d06060}
+.wg-fb{margin:0;min-height:28px;text-align:center;font-size:22px;font-weight:900;color:#7a6252}.wg-fb.r2{color:#e09a10}.wg-fb.r1{color:#4a8a4a}.wg-fb.r0{color:#c0452e}
+.wg-hit{margin-top:auto;min-height:96px;font-size:30px}
+.wg-ov{position:absolute;left:0;right:0;top:96px;bottom:0;background:#5a3a2a55;display:flex;align-items:center;justify-content:center;z-index:8}
+.wg-ov[hidden]{display:none}
+.wg-ovc{position:relative;background:#fffaf2;border:4px solid #c9a98a;border-radius:22px;width:min(980px,96%);max-height:96%;overflow:auto;padding:14px 20px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px}
+.wg-ovx{position:absolute;right:10px;top:8px;width:82px;height:82px;border-radius:50%;border:3px solid #c9a98a;background:#fff;font-size:24px;font-weight:900;color:#7a3f2a}
+.wg-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.wg-prow{display:flex;gap:10px;align-items:center;border-bottom:2px dashed #ead8c4;padding:2px 0}.wg-psw{flex:0 0 70px;height:70px}.wg-psw .wg-sw{width:100%;height:100%}.wg-pin{flex:1}.wg-pin b{display:block;font-size:23px}.wg-pin small{font-size:18px;color:#7a6252}
+.wg-dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.wg-dc{display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border:3px solid #ead8c4;border-radius:14px;padding:6px;text-align:center}.wg-dc.on{border-color:#A8C3A0}.wg-dc b{font-size:19px}.wg-dc small{font-size:16px;color:#7a6252;min-height:16px}.wg-dc .wg-btn{width:100%}
+.wg-de{font-size:36px;line-height:1.1}.wg-dn{width:60px;height:38px;border-radius:0 0 8px 8px}.wg-ds{writing-mode:vertical-rl;font-family:serif;font-weight:900;background:#d8b080;border:3px solid #7a5032;border-radius:6px;padding:4px 2px;font-size:15px}.wg-ds.gold{background:#2a1a0e;color:#f2c94c}
+.wg-xc,.wg-xr{display:flex;gap:10px;align-items:flex-start;background:#fff;border:2px solid #ead8c4;border-radius:12px;padding:6px 10px}.wg-xc.lock{opacity:.6}.wg-xa{font-size:40px;line-height:1}.wg-xc b,.wg-xr b{font-size:21px}.wg-xc small,.wg-xr small{display:block;font-size:17px;color:#7a6252}.wg-xc p{margin:2px 0 0;font-size:17px}
+.wg-xsw{flex:0 0 56px;height:56px}.wg-xsw .wg-sw{width:100%;height:100%}
+.wg-pks{display:flex;flex-wrap:wrap;gap:8px}.wg-pk{width:80px;height:80px;border-radius:14px;border:3px dashed #d8c0a8;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:30px;color:#c8b098;background:#fff}.wg-pk.on{border-style:solid;border-color:#e8a0a0;color:inherit}.wg-pk small{font-size:14px;color:#7a6252}
+.wg-story p{margin:4px 0;font-size:21px;line-height:1.5}.wg-story em{font-style:normal;font-size:13px;color:#d86a7a;margin-right:8px}
+.wg-kt{display:flex;gap:16px;align-items:center}
+.wg-kt canvas{flex:0 0 auto;width:380px;height:380px;touch-action:none;border-radius:50%;background:#f0dcc0}
+.wg-kts{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+.wg-kbar{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800}.wg-kbar i{flex:1;height:14px;border-radius:8px;background:#ead8c4;overflow:hidden}.wg-kbar b{display:block;height:100%;background:#A8C3A0;transition:width .1s}.wg-kbar.crack b{background:#e8a0a0}
+.wg-toast{position:absolute;left:50%;top:108px;transform:translate(-50%,-10px);background:#5a3a2a;color:#fff;padding:8px 18px;border-radius:20px;font-size:17px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:9;white-space:nowrap}.wg-toast.on{opacity:1;transform:translate(-50%,0)}
+.wg-sw{display:block}`;
+})();
+</script>
 <script>/* 點食成金：遊戲廳裡的放置點擊小遊戲（獨立貨幣「食券」，只存這台裝置，與店裡的錢、排行榜、雲端存檔完全分開）[2026-11-11 起改為存在帳號雲端 saves/$uid/fc 並跨裝置同步](2026-11-11；v2：1000 級、30 種幫手、16 種筷子、秘傳升級、成就領獎)
    存檔相容原則：只新增欄位，舊欄位（e/c/tp/h/t/col/ach）一律原樣保留，陣列只補長度不截斷 */
 (function(){

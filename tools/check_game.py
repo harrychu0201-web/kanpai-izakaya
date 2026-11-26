@@ -16,6 +16,7 @@
   tut       新手教學（小夜對話框）：居酒屋真實點擊進入並點完、上一步、海風壽司教學點完、製作教學跳過；立繪載入、對話框不超出、按鈕 44px
   home3d    我的島（3D，作者限定）：一般玩家看不到入口；島上拖曳轉鏡頭、改房子外觀並存檔、走回家進屋；布置買家具扣錢、拖曳、存檔；收銀台收錢；出門回島；重開還在；示範島、好友的島進屋留言送禮
   oko       御好燒店（作者限定）：從麵糊開始真實點擊加料做完四道菜、順序錯加不進去、空手連點倒掉、放太久會焦、做好放保溫台、📖 做法暫停
+  wagashi   和果子屋（作者限定）：一般玩家看不到入口；一天 6 位客人跑三檔難度、完美／普通品／超時、打烊隔夜食材、型拔成功與碎掉、裝飾、圖鑑、返回、存檔
   saves     玩完整條路徑後，玩家原本的存檔欄位一個都不能少、不認得的欄位原封不動
 """
 import argparse, functools, http.server, json, os, shutil, socketserver, sys, threading, time, traceback
@@ -2476,10 +2477,222 @@ def sc_homekeep(b, base):
         c.close()
 
 
+def wg_make(c, aim, timeout_ms=6000):
+    """和果子屋製作小遊戲：三步都用真實輸入。aim: 'perf' 用空白鍵停在金色區正中、'good' 真實點「點！」停在綠區（非金色）、'miss' 讓指針跑完不點。
+    匠人難度的金色區只有約 ±25ms，所以先量出「送出輸入 → 頁面收到」的延遲，提早這麼多送出（跟真人提早按是一樣的）"""
+    c.page.evaluate("if(!window.__wgLat){window.__wgLat=1;addEventListener('keydown',()=>{window.__wgT2=performance.now()},true);addEventListener('pointerdown',()=>{window.__wgT2=performance.now()},true)}")
+    lat = getattr(c, 'wglat', {'key': 25.0, 'mouse': 35.0})
+    c.wglat = lat
+    for step in range(3):
+        t0 = time.time()
+        while not c.page.evaluate("(()=>{const m=__wg.WG.mk;return !!(m&&m.run&&m.i===%d)})()" % step):
+            if time.time() - t0 > timeout_ms / 1000:
+                raise AssertionError('和果子屋：第 %d 步的指針一直沒開始跑\n%s' % (step + 1, c.diag()))
+            c.page.wait_for_timeout(20)
+        if aim == 'miss':
+            c.page.wait_for_timeout(2600)
+        else:
+            kind = 'key' if aim == 'perf' else 'mouse'
+            if kind == 'mouse':
+                bb = c.page.locator('#wgHit').bounding_box()
+            ok = c.page.evaluate("""([lat,good])=>new Promise(r=>{const f=()=>{const m=__wg.WG.mk;if(!m||!m.run)return r(0);
+                const tgt=m.cz+(good?(m.ph+m.hw)/2:0),slow=__wg.S.diff==='easy'&&Math.abs(m.pos-m.cz)<=m.hw?.45:1,left=(tgt-m.pos)*m.tp/slow;
+                if(left<=lat){window.__wgT1=performance.now();return r(1)}if(left<lat+40)setTimeout(f,0);else requestAnimationFrame(f)};f()})""", [lat[kind], aim == 'good'])
+            if not ok:
+                raise AssertionError('和果子屋：等判定時指針已經跑完（第 %d 步）' % (step + 1))
+            if kind == 'key':
+                c.page.keyboard.press('Space')
+            else:
+                c.page.mouse.click(bb['x'] + bb['width'] / 2, bb['y'] + bb['height'] / 2)
+            d = c.page.evaluate("window.__wgT2-window.__wgT1")
+            if 0 < d < 300:
+                lat[kind] = lat[kind] * 0.5 + d * 0.5
+        c.page.wait_for_timeout(850)
+    if c.page.evaluate("__wg.WG.st") != 'done':
+        raise AssertionError('和果子屋：三步做完沒有進到完成畫面（st=%s）' % c.page.evaluate("__wg.WG.st"))
+    return c.page.evaluate("JSON.parse(JSON.stringify(__wg.WG.res))")
+
+
+def wg_check_res(c, res, diff, aim):
+    """判定要跟按下時指針離中心的距離一致；星級、匠心要跟三步結果一致。
+    （真實輸入有幾毫秒的延遲誤差，所以匠人／標準的「完美」不強求，只檢查判定公式對不對；輕鬆的金色區很寬，一定要三星）"""
+    log = res.get('log') or []
+    if len(log) != 3:
+        raise AssertionError('和果子屋：判定紀錄不是三步（%s）' % res)
+    for d, ph, hw, r in log:
+        want = 2 if d <= ph else 1 if d <= hw else 0
+        if r != want:
+            raise AssertionError('和果子屋：判定結果跟指針位置不一致（距離 %s、金色 ±%s、綠色 ±%s，給了 %s）' % (d, ph, hw, r))
+    pts = sum(x[3] for x in log)
+    stars = 3 if pts >= 6 else 2 if pts >= 4 else 1 if pts >= 2 else 0
+    if res['stars'] != stars or res['art'] != (diff == 'art' and pts == 6):
+        raise AssertionError('和果子屋：星級或匠心跟三步結果不一致（%s）' % res)
+    if aim == 'miss' and res['stars'] != 0:
+        raise AssertionError('和果子屋：三步都沒點卻不是普通品（%s）' % res)
+    if aim == 'perf' and diff == 'easy' and res['stars'] != 3:
+        raise AssertionError('和果子屋：輕鬆難度三步都瞄準金色區正中卻不是三星（%s）' % res)
+    if res['art'] and not c.page.evaluate("!!__wg.S.recipe['%s']" % res['k']):
+        raise AssertionError('和果子屋：匠心之作沒有解鎖那款甜點的高階配方')
+
+
+def sc_wagashi(b, base):
+    """和果子屋（作者／管理員限定）：一般玩家看不到入口；作者完整跑一天 6 位客人（三檔難度、完美／普通品／超時離開）、
+    打烊隔夜食材、型拔成功與碎掉、買裝飾、圖鑑、返回、重新整理存檔還在、居酒屋存檔不被動到、按鈕實際至少 44px"""
+    c = Ctx(b, base).open()
+    try:
+        c.dismiss_modals()
+        c.click('[data-act=cont]', wait=900)
+        if c.has('[data-act=wg]'):
+            raise AssertionError('和果子屋：一般玩家的選店卡片出現了和果子屋入口')
+        c.page.evaluate("CL.user={email:ADMIN_EMAIL,uid:'check-admin',name:'Author Check',photo:''};showHome()")
+        c.page.wait_for_timeout(500)
+        c.dismiss_modals()
+        c.click('[data-act=cont]', wait=900)
+        c.click('.modal [data-act=wg]', wait=900)
+        c.expect_clean('進入和果子屋')
+        if not c.has('#wgRoot') or not c.has('[data-act=wgopenshop]'):
+            raise AssertionError('和果子屋：點卡片後沒有出現店面與備料畫面\n%s' % c.diag())
+        # 觸控目標（橫向手機 844x390，舞台被縮放）
+        small = c.page.evaluate("""[...document.querySelectorAll('.wg-top button,.wg-ov button')].map(e=>{const r=e.getBoundingClientRect();return [e.dataset.act||e.className,Math.round(r.width),Math.round(r.height)]}).filter(x=>x[1]<44||x[2]<44)""")
+        if small:
+            raise AssertionError('和果子屋：按鈕實際小於 44px：%s' % small)
+        for k in ('daifuku', 'sakura', 'pudding'):
+            c.click('[data-act=wgbuy][data-k=%s][data-n="3"]' % k, wait=250)
+        m0 = c.page.evaluate("__wg.S.money")
+        if m0 != 3000 - 3 * (90 + 80 + 110):
+            raise AssertionError('和果子屋：備料扣錢不對（剩 %s）' % m0)
+        c.click('[data-act=wgopenshop]', wait=500)
+        plan = [('easy', 'perf'), ('std', 'perf'), ('art', 'perf'), ('std', 'miss'), ('std', 'good'), (None, 'timeout')]
+        for i, (diff, aim) in enumerate(plan):
+            if diff:
+                c.click('.wg-seg [data-act=wgdiff][data-d=%s]' % diff, wait=200)
+                if c.page.evaluate("__wg.S.diff") != diff:
+                    raise AssertionError('和果子屋：切換難度到 %s 沒有生效' % diff)
+            c.click('[data-act=wgserve],[data-act=wgnext]', wait=1100)
+            if c.page.evaluate("__wg.WG.st") != 'order':
+                raise AssertionError('和果子屋：第 %d 位客人沒有點單\n%s' % (i + 1, c.diag()))
+            before = c.page.evaluate("({m:__wg.S.money,r:__wg.S.rep,n:__wg.S.today.n,cat:!!__wg.WG.c.cat})")
+            if aim == 'timeout':
+                c.page.evaluate("__wg.WG.c.left=0.3")  # 不想真的等 60 秒：把耐心值調到快沒了，看會不會自己離開
+                c.page.wait_for_timeout(1200)
+                r = c.page.evaluate("({st:__wg.WG.st,r:__wg.S.rep,n:__wg.S.today.n})")
+                if r['st'] != 'leave' or r['n'] != before['n'] + 1 or r['r'] != max(0, before['r'] - 2):
+                    raise AssertionError('和果子屋：客人等太久沒有正常離開（%s）' % r)
+                continue
+            if i == 0:
+                small = c.page.evaluate("""[...document.querySelectorAll('.wg-side button')].map(e=>{const r=e.getBoundingClientRect();return [e.dataset.act||e.className,Math.round(r.width),Math.round(r.height)]}).filter(x=>x[1]<44||x[2]<44)""")
+                if small:
+                    raise AssertionError('和果子屋：點單畫面按鈕實際小於 44px：%s' % small)
+            c.click('[data-act=wgmake]', wait=300)
+            res = wg_make(c, aim)
+            wg_check_res(c, res, diff, aim)
+            c.click('[data-act=wggive]', wait=1700)
+            after = c.page.evaluate("({m:__wg.S.money,r:__wg.S.rep,n:__wg.S.today.n})")
+            if after['n'] != before['n'] + 1:
+                raise AssertionError('和果子屋：交付後今日客人數沒有 +1')
+            if not before['cat'] and after['m'] - before['m'] != res['price']:
+                raise AssertionError('和果子屋：交付收入不對（多了 %s，應該 %s）' % (after['m'] - before['m'], res['price']))
+            if aim == 'miss' and res['price'] <= 0:
+                raise AssertionError('和果子屋：普通品應該還是有收入')
+            c.expect_clean('和果子屋第 %d 位客人' % (i + 1))
+        c.page.wait_for_timeout(800)
+        c.click('[data-act=wgcloseday]', wait=500)
+        if c.has('[data-act=wgleft]'):
+            c.click('[data-act=wgleft][data-m=meal]', wait=500)
+        else:
+            c.click('[data-act=wgnextday]', wait=500)
+        d2 = c.page.evaluate("({d:__wg.S.day,n:__wg.S.today.n,prep:__wg.S.today.prep,o:__wg.S.inv.daifuku.o+__wg.S.inv.sakura.o+__wg.S.inv.pudding.o,f:__wg.S.inv.daifuku.f+__wg.S.inv.sakura.f+__wg.S.inv.pudding.f})")
+        if d2['d'] != 2 or d2['n'] != 0 or d2['prep'] or d2['f'] != 0 or not c.has('[data-act=wgopenshop]'):
+            raise AssertionError('和果子屋：打烊後沒有正確進入第 2 天備料（%s）' % d2)
+        c.click('[data-act=wgopenshop]', wait=400)
+        # 隔夜食材：先用隔夜的，品質 -10%
+        if d2['o'] > 0:
+            c.click('[data-act=wgserve]', wait=1100)
+            k = c.page.evaluate("__wg.WG.c.fav")
+            if c.page.evaluate("__wg.S.inv.%s.o" % k) > 0:
+                c.click('[data-act=wgmake]', wait=300)
+                res = wg_make(c, 'perf')
+                if not res['old']:
+                    raise AssertionError('和果子屋：有隔夜食材時沒有先用隔夜的')
+                c.click('[data-act=wggive]', wait=1700)
+            else:
+                c.page.evaluate("__wg.WG.c.left=0.3")
+                c.page.wait_for_timeout(1200)
+        # 匠人難度：沒做出過匠心之作就再接幾位客人試（真實輸入誤差可能差一點點）
+        c.click('.wg-seg [data-act=wgdiff][data-d=art]', wait=200)
+        for _ in range(4):
+            if c.page.evaluate("__wg.S.stats.art>0"):
+                break
+            c.click('[data-act=wgserve],[data-act=wgnext]', wait=1100)
+            c.click('[data-act=wgmake]', wait=300)
+            res = wg_make(c, 'perf')
+            wg_check_res(c, res, 'art', 'perf')
+            c.click('[data-act=wggive]', wait=1700)
+        if not c.page.evaluate("__wg.S.stats.art>0"):
+            raise AssertionError('和果子屋：匠人難度試了多次都做不出匠心之作（判定可能太嚴或有錯）')
+        c.page.wait_for_timeout(800)
+        # 型拔：沿虛線描一圈要成功
+        c.click('.wg-top [data-act=wgfest]', wait=500)
+        m1 = c.page.evaluate("__wg.S.money")
+        pts = c.page.evaluate("__wg.WG.kt.pts")
+        box = c.page.locator('#wgKt').bounding_box()
+        sx = box['width'] / 400
+        c.page.mouse.move(box['x'] + pts[0][0] * sx, box['y'] + pts[0][1] * sx)
+        c.page.mouse.down()
+        for q in pts[1:] + pts[:4]:
+            c.page.mouse.move(box['x'] + q[0] * sx, box['y'] + q[1] * sx, steps=2)
+        c.page.mouse.up()
+        c.page.wait_for_timeout(700)
+        k = c.page.evaluate("({end:__wg.WG.kt.end,m:__wg.S.money,kata:__wg.S.stats.kata})")
+        if k['end'] != 1 or k['m'] <= m1 or k['kata'] != 1:
+            raise AssertionError('和果子屋：沿著虛線描完型拔沒有成功或沒有獎勵（%s）' % k)
+        # 換一片，亂畫離線很遠要碎掉
+        c.click('[data-act=wgkt]', wait=400)
+        c.page.mouse.move(box['x'] + 200 * sx, box['y'] + 200 * sx)
+        c.page.mouse.down()
+        for i in range(60):
+            c.page.mouse.move(box['x'] + (200 + (40 if i % 2 else -40)) * sx, box['y'] + (195 + i % 7) * sx, steps=3)
+            if c.page.evaluate("__wg.WG.kt.end"):
+                break
+        c.page.mouse.up()
+        if c.page.evaluate("__wg.WG.kt.end") != 2:
+            raise AssertionError('和果子屋：在糖片中間亂畫沒有碎掉（crack=%s）' % c.page.evaluate("__wg.WG.kt.crack"))
+        c.click('.wg-ov [data-act=wgovx]', wait=300)
+        # 裝飾：買手寫木牌並出現在店裡
+        c.page.evaluate("__wg.S.money=Math.max(__wg.S.money,5000)")
+        c.click('.wg-top [data-act=wgdecor]', wait=400)
+        c.click('[data-act=wgdbuy][data-id=sign_wood]', wait=400)
+        if c.page.evaluate("__wg.S.decor.eq.sign") != 'sign_wood' or not c.has('#wgScene .wg-sign'):
+            raise AssertionError('和果子屋：買了木牌沒有裝上或店裡看不到')
+        c.click('[data-act=wgdeq][data-id=sign_none]', wait=300)
+        c.click('[data-act=wgdeq][data-id=sign_wood]', wait=300)
+        c.click('.wg-ov [data-act=wgovx]', wait=300)
+        c.click('.wg-top [data-act=wgdex]', wait=400)
+        if '顧客故事' not in c.page.evaluate("document.querySelector('.wg-ov').innerText"):
+            raise AssertionError('和果子屋：圖鑑沒有顧客故事')
+        c.click('.wg-ov [data-act=wgovx]', wait=300)
+        c.expect_clean('和果子屋型拔／裝飾／圖鑑')
+        day = c.page.evaluate("__wg.S.day")
+        c.click('.wg-top [data-act=wgx]', wait=900)
+        if c.has('#wgRoot') or not c.has('.modal [data-act=start]'):
+            raise AssertionError('和果子屋：按 ✕ 沒有回到開店前畫面\n%s' % c.diag())
+        c.page.reload(wait_until='domcontentloaded')
+        c.page.wait_for_timeout(2200)
+        saved = c.page.evaluate("JSON.parse(localStorage.getItem('izakaya-wagashi-v1')||'{}')")
+        if saved.get('day') != day or (saved.get('decor') or {}).get('eq', {}).get('sign') != 'sign_wood':
+            raise AssertionError('和果子屋：重新整理後存檔不見了（%s）' % {k: saved.get(k) for k in ('day', 'money')})
+        main = c.page.evaluate("JSON.parse(localStorage.getItem('%s'))" % SAVE_KEY)
+        if main.get('zz_future_field') != SEED_SAVE['zz_future_field'] or main.get('coins') != SEED_SAVE['coins']:
+            raise AssertionError('和果子屋：居酒屋的存檔被動到了')
+        c.expect_clean('和果子屋整條路徑')
+    finally:
+        c.close()
+
+
 SCENARIOS = [('chrestart', sc_chrestart), ('fblogin', sc_fblogin), ('coicons', sc_coicons), ('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves), ('keepbak', sc_keepbak),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barnew', sc_barnew), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
-             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d), ('homekeep', sc_homekeep)]
+             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d), ('homekeep', sc_homekeep), ('wagashi', sc_wagashi)]
 
 
 def main():
