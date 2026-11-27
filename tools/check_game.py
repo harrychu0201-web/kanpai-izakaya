@@ -18,6 +18,7 @@
   oko       御好燒店（作者限定）：從麵糊開始真實點擊加料做完四道菜、順序錯加不進去、空手連點倒掉、放太久會焦、做好放保溫台、📖 做法暫停
   wagashi   和果子屋（作者限定）：一般玩家看不到入口；一天 6 位客人跑三檔難度、完美／普通品／超時、打烊隔夜食材、型拔成功與碎掉、裝飾、圖鑑、返回、存檔
   tepfix    炎舞鐵板燒：下架／上架、對話框上的提示看得到、燒焦時間
+  keys      電腦鍵盤出餐：1～6 鐵板、Q／W 啤酒、同鍵再按送給等最久的客人、暫停時無效
   shopgun   每家店的商店都有武器分頁、買得到、營業時槍架拿得起來
   morph     工作台局部更新（setHTML）和整塊重建結果一致；營業中啤酒機不會每 0.1 秒整塊重建
   corner    街角試作（dev/corner）：開得起來、搖桿／點地面走路、白天傍晚夜晚切換、draw call 上限
@@ -2853,6 +2854,56 @@ def sc_tepfix(b, base):
         c.close()
 
 
+def sc_keys(b, base):
+    """2026/11/28 鍵盤出餐：1～6 操作鐵板、Q／W 拿啤酒，同一鍵再按一次送給點這道、等最久的客人；沒人點就留在手上；暫停時不作用"""
+    c = Ctx(b, base).open()
+    try:
+        c.page.evaluate("(()=>{const s=JSON.parse(localStorage.getItem('izakaya-cook-v1'));s.tep={up:{}};s.menu=s.menu||{};['tpgarlic','tpcabbage','tpchicken','tpshrimp'].forEach(k=>s.menu[k]=1);s.up.taps=2;s.where='tep';localStorage.setItem('izakaya-cook-v1',JSON.stringify(s))})()")
+        c.page.reload(); c.page.wait_for_timeout(3500); c.dismiss_modals(8)
+        c.click('[data-act=cont]', wait=1000)
+        c.click('.modal [data-act=tephome]', wait=800)
+        c.click('.modal [data-act=back]', wait=900)
+        c.click('[data-act=start]', wait=2000)
+        ev, key, wait = c.page.evaluate, c.page.keyboard.press, c.page.wait_for_timeout
+        def need(js, msg):
+            if not ev(js):
+                raise AssertionError(msg + c.diag(msg))
+        # 固定兩位客人：1 號比較早坐下。營業時鐘照跑，只擋掉新客人
+        def seat(order):
+            c.page.wait_for_function("R.seats.filter(x=>x&&x.st==='wait').length>=2", timeout=60000)
+            ev("""(o)=>{R.spawnT=R.nextSpawn=1e9;const w=R.seats.filter(x=>x&&x.st==='wait');w.forEach((x,n)=>{x.order=n<2?[o]:['zz'];x.filled=[false];x.extra=null;x.taken=true;x.pat=x.max=999;x.critic=false;x.tr={};x.sitAt=n===0?5:n===1?1:9});renderCust()}""", order)
+        seat('tpchicken')
+        c.page.click('[data-st=rawTpChicken]'); wait(400)
+        c.page.wait_for_function("R.tpn[0]&&needTp(R.tpn[0])", timeout=30000)
+        key('Digit1')
+        need("R.tpn[0].s===1", '按 1 沒有翻面')
+        c.page.wait_for_function("R.tpn[0]&&cookState(R.tpn[0].t,R.tpn[0].kind)==='done'", timeout=60000)
+        key('Digit1')
+        need("!!R.held&&R.held.src==='tpn'&&R.held.i===0", '按 1 沒有起鍋')
+        key('Digit1'); wait(300)
+        need("!R.tpn[0]&&!R.held", '再按 1 沒有送出')
+        need("(()=>{const w=R.seats.filter(x=>x);return w.some(x=>x.sitAt===1&&x.filled[0])||!w.some(x=>x.sitAt===1&&x.st==='wait')})()", '沒有先送給等最久的客人')
+        need("R.seats.some(x=>x&&x.sitAt===5&&!x.filled[0])", '送錯人（較晚坐下的先拿到）')
+        for k, i in (('KeyQ', 0), ('KeyW', 1)):
+            c.page.wait_for_function("R.taps[%d].st==='full'" % i, timeout=30000)
+            ev("R.seats.forEach(x=>{if(x){x.order=['zz'];x.filled=[false]}})")
+            key(k); wait(100)
+            need("!!R.held&&R.held.src==='tap'&&R.held.i===%d" % i, '%s 沒有拿起啤酒' % k)
+            key(k); wait(200)
+            need("!!R.held&&R.taps[%d].st==='full'" % i, '沒人點啤酒時應該留在手上')
+            ev("(()=>{const x=R.seats.find(x=>x&&x.st==='wait');x.order=['beer'];x.filled=[false];x.taken=true;renderCust()})()")
+            key(k); wait(200)
+            need("R.taps[%d].st!=='full'&&!R.held" % i, '%s 再按一次沒有送出啤酒' % k)
+        c.page.wait_for_function("R.taps[0].st==='full'", timeout=30000)
+        need("getComputedStyle(document.querySelector('.kbk')).display==='block'", '電腦上看不到按鍵標籤')
+        c.page.screenshot(path='/tmp/keys.png')
+        ev("pause()"); key('KeyQ'); wait(200)
+        need("!R.held", '暫停時按鍵不該有作用')
+        c.expect_clean('鍵盤出餐')
+    finally:
+        c.close()
+
+
 def sc_shopgun(b, base):
     """2026/11/27 玩家回報找不到武器：每一家店的商店都要有「🔫 武器」分頁，真實點擊買得到，營業時槍架拿得起來"""
     shops = [('iz', 'dayshop', 'stab', 'gun'), ('rm', 'dayshop', 'stab', 'rgun'), ('sushi', 'sushishop', 'sutab', 'gun'),
@@ -2972,7 +3023,7 @@ def sc_corner(b, base):
 SCENARIOS = [('chrestart', sc_chrestart), ('fblogin', sc_fblogin), ('coicons', sc_coicons), ('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves), ('keepbak', sc_keepbak),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barnew', sc_barnew), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
-             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d), ('homekeep', sc_homekeep), ('wagashi', sc_wagashi), ('tepfix', sc_tepfix), ('shopgun', sc_shopgun), ('morph', sc_morph), ('corner', sc_corner)]
+             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d), ('homekeep', sc_homekeep), ('wagashi', sc_wagashi), ('tepfix', sc_tepfix), ('keys', sc_keys), ('shopgun', sc_shopgun), ('morph', sc_morph), ('corner', sc_corner)]
 
 
 def main():

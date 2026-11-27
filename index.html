@@ -494,6 +494,7 @@ html,body,#game,#homeLayer{-webkit-user-select:none;user-select:none;-webkit-tou
 @media (max-height:560px) and (orientation:landscape){.topr,.topl{top:6px}.acct{font-size:12px;padding:2px 10px 2px 3px}.acct .g,.acct img{width:18px;height:18px}.acct .g svg{width:13px;height:13px}}
 .tpspout{position:absolute;width:96px;height:124px;margin:-104px 0 0 -48px;pointer-events:none;z-index:7;transform-origin:50% 100%;filter:drop-shadow(0 0 10px #ff8a2a);animation:tpspout .8s ease-out forwards}.tpspout .a{animation:tpflick .18s steps(2) infinite}.tpspout .b{animation:tpflick .22s steps(2) infinite reverse}@keyframes tpspout{0%{opacity:0;transform:scale(.3,.08)}18%{opacity:1;transform:scale(1,1.08)}55%{opacity:1;transform:scale(.92,1.18)}100%{opacity:0;transform:scale(.7,1.5) translateY(-14px)}}@keyframes tpflick{0%{transform:translateY(0) scaleY(1)}100%{transform:translateY(-4px) scaleY(1.06)}}
 .tpshow{position:absolute;left:50%;top:36%;transform:translate(-50%,-50%);z-index:40;pointer-events:none;text-align:center;color:#fff3c4;text-shadow:0 3px 0 #7a1a08,0 0 18px #ff6a1a;white-space:nowrap;animation:tpshow 1.8s ease-out forwards}.tpshow b{display:block;font-size:56px;font-weight:900;letter-spacing:4px}.tpshow small{display:block;font-size:18px;font-weight:900;margin-top:4px}.tpshow::before{content:'';position:absolute;left:-320px;right:-320px;top:-60px;bottom:-60px;background:radial-gradient(ellipse at center,#ff7a1acc,#ff3a0000 65%);z-index:-1}@keyframes tpshow{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}14%{opacity:1;transform:translate(-50%,-50%) scale(1.18)}28%{transform:translate(-50%,-50%) scale(1)}78%{opacity:1}100%{opacity:0;transform:translate(-50%,-75%) scale(1)}}
+.kbk{display:none;position:absolute;left:1px;bottom:16px;min-width:17px;height:17px;border-radius:4px;background:#fff1cf;color:#2a1608;border:2px solid #2a1608;font:900 11px/13px system-ui,sans-serif;text-align:center;pointer-events:none;z-index:4}@media (hover:hover) and (pointer:fine){.kbk{display:block}}
 .tkflip{position:absolute;left:50%;top:-4px;transform:translateX(-50%);background:#e0412c;color:#fff;font-size:13px;font-weight:900;line-height:1;padding:4px 9px;border-radius:999px;border:2px solid #fff1cf;white-space:nowrap;pointer-events:none;z-index:3;animation:tkp .45s infinite alternate}@keyframes tkp{to{transform:translateX(-50%) scale(1.14)}}
 .updbar{position:absolute;left:50%;top:max(10px,env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;background:#b8372a;border:2px solid #fff1cf;color:#fff;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 4px 12px #0008;white-space:nowrap;animation:updpulse 1.6s infinite ease-in-out}@keyframes updpulse{50%{transform:translateX(-50%) scale(1.05)}}
 .lbtabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;touch-action:pan-x;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border-bottom:3px solid #e3cfa6}.lbtabs .stab{padding:6px 8px;font-size:14px}
@@ -2857,7 +2858,7 @@ function tpnHTML(){if(CUR==='bar')return barHTML();if(CUR==='oko')return okHTML(
       inner=sv(tpArt(g.kind,st,g.s||0,!!g.bad,null,g.sk||0)+steam+fire);
       bar=need?`<i class="cbar"><i style="width:${Math.max(0,1-(g.w||0)/TPGRACE)*100}%;background:${perf?'#f0b020':'#e0412c'}"></i></i>`:CUR==='bar'&&st==='burnt'?`<span class="burnt">${T(g.bad?'失手了':'冰化了')}</span>`:cookBar(g.t,g.kind,st)}
     else inner=`<div style="opacity:.22;width:100%;height:100%">${sv(`<ellipse cx="50" cy="62" rx="34" ry="18" fill="none" stroke="#14151a" stroke-width="5" stroke-dasharray="7 6"/>`)}</div>`;
-    s+=`<div class="st slot" data-tpn="${i}" style="left:${x}px;top:18px;width:${SW-4}px;height:146px;${st==='done'?'box-shadow:0 0 0 3px #ffc65a inset;background:#ffc65a22':need?`box-shadow:0 0 0 3px ${perf?'#ffd23a':'#ff5a3c'} inset;background:${perf?'#ffd23a33':'#ff5a3c22'}`:''}"><div style="position:absolute;left:-4px;right:-4px;top:${CUR==='oko'||CUR==='bar'?26:34}px;height:${CUR==='oko'||CUR==='bar'?Math.min(Math.round(SW+8),124):Math.round(SW+8)}px">${inner}</div>${need?`<span class="tkflip" style="${perf?'background:#f0a818;color:#2a1608':''}">${T(TPLBL[TPS[g.kind][g.s||0]])}${TPS[g.kind][g.s||0]==='bshake'&&g.sk?` ${g.sk}/${BSHAKE}`:''}</span>`:''}${bar}</div>`}
+    s+=`<div class="st slot" data-tpn="${i}" style="left:${x}px;top:18px;width:${SW-4}px;height:146px;${st==='done'?'box-shadow:0 0 0 3px #ffc65a inset;background:#ffc65a22':need?`box-shadow:0 0 0 3px ${perf?'#ffd23a':'#ff5a3c'} inset;background:${perf?'#ffd23a33':'#ff5a3c22'}`:''}"><div style="position:absolute;left:-4px;right:-4px;top:${CUR==='oko'||CUR==='bar'?26:34}px;height:${CUR==='oko'||CUR==='bar'?Math.min(Math.round(SW+8),124):Math.round(SW+8)}px">${inner}</div>${need?`<span class="tkflip" style="${perf?'background:#f0a818;color:#2a1608':''}">${T(TPLBL[TPS[g.kind][g.s||0]])}${TPS[g.kind][g.s||0]==='bshake'&&g.sk?` ${g.sk}/${BSHAKE}`:''}</span>`:''}${bar}${CUR==='tep'?`<b class="kbk">${i+1}</b>`:''}</div>`}
   if(CUR==='oko')return s+`<span class="lbl" style="white-space:nowrap">${T('御好燒鐵板')}</span>`;const cn=(R.tpc||0)%TPSHOW;return s+`<span class="lbl" style="white-space:nowrap">${CUR==='bar'?T('吧台')+'　🍸 '+T('調酒秀'):T('大鐵板')+'　🔥 '+T('火焰秀')} <span style="color:#ffb02e;letter-spacing:1px">${'●'.repeat(cn)}</span><span style="opacity:.45;letter-spacing:1px">${'○'.repeat(TPSHOW-cn)}</span>${(R.tpc||0)>1?` ${T('連擊 ×{0}',R.tpc)}`:''}</span>`}
 /* 2026-11-27 玩家回報看不懂生料對哪道菜：食材盤標籤上面寫成品菜名（和客人點單一樣），下面小字寫生料；兩者同名就只寫一行 */
 function tpTrayLbl(k){const a=T(ITEMS[k].zh),b=T(TP_RAWN[k]);return a===b?`<span class="lbl" style="white-space:nowrap;font-size:11px">${a}</span>`:`<span class="lbl tplbl"><b>${a}</b><small>${b}</small></span>`}
@@ -4465,7 +4466,7 @@ function stHTML(name){
       return `<div class="st" data-tap="${i}" style="position:relative;inset:auto;flex:1">${sv(`${ARTFOOD&&ART?`<image href="${ARTIMG.tap}" x="${c-11}" y="0" width="21.9" height="64"/>`:`<rect x="${c-12}" y="6" width="24" height="46" rx="6" fill="#d7dce2" stroke="${O}" stroke-width="4"/><rect x="${c-8}" y="10" width="6" height="36" fill="#fff" opacity=".6"/><rect x="${c-16}" y="0" width="32" height="14" rx="5" fill="#1a1a1a" stroke="${O}" stroke-width="3"/>
       <path d="M${c} 52v10h-${n===1?10:6}" stroke="${O}" stroke-width="10" fill="none"/><path d="M${c} 52v10h-${n===1?10:6}" stroke="#c9ced4" stroke-width="4" fill="none"/>`}${tp.st==='filling'?`<path d="M${ARTFOOD&&ART?c-6.2:c-(n===1?10:6)} 64v${n===1?16:20}" stroke="#f4a62a" stroke-width="4"/>`:''}
       <rect x="3" y="166" width="${vb-6}" height="12" rx="4" fill="#8a9098" stroke="${O}" stroke-width="3"/>
-      <g transform="translate(${c-50*sx} ${168-96*sy}) scale(${sx} ${sy})">${beerG(lvl,tp.st==='full')}</g>`,`0 0 ${vb} 186`).replace('<svg ','<svg style="overflow:visible" ')}<span class="lbl"${n>1?' style="font-size:12px;padding:0 4px"':''}>${T(tp.st==='full'?'啤酒':(n===1?'自動裝杯中…':'裝杯中'))}</span></div>`}).join('')}</div>`}
+      <g transform="translate(${c-50*sx} ${168-96*sy}) scale(${sx} ${sy})">${beerG(lvl,tp.st==='full')}</g>`,`0 0 ${vb} 186`).replace('<svg ','<svg style="overflow:visible" ')}<span class="lbl"${n>1?' style="font-size:12px;padding:0 4px"':''}>${T(tp.st==='full'?'啤酒':(n===1?'自動裝杯中…':'裝杯中'))}</span><b class="kbk">${i?'W':'Q'}</b></div>`}).join('')}</div>`}
   if(name==='sake')return sv(`<rect x="4" y="44" width="76" height="40" rx="6" fill="#8a5a34" stroke="${O}" stroke-width="3"/><g transform="translate(4 -2) scale(.78)">${sakeG()}</g>`,'0 0 84 90')+`<span class="lbl">${T('清酒')}</span>`+lockDiv(ITEMS.sake.day);
   if(name==='edamame')return sv(`<g transform="translate(-4 -6) scale(.92)">${edamameG()}</g>`,'0 0 84 90')+`<span class="lbl">${JP('edamame')}</span>`;
   if(name==='rawN'||name==='rawT'){const k=name==='rawN'?'negima':'tsukune';
@@ -5418,6 +5419,23 @@ function consume(h){
   if(h.src==='bowl')R.bowls[h.i]=null;
   if(h.src==='oden')R.oden.n=Math.max(0,R.oden.n-1);
 }
+/* 電腦鍵盤出餐（2026/11/28 玩家建議）：Q／W＝第一、二台生啤機，1～6＝炎舞鐵板燒的鐵板格子（由左到右）。
+   第一下＝和點滑鼠一樣（翻炒／翻面／刷醬／點火、起鍋、拿啤酒、丟掉焦的）；手上已經是這一份時再按一次＝送給點這道、等最久的客人，沒人點就留在手上。
+   用 e.code 判斷，開著注音輸入法也按得動；畫面被對話框蓋住時不作用 */
+function kbServe(){const h=R.held;if(!h||!heldValid())return false;
+  const cs=R.seats.map((c,i)=>({c,i})).filter(({c})=>c&&c.st==='wait'&&(c.order.some((k,j)=>!c.filled[j]&&k===h.key)||(c.extra&&c.extra.ok&&!c.extra.done&&c.extra.key===h.key)))
+    .sort((a,b)=>(a.c.sitAt??0)-(b.c.sitAt??0));
+  if(!cs.length)return false;deliver(cs[0].i);return true}
+document.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||!R||R.paused||R.over)return;
+  const t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;
+  if(typeof CO!=='undefined'&&CO.open)return;
+  const tap=e.code==='KeyQ'?0:e.code==='KeyW'?1:-1,m=/^(?:Digit|Numpad)([1-6])$/.exec(e.code||''),slot=m&&CUR==='tep'?+m[1]-1:-1;
+  if(tap<0&&slot<0)return;
+  const src=tap>=0?'tap':'tpn',i=tap>=0?tap:slot,el=document.querySelector(`[data-${src}="${i}"]`);if(!el)return;
+  const r=el.getBoundingClientRect(),top=r.width&&document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);if(!top||!el.contains(top))return;
+  e.preventDefault();
+  if(R.held&&R.held.src===src&&R.held.i===i&&heldValid()){if(!kbServe())nope(el);return}
+  if(src==='tpn')clickTpn(i,el);else if(R.taps[i].st==='full'){R.held={src:'tap',i,key:'beer'};renderStations()}else nope(el)});
 function onTap(e){
   if(!R||R.paused||R.over)return;
   const t=e.target;
