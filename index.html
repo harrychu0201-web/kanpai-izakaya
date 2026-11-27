@@ -3653,7 +3653,7 @@ function bxGlassSV(g,o,w,h){const G=BXG2[g],a=BXA[G.s];return `<svg viewBox="0 0
 function brIcon(k){const r=BXR[k],G=BXG2[r.g],a=BXA[G.s],o={lv:r.g==='choko'?.75:r.g==='masu'?.9:.62,col:bxMlCol(Object.fromEntries(r.st.filter(x=>x[0]==='m').map(x=>[x[1],x[2]])))||BXL[bxFirst(k)][1],ice:r.ice,fizz:r.st.some(s=>s[0]==='top'&&BXFIZZ.includes(s[1]))?60:0,foam:r.st.some(s=>s[0]==='shake'),gar:r.opt.slice(0,1)};
   return `<ellipse cx="50" cy="94" rx="40" ry="6" fill="#5a3418" opacity=".55"/><svg x="8" y="2" width="84" height="94" viewBox="0 0 ${a[1]} ${a[2]}" preserveAspectRatio="xMidYMax meet">${bxLiq(r.g,o)}<image href="${bxSrc(G.s)}" width="${a[1]}" height="${a[2]}"/>${bxTopArt(r.g,o)}</svg>`}
 /* 吧台墊上正在做的這杯：液體一層（會一直更新）＋杯子圖＋上層 */
-function bxMatHTML(g,o){const G=BXG2[g],a=BXA[G.s];if(!window.Liquid3D&&!L3P)setTimeout(()=>loadLiquid3D().catch(()=>{}),0);return `<div class="bxs-mat" data-lyk="mat" style="height:${G.h}%;aspect-ratio:${a[1]}/${a[2]}"><svg id="bxmatl" viewBox="0 0 ${a[1]} ${a[2]}" width="100%" height="100%">${bxLiq(g,o)}</svg>${bxImg(G.s)}<svg id="bxmatt" viewBox="0 0 ${a[1]} ${a[2]}" width="100%" height="100%">${bxTopArt(g,o)}</svg></div>`}
+function bxMatHTML(g,o){const G=BXG2[g],a=BXA[G.s];if(!window.Liquid3D&&!L3P)setTimeout(()=>loadLiquid3D().catch(()=>{}),0);if(!window.Stir3D&&!S3P)setTimeout(()=>loadStir3D().catch(()=>{}),0);return `<div class="bxs-mat" data-lyk="mat" style="height:${G.h}%;aspect-ratio:${a[1]}/${a[2]}"><svg id="bxmatl" viewBox="0 0 ${a[1]} ${a[2]}" width="100%" height="100%">${bxLiq(g,o)}</svg>${bxImg(G.s)}<svg id="bxmatt" viewBox="0 0 ${a[1]} ${a[2]}" width="100%" height="100%">${bxTopArt(g,o)}</svg></div>`}
 function bxMatUpd(tg){const r=BXR[bxOrder().k],gg=BX.d.g||r.g,l=$('bxmatl'),t=$('bxmatt'),o=bxLook(tg!=null?{target:tg}:{});if(l)l.innerHTML=bxLiq(gg,o);if(t)t.innerHTML=bxTopArt(gg,o)}
 /* 倒酒：長條旁邊的杯子刻度管（小杯子看不清楚液面，看這條就知道什麼時候滿） */
 function bxPourGauge(lv,tg,lv0,col){const Y=v=>262-Math.max(0,Math.min(1.04,v))*236;let o=`<svg viewBox="0 6 124 274" width="100%" height="100%"><rect x="8" y="20" width="48" height="248" rx="16" fill="#1a0e08" fill-opacity=".6" stroke="#e8d8b0" stroke-width="3"/>`;
@@ -3672,7 +3672,8 @@ function bxJigger(s,sp,ml){const Y=v=>262-v/sp.cap*236,c=BXL[s[1]][1];let o=`<sv
   return o+`<path d="M44 30V250" stroke="#fff" stroke-width="3" opacity=".35" stroke-linecap="round"/></svg>`}
 /* 攪拌：攪拌杯裡的冰（畫在 #bxv）、吧勺（#bxspn 只改位置，不重建圖片） */
 function bxStirArt(ang,fp){const d=BX.d,lift=bxCur()[0]==='lift';let s=`<svg viewBox="0 0 280 280" width="100%" height="100%">`;
-  if(!lift){const mc=bxMlCol(bxAllMl(d));if(mc)s+=`<path d="M67 170L71 248Q72 254 80 254H210Q218 254 219 248L222 170Z" fill="${mc}" fill-opacity=".62"/><path d="M67 170H222" stroke="#fff" stroke-width="2.5" opacity=".5"/>`;if(d.ice==='ball')s+=`<circle cx="${(140+Math.cos(ang)*14).toFixed(1)}" cy="190" r="50" fill="#f2fbff" fill-opacity=".45" stroke="#9fc4d6" stroke-width="2"/>`;
+  const s3=!lift&&!!($('bxpad')&&$('bxpad').classList.contains('s3d'));/* 3D 版開著時，液體和冰由 3D 畫 */
+  if(!lift&&!s3){const mc=bxMlCol(bxAllMl(d));if(mc)s+=`<path d="M67 170L71 248Q72 254 80 254H210Q218 254 219 248L222 170Z" fill="${mc}" fill-opacity=".62"/><path d="M67 170H222" stroke="#fff" stroke-width="2.5" opacity=".5"/>`;if(d.ice==='ball')s+=`<circle cx="${(140+Math.cos(ang)*14).toFixed(1)}" cy="190" r="50" fill="#f2fbff" fill-opacity=".45" stroke="#9fc4d6" stroke-width="2"/>`;
     else for(let i=0;i<5;i++){const a=ang+i*1.257,x=140+Math.cos(a)*62,y=150+i*20+Math.sin(a)*8,z=.75+.25*Math.sin(a);s+=`<rect x="-16" y="-16" width="32" height="32" rx="6" transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(a*57).toFixed(0)}) scale(${z.toFixed(2)})" fill="#f2fbff" fill-opacity=".6" stroke="#9fc4d6" stroke-width="2"/>`}}
   if(fp)s+=`<circle cx="${fp.x.toFixed(0)}" cy="${fp.y.toFixed(0)}" r="16" fill="#ffd23a" fill-opacity=".35" stroke="#ffd23a" stroke-width="3"/>`;
   else s+=`<ellipse cx="140" cy="${lift?150:120}" rx="96" ry="34" fill="none" stroke="#ffd23a" stroke-width="3" stroke-dasharray="10 8" opacity=".85"/><text x="140" y="${lift?206:62}" text-anchor="middle" font-size="22" font-weight="900" fill="#ffd23a" stroke="#1a0e08" stroke-width="4" paint-order="stroke">${T('在這裡畫圈')} ⟲⟳</text>`;
@@ -3680,7 +3681,16 @@ function bxStirArt(ang,fp){const d=BX.d,lift=bxCur()[0]==='lift';let s=`<svg vie
 /* 吧勺：勺頭（圖片左下角的匙）跟著畫圈繞著杯子中心轉，永遠在杯子裡的酒裡面 */
 function bxSpoonPos(ang){const sp=$('bxspn');if(!sp)return;const lift=sp.classList.contains('lift'),c=lift?{x:50,y:62,rx:9,ry:3}:{x:50,y:77,rx:17,ry:4},W=lift?50:56,
   px=c.x+Math.cos(ang)*c.rx,py=c.y+Math.sin(ang)*c.ry;sp.style.left=(px-W*.12).toFixed(2)+'%';sp.style.top=(py-W*.952*.89).toFixed(2)+'%';sp.style.width=W+'%';sp.style.transform=`rotate(${(-39-Math.cos(ang)*5).toFixed(1)}deg)`;sp.dataset.bowl=px.toFixed(1)+','+py.toFixed(1)}
-function bxStirShow(ang,fp){const v=$('bxv');if(v)v.innerHTML=bxStirArt(ang,fp);bxSpoonPos(ang)}
+function bxStirShow(ang,fp){bxStir3D(fp);const v=$('bxv');if(v)v.innerHTML=bxStirArt(ang,fp);bxSpoonPos(ang)}
+/* 3D 攪拌（img/stir3d-*.js，原始碼 dev/stir3d/）：載入好之前、載入失敗或不支援 WebGL 時照舊顯示圖片版 */
+let S3P=null,S3F=null;
+function loadStir3D(){if(window.Stir3D)return Promise.resolve();if(S3P)return S3P;
+  S3P=new Promise((ok,no)=>{const s=document.createElement('script');s.src='img/stir3d-0a55170c.js';s.onload=()=>ok();s.onerror=()=>{S3P=null;s.remove();no(new Error('stir3d'))};document.head.appendChild(s)});return S3P}
+function bxStir3D(fp){S3F=fp;try{const pad=$('bxpad');if(!pad||!pad.classList.contains('bxz-stir')||!BX||bxCur()[0]!=='stir')return;
+  if(!window.Stir3D){loadStir3D().then(()=>{const p=$('bxpad');if(p&&p.classList.contains('bxz-stir'))bxStirShow(0,S3F)}).catch(()=>{});return}
+  const d=BX.d,ml=bxAllMl(d),ks=Object.keys(ml).filter(k=>ml[k]>0&&BXL[k]).sort((a,b)=>ml[b]-ml[a]),col=bxMlCol(ml)||'#e0c080',
+    a=ks.length>1?BXL[ks[0]][1]:col,b=ks.length>1?BXL[ks[1]][1]:tpShade(col,.35),tot=ks.reduce((t,k)=>t+ml[k],0);
+  Stir3D.show(pad,{key:BX.i+':'+BX.si,ice:d.ice,col,a,b,mix:(d.dil||0)/(bxCur()[1][0]||30),level:tot/110,finger:fp?{x:(fp.x-140)/140,y:(fp.y-140)/140}:null})}catch(e){}}
 /* 搖盪：只改雪克杯的位置 */
 function bxShakerArt(dx,dy){return ''}
 function bxPouring(on){const e=document.querySelector('#barx .bxs');if(e)e.classList.toggle('pouring',!!on);l3dPour(on)}
@@ -3811,7 +3821,7 @@ function bxBind(){const s=bxCur(),d=BX.d,o=bxOrder(),r=BXR[o.k];
     const up=()=>{if(!h.classList.contains('on'))return;(h.classList.remove('on'),bxPouring(0));cancelAnimationFrame(BXRAF);BXRAF=0;bxMRelease()};
     h.addEventListener('pointerdown',down);['pointerup','pointercancel','lostpointercapture'].forEach(ev=>h.addEventListener(ev,up))}
   if(s[0]==='stir'||s[0]==='lift'){const pad=$('bxpad'),lift=s[0]==='lift';let ang=0,prev=null,acc=lift?(d.lift||0)*2*Math.PI:(d.dil||0)/3.6*2*Math.PI,dir=0,rev=0,samp=[],lt=0,lastA=0;
-    const P=e=>{const p=bxPt(e,pad);return {x:p.x/p.w*280,y:p.y/p.h*280}};bxSpoonPos(ang);
+    const P=e=>{const p=bxPt(e,pad);return {x:p.x/p.w*280,y:p.y/p.h*280}};if(lift)bxSpoonPos(ang);else bxStirShow(ang,null);
     pad.addEventListener('pointerdown',e=>{e.preventDefault();try{pad.setPointerCapture(e.pointerId)}catch(x){}const p=P(e);prev=Math.atan2(p.y-140,p.x-140);lt=performance.now();lastA=acc;dir=0;rev=0});
     pad.addEventListener('pointermove',e=>{if(prev==null)return;const p=P(e),a=Math.atan2(p.y-140,p.x-140);let da=a-prev;if(da>Math.PI)da-=2*Math.PI;if(da<-Math.PI)da+=2*Math.PI;prev=a;
       if(Math.hypot(p.x-140,p.y-140)<18)return;if(!dir&&Math.abs(da)>.05)dir=Math.sign(da);if(!dir)return;ang+=da*.8;/* 順時針、逆時針都可以：換方向時先累積一小段（防止來回抖動也算圈），確定是反方向畫圈就換過去 */
@@ -4117,6 +4127,7 @@ Object.assign(HOW,Object.fromEntries(BRKEYS.map(k=>[k,bxStepsText(k)+'。'+T('�
 #barx .bxz-spn{position:absolute;left:0;top:0;width:56%;aspect-ratio:420/400;transform-origin:12% 89%;pointer-events:none}
 #barx .bxz-spn img{width:100%;height:100%;display:block}
 #barx .bxz-ov{position:absolute;inset:0}
+#barx .bxz-stir.s3d>.bxz-mg,#barx .bxz-stir.s3d>.bxz-spn{opacity:0}
 #barx .bxs-liftpad{position:absolute;left:16%;bottom:9%;height:36%;aspect-ratio:1;transform:translateX(-50%);touch-action:none;cursor:pointer;border-radius:50%}
 #barx .bxz-shake{position:relative;height:calc(var(--u)*31);width:calc(var(--u)*42);touch-action:none;cursor:grab;border-radius:calc(var(--u)*3);background:radial-gradient(closest-side,#ffd23a22,transparent)}
 #barx .bxz-shk{position:absolute;left:calc(50% - var(--u)*6.6);bottom:6%;height:86%;pointer-events:none}

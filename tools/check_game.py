@@ -1180,6 +1180,12 @@ def bx_make(c, wrong=False, started=False, adds=None, swap=None):
             bx_circles(c, tot / 2)
             d1 = c.page.evaluate("BX.d.dil")
             bx_circles(c, tot / 2, release=False, ccw=True)
+            # 2026/11/28 3D 攪拌：畫布要在、手指在轉時漩渦要起來、冰要被推著走（不支援 WebGL 時退回圖片版）
+            s3 = c.page.evaluate("(()=>({gl:!!document.createElement('canvas').getContext('webgl2'),s:window.Stir3D?Stir3D.state():null}))()")
+            if s3['gl']:
+                st3 = s3['s']
+                if not (st3 and st3['inPad'] and st3['frames'] > 2 and st3['w'] > 50 and abs(st3['phase']) > 0.1 and st3['ice']):
+                    raise AssertionError('月影酒吧：3D 攪拌沒有動起來：%s\n%s' % (s3, c.diag()))
             bx_shot(c, 'stirring-%s' % o['k'])
             c.page.mouse.up()
             c.page.wait_for_timeout(200)
