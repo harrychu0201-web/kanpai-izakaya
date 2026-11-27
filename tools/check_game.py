@@ -23,6 +23,7 @@
   corner    街角試作（dev/corner）：開得起來、搖桿／點地面走路、白天傍晚夜晚切換、draw call 上限
   saves     玩完整條路徑後，玩家原本的存檔欄位一個都不能少、不認得的欄位原封不動
 """
+import math
 import argparse, functools, http.server, json, os, shutil, socketserver, sys, threading, time, traceback
 from playwright.sync_api import sync_playwright
 
@@ -2314,13 +2315,26 @@ def sc_home3d(b, base):
         c.page.mouse.up(); c.page.wait_for_timeout(900); p = h3_probe(c)
         if p['cam']['z'] > cam0['z'] - .5:
             raise AssertionError('布置時往下拖空地，視角沒有往房間深處移：%s→%s' % (cam0, p['cam']))
-        # ⟲ 轉方向按鈕：布置時看得到、夠大、點了會轉
-        bb = c.page.locator('.home3 [data-h3=camL]').bounding_box()
-        if not bb or bb['height'] < 44 or bb['width'] < 44:
-            raise AssertionError('布置時的轉向按鈕不見了或太小：%s' % bb)
-        y1 = p['yaw']; c.click('.home3 [data-h3=camL]', wait=700)
-        if abs(h3_probe(c)['yaw'] - y1) < .3:
-            raise AssertionError('點 ⟲ 沒有轉鏡頭')
+        # 轉方向直接用兩指（2026/11/27 使用者要求不要 ⟲⟳ 按鈕）：真實雙指觸控，畫面要跟著手指同方向轉，跨過 180° 也不能多轉一圈
+        if c.page.locator('.home3 [data-h3=camL], .home3 [data-h3=camR], .home3 .h3cam').count():
+            raise AssertionError('⟲⟳ 轉向按鈕應該已經刪掉')
+        cdp = c.page.context.new_cdp_session(c.page)
+        mx, my = cvb['x'] + cvb['width'] * .5, cvb['y'] + cvb['height'] * .3
+        def pts(deg):
+            a = math.radians(deg); dx, dy = 70 * math.cos(a), 70 * math.sin(a)
+            return [{'x': mx - dx, 'y': my - dy, 'id': 1}, {'x': mx + dx, 'y': my + dy, 'id': 2}]
+        ang = "(()=>{const c=HOME3.probe().cam,a=HOME3.px(c.x,0,c.z),b=HOME3.px(c.x+1,0,c.z);return Math.atan2(b.y-a.y,b.x-a.x)})()"
+        for start, turn in ((0, 45), (170, 30), (0, -45)):
+            c.page.wait_for_timeout(700); y1 = h3_probe(c)['yaw']; s0 = c.page.evaluate(ang)
+            cdp.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': pts(start)})
+            for k in range(1, 9):
+                cdp.send('Input.dispatchTouchEvent', {'type': 'touchMove', 'touchPoints': pts(start + turn * k / 8)}); c.page.wait_for_timeout(30)
+            cdp.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+            c.page.wait_for_timeout(900)
+            dyaw = h3_probe(c)['yaw'] - y1; d = c.page.evaluate(ang) - s0
+            d = math.atan2(math.sin(d), math.cos(d))
+            if not .3 < abs(dyaw) < 1.2 or d * turn <= 0:
+                raise AssertionError('兩指轉 %s°（起點 %s°）畫面沒有跟著同方向轉：yaw 變 %.2f、畫面轉 %.2f' % (turn, start, dyaw, d))
         c.page.screenshot(path='/tmp/check-home3d-pan.png')
         # 拿著行燈停在畫面左邊緣：視角要自己跟過去
         c.click('.home3 [data-h3=done]', wait=300); c.click('.home3 [data-h3=build]', wait=1200)

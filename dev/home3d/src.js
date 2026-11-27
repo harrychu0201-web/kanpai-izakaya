@@ -94,9 +94,6 @@ const CSS = `
 .h3info{position:absolute;left:max(12px,env(safe-area-inset-left));top:92px;background:#2a1810d9;color:#fff3d6;border:2px solid #ffd27a;border-radius:16px;padding:8px 14px;font-size:16px;line-height:1.35;z-index:3;pointer-events:none;max-width:44%}
 .h3info b{font-size:20px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .h3info .h3st{color:#ffd34d;letter-spacing:1px}
-.h3cam{position:absolute;left:max(14px,env(safe-area-inset-left));bottom:26px;display:flex;gap:14px;z-index:3}
-.h3cam button{width:80px;height:80px;border-radius:50%;border:4px solid #ffffffcc;background:#2a1810cc;color:#fff3d6;font-size:40px;line-height:1;padding:0;touch-action:none;user-select:none;-webkit-user-select:none}
-.h3cam button:active{background:#6b3a1ab3}
 .h3hint{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);background:#2a1810d9;color:#fff3d6;border:2px solid #ffd27a;border-radius:999px;padding:7px 18px;font-size:16px;font-weight:700;pointer-events:none;opacity:0;transition:opacity .25s;white-space:nowrap;z-index:3}
 .h3hint.on{opacity:1}
 .h3toast{position:absolute;left:50%;top:150px;transform:translateX(-50%);background:#fff6e0;color:#3a1e0c;border:3px solid #2a1810;border-radius:14px;padding:8px 18px;font-size:18px;font-weight:800;box-shadow:0 5px 0 #0006;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9;white-space:nowrap}
@@ -147,7 +144,6 @@ const CSS = `
 .h3hud{top:64px;gap:8px}.h3b{min-width:70px;min-height:56px;font-size:14px;border-radius:15px;padding:3px 8px;border-width:2px}.h3b i{font-size:21px}
 .h3info{top:64px;font-size:12px;padding:4px 10px;border-radius:12px}.h3info b{font-size:15px}
 .h3top{top:64px;font-size:13px;padding:4px 12px}
-.h3cam{bottom:12px;gap:10px}.h3cam button{width:58px;height:58px;font-size:28px;border-width:3px}
 .h3bp{padding-top:4px;padding-bottom:5px}.h3tab{min-height:44px;font-size:14px;padding:0 11px}.h3tabs{padding-bottom:4px;gap:5px}
 .h3it{width:82px;font-size:11.5px;padding:3px 3px 4px;border-width:2px}.h3it img,.h3it .ph{width:54px;height:54px}.h3it .pr{font-size:11.5px}
 .h3card{bottom:10px;font-size:14px;padding:6px 8px;width:min(430px,calc(52% - 6px))}.h3x{width:48px;height:48px;font-size:28px;border-width:3px}.h3n{min-height:48px;font-size:16px;padding:0 16px}.h3t{font-size:14.5px}.h3av{width:36px;height:36px}.h3h{margin-bottom:2px}
@@ -569,7 +565,7 @@ export function start(o) {
   function npcGo(p, tx, tz) { const path = findPath(p.x, p.z, tx, tz); if (path && path.length) { p.path = path; p.state = 'walk'; return true; } return false; }
 
   /* ───────── 鏡頭、輸入、介面 ───────── */
-  const S = { dead: false, mode: 'walk', yaw: 0, yawT: 0, dist: 11, distT: 11, camV: 0, tgt: null, joy: null, keys: {}, t: 0, talk: null, sel: null, drag: null, last: performance.now(), inside: me.z < RD, cam: new Vector3(me.x, 1, me.z), low: {}, fp: FPPREF.v, fpK: 0, fpP: 0, pitch: .7, pitchT: .7, pan: { x: 0, z: 0 } };
+  const S = { dead: false, mode: 'walk', yaw: 0, yawT: 0, dist: 11, distT: 11, tgt: null, joy: null, keys: {}, t: 0, talk: null, sel: null, drag: null, last: performance.now(), inside: me.z < RD, cam: new Vector3(me.x, 1, me.z), low: {}, fp: FPPREF.v, fpK: 0, fpP: 0, pitch: .7, pitchT: .7, pan: { x: 0, z: 0 } };
   const eyeV = new Vector3(), lookV = new Vector3(), lookFP = new Vector3();
   /* 2026-11-26 使用者說視角太遠、點東西常沒反應：布置 13.5→11.5（畫面中心移到面板上方）、室內走路 10.5→8.5（雙指縮放範圍不變） */
   const BUILD_D = 11.5, IN_D = 8.5;
@@ -578,7 +574,6 @@ export function start(o) {
   const U = s => { ui.push(s); return s; };
   const info = U(el('div', 'h3info'));
   const hud = U(el('div', 'h3hud'));
-  const camEl = U(el('div', 'h3cam', '<button type="button" aria-label="向左轉" data-h3="camL">⟲</button><button type="button" aria-label="向右轉" data-h3="camR">⟳</button>'));
   const hint = U(el('div', 'h3hint'));
   const toastEl = U(el('div', 'h3toast'));
   const joyEl = U(el('div', 'h3j', '<i></i>'));
@@ -606,8 +601,7 @@ export function start(o) {
     if (HOME) { info.innerHTML = `<b>🏠 ${esc(o.title || '我的家')}</b><span class="h3st">${'★'.repeat(s)}${'☆'.repeat(5 - s)}</span> 溫馨度 ${c}<br><small>${own ? '按「🔨 布置」擺家具、換地板牆壁' : `${esc((o.owner && o.owner.name) || '')} 的家`}</small>`; return; }
     info.innerHTML = `<b>🏮 ${esc(D.name)}</b><span class="h3st">${'★'.repeat(s)}${'☆'.repeat(5 - s)}</span> ${esc(STARS[s][1])}<br><small>溫馨度 ${c}${own ? `・每天收入 ${yen(dailyIncome(c))}` : `・店長 ${esc((o.owner && o.owner.name) || '')}`}</small>`;
   }
-  hudBtns(); updInfo(); camEl.style.display = 'none'; setTimeout(() => joyRest(), 50); const onRs = () => joyRest(); window.addEventListener('resize', onRs);
-  camEl.querySelectorAll('button').forEach((b, i) => { const dir = i ? -1 : 1; b.addEventListener('pointerdown', e => { e.preventDefault(); S.camV = dir; try { b.setPointerCapture(e.pointerId); } catch (_) { } }); const u2 = () => { S.camV = 0; }; b.addEventListener('pointerup', u2); b.addEventListener('pointercancel', u2); b.addEventListener('click', () => { if (!S.camV) S.yawT += dir * .5; }); });
+  hudBtns(); updInfo(); setTimeout(() => joyRest(), 50); const onRs = () => joyRest(); window.addEventListener('resize', onRs);
 
   /* 點擊 / 拖曳 */
   const rect = () => cv.getBoundingClientRect();
@@ -654,13 +648,13 @@ export function start(o) {
   cv.addEventListener('pointermove', e => {
     if (jd && e.pointerId === jd.id) { const l = local(e.clientX, e.clientY), dx = l.x - jd.sx, dy = l.y - jd.sy, d = Math.hypot(dx, dy), R0 = 50, m = Math.min(1, d / R0) / Math.max(d, 1e-6); S.joy = { x: dx * m, y: dy * m }; joyEl.firstChild.style.transform = `translate(${S.joy.x * R0}px,${S.joy.y * R0}px)`; return; }
     if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pinch && ptrs.size >= 2) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); S.distT = clamp(pinch.dist * pinch.d / Math.max(20, d), 6, 20); S.yawT = pinch.yaw - (Math.atan2(b.y - a.y, b.x - a.x) - pinch.ang); return; }
+    if (pinch && ptrs.size >= 2) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); S.distT = clamp(pinch.dist * pinch.d / Math.max(20, d), 6, 20); const da = Math.atan2(b.y - a.y, b.x - a.x) - pinch.ang; S.yawT = pinch.yaw + Math.atan2(Math.sin(da), Math.cos(da)); return; }
     if (!pd || pd.id !== e.pointerId) return;
     const l = local(e.clientX, e.clientY), dx = l.x - pd.sx, dy = l.y - pd.sy, d = Math.hypot(dx, dy);
     pd.mx = e.clientX; pd.my = e.clientY;
     if (!pd.moved && d > (pd.lp ? 3 : 10)) { pd.moved = 1; clearTimeout(pd.lpT); }
     if (!pd.moved) return;
-    /* 2026-11-27 使用者要求：布置模式拖空白處＝移動視角（原本只能繞著房間中心轉，角落的家具很難移）；轉方向用 ⟲⟳ 或兩指轉 */
+    /* 2026-11-27 使用者要求：布置模式拖空白處＝移動視角（原本只能繞著房間中心轉，角落的家具很難移）；轉方向直接用兩指轉（2026-11-27 使用者要求不要轉向按鈕） */
     if (S.mode === 'build' && !pd.dragItem && pd.btn !== 2) {
       if (!pd.pan0) { if (S.bt) { const b = panBase(); S.pan = { x: S.bt.x - b.x, z: S.bt.z - b.z }; S.bt = null; } pd.pan0 = { x: S.pan.x, z: S.pan.z }; }
       const k = 2 * camDist() * Math.tan(20 * Math.PI / 180) / Math.max(1, cv.clientHeight), sy = Math.sin(S.yaw), cy = Math.cos(S.yaw), fy = dy * k / Math.sin(Math.max(.75, S.pitch));
@@ -765,10 +759,10 @@ export function start(o) {
   /* 布置模式 */
   function setMode(m) {
     S.mode = m; select(null); closeCard(); S.tgt = null; hudBtns(); setTimeout(joyRest, 0);
-    bp.classList.toggle('on', m === 'build'); topBar.classList.remove('on');  /* 2026-11-26 使用者要求：布置模式不顯示「拖曳家具移動」提示條（擋畫面） */ if (m !== 'build') { camEl.style.bottom = ''; }
+    bp.classList.toggle('on', m === 'build'); topBar.classList.remove('on');  /* 2026-11-26 使用者要求：布置模式不顯示「拖曳家具移動」提示條（擋畫面） */
     info.style.display = m === 'build' ? 'none' : '';
-    S.bt = null; S.pan = { x: 0, z: 0 }; S.camV = 0; camEl.style.display = m === 'build' ? '' : 'none';
-    if (m === 'build') { topBar.textContent = '🔨 長按家具拖動・拖空白處移動視角'; drawPanel(); S.distT = BUILD_D; try { const n = +(localStorage.getItem('izakaya-h3lp2') || 0); if (n < 3) { localStorage.setItem('izakaya-h3lp2', n + 1); toast('長按拿起家具～拖空白處移動視角，⟲⟳ 轉方向'); } } catch (_) { } }
+    S.bt = null; S.pan = { x: 0, z: 0 };
+    if (m === 'build') { topBar.textContent = '🔨 長按家具拖動・拖空白處移動視角'; drawPanel(); S.distT = BUILD_D; try { const n = +(localStorage.getItem('izakaya-h3lp2') || 0); if (n < 3) { localStorage.setItem('izakaya-h3lp2', n + 1); toast('長按拿起家具～單指拖空白處移動，兩指轉方向'); } } catch (_) { } }
     else { S.distT = S.inside ? IN_D : 13; if (!okAt(me.x, me.z, me.z)) { const c = walkableCells(me.z < RD).sort((a, b) => Math.hypot(a[0] + .5 - me.x, a[1] + .5 - me.z) - Math.hypot(b[0] + .5 - me.x, b[1] + .5 - me.z)).find(c => okAt(c[0] + .5, c[1] + .5, c[1])); if (c) { me.x = c[0] + .5; me.z = c[1] + .5; } } changed(); }
   }
   let curCat = HOME ? 'liv' : 'tbl';
@@ -806,7 +800,7 @@ export function start(o) {
     const sc = bp.querySelector('.h3row'), sl = sc ? sc.scrollLeft : 0, same = bp.dataset.cat === curCat;
     bp.innerHTML = `<div class="h3tabs">${tabs}</div><div class="h3row">${row}</div>`; bp.dataset.cat = curCat;
     if (same) bp.querySelector('.h3row').scrollLeft = sl;
-    const bh = bp.offsetHeight || 150; camEl.style.bottom = (bh + 8) + 'px'; selBar.style.bottom = (bh + 8) + 'px';
+    const bh = bp.offsetHeight || 150; selBar.style.bottom = (bh + 8) + 'px';
   }
   const swC = {};
   function swatch(t, k) { const key = t + k; if (swC[key]) return swC[key]; let c; if (t === 'f') { const tx = (floorTex[k] || floorTex.wood)(); c = tx.image; } else { c = wallTex(k, 2).image; } return swC[key] = c.toDataURL(); }
@@ -984,7 +978,7 @@ export function start(o) {
     resize();
     fpsT += dt; fpsN++; if (fpsT > 1.2) { const avg = fpsT / fpsN; if (avg > .028) { if (renderer.shadowMap.enabled) { renderer.shadowMap.enabled = false; scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => m.needsUpdate = true); }); } else if (pr > prFloor + .01) { pr = Math.max(prFloor, pr * .88); prCap = pr; renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } } fpsT = 0; fpsN = 0; }
     /* 鏡頭轉 */
-    const K = S.keys; if (K.q) S.yawT += dt * 1.8; if (K.e) S.yawT -= dt * 1.8; if (S.camV) S.yawT += S.camV * dt * 1.8;
+    const K = S.keys; if (K.q) S.yawT += dt * 1.8; if (K.e) S.yawT -= dt * 1.8;
     S.yaw += (S.yawT - S.yaw) * Math.min(1, dt * 8); S.pitch += (S.pitchT - S.pitch) * Math.min(1, dt * 8); S.dist += (S.distT - S.dist) * Math.min(1, dt * 5);
     const sy = Math.sin(S.yaw), cy = Math.cos(S.yaw); fwd.set(-sy, 0, -cy); rgt.set(cy, 0, -sy);
     /* 玩家 */
