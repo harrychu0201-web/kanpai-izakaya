@@ -9,6 +9,7 @@ import {
   Vector3, Raycaster, Line, LineBasicMaterial, Plane, Vector2,
 } from 'three';
 import { NPCS, PAIRS, KIND } from './npcs.js';
+import { makeChibi, specKey, CHIBI_ON } from '../home3d/chibi.js';
 
 const FONT = "'Zen Maru Gothic','Noto Sans TC','Noto Sans JP','PingFang TC','Microsoft JhengHei',sans-serif";
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -300,11 +301,17 @@ export function start(o) {
   function mkPerson(src, h, isMe) {
     const h0 = h; h *= PS;
     const grp = new Group(); scene.add(grp);
+    const ck = CHIBI_ON && specKey(src); let p;
+    if (ck) {   /* 3D Q 版角色（home3d/chibi.js） */
+      const ch = makeChibi(ck); grp.add(ch.root);
+      p = { grp, m: ch.root, mat: ch.mat, ch, hd: 0, h, h0, ar: .62, w: h * .62, x: 0, z: 0, face: 1, ph: Math.random() * 7, alpha: 1, isMe, moving: false };
+    } else {
     const geo = new PlaneGeometry(1, 1); geo.translate(0, .5, 0);
     const mat = new MeshBasicMaterial({ transparent: true, alphaTest: .04, color: 0xf2ebf2 });
     const m = new Mesh(geo, mat); grp.add(m);
-    const p = { grp, m, mat, h, h0, ar: .8, w: h * .8, x: 0, z: 0, face: 1, ph: Math.random() * 7, alpha: 1, isMe, moving: false };
+    p = { grp, m, mat, h, h0, ar: .8, w: h * .8, x: 0, z: 0, face: 1, ph: Math.random() * 7, alpha: 1, isMe, moving: false };
     loadTex(src, t => { mat.map = t; mat.needsUpdate = true; p.ar = t.image.width / t.image.height; p.w = p.h * p.ar; });
+    }
     const sh = new Mesh(new CircleGeometry(.5, 16), new MeshBasicMaterial({ map: shadowT, transparent: true, depthWrite: false, opacity: .8 })); sh.rotation.x = -Math.PI / 2; sh.position.y = .22; scene.add(sh); p.sh = sh;
     people.push(p); return p;
   }
@@ -551,7 +558,13 @@ export function start(o) {
     for (const p of people) {
       const vis = p.hidden !== 'in'; p.grp.visible = vis; p.sh.visible = vis; if (!vis) continue;
       const w = p.w, h = p.h, walk = p.moving ? 1 : 0, s = Math.sin(p.ph), bob = walk ? Math.abs(s) * .07 * PS : 0, tilt = walk ? s * .06 : Math.sin(t * 1.6 + p.ph) * .01, sq = walk ? 1 + Math.cos(p.ph * 2) * .025 : 1 + Math.sin(t * 1.6 + p.ph) * .008;
-      p.grp.position.set(p.x, bob + .18, p.z); p.m.rotation.set(0, S.yaw, tilt * p.face); p.m.scale.set(w * p.face * (2 - sq), h * sq, 1);
+      if (p.ch) {   /* 3D 角色：面向走路方向，但往鏡頭偏一點（街道是側面看，才看得到臉）；停下來就轉向鏡頭 */
+        if (p.lx !== undefined) { const dx = p.x - p.lx, dz = p.z - p.lz; if (dx * dx + dz * dz > 1e-6) { const a = Math.atan2(dx, dz), d0 = Math.atan2(Math.sin(S.yaw - a), Math.cos(S.yaw - a)); p.hd2 = a + clamp(d0, -.6, .6); } else if (!p.moving) p.hd2 = S.yaw; }
+        p.lx = p.x; p.lz = p.z;
+        if (p.hd2 !== undefined) { let d = p.hd2 - p.hd; d = Math.atan2(Math.sin(d), Math.cos(d)); p.hd += d * Math.min(1, dt * 10); }
+        p.grp.position.set(p.x, .18, p.z); p.m.rotation.y = p.hd; p.m.scale.setScalar(h * .9); p.ch.update(p.moving, p.ph * .5, t);
+        const tr = (p.isMe ? me.alpha : p.alpha) < .999; if (p.mat.transparent !== tr) { p.mat.transparent = tr; p.mat.depthWrite = !tr; p.mat.needsUpdate = true; }
+      } else { p.grp.position.set(p.x, bob + .18, p.z); p.m.rotation.set(0, S.yaw, tilt * p.face); p.m.scale.set(w * p.face * (2 - sq), h * sq, 1); }
       p.mat.opacity = p.isMe ? me.alpha : p.alpha; p.sh.position.set(p.x, .2, p.z); p.sh.scale.set(w * .75, w * .42, 1); p.sh.material.opacity = .7 * (p.isMe ? me.alpha : p.alpha);
       if (p.bub) { p.bub.position.set(p.x, h + .62 * PS + Math.sin(t * 2.3 + p.ph) * .07, p.z); const bs = 1 + Math.sin(t * 3 + p.ph) * .04; p.bub.scale.set(.95 * PS * bs, .83 * PS * bs, 1); p.bub.visible = p.hidden === false && p.state !== 'talk' && p.state !== 'enter' && p.state !== 'exit' ? true : false; }
     }

@@ -12,6 +12,7 @@ import {
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { NPCS, KIND } from '../town3d/npcs.js';
 import { ctex, rrect, GLOW, FONT } from './models.js';
+import { makeChibi, specKey, CHIBI_ON } from './chibi.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -352,15 +353,30 @@ export function island(o) {
   scene.traverse(o => { if (o.isInstancedMesh) windMat(o.material); });
 
   /* ───────── 人 ───────── */
+  /* 3D 角色：面向走路的方向（停下來保持原本方向；聊天時面向對方），身高跟原本立牌一樣 */
+  function chibiStep(p, dt, t, look) {
+    if (p.lx !== undefined) { const dx = p.x - p.lx, dz = p.z - p.lz; if (dx * dx + dz * dz > 1e-6) p.hd2 = Math.atan2(dx, dz); }
+    p.lx = p.x; p.lz = p.z;
+    if (look && look !== p) p.hd2 = Math.atan2(look.x - p.x, look.z - p.z);
+    if (p.hd2 !== undefined) { let d = p.hd2 - p.hd; d = Math.atan2(Math.sin(d), Math.cos(d)); p.hd += d * Math.min(1, dt * 12); }
+    p.m.rotation.y = p.hd; p.m.scale.setScalar(p.h * .9); p.ch.update(p.moving, p.ph * .5, t);
+    const op = p.mat.opacity, tr = op < .999; if (p.mat.transparent !== tr) { p.mat.transparent = tr; p.mat.depthWrite = !tr; p.mat.needsUpdate = true; }
+  }
   const people = []; let PS = 1.5;
   const shadowT = ctex(64, 64, x => { const g = x.createRadialGradient(32, 32, 2, 32, 32, 32); g.addColorStop(0, 'rgba(0,0,0,.55)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); });
   function nameTex(name, kind) { return ctex(512, 112, (x, w, h) => { x.textAlign = 'center'; x.textBaseline = 'middle'; let fs = 52; x.font = `900 ${fs}px ${FONT}`; const s = String(name || '').slice(0, 16); while (x.measureText(s).width > w - 80 && fs > 22) { fs -= 2; x.font = `900 ${fs}px ${FONT}`; } const tw = Math.min(w - 12, x.measureText(s).width + 56); x.fillStyle = kind === 'me' ? '#ffffffee' : '#2a2a48e0'; x.strokeStyle = kind === 'me' ? '#3a2a1a' : '#c8c0ff'; x.lineWidth = 7; rrect(x, (w - tw) / 2, 14, tw, h - 28, (h - 28) / 2); x.fill(); x.stroke(); x.fillStyle = kind === 'me' ? '#3a2a1a' : '#fff3d6'; x.fillText(s, w / 2, h / 2 + 2); }); }
   const bubT = ctex(128, 112, (x) => { x.strokeStyle = '#2a1810'; x.lineWidth = 6; x.lineJoin = 'round'; x.fillStyle = '#ffffff'; rrect(x, 12, 8, 104, 66, 24); x.fill(); x.stroke(); x.beginPath(); x.moveTo(44, 72); x.lineTo(34, 100); x.lineTo(66, 74); x.closePath(); x.fill(); x.stroke(); x.fillRect(46, 68, 18, 8); x.fillStyle = '#2a1810'; for (let i = 0; i < 3; i++) { x.beginPath(); x.arc(40 + i * 24, 42, 6, 0, 7); x.fill(); } });
   function mkPerson(src, h, opt) {
     opt = opt || {}; const grp = new Group(); scene.add(grp);
+    const ck = CHIBI_ON && specKey(src);
+    if (ck) {   /* 3D Q 版角色（chibi.js）；p.m 是角色本體、p.mat 是它的材質（淡出用） */
+      const ch = makeChibi(ck); grp.add(ch.root);
+      var p = { grp, m: ch.root, mat: ch.mat, ch, hd: Math.random() * 6.28, h0: h, h: h * PS, ar: .62, w: h * PS * .62, x: 0, z: 0, y: 0, face: 1, ph: Math.random() * 7, moving: false };
+    } else {
     const geo = new PlaneGeometry(1, 1); geo.translate(0, .5, 0); const mat = new MeshBasicMaterial({ transparent: true, alphaTest: .04, color: 0xffffff }); const m = new Mesh(geo, mat); grp.add(m);
-    const p = { grp, m, mat, h0: h, h: h * PS, ar: .8, w: h * PS * .8, x: 0, z: 0, y: 0, face: 1, ph: Math.random() * 7, moving: false };
+    var p = { grp, m, mat, h0: h, h: h * PS, ar: .8, w: h * PS * .8, x: 0, z: 0, y: 0, face: 1, ph: Math.random() * 7, moving: false };
     loadTex(src, t => { mat.map = t; mat.needsUpdate = true; p.ar = t.image.width / t.image.height; p.w = p.h * p.ar; });
+    }
     const sh = new Mesh(new CircleGeometry(.5, 16), new MeshBasicMaterial({ map: shadowT, transparent: true, depthWrite: false })); sh.rotation.x = -Math.PI / 2; scene.add(sh); p.sh = sh;
     if (opt.name) { const nt = new Sprite(new SpriteMaterial({ map: nameTex(opt.name, opt.nk), transparent: true, depthTest: false })); nt.renderOrder = 30; nt.scale.set(2.2, .48, 1); scene.add(nt); p.tag = nt; }
     if (opt.bubble) { const bs = new Sprite(new SpriteMaterial({ map: bubT, transparent: true, depthWrite: false })); bs.scale.set(.85, .74, 1); scene.add(bs); p.bub = bs; }
@@ -629,7 +645,8 @@ export function island(o) {
     if (S.night > .6) { sun.position.set(shX - 25, 50, shZ + 30); }
     /* 人 */
     for (const p of people) { const w = p.w, hh = p.h, walk = p.moving, s = Math.sin(p.ph), bob = walk ? Math.abs(s) * .06 : 0, tilt = walk ? s * .06 : Math.sin(t * 1.6 + p.ph) * .01, sq = walk ? 1 + Math.cos(p.ph * 2) * .025 : 1 + Math.sin(t * 1.6 + p.ph) * .008;
-      p.grp.position.set(p.x, (p.y || 0) + bob, p.z); p.m.rotation.set(0, Math.atan2(camPos.x - p.x, camPos.z - p.z), tilt * p.face); p.m.scale.set(w * p.face * (2 - sq), hh * sq, 1); p.sh.position.set(p.x, (p.y || 0) + .07, p.z); p.sh.scale.set(w * .7, w * .4, 1);
+      if (p.ch) { chibiStep(p, dt, t, p.state === 'talk' ? me : (p === me && S.talk ? S.talk : null)); p.grp.position.set(p.x, p.y || 0, p.z); p.sh.position.set(p.x, (p.y || 0) + .07, p.z); p.sh.scale.set(hh * .5, hh * .34, 1); }
+      else { p.grp.position.set(p.x, (p.y || 0) + bob, p.z); p.m.rotation.set(0, Math.atan2(camPos.x - p.x, camPos.z - p.z), tilt * p.face); p.m.scale.set(w * p.face * (2 - sq), hh * sq, 1); p.sh.position.set(p.x, (p.y || 0) + .07, p.z); p.sh.scale.set(w * .7, w * .4, 1); }
       if (p.tag) p.tag.position.set(p.x, (p.y || 0) + hh + .35, p.z); if (p.bub) { p.bub.visible = p !== S.talk; p.bub.position.set(p.x, hh + .5 + Math.sin(t * 2.3 + p.ph) * .06, p.z); } }
     /* 動畫 */
     waveT.offset.set(t * .004, t * .006); water.forEach((w, i) => { if (i === 0) w.rotation.z = t * .3; else w.scale.y = 1 + Math.sin(t * 6) * .08; });

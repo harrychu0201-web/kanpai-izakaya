@@ -12,6 +12,7 @@ import {
 import { NPCS, KIND } from '../town3d/npcs.js';
 import { FPPREF } from './island.js';
 import { ITEMS, IT, CATS, HCATS, FLOORS, WALLS, build, lam, bas, ctex, rrect, GLOW, FONT, kready } from './models.js';
+import { makeChibi, specKey, CHIBI_ON } from './chibi.js';
 /* 家具模型解析完才算載入好（index.html 的 loadHome3D 會等它） */
 export const ready = kready;
 
@@ -466,14 +467,29 @@ export function start(o) {
       x.fillStyle = '#fff3d6'; x.fillText(s, w / 2, h / 2 + 2);
     });
   }
+  /* 3D 角色：面向走路方向；聊天時面向對方；睡覺的店長往前點頭 */
+  function chibiStep(p, dt, t, look) {
+    if (p.lx !== undefined) { const dx = p.x - p.lx, dz = p.z - p.lz; if (dx * dx + dz * dz > 1e-6) p.hd2 = Math.atan2(dx, dz); }
+    p.lx = p.x; p.lz = p.z;
+    if (look && look !== p) p.hd2 = Math.atan2(look.x - p.x, look.z - p.z);
+    if (p.hd2 !== undefined) { let d = p.hd2 - p.hd; d = Math.atan2(Math.sin(d), Math.cos(d)); p.hd += d * Math.min(1, dt * 12); }
+    p.m.rotation.y = p.hd; p.m.scale.setScalar(p.h * .9); p.ch.update(p.moving, p.ph * .5, t, { sleep: p.state === 'sleep' });
+    const op = p.mat.opacity, tr = op < .999; if (p.mat.transparent !== tr) { p.mat.transparent = tr; p.mat.depthWrite = !tr; p.mat.needsUpdate = true; }
+  }
   function mkPerson(src, h, opt) {
     opt = opt || {};
     const grp = new Group(); scene.add(grp);
+    const ck = CHIBI_ON && specKey(src); let p;
+    if (ck) {   /* 3D Q 版角色（chibi.js） */
+      const ch = makeChibi(ck, { tint: opt.tint }); grp.add(ch.root);
+      p = { grp, m: ch.root, mat: ch.mat, ch, hd: 0, h0: h, h: h * PS, ar: .62, w: h * PS * .62, x: 0, z: 0, face: 1, ph: Math.random() * 7, alpha: 1, moving: false, path: null, state: 'idle', t: 0, isMe: !!opt.me };
+    } else {
     const geo = new PlaneGeometry(1, 1); geo.translate(0, .5, 0);
     const mat = new MeshBasicMaterial({ transparent: true, alphaTest: .04, color: opt.tint || 0xf4eef0 });
     const m = new Mesh(geo, mat); grp.add(m);
-    const p = { grp, m, mat, h0: h, h: h * PS, ar: .8, w: h * PS * .8, x: 0, z: 0, face: 1, ph: Math.random() * 7, alpha: 1, moving: false, path: null, state: 'idle', t: 0, isMe: !!opt.me };
+    p = { grp, m, mat, h0: h, h: h * PS, ar: .8, w: h * PS * .8, x: 0, z: 0, face: 1, ph: Math.random() * 7, alpha: 1, moving: false, path: null, state: 'idle', t: 0, isMe: !!opt.me };
     loadTex(src, t => { mat.map = t; mat.needsUpdate = true; p.ar = t.image.width / t.image.height; p.w = p.h * p.ar; });
+    }
     const sh = new Mesh(new CircleGeometry(.5, 16), new MeshBasicMaterial({ map: shadowT, transparent: true, depthWrite: false, opacity: .8 })); sh.rotation.x = -Math.PI / 2; scene.add(sh); p.sh = sh;
     if (opt.name) { const nt = new Sprite(new SpriteMaterial({ map: nameTex(opt.name, opt.nk), transparent: true, depthTest: false })); nt.renderOrder = 30; nt.scale.set(2.0, .44, 1); scene.add(nt); p.tag = nt; p.name = opt.name; }
     if (opt.bubble) { const bs = new Sprite(new SpriteMaterial({ map: bubbleTex(opt.bubble), transparent: true, depthWrite: false })); bs.scale.set(.8, .7, 1); scene.add(bs); p.bub = bs; p.kind = opt.bubble; }
@@ -1032,8 +1048,11 @@ export function start(o) {
       if (!vis) continue;
       const w = p.w, h = p.h, walk = p.moving ? 1 : 0, s = Math.sin(p.ph), bob = walk ? Math.abs(s) * .06 : 0, tilt = walk ? s * .06 : Math.sin(t * 1.6 + p.ph) * .01, sq = walk ? 1 + Math.cos(p.ph * 2) * .025 : 1 + Math.sin(t * 1.6 + p.ph) * .008;
       const sleep = p.state === 'sleep' ? Math.sin(t * 1.2) * .015 : 0;
+      if (p.ch) { p.mat.opacity = p.alpha == null ? 1 : p.alpha; chibiStep(p, dt, t, p.state === 'talk' ? me : null); p.grp.position.set(p.x, 0, p.z); p.sh.position.set(p.x, .025, p.z); p.sh.scale.set(h * .5, h * .34, 1); }
+      else {
       p.grp.position.set(p.x, bob, p.z); p.m.rotation.set(0, Math.atan2(camPos.x - p.x, camPos.z - p.z), tilt * p.face + sleep);  /* 對每個人算轉向，第一人稱才不會看到側面一條線 */ p.m.scale.set(w * p.face * (2 - sq), h * sq, 1);
       p.mat.opacity = p.alpha == null ? 1 : p.alpha; p.sh.position.set(p.x, .025, p.z); p.sh.scale.set(w * .7, w * .4, 1);
+      }
       if (p.tag) { p.tag.position.set(p.x, h + .3, p.z); p.tag.material.opacity = p.alpha == null ? 1 : p.alpha; }
       if (p.bub) { p.bub.position.set(p.x, h + (p.tag ? .82 : .45) + Math.sin(t * 2.3 + p.ph) * .06, p.z); }
     }
