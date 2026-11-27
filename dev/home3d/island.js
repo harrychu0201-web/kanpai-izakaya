@@ -567,9 +567,10 @@ export function island(o) {
     const dt = Math.min(.1, (now - S.last) / 1000); S.last = now; S.t += dt; const t = S.t; resize();
     fpsT += dt; fpsN++; if (fpsT > 1.5) { const slowF = fpsT / fpsN > .024; if (slowF && renderer.shadowMap.enabled) { renderer.shadowMap.enabled = false; scene.traverse(m => { if (m.material) (Array.isArray(m.material) ? m.material : [m.material]).forEach(x => { x.needsUpdate = true; }); }); } else if (slowF && pr > prFloor + .01) { pr = Math.max(prFloor, pr * .9); renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); } fpsT = 0; fpsN = 0; }
     const h = hourNow(); if (Math.abs(h - lastH) > .02) { applyTime(h); lastH = h; updInfo(); shFlag = true; }
-    /* 陰影範圍以 4 格為單位跟著角色挪（陰影貼圖和它的矩陣一起換，所以沒重畫時影子位置也不會錯），走路時不用每幀重畫陰影；樹會搖，所以每 0.5 秒還是重畫一次 */
+    /* 手機（2026/11/27 卡卡）：不再每 0.5 秒重畫陰影（樹影跟著搖的那一下會讓整幀變重，週期性頓一下），只在換區域、時間變化時重畫。
+       陰影範圍以 4 格為單位跟著角色挪（陰影貼圖和它的矩陣一起換，所以沒重畫時影子位置也不會錯），走路時不用每幀重畫陰影；樹會搖，所以每 0.5 秒還是重畫一次 */
     const sgx = Math.round(S.cam.x / 4) * 4, sgz = Math.round(S.cam.z / 4) * 4;
-    shT -= dt; if (shFlag || shT <= 0 || sgx !== shX || sgz !== shZ) { renderer.shadowMap.needsUpdate = true; shX = sgx; shZ = sgz; shT = .5; shFlag = false; }
+    shT -= dt; if (shFlag || shT <= 0 || sgx !== shX || sgz !== shZ) { renderer.shadowMap.needsUpdate = true; shX = sgx; shZ = sgz; shT = mobile ? 1e9 : .5; shFlag = false; }
     const K = S.keys; if (K.q) S.yawT += dt * 1.8; if (K.e) S.yawT -= dt * 1.8;
     S.yaw += (S.yawT - S.yaw) * Math.min(1, dt * 9); S.pitch += (S.pitchT - S.pitch) * Math.min(1, dt * 9); S.dist += (S.distT - S.dist) * Math.min(1, dt * 6);
     const sy = Math.sin(S.yaw), cy = Math.cos(S.yaw); fwd.set(-sy, 0, -cy); rgt.set(cy, 0, -sy);

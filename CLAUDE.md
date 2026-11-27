@@ -61,6 +61,8 @@
 - **橫向手機 + 有好友** 的畫面要測（一鍵送禮列曾把「加好友」輸入框擠出畫面）。
 - **玩家停在舊版**是很多重複回報的真正原因：遇到「同步失敗」「功能沒反應」類回報，先檢查玩家是不是舊版（更新路徑），再查程式。
 - 在 headless 測試中要擋外部請求、清掉殘留的 chrome 程序，否則頁面載入會卡住。
+- **營業畫面的重畫（2026/11/27 手機卡卡）**：工作台、客人泡泡、HUD 每 0.1 秒用 `setHTML` 重畫。`setHTML` 現在是「只改有變的節點」（morph），所以產生的 HTML 字串**不要放每次都不同的東西**（隨機 id、遞增編號、時間戳），否則每 0.1 秒都要比對修改；SVG 裡要用 id（clipPath 等）就用由內容算出的固定 id。`check_game.py` 的 `morph` 情境會量啤酒機 2 秒內有沒有整塊重建。
+- **街角試作 `dev/corner/`**（2026/11/27，我的島改畫風前的試水溫）：獨立頁面 `dev/corner/corner.html`，不在遊戲裡、不影響玩家。原始碼 `src.js`，改了跑 `dev/corner/build.sh /path/to/node_modules`（會換 `corner-<hash>.js` 檔名並更新 corner.html）。網址：https://harrychu0201-web.github.io/kanpai-izakaya/dev/corner/corner.html 。頁面檔名不能叫 index.html（sw.js 會把它當成遊戲首頁攔下來）。`check_game.py` 的 `corner` 情境有真實點擊測。
 - 3D 街道的 CSS 在 `dev/town3d/src.js` 並被打包進 `img/town3d-<hash>.js`；改了要換檔名並更新 index.html。
 
 ## 設計決定（不要擅自推翻）

@@ -19,6 +19,8 @@
   wagashi   和果子屋（作者限定）：一般玩家看不到入口；一天 6 位客人跑三檔難度、完美／普通品／超時、打烊隔夜食材、型拔成功與碎掉、裝飾、圖鑑、返回、存檔
   tepfix    炎舞鐵板燒：下架／上架、對話框上的提示看得到、燒焦時間
   shopgun   每家店的商店都有武器分頁、買得到、營業時槍架拿得起來
+  morph     工作台局部更新（setHTML）和整塊重建結果一致；營業中啤酒機不會每 0.1 秒整塊重建
+  corner    街角試作（dev/corner）：開得起來、搖桿／點地面走路、白天傍晚夜晚切換、draw call 上限
   saves     玩完整條路徑後，玩家原本的存檔欄位一個都不能少、不認得的欄位原封不動
 """
 import argparse, functools, http.server, json, os, shutil, socketserver, sys, threading, time, traceback
@@ -2829,10 +2831,84 @@ def sc_shopgun(b, base):
             c.close()
 
 
+def sc_morph(b, base):
+    """工作台只改有變的部分（2026/11/27 手機卡卡）：setHTML 要和整塊重建的結果一模一樣，而且沒變的圖片節點不能被換掉；
+    營業中工作台不能每 0.1 秒都整塊重建（啤酒杯的 clipPath id 以前每次都不同）。"""
+    c = Ctx(b, base, style='new').open()
+    try:
+        r = c.page.evaluate("""(()=>{const out=[];const a=document.createElement('div'),z=document.createElement('div');document.body.append(a,z);
+          const cases=['<b class="x">1</b><img src="img/art-beermug-1.webp"><i style="width:10%"></i>',
+            '<b class="y">2</b><img src="img/art-beermug-1.webp"><i style="width:55%"></i>',
+            '<b class="y">2</b><img src="img/art-beertap-1.webp"><i style="width:55%"></i><u>new</u>',
+            '<svg viewBox="0 0 10 10"><clipPath id="q1"><rect x="0" y="3" width="10" height="7"/></clipPath><image href="img/art-beermug-1.webp" clip-path="url(#q1)"/></svg>',
+            '<svg viewBox="0 0 10 10"><clipPath id="q1"><rect x="0" y="5" width="10" height="5"/></clipPath><image href="img/art-beermug-1.webp" clip-path="url(#q1)"/></svg>',
+            'text only','<span>a</span><span>b</span>',''];
+          let keep=null;
+          cases.forEach((h,i)=>{if(i===1)keep=a.querySelector('img');setHTML(a,h);z.innerHTML=h;
+            if(a.innerHTML!==z.innerHTML)out.push('case '+i+': '+a.innerHTML+' != '+z.innerHTML);
+            if(i===1&&a.querySelector('img')!==keep)out.push('沒變的圖片被整個換掉了');
+            if(i===4&&a.querySelector('rect').namespaceURI!=='http://www.w3.org/2000/svg')out.push('svg 命名空間錯了')});
+          a.remove();z.remove();return out})()""")
+        if r:
+            raise AssertionError('setHTML 局部更新和整塊重建結果不同：\n  ' + '\n  '.join(r))
+        to_day(c, 2500)
+        n = c.page.evaluate("""new Promise(ok=>{const el=document.getElementById('st-tap');if(!el)return ok(-1);let n=0;
+          const mo=new MutationObserver(m=>{n+=m.filter(x=>x.type==='childList').length});mo.observe(el,{childList:true,subtree:true});
+          setTimeout(()=>{mo.disconnect();ok(n)},2000)})""")
+        if n > 3:
+            raise AssertionError('營業中啤酒機的畫面 2 秒內整塊重建了 %s 次（沒有變化也在重建，手機會卡）' % n)
+        c.expect_clean('工作台局部更新')
+    finally:
+        c.close()
+
+
+def sc_corner(b, base):
+    """街角試作（dev/corner/corner.html，我的島改畫風的試水溫）：開得起來、沒有錯誤；
+    搖桿真實拖曳會走路、點地面會走過去、白天／傍晚／夜晚按鈕真實點擊會切換；一幀 draw call 不能爆量；按鈕至少 44px。"""
+    ctx = b.new_context(viewport={'width': 844, 'height': 390}, has_touch=True, is_mobile=True, user_agent=UA_IOS)
+    ctx.route('**/*', lambda r: r.continue_() if r.request.url.startswith(base) else r.abort())
+    pg = ctx.new_page(); errs = []
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    try:
+        pg.goto(base + '/dev/corner/corner.html?test', wait_until='load', timeout=60000)
+        pg.wait_for_function('window.CORNER&&CORNER.probe().calls>0', timeout=30000)
+        pg.wait_for_timeout(800)
+        if errs:
+            raise AssertionError('街角試作開啟時有 JS 錯誤：%s' % errs[:3])
+        calls = min(pg.evaluate('CORNER.probe().calls') for _ in range(6) if pg.wait_for_timeout(100) or True)
+        if calls > 320:
+            raise AssertionError('街角試作一幀畫了 %s 次（draw call），手機會卡；新零件要經過 mergeStatic 合併' % calls)
+        for sel in ('.cjoy', '.cbar button', '.cback'):
+            for bt in pg.locator(sel).all():
+                bb = bt.bounding_box()
+                if not bb or bb['height'] < 44 or bb['width'] < 44:
+                    raise AssertionError('街角試作的按鈕太小：%s %s' % (sel, bb))
+        j = pg.locator('.cjoy').bounding_box(); cx, cy = j['x'] + j['width'] / 2, j['y'] + j['height'] / 2
+        a = pg.evaluate('CORNER.probe().me'); pg.mouse.move(cx, cy); pg.mouse.down()
+        for k in range(10):
+            pg.mouse.move(cx, cy - k * 6); pg.wait_for_timeout(30)
+        pg.wait_for_timeout(1500); pg.mouse.up()
+        z = pg.evaluate('CORNER.probe().me')
+        if not z[1] < a[1] - 2:
+            raise AssertionError('街角試作：搖桿往上推，角色沒有往前走（%s → %s）' % (a, z))
+        pg.mouse.click(700, 330); pg.wait_for_timeout(2500)
+        z2 = pg.evaluate('CORNER.probe().me')
+        if not z2[0] > z[0] + 1:
+            raise AssertionError('街角試作：點右邊地面，角色沒有走過去（%s → %s）' % (z, z2))
+        for t in ('night', 'eve', 'day'):
+            pg.click('.cbar [data-t=%s]' % t); pg.wait_for_timeout(250)
+            if pg.evaluate('CORNER.time') != t:
+                raise AssertionError('街角試作：按「%s」沒有切換時間' % t)
+        if errs:
+            raise AssertionError('街角試作操作時有 JS 錯誤：%s' % errs[:3])
+    finally:
+        ctx.close()
+
+
 SCENARIOS = [('chrestart', sc_chrestart), ('fblogin', sc_fblogin), ('coicons', sc_coicons), ('coopcpu', sc_coopcpu), ('boot', sc_boot), ('styles', sc_styles), ('replay', sc_replay), ('shops', sc_shops),
              ('pick', sc_pick), ('layout', sc_layout), ('lyed', sc_lyed), ('saves', sc_saves), ('keepbak', sc_keepbak),
              ('ach_backfill', sc_ach_backfill), ('sponsor', sc_sponsor), ('homedog', sc_homedog), ('bar', sc_bar), ('barnew', sc_barnew), ('barext', sc_barext), ('barbuy', sc_barbuy), ('oko', sc_oko),
-             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d), ('homekeep', sc_homekeep), ('wagashi', sc_wagashi), ('tepfix', sc_tepfix), ('shopgun', sc_shopgun)]
+             ('tut', sc_tut), ('retut', sc_retut), ('pausewalk', sc_pausewalk), ('iframeclip', sc_iframeclip), ('gun', sc_gun), ('home3d', sc_home3d), ('homekeep', sc_homekeep), ('wagashi', sc_wagashi), ('tepfix', sc_tepfix), ('shopgun', sc_shopgun), ('morph', sc_morph), ('corner', sc_corner)]
 
 
 def main():
