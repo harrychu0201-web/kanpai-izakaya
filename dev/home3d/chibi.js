@@ -2,14 +2,14 @@
    全部用 three.js 幾何體拼，依每個角色原本立繪的髮型、髮色、服裝配色做（SPEC）。
    效能：每個角色只有 5 個網格（身體＋頭＋頭髮＋配件合成一個、兩手、兩腳），頂點上色＋一張臉部貼圖，
    所以一個人一幀只多 5 次 draw call。
-   換回 2D 立牌：在 island.js／src.js／town3d 的 mkPerson 把 CHIBI_ON 改成 false（或網址加 ?flat2d）。 */
+   目前預設關閉（使用者看過覺得醜），網址加 ?chibi3d 才會用 3D 角色。 */
 import {
   Group, Mesh, Color, CanvasTexture, SRGBColorSpace, MeshToonMaterial, DataTexture, RedFormat, NearestFilter,
   SphereGeometry, CylinderGeometry, CapsuleGeometry, ConeGeometry, TorusGeometry, BoxGeometry, Matrix4, Euler, Quaternion, Vector3, Float32BufferAttribute,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-export const CHIBI_ON = !/[?&]flat2d/.test(typeof location !== 'undefined' ? location.search : '');
+export const CHIBI_ON = /[?&]chibi3d/.test(typeof location !== 'undefined' ? location.search : '');   // 2026/11/27 使用者覺得醜，預設關；網址加 ?chibi3d 才看得到
 
 /* hs 髮型：short messy slick bob long bun pony twin braid curly afro bald
    top 上衣樣式：shirt hoodie suit kimono cardigan polo blouse striped jumpsuit
