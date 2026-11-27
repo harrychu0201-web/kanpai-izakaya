@@ -82,6 +82,7 @@ body.ovl .hud .icon-btn.bagbtn{width:auto;min-width:40px;height:36px;padding:0 9
 .nope{animation:nope .3s}
 @keyframes nope{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .lbl{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);background:var(--soot);color:var(--paper);font-size:13px;padding:1px 8px;border-radius:999px;white-space:nowrap;pointer-events:none;z-index:2}
+.tplbl{display:flex;flex-direction:column;align-items:center;line-height:1.15;padding:2px 5px;border-radius:9px;bottom:-4px}.tplbl b{font-size:10px;font-weight:700}.tplbl small{font-size:9px;opacity:.75}
 .locked{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:repeating-linear-gradient(-45deg,#3f2416ee 0 12px,#4a2b19ee 12px 24px);border-radius:10px;font-size:13px;color:#e7b97f;pointer-events:auto;cursor:default;line-height:1.3;z-index:3}
 .slot{border-radius:6px}
 
@@ -2858,8 +2859,10 @@ function tpnHTML(){if(CUR==='bar')return barHTML();if(CUR==='oko')return okHTML(
     else inner=`<div style="opacity:.22;width:100%;height:100%">${sv(`<ellipse cx="50" cy="62" rx="34" ry="18" fill="none" stroke="#14151a" stroke-width="5" stroke-dasharray="7 6"/>`)}</div>`;
     s+=`<div class="st slot" data-tpn="${i}" style="left:${x}px;top:18px;width:${SW-4}px;height:146px;${st==='done'?'box-shadow:0 0 0 3px #ffc65a inset;background:#ffc65a22':need?`box-shadow:0 0 0 3px ${perf?'#ffd23a':'#ff5a3c'} inset;background:${perf?'#ffd23a33':'#ff5a3c22'}`:''}"><div style="position:absolute;left:-4px;right:-4px;top:${CUR==='oko'||CUR==='bar'?26:34}px;height:${CUR==='oko'||CUR==='bar'?Math.min(Math.round(SW+8),124):Math.round(SW+8)}px">${inner}</div>${need?`<span class="tkflip" style="${perf?'background:#f0a818;color:#2a1608':''}">${T(TPLBL[TPS[g.kind][g.s||0]])}${TPS[g.kind][g.s||0]==='bshake'&&g.sk?` ${g.sk}/${BSHAKE}`:''}</span>`:''}${bar}</div>`}
   if(CUR==='oko')return s+`<span class="lbl" style="white-space:nowrap">${T('御好燒鐵板')}</span>`;const cn=(R.tpc||0)%TPSHOW;return s+`<span class="lbl" style="white-space:nowrap">${CUR==='bar'?T('吧台')+'　🍸 '+T('調酒秀'):T('大鐵板')+'　🔥 '+T('火焰秀')} <span style="color:#ffb02e;letter-spacing:1px">${'●'.repeat(cn)}</span><span style="opacity:.45;letter-spacing:1px">${'○'.repeat(TPSHOW-cn)}</span>${(R.tpc||0)>1?` ${T('連擊 ×{0}',R.tpc)}`:''}</span>`}
+/* 2026-11-27 玩家回報看不懂生料對哪道菜：食材盤標籤上面寫成品菜名（和客人點單一樣），下面小字寫生料；兩者同名就只寫一行 */
+function tpTrayLbl(k){const a=T(ITEMS[k].zh),b=T(TP_RAWN[k]);return a===b?`<span class="lbl" style="white-space:nowrap;font-size:11px">${a}</span>`:`<span class="lbl tplbl"><b>${a}</b><small>${b}</small></span>`}
 function tpStHTML(name){if(CUR==='bar')return barStHTML(name);if(CUR==='oko')return okStHTML(name);if(CUR!=='tep')return null;const k=TP_TRAY[name];if(!k)return null;
-  return sv(`<rect x="4" y="10" width="64" height="72" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/><rect x="8" y="14" width="56" height="8" rx="4" fill="#fff" opacity=".35"/><g transform="${k==='okosaka'?'translate(4 14) scale(.64)':BRDEF[k]?'translate(4 12) scale(.64)':'translate(2 9) scale(.7)'}">${tpArt(k,'raw',0,false,'tray')}</g>`,'0 0 72 90')+`<span class="lbl" style="white-space:nowrap;font-size:11px">${T(TP_RAWN[k])}</span>`+(has(k)?'':`<div class="locked">${T('商店<br>購買')}</div>`)}
+  return sv(`<rect x="4" y="10" width="64" height="72" rx="8" fill="#c9ced4" stroke="${O}" stroke-width="3"/><rect x="8" y="14" width="56" height="8" rx="4" fill="#fff" opacity=".35"/><g transform="${k==='okosaka'?'translate(4 14) scale(.64)':BRDEF[k]?'translate(4 12) scale(.64)':'translate(2 9) scale(.7)'}">${tpArt(k,'raw',0,false,'tray')}</g>`,'0 0 72 90')+`${tpTrayLbl(k)}`+(has(k)?'':`<div class="locked">${T('商店<br>購買')}</div>`)}
 /* ---- 點鐵板上的格子 ---- */
 function clickTpn(i,el){if(CUR==='bar')return barSlot(i,el);if(CUR==='oko')return okSlot(i,el);const g=R.tpn[i];if(!g)return;const s=cookState(g.t,g.kind),c=srcCenter({src:'tpn',i});
   if(s==='raw'){
