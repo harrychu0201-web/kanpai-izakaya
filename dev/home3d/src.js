@@ -437,7 +437,7 @@ export function start(o) {
 
   /* ───────── 人 ───────── */
   const people = [];
-  let PS = 1.5;
+  const PS = 1.15;   /* 角色大小：手機、電腦同一比例 */
   const bubT = {};
   function bubbleTex(kind) {
     if (bubT[kind]) return bubT[kind];
@@ -955,10 +955,8 @@ export function start(o) {
   /* ───────── 每幀 ───────── */
   let cw = 0, ch = 0, dprv = 0, pr = 1, fpsT = 0, fpsN = 0, prCap = 9, prFloor = .9;
   const fwd = new Vector3(), rgt = new Vector3(), camPos = new Vector3();
-  function calcPS(H) { return Math.round(clamp(1.75 - (H - 380) / 440 * .6, 1.15, 1.75) * 20) / 20; }
   function resize() {
     const r = cv.getBoundingClientRect(), W = Math.max(1, cv.clientWidth), Hh = Math.max(1, cv.clientHeight), dpr = Math.min(2, window.devicePixelRatio || 1);
-    const nps = calcPS(r.height || Hh); if (nps !== PS) { PS = nps; people.forEach(q => { q.h = q.h0 * PS; q.w = q.h * q.ar; }); }
     if (W === cw && Hh === ch && dpr === dprv) return;
     cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2.2); pr = Math.min(pr, Math.sqrt(2e6 / (W * Hh))); prFloor = Math.max(Math.min(pr, .9), pr * .8); pr = Math.max(prFloor, Math.min(pr, prCap));
     renderer.setPixelRatio(pr); renderer.setSize(W, Hh, false); camera.aspect = W / Hh; camera.updateProjectionMatrix();

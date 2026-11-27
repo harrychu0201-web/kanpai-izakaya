@@ -362,7 +362,7 @@ export function island(o) {
     p.m.rotation.y = p.hd; p.m.scale.setScalar(p.h * .9); p.ch.update(p.moving, p.ph * .5, t);
     const op = p.mat.opacity, tr = op < .999; if (p.mat.transparent !== tr) { p.mat.transparent = tr; p.mat.depthWrite = !tr; p.mat.needsUpdate = true; }
   }
-  const people = []; let PS = 1.5;
+  const people = []; const PS = 1.15;   /* 角色大小：手機、電腦同一比例 */
   const shadowT = ctex(64, 64, x => { const g = x.createRadialGradient(32, 32, 2, 32, 32, 32); g.addColorStop(0, 'rgba(0,0,0,.55)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); });
   function nameTex(name, kind) { return ctex(512, 112, (x, w, h) => { x.textAlign = 'center'; x.textBaseline = 'middle'; let fs = 52; x.font = `900 ${fs}px ${FONT}`; const s = String(name || '').slice(0, 16); while (x.measureText(s).width > w - 80 && fs > 22) { fs -= 2; x.font = `900 ${fs}px ${FONT}`; } const tw = Math.min(w - 12, x.measureText(s).width + 56); x.fillStyle = kind === 'me' ? '#ffffffee' : '#2a2a48e0'; x.strokeStyle = kind === 'me' ? '#3a2a1a' : '#c8c0ff'; x.lineWidth = 7; rrect(x, (w - tw) / 2, 14, tw, h - 28, (h - 28) / 2); x.fill(); x.stroke(); x.fillStyle = kind === 'me' ? '#3a2a1a' : '#fff3d6'; x.fillText(s, w / 2, h / 2 + 2); }); }
   const bubT = ctex(128, 112, (x) => { x.strokeStyle = '#2a1810'; x.lineWidth = 6; x.lineJoin = 'round'; x.fillStyle = '#ffffff'; rrect(x, 12, 8, 104, 66, 24); x.fill(); x.stroke(); x.beginPath(); x.moveTo(44, 72); x.lineTo(34, 100); x.lineTo(66, 74); x.closePath(); x.fill(); x.stroke(); x.fillRect(46, 68, 18, 8); x.fillStyle = '#2a1810'; for (let i = 0; i < 3; i++) { x.beginPath(); x.arc(40 + i * 24, 42, 6, 0, 7); x.fill(); } });
@@ -576,7 +576,6 @@ export function island(o) {
   let shX = 1e9, shZ = 1e9, shT = 0, shFlag = true;
   const fwd = new Vector3(), rgt = new Vector3(), camPos = new Vector3(), eyeV = new Vector3(), lookV = new Vector3(), lookFP = new Vector3();
   function resize() { const r = cv.getBoundingClientRect(), W = Math.max(1, cv.clientWidth), Hh = Math.max(1, cv.clientHeight), dpr = Math.min(2, window.devicePixelRatio || 1);
-    const nps = Math.round(clamp(1.75 - ((r.height || Hh) - 380) / 440 * .6, 1.15, 1.75) * 20) / 20; if (nps !== PS) { PS = nps; people.forEach(q => { q.h = q.h0 * PS; q.w = q.h * q.ar; }); }
     if (W === cw && Hh === ch && dpr === dprv) return; cw = W; ch = Hh; dprv = dpr; pr = clamp((r.width * dpr) / W, .5, 2); pr = Math.min(pr, Math.sqrt((mobile ? 1.3e6 : 2.2e6) / (W * Hh))); prFloor = Math.max(Math.min(pr, .9), pr * .8); renderer.setPixelRatio(pr); renderer.setSize(W, Hh, false); camera.aspect = W / Hh; camera.updateProjectionMatrix(); }
   function frame(now) {
     if (S.dead) return; if (!document.contains(cv)) { dispose(); return; } S.raf = requestAnimationFrame(frame);

@@ -2580,6 +2580,20 @@ def sc_homekeep(b, base):
         n2 = c.page.evaluate("homeCount(homeLocal())")
         if n2 != n0:
             raise AssertionError('按「還原備份」後件數不對：%s（應該 %s）' % (n2, n0))
+        # 兩台裝置同步：本機較新 → 開島就補傳；雲端較新 → 換成雲端且本機那份留備份；讀不到雲端 → 不上傳
+        r = c.page.evaluate("""(async()=>{const me={uid:'h3-admin'};CL.user=Object.assign({email:ADMIN_EMAIL,name:'a',photo:''},me);const put=[];
+          const mk=(at,n)=>({v:1,name:n,it:[],inv:{},home:{v:1,it:[['tv',1,0,0]],inv:{}},at});
+          const run=async(loc,get)=>{put.length=0;if(loc)localStorage.setItem('izakaya-home-v1',JSON.stringify(loc));else localStorage.removeItem('izakaya-home-v1');
+            CL.api=Object.assign({},CL.api||{},{homeGet:get,homePut:(u,d)=>{put.push(JSON.parse(d.v).name);return Promise.resolve()}});
+            const d=await homeSync(me);return {use:d&&d.name,put:put.slice(),nc:HOME_NOCLOUD,bak:homeBakList().map(x=>x.d.name)}};
+          const cl=(at,n)=>()=>Promise.resolve({at,v:JSON.stringify(mk(at,n))});
+          const out={newerLocal:await run(mk(200,'L'),cl(100,'C')),noCloud:await run(mk(200,'L'),()=>Promise.resolve(null)),newerCloud:await run(mk(100,'L'),cl(200,'C')),fail:await run(mk(200,'L'),()=>Promise.reject(new Error('x')))};
+          put.length=0;homeSave(mk(0,'L'),true);out.failPut=put.length;HOME_NOCLOUD=false;return out})()""")
+        ok = (r['newerLocal']['put'] == ['L'] and 'C' in r['newerLocal']['bak'] and r['noCloud']['put'] == ['L']
+              and r['newerCloud']['use'] == 'C' and r['newerCloud']['put'] == [] and 'L' in r['newerCloud']['bak']
+              and r['fail']['nc'] and r['fail']['put'] == [] and r['failPut'] == 0)
+        if not ok:
+            raise AssertionError('我的島兩台裝置同步結果不對：%s' % r)
         if c.errors:
             raise AssertionError('頁面錯誤：%s' % c.errors[:3])
     finally:
