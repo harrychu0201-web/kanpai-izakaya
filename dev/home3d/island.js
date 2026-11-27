@@ -616,14 +616,14 @@ export function island(o) {
     const fpK = S.fpK, cpf = Math.cos(S.fpP), spf = Math.sin(S.fpP);
     /* 第一人稱走路的晃動：跟著腳步上下點、左右微晃（沒有這個會像用飄的） */
     S.bobA = (S.bobA || 0) + ((me.moving ? 1 : 0) - (S.bobA || 0)) * Math.min(1, dt * 8);
-    const stp = me.ph * .9, bobY = (Math.abs(Math.sin(stp)) - .6) * .18 * S.bobA, bobX = Math.sin(stp) * .1 * S.bobA;  /* 麥塊式：一秒約 2.6～2.9 步，左右一步一邊 */
+    const stp = me.ph * .9, bobY = (Math.abs(Math.sin(stp)) - .6) * .09 * S.bobA, bobX = Math.sin(stp) * .05 * S.bobA;  /* 麥塊式：一秒約 2.6～2.9 步，左右一步一邊 */
     eyeV.set(S.cam.x + rgt.x * bobX, me.y + 2.3 + bobY, S.cam.z + rgt.z * bobX);  /* 2026/11/26 原本 1.55 太低（像小孩視角），調高 */
     const upK = clamp((.3 - S.pitch) / .26, 0, 1);  /* 鏡頭壓得越低，看的點越往上抬（看得到天空） */
     lookV.set(S.cam.x, S.cam.y + .4 + upK * 2.2, S.cam.z); lookFP.set(eyeV.x - sy * cpf * 10, eyeV.y + spf * 10, eyeV.z - cy * cpf * 10);
     camPos.lerp(eyeV, fpK); lookV.lerp(lookFP, fpK);
     me.grp.visible = fpK < .5; me.sh.visible = fpK < .5; if (me.tag) me.tag.visible = fpK < .5;
     camera.position.copy(camPos); camera.lookAt(lookV); sky.position.copy(camPos);
-    if (fpK > .01) { const k = S.bobA * fpK; camera.rotateZ(Math.sin(stp) * .016 * k); camera.rotateX(-Math.abs(Math.cos(stp)) * .009 * k); }  /* 踏步時畫面跟著微微歪、點一下 */
+    if (fpK > .01) { const k = S.bobA * fpK; camera.rotateZ(Math.sin(stp) * .007 * k); camera.rotateX(-Math.abs(Math.cos(stp)) * .004 * k); }  /* 踏步時畫面跟著微微歪、點一下 */
     sun.position.set(shX + 30, 60, shZ + 22); sun.target.position.set(shX, 0, shZ);
     if (S.night > .6) { sun.position.set(shX - 25, 50, shZ + 30); }
     /* 人 */
