@@ -569,7 +569,7 @@ export function start(o) {
   function npcGo(p, tx, tz) { const path = findPath(p.x, p.z, tx, tz); if (path && path.length) { p.path = path; p.state = 'walk'; return true; } return false; }
 
   /* ───────── 鏡頭、輸入、介面 ───────── */
-  const S = { dead: false, mode: 'walk', yaw: 0, yawT: 0, dist: 11, distT: 11, camV: 0, tgt: null, joy: null, keys: {}, t: 0, talk: null, sel: null, drag: null, last: performance.now(), inside: me.z < RD, cam: new Vector3(me.x, 1, me.z), low: {}, fp: FPPREF.v, fpK: 0, fpP: 0, pitch: .7, pitchT: .7 };
+  const S = { dead: false, mode: 'walk', yaw: 0, yawT: 0, dist: 11, distT: 11, camV: 0, tgt: null, joy: null, keys: {}, t: 0, talk: null, sel: null, drag: null, last: performance.now(), inside: me.z < RD, cam: new Vector3(me.x, 1, me.z), low: {}, fp: FPPREF.v, fpK: 0, fpP: 0, pitch: .7, pitchT: .7, pan: { x: 0, z: 0 } };
   const eyeV = new Vector3(), lookV = new Vector3(), lookFP = new Vector3();
   /* 2026-11-26 使用者說視角太遠、點東西常沒反應：布置 13.5→11.5（畫面中心移到面板上方）、室內走路 10.5→8.5（雙指縮放範圍不變） */
   const BUILD_D = 11.5, IN_D = 8.5;
@@ -578,7 +578,7 @@ export function start(o) {
   const U = s => { ui.push(s); return s; };
   const info = U(el('div', 'h3info'));
   const hud = U(el('div', 'h3hud'));
-  const camEl = (el('div', 'h3cam', '<button type="button" aria-label="向左轉" data-h3="camL">⟲</button><button type="button" aria-label="向右轉" data-h3="camR">⟳</button>'));
+  const camEl = U(el('div', 'h3cam', '<button type="button" aria-label="向左轉" data-h3="camL">⟲</button><button type="button" aria-label="向右轉" data-h3="camR">⟳</button>'));
   const hint = U(el('div', 'h3hint'));
   const toastEl = U(el('div', 'h3toast'));
   const joyEl = U(el('div', 'h3j', '<i></i>'));
@@ -645,7 +645,7 @@ export function start(o) {
     if (e.pointerType === 'touch' && !jd && S.mode === 'walk' && !pan.classList.contains('on')) { const r = rect(); if (e.clientX - r.left < r.width * .45) { jd = { id: e.pointerId, sx: l.x, sy: l.y }; S.tgt = null; joyEl.style.display = 'block'; joyEl.style.opacity = 1; joyEl.style.left = l.x + 'px'; joyEl.style.top = l.y + 'px'; joyEl.firstChild.style.transform = ''; return; } }
     ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), dist: S.distT, ang: Math.atan2(b.y - a.y, b.x - a.x), yaw: S.yawT }; if (pd) clearTimeout(pd.lpT); pd = null; endDrag(); return; }
-    pd = { id: e.pointerId, sx: l.x, sy: l.y, cx: e.clientX, cy: e.clientY, moved: 0, btn: e.button, yaw0: S.yawT, pit0: S.pitchT, fp0: S.fpP };
+    pd = { id: e.pointerId, sx: l.x, sy: l.y, cx: e.clientX, cy: e.clientY, moved: 0, btn: e.button, yaw0: S.yawT, pit0: S.pitchT, fp0: S.fpP, mx: e.clientX, my: e.clientY };
     /* 2026-11-26 使用者要求：家具要「長按」才拖得動（之前一碰就拖，轉鏡頭時常不小心移到）。短按＝選取，按住不動 0.35 秒＝拿起來拖 */
     /* 已經選取（綠框）的家具：按住它或綠框直接拖，不用再長按（2026/11/26 管理員回報「東西拖不動」） */
     if (S.mode === 'build' && e.button !== 2) { const it = itemHit(e.clientX, e.clientY), s = S.sel; if (s && !s.I.fixed2 && (it === s || (ringHit(e.clientX, e.clientY) && (!it || s.I.L === 'top')))) { pd.dragItem = s; return; } if (it && !it.I.fixed2) { const me2 = pd; pd.lpT = setTimeout(() => { if (pd !== me2 || me2.moved || S.dead || S.mode !== 'build') return; if (S.sel !== it) select(it); me2.dragItem = it; me2.lp = 1; S.bt = null; liftFx(it); }, 350); } }
@@ -657,9 +657,16 @@ export function start(o) {
     if (pinch && ptrs.size >= 2) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); S.distT = clamp(pinch.dist * pinch.d / Math.max(20, d), 6, 20); S.yawT = pinch.yaw - (Math.atan2(b.y - a.y, b.x - a.x) - pinch.ang); return; }
     if (!pd || pd.id !== e.pointerId) return;
     const l = local(e.clientX, e.clientY), dx = l.x - pd.sx, dy = l.y - pd.sy, d = Math.hypot(dx, dy);
+    pd.mx = e.clientX; pd.my = e.clientY;
     if (!pd.moved && d > (pd.lp ? 3 : 10)) { pd.moved = 1; clearTimeout(pd.lpT); }
     if (!pd.moved) return;
-    if (pd.btn === 2 || S.mode === 'walk' || (S.mode === 'build' && !pd.dragItem)) { S.yawT = pd.yaw0 - dx * .008; if (S.fp && S.mode === 'walk') S.fpP = clamp(pd.fp0 - dy * .005, -1.2, 1.2); else S.pitchT = clamp(pd.pit0 + dy * .005, .3, 1.25); return; }
+    /* 2026-11-27 使用者要求：布置模式拖空白處＝移動視角（原本只能繞著房間中心轉，角落的家具很難移）；轉方向用 ⟲⟳ 或兩指轉 */
+    if (S.mode === 'build' && !pd.dragItem && pd.btn !== 2) {
+      if (!pd.pan0) { if (S.bt) { const b = panBase(); S.pan = { x: S.bt.x - b.x, z: S.bt.z - b.z }; S.bt = null; } pd.pan0 = { x: S.pan.x, z: S.pan.z }; }
+      const k = 2 * camDist() * Math.tan(20 * Math.PI / 180) / Math.max(1, cv.clientHeight), sy = Math.sin(S.yaw), cy = Math.cos(S.yaw), fy = dy * k / Math.sin(Math.max(.75, S.pitch));
+      setPan(pd.pan0.x - cy * dx * k - sy * fy, pd.pan0.z + sy * dx * k - cy * fy); return;
+    }
+    if (pd.btn === 2 || S.mode === 'walk') { S.yawT = pd.yaw0 - dx * .008; if (S.fp && S.mode === 'walk') S.fpP = clamp(pd.fp0 - dy * .005, -1.2, 1.2); else S.pitchT = clamp(pd.pit0 + dy * .005, .3, 1.25); return; }
     if (S.mode === 'build' && pd.dragItem) { dragTo(pd.dragItem, e.clientX, e.clientY); return; }
     if (S.mode === 'walk') { const R = 55, m = Math.min(1, d / R) / Math.max(d, 1e-6); S.joy = { x: dx * m, y: dy * m }; S.tgt = null; joyEl.style.display = 'block'; joyEl.style.left = pd.sx + 'px'; joyEl.style.top = pd.sy + 'px'; joyEl.firstChild.style.transform = `translate(${S.joy.x * 55}px,${S.joy.y * 55}px)`; }
   });
@@ -739,13 +746,29 @@ export function start(o) {
   coinSp.renderOrder = 25; coinSp.scale.set(.55, .55, 1); scene.add(coinSp);
   const coinFlyer = []; function coinFx(e) { for (let i = 0; i < 8; i++) { const s = coinSp.clone(); s.material = coinSp.material.clone(); s.position.copy(e.g.position).add(new Vector3(0, 1.4, 0)); s.userData.v = new Vector3(rnd(-1.2, 1.2), rnd(2.5, 4), rnd(-1.2, 1.2)); s.userData.t = 0; scene.add(s); coinFlyer.push(s); } }
 
+  /* 布置模式的視角：預設對準房間中心（panBase），S.pan 是手指拖出來的位移，限制在房間（店外布置時含庭院）範圍內 */
+  const camDist = () => { const aspect = cw / ch, extra = aspect < 1.45 ? 1.45 / aspect : 1; return S.dist * extra * Math.max(RW / 10, RD / 8); };
+  function panBase() { const sy = Math.sin(S.yaw), cy = Math.cos(S.yaw); return S.inside ? { x: RW / 2 + sy * 1.2, z: RD / 2 + cy * 1.2 } : { x: DX + sy * 2, z: RD + 2.5 + cy * 2 }; }
+  function setPan(x, z) { const b = panBase(), inn = S.inside; S.pan = { x: clamp(b.x + x, inn ? 0 : YX0, inn ? RW : YX1) - b.x, z: clamp(b.z + z, 0, inn ? RD + 1 : YZ1) - b.z }; }
+  /* 拿著家具拖到畫面邊緣（或下面的面板旁）時，視角自己跟著移過去 */
+  function edgePan(dt) {
+    if (S.mode !== 'build' || !pd || !pd.dragItem || !pd.moved) return;
+    const r = rect(), bot = bp.offsetHeight ? bp.getBoundingClientRect().top : r.bottom, m = 48;
+    const ex = pd.mx < r.left + m ? -1 : pd.mx > r.right - m ? 1 : 0, ey = pd.my < r.top + m ? 1 : pd.my > bot + 6 ? -1 : 0;
+    if (!ex && !ey) return;
+    if (S.bt) { const b = panBase(); S.pan = { x: S.bt.x - b.x, z: S.bt.z - b.z }; S.bt = null; }
+    const v = 4 * dt, sy = Math.sin(S.yaw), cy = Math.cos(S.yaw);
+    setPan(S.pan.x + (cy * ex - sy * ey) * v, S.pan.z + (-sy * ex - cy * ey) * v);
+    dragTo(pd.dragItem, pd.mx, pd.my);
+  }
+
   /* 布置模式 */
   function setMode(m) {
     S.mode = m; select(null); closeCard(); S.tgt = null; hudBtns(); setTimeout(joyRest, 0);
     bp.classList.toggle('on', m === 'build'); topBar.classList.remove('on');  /* 2026-11-26 使用者要求：布置模式不顯示「拖曳家具移動」提示條（擋畫面） */ if (m !== 'build') { camEl.style.bottom = ''; }
     info.style.display = m === 'build' ? 'none' : '';
-    S.bt = null;
-    if (m === 'build') { topBar.textContent = '🔨 長按家具拖動・拖空白處轉鏡頭'; drawPanel(); S.distT = BUILD_D; try { const n = +(localStorage.getItem('izakaya-h3lp') || 0); if (n < 3) { localStorage.setItem('izakaya-h3lp', n + 1); toast('長按拿起家具，已選取的可以直接拖～'); } } catch (_) { } }
+    S.bt = null; S.pan = { x: 0, z: 0 }; S.camV = 0; camEl.style.display = m === 'build' ? '' : 'none';
+    if (m === 'build') { topBar.textContent = '🔨 長按家具拖動・拖空白處移動視角'; drawPanel(); S.distT = BUILD_D; try { const n = +(localStorage.getItem('izakaya-h3lp2') || 0); if (n < 3) { localStorage.setItem('izakaya-h3lp2', n + 1); toast('長按拿起家具～拖空白處移動視角，⟲⟳ 轉方向'); } } catch (_) { } }
     else { S.distT = S.inside ? IN_D : 13; if (!okAt(me.x, me.z, me.z)) { const c = walkableCells(me.z < RD).sort((a, b) => Math.hypot(a[0] + .5 - me.x, a[1] + .5 - me.z) - Math.hypot(b[0] + .5 - me.x, b[1] + .5 - me.z)).find(c => okAt(c[0] + .5, c[1] + .5, c[1])); if (c) { me.x = c[0] + .5; me.z = c[1] + .5; } } changed(); }
   }
   let curCat = HOME ? 'liv' : 'tbl';
@@ -914,7 +937,7 @@ export function start(o) {
     data: () => JSON.parse(JSON.stringify(serialize())),
     probe() {
       const P = v => { const f = proj(v); return { x: Math.round(f.x), y: Math.round(f.y) }; };
-      return { mode: S.mode, fp: S.fp, fpK: +S.fpK.toFixed(2), inside: S.inside, ceil: ceil.visible, door: homeDoor ? +homeDoor.rotation.y.toFixed(2) : null, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, yaw: +S.yaw.toFixed(2), sel: S.sel ? { k: S.sel.k, x: S.sel.x, z: S.sel.z, r: S.sel.r, ok: S.sel.ok } : null,
+      return { mode: S.mode, fp: S.fp, fpK: +S.fpK.toFixed(2), inside: S.inside, ceil: ceil.visible, door: homeDoor ? +homeDoor.rotation.y.toFixed(2) : null, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, me: { x: +me.x.toFixed(2), z: +me.z.toFixed(2) }, yaw: +S.yaw.toFixed(2), cam: { x: +S.cam.x.toFixed(2), z: +S.cam.z.toFixed(2) }, sel: S.sel ? { k: S.sel.k, x: S.sel.x, z: S.sel.z, r: S.sel.r, ok: S.sel.ok } : null,
         items: placed.map(e => Object.assign({ k: e.k, x: e.x, z: e.z, r: e.r, km: e.g.userData.km ? 1 : 0 }, P(new Vector3(e.g.position.x, e.g.position.y + .4, e.g.position.z)))),
         npcs: npcs.filter(p => !p.hidden).map(p => Object.assign({ id: p.d.id || p.kind2, kind: p.kind2, state: p.state }, P(new Vector3(p.x, p.h * .5, p.z)))),
         board: P(new Vector3(BOARD.x, 1.15, BOARD.z)), gifts: giftBoxes.length, card: card.classList.contains('on') ? card.textContent : '', pan: pan.classList.contains('on') ? pan.textContent : '',
@@ -1013,8 +1036,8 @@ export function start(o) {
       P.g.position.set(P.x, onBed ? .1 : 0, P.z); P.g.scale.y = onBed ? .75 + Math.sin(t * 1.5) * .03 : 1; }
     /* 鏡頭 */
     let tx = me.x, tz = me.z, ty = 1.1;
-    if (S.mode === 'build') { if (S.bt) { tx = S.bt.x; tz = S.bt.z; } else if (S.inside) { tx = RW / 2 + sy * 1.2; tz = RD / 2 + cy * 1.2; } else { tx = DX + sy * 2; tz = RD + 2.5 + cy * 2; } ty = .4; }
-    S.cam.x += (tx - S.cam.x) * Math.min(1, dt * (S.mode === 'build' ? 4 : 12)); S.cam.z += (tz - S.cam.z) * Math.min(1, dt * (S.mode === 'build' ? 4 : 12)); S.cam.y += (ty - S.cam.y) * Math.min(1, dt * 4);
+    if (S.mode === 'build') { edgePan(dt); if (S.bt) { tx = S.bt.x; tz = S.bt.z; } else { const b = panBase(); tx = b.x + S.pan.x; tz = b.z + S.pan.z; } ty = .4; }
+    S.cam.x += (tx - S.cam.x) * Math.min(1, dt * (S.mode === 'build' && !(pd && (pd.pan0 || pd.dragItem)) ? 4 : 12)); S.cam.z += (tz - S.cam.z) * Math.min(1, dt * (S.mode === 'build' && !(pd && (pd.pan0 || pd.dragItem)) ? 4 : 12)); S.cam.y += (ty - S.cam.y) * Math.min(1, dt * 4);
     const aspect = cw / ch, extra = aspect < 1.45 ? 1.45 / aspect : 1, dd = S.dist * extra * Math.max(RW / 10, RD / 8), pitch = S.mode === 'build' ? Math.max(.75, S.pitch) : S.pitch;
     camPos.set(S.cam.x + sy * Math.cos(pitch) * dd, S.cam.y + Math.sin(pitch) * dd, S.cam.z + cy * Math.cos(pitch) * dd);
     /* 第一人稱：鏡頭移到角色眼睛高度，和第三人稱之間平滑過渡；之後的牆判斷用過渡後的鏡頭位置 */

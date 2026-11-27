@@ -2292,7 +2292,7 @@ def sc_home3d(b, base):
         if not (cvb['x'] + 20 < it['x'] < cvb['x'] + cvb['width'] - 20 and cvb['y'] + 20 < it['y'] < bpb['y'] - 10):
             c.page.screenshot(path='/tmp/check-fail.png')
             raise AssertionError('買完的行燈不在畫面可見區域（被面板蓋住或在畫面外）：%s 面板頂 %s' % (it, bpb['y']))
-        # 快速拖（沒有長按）家具＝轉鏡頭，家具不能被移動（2026/11/26 改成長按才拖）
+        # 快速拖（沒有長按）家具＝移動視角（2026/11/27 原本是轉鏡頭），家具不能被移動（2026/11/26 改成長按才拖）
         if not c.page.locator('.home3 [data-h3=ok]').is_disabled():
             c.click('.home3 [data-h3=ok]', wait=300)
         grid = "HOME3.data().it.filter(e=>e[0]==='andon').map(e=>[e[1],e[2]])"
@@ -2302,10 +2302,40 @@ def sc_home3d(b, base):
         for k in range(1, 9):
             c.page.mouse.move(it['x'] + k * 20, it['y']); c.page.wait_for_timeout(20)
         c.page.mouse.up(); c.page.wait_for_timeout(600)
-        p = h3_probe(c)
-        if abs(p['yaw'] - y0) < .2 or c.page.evaluate(grid) != g0:
-            raise AssertionError('在家具上快速拖曳（沒長按）應該轉鏡頭、不移動家具：yaw %s→%s 位置 %s→%s' % (y0, p['yaw'], g0, c.page.evaluate(grid)))
-        c.page.evaluate("HOME3.setYaw(%s)" % y0); c.page.wait_for_timeout(500)
+        cam0 = p['cam']; c.page.wait_for_timeout(600); p = h3_probe(c)
+        if p['cam']['x'] > cam0['x'] - .8 or abs(p['yaw'] - y0) > .05 or c.page.evaluate(grid) != g0:
+            raise AssertionError('布置時在家具上快速往右拖（沒長按）應該移動視角、不轉向、不移動家具：cam %s→%s yaw %s→%s 位置 %s→%s' % (cam0, p['cam'], y0, p['yaw'], g0, c.page.evaluate(grid)))
+        # 往下拖空地：視角往房間深處移
+        cvb = c.page.locator('.home3 canvas.twcv').bounding_box(); cam0 = p['cam']
+        sx, sy_ = cvb['x'] + cvb['width'] * .72, cvb['y'] + cvb['height'] * .2
+        c.page.mouse.move(sx, sy_); c.page.mouse.down()
+        for k in range(1, 9):
+            c.page.mouse.move(sx, sy_ + k * 10); c.page.wait_for_timeout(20)
+        c.page.mouse.up(); c.page.wait_for_timeout(900); p = h3_probe(c)
+        if p['cam']['z'] > cam0['z'] - .5:
+            raise AssertionError('布置時往下拖空地，視角沒有往房間深處移：%s→%s' % (cam0, p['cam']))
+        # ⟲ 轉方向按鈕：布置時看得到、夠大、點了會轉
+        bb = c.page.locator('.home3 [data-h3=camL]').bounding_box()
+        if not bb or bb['height'] < 44 or bb['width'] < 44:
+            raise AssertionError('布置時的轉向按鈕不見了或太小：%s' % bb)
+        y1 = p['yaw']; c.click('.home3 [data-h3=camL]', wait=700)
+        if abs(h3_probe(c)['yaw'] - y1) < .3:
+            raise AssertionError('點 ⟲ 沒有轉鏡頭')
+        c.page.screenshot(path='/tmp/check-home3d-pan.png')
+        # 拿著行燈停在畫面左邊緣：視角要自己跟過去
+        c.click('.home3 [data-h3=done]', wait=300); c.click('.home3 [data-h3=build]', wait=1200)
+        c.page.evaluate("HOME3.setYaw(%s)" % y0); c.page.wait_for_timeout(700)
+        p = h3_probe(c); it = [i for i in p['items'] if i['k'] == 'andon'][0]; cam0 = p['cam']
+        c.page.mouse.move(it['x'], it['y']); c.page.mouse.down(); c.page.wait_for_timeout(600)
+        for k in range(1, 9):
+            c.page.mouse.move(it['x'] + (cvb['x'] + 12 - it['x']) * k / 8, it['y']); c.page.wait_for_timeout(20)
+        c.page.wait_for_timeout(900); p = h3_probe(c)
+        c.page.mouse.up(); c.page.wait_for_timeout(300)
+        if p['cam']['x'] > cam0['x'] - .5:
+            raise AssertionError('拿著家具停在左邊緣，視角沒有跟著移：%s→%s' % (cam0, p['cam']))
+        c.click('.home3 [data-h3=done]', wait=300); c.click('.home3 [data-h3=build]', wait=1200)
+        c.page.evaluate("HOME3.setYaw(%s)" % y0); c.page.wait_for_timeout(700)
+        g0 = c.page.evaluate(grid)
         # 長按 0.35 秒後才拖得動：按住 0.6 秒再拖到 (8.5,6.5)
         p = h3_probe(c); it = [i for i in p['items'] if i['k'] == 'andon'][0]
         tg = c.page.evaluate("HOME3.px(8.5,0,6.5)")
