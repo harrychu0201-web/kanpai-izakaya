@@ -2895,7 +2895,7 @@ def sc_keys(b, base):
             key(k); wait(200)
             need("R.taps[%d].st!=='full'&&!R.held" % i, '%s 再按一次沒有送出啤酒' % k)
         c.page.wait_for_function("R.taps[0].st==='full'", timeout=30000)
-        need("getComputedStyle(document.querySelector('.kbk')).display==='block'", '電腦上看不到按鍵標籤')
+        need("!document.querySelector('[data-tap] .kbk')", '啤酒機上不應該有按鍵標籤')
         c.page.screenshot(path='/tmp/keys.png')
         ev("pause()"); key('KeyQ'); wait(200)
         need("!R.held", '暫停時按鍵不該有作用')
